@@ -3,12 +3,12 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-06 |
-| Estado | **Princípios arquiteturais validados; contrato detalhado a consolidar no IKP** |
+| Estado | **Documento de contexto arquitetural; semântica detalhada consolidada em P1** |
 | Âmbito | Scanner independente, IKP e PHC Knowledge |
 | Implementação | Nenhuma alteração de código nesta etapa |
 | Relação | Complementa `ikp-0.1-specification.md` e `collector-coverage-investigation-2026-11-06.md` |
 
-Este documento consolida as decisões validadas na investigação sobre cobertura, identidade, observações, versões de conteúdo, compatibilidade entre capacidades do Scanner e linhagem entre instalações. Não substitui ainda a especificação IKP 0.1; estabelece a direção que a revisão dessa especificação deve incorporar.
+Este documento conserva o contexto arquitetural e as decisões de alto nível sobre cobertura, identidade, observações, compatibilidade entre capacidades e linhagem. A semântica normativa detalhada de identidade da origem, estados de definição e fingerprints está agora em [P1 — Contrato de identidade, proveniência e fingerprints](p1-identity-provenance-contract.md). A especificação IKP 0.1 define a serialização do pacote e referencia esse contrato.
 
 ## 1. Fronteiras de responsabilidade
 
