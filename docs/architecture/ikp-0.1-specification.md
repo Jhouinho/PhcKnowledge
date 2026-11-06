@@ -1,65 +1,58 @@
-# IKP 0.1 — Installation Knowledge Package (especificação)
+# IKP 0.1 — Installation Knowledge Package
 
 | Campo | Valor |
-| --- | --- |
-| Estado | **Proposta para revisão conjunta** — não aprovada só por existir |
-| Data | 2026-11-06 |
-| Contrato | `ikpContractVersion = 0.1` |
-| Content-Type | `phc.installation.knowledge.package` |
+|---|---|
+| Data da revisão | 2026-11-06 |
+| Contrato | ikpContractVersion = 0.1 |
+| Content-Type | phc.installation.knowledge.package |
 | Transporte canónico | ZIP |
-| Implementação | Nenhuma nesta etapa |
-| Documento-mãe | [`technology-and-import-contract-assessment.md`](technology-and-import-contract-assessment.md) |
+| Estado | **Contrato consolidado para revisão técnica através de fixtures e matriz de compatibilidade** |
+| Implementação | Ainda não implementado |
+| Documento complementar | [Contrato de observação, identidade e linhagem](observation-identity-and-lineage-contract.md) |
 
-Legenda: `[código]` Scanner atual · `[acordado]` decisões de arquitetura · `[proposta]` IKP 0.1 · `[pendente]` validação conjunta · `[lacuna]` gap Scanner ↔ IKP
+Este documento define o pacote de transferência entre o Scanner PHC independente e a plataforma PHC Knowledge. Distingue o contrato pretendido da capacidade atualmente existente no Scanner. A especificação não significa que o Scanner já emita IKP nem que a plataforma já o importe.
 
----
+## 1. Objetivo e fronteiras
 
-## 1. Resumo das capacidades reais do Scanner `[código]`
+O IKP é o formato normalizado que o PHC Knowledge aceita como entrada de conhecimento técnico de uma instalação PHC.
 
-O Scanner independente (`PhcKnowledgeScanner/`) **não produz ainda um IKP**. Produz **três** exports distintos:
+Responsabilidades:
 
-| Export | Produtor | Layout / manifesto | Identidade | Integridade | Cobertura |
-| --- | --- | --- | --- | --- | --- |
-| **Database Schema Snapshot** | `DatabaseSchemaSnapshotWriter` + CLI `schema-snapshot` | Pasta ou ZIP: `manifest.json`, `tables/*.json`, `relationships/`, `indexes/`, `views/`, `triggers/`, `procedures/`, `functions/`, `types/`, `synonyms/`, `documentation/overview.md` | `originFingerprint` (anonimizado); **sem** `packageId` / `snapshotId` UUID / `environmentId`; sem ID de instalação da plataforma | `snapshotHash` estrutural canónico (`SchemaSnapshotHasher`); **sem** `checksums.json` por ficheiro nem checksum do ZIP | `completionStatus`, `categoryStatuses[]`, `warnings`, `limitations`; classificação conservadora |
-| **ZIP de personalizações** | `WorkspaceExportService` | Pastas `brule`, `ebrule`, `udefs`, `eudefs`, `eventos`, `eeventos`, `teclas`, `campos`, `formc`, `formb`, `ftu` | Nomes de ficheiro derivados de schema/name; **sem manifesto** | Sem checksums no ZIP | Implícita (só o que está no workspace) |
-| **ZIP de scan** | `ZipScanExporter` | `manifest.json` + `collectors/{collectorId}/…` + `README.txt` | `InstallationId = "{Server}/{Database}"` (`ScanAppService`) | Sem checksums; manifesto lista `byteLength` sem hash | `CollectorStatus` por collector (`Succeeded` / `SucceededWithWarnings` / `Partial` / `Failed` / `Skipped`) + `Issues` |
+- **Scanner:** recolhe factos e definições técnicas, identifica objetos na origem, declara capacidades e cobertura, preserva artefactos originais e produz o IKP.
+- **IKP:** transporta uma captura imutável, com identidade de captura, capacidades, cobertura, índice de objetos, artefactos, integridade e proveniência.
+- **PHC Knowledge:** associa o pacote a uma instalação, valida e importa, mantém entidades e histórico, calcula/compara observações, gere correspondências de identidade e linhagem.
 
-**Melhor embrião para IKP 0.1:** Database Schema Snapshot (ADR 0014, `samples/database-schema-snapshot/`).
+O PHC Knowledge não executa o Scanner em runtime. O Scanner não depende do PHC Knowledge nem dos seus identificadores internos.
 
-**Workspace SQLite** (não é pacote de importação): persiste objetos, `artifacts.sha256`, relações declaradas, interpretações; alimenta exports e Desktop. Projeção KR/FieldMapping é em memória (`RelationalKnowledgeProjector`) — **não** exportada como pacote unificado hoje.
+O IKP parte do Database Schema Snapshot atual, mas não é a junção direta dos três ZIPs existentes nem a recuperação do formato histórico do ConsoleApp.
 
-Não confundir com `PhcKnowledgeScannerV1` / Snapshot ZIP histórico do ConsoleApp.
+## 2. Princípios obrigatórios
 
----
-
-## 2. Objetivo do IKP 0.1 `[proposta]`
-
-Formato **normalizado de entrada** no PHC Knowledge (plataforma centralizada, PostgreSQL). O Scanner permanece independente; a plataforma **não** o executa em runtime. `[acordado]`
-
-IKP 0.1 define o contrato que a plataforma **aceita**. A capacidade do Scanner de **emitir** IKP 0.1 é uma evolução posterior — esta especificação documenta o alvo e as lacunas.
-
-Princípios:
-
-- Partir do Database Schema Snapshot; **não** unir ingénuamente os três ZIPs; **não** recuperar Snapshot V1 histórico. `[acordado]`
-- Conteúdo parcial permitido (categorias opcionais).
-- Cobertura explícita; `NotObserved` ≠ `Removed`. `[acordado]`
-- Identidade de instalação da plataforma ≠ identidade técnica de origem do Scanner. `[acordado]`
-- Staging + publicação controlada; anti-`ReplaceExisting`. `[acordado]`
-
----
+1. Uma captura pode conter categorias opcionais; a ausência de uma categoria não significa que não existam objetos.
+2. Cobertura, capacidades suportadas e inventário de objetos são dimensões distintas.
+3. Ausência de um objeto só pode fundamentar remoção após comparação compatível e cobertura completa.
+4. O Scanner produz observações; a plataforma mantém entidades e histórico.
+5. Identidade lógica, identidade nativa da origem, identidade da observação e fingerprints são conceitos separados.
+6. Duas bases de dados PHC diferentes são duas instalações diferentes, mesmo que uma resulte de cópia/restauro da outra.
+7. Linhagem regista proveniência entre instalações; nunca funde os seus históricos.
+8. O pacote não transporta o InstallationId interno da plataforma.
+9. Artefactos originais e factos declarados não devem ser substituídos por interpretações derivadas.
+10. Receber ou validar um pacote não equivale a publicar conhecimento.
 
 ## 3. Estrutura do pacote
 
-### 3.1 Layout ZIP `[proposta]`
+### 3.1 Layout ZIP
 
-```text
+~~~text
 {packageId}.zip
-├── manifest.json                 # obrigatório — contrato IKP
-├── checksums.json                # obrigatório — SHA-256 por entrada do payload (+ ficheiros de topo listados)
-├── coverage.json                 # obrigatório — cobertura por categoria/capability
+├── manifest.json
+├── capabilities.json
+├── coverage.json
+├── object-index.json
+├── checksums.json
 └── payload/
-    ├── schema/                   # recomendado em 0.1 se a recolha estrutural existir
-    │   ├── manifest.json         # manifesto legado/compatível do schema snapshot (opcional se fundido no IKP)
+    ├── schema/
+    │   ├── source-manifest.json
     │   ├── tables/
     │   ├── relationships/
     │   ├── indexes/
@@ -70,304 +63,533 @@ Princípios:
     │   ├── types/
     │   ├── synonyms/
     │   └── documentation/
-    ├── customizations/           # opcional — artefactos originais (pastas tipo WorkspaceExport)
-    ├── relations/                # opcional — REL/DTL/FK factos + interpretações
-    ├── knowledge/                # opcional — projeções derivadas (KR/FieldMapping); regeneráveis
-    └── diagnostics/              # opcional — issues agregados, limitações narrativas
-```
+    ├── customizations/
+    ├── relations/
+    ├── knowledge/
+    └── diagnostics/
+~~~
 
-Ficheiros fora deste inventário → rejeição ou quarentena segundo política §7 (recomendação 0.1: **rejeitar** entradas não declaradas no manifesto).
+Ficheiros de topo obrigatórios: manifest.json, capabilities.json, coverage.json, object-index.json e checksums.json.
 
-### 3.2 Perfis de conteúdo `[proposta]`
+Pastas de payload são opcionais, mas devem ser coerentes com as capacidades, cobertura, índice de objetos e manifesto. O manifesto do Schema Snapshot original é preservado em payload/schema/source-manifest.json, quando esse perfil é incluído. O manifesto principal IKP é único e não deve duplicar campos de identidade da captura.
 
-| Perfil | Significado | Obrigatório em 0.1? |
-| --- | --- | --- |
-| `schema` | Metadados estruturais SQL (base do schema snapshot) | Não — mas se declarado em coverage como `Succeeded*`, o payload deve existir |
-| `customizations` | Personalizações PHC | Não |
-| `relations` | Relações declaradas / FK / interpretações | Não |
-| `knowledge` | Projeções derivadas | Não |
-| `diagnostics` | Diagnósticos extra | Não |
+### 3.2 Perfis de payload
 
-Um pacote válido pode conter só `schema`, só `customizations`, ou combinações. O manifesto e `coverage.json` devem declarar o que foi tentado e o resultado.
+| Perfil | Conteúdo | Regra |
+|---|---|---|
+| schema | Schema físico SQL: tabelas, colunas, PK/FK, índices, views, procedures, triggers, funções, tipos e synonyms | Opcional |
+| customizations | Definições e metadados de personalizações PHC | Opcional |
+| relations | Factos REL/DTL/FK e interpretações versionadas | Opcional |
+| knowledge | Projeções derivadas, como KR/FieldMapping | Opcional e regenerável |
+| diagnostics | Issues e diagnósticos adicionais | Opcional |
 
----
+O pacote pode transportar apenas um perfil ou vários. A ausência de knowledge não significa ausência de factos relacionais. As projeções devem ser identificadas como derivadas, com versão do analisador e referências às evidências de origem.
 
-## 4. Identidade do pacote e da instalação
+### 3.3 Extensibilidade
 
-### 4.1 Identidades a distinguir `[proposta]` + `[acordado]`
+- Categorias e operações novas são declaradas em capabilities.json e coverage.json.
+- Novas pastas de payload podem ser adicionadas sem alterar a semântica dos perfis existentes.
+- Consumidores devem ignorar propriedades opcionais desconhecidas em estruturas extensíveis, mas não ignorar campos obrigatórios desconhecidos que afetem identidade, integridade ou interpretação.
+- Uma versão de contrato incompatível é rejeitada; não se deve inferir compatibilidade apenas porque o JSON pode ser lido.
 
-| Conceito | Onde vive | Notas |
-| --- | --- | --- |
-| **PackageId** | `manifest.packageId` | UUID do artefacto físico IKP |
-| **CaptureId** | `manifest.capture.captureId` | UUID da recolha/observação (substitui o papel de “snapshotId” de captura; **não** é EntityIdentity) |
-| **Producer** | `manifest.producer` | `productId`, `productVersion` (Scanner) |
-| **OriginIdentity** | `manifest.origin` | Identidade técnica da origem no Scanner (servidor/BD/fingerprint) — **hint**, não ID de plataforma |
-| **InstallationId (plataforma)** | Atribuído/confirmado **na ingestão** | ID próprio do PHC Knowledge; **nunca** = `server/database` |
-| **EnvironmentId (plataforma)** | Na ingestão / manifesto hint | Ex. `production`, `test` |
-| **EntityIdentity** | Por objeto no âmbito instalação+tipo+chave local | **Sem** CaptureId / PackageId |
-| **ObservationIdentity** | Entidade + CaptureId (+ capability) | Ocorrência temporal |
-| **ContentFingerprint** | Hash canónico do conteúdo observado | ≠ checksum ZIP ≠ hash FTS |
+## 4. Manifesto principal
 
-### 4.2 Campos do manifesto — identidade e produção `[proposta]`
+### 4.1 Campos
 
-| Campo | Obrig. 0.1 | Descrição |
-| --- | --- | --- |
-| `ikpContractVersion` | sim | `"0.1"` |
-| `contentType` | sim | `"phc.installation.knowledge.package"` |
-| `packageId` | sim | UUID |
-| `producedAtUtc` | sim | Instantâneo de empacotamento |
-| `producer.productId` | sim | Ex. `"PhcKnowledgeScanner"` |
-| `producer.productVersion` | sim | Versão do Scanner |
-| `producer.exportTool` | não | CLI/Desktop/host |
-| `capture.captureId` | sim | UUID da recolha |
-| `capture.startedAtUtc` / `finishedAtUtc` | sim | Janela da recolha |
-| `capture.mode` | não | Ex. `schema-snapshot`, `customizations`, `full` |
-| `origin.engine` | sim | Ex. `"sqlserver"` |
-| `origin.databaseName` | não | Técnico; **não** ID de instalação |
-| `origin.serverLabel` | não | Etiqueta não confidencial preferível a FQDN |
-| `origin.originFingerprint` | sim se schema | Como no schema snapshot `[código]` |
-| `origin.phcVersion` / `phcSignatureDetected` | não | Quando disponível `[código]` |
-| `hints.suggestedInstallationKey` | não | Sugestão para UI de associação (nunca autoritativa) |
-| `hints.suggestedEnvironmentId` | não | |
-| `compatibility.minPlatformIkp` / `maxPlatformIkp` | não | Reservado; 0.1 usa só `ikpContractVersion` |
+| Campo | Obrigatório | Significado |
+|---|---:|---|
+| ikpContractVersion | Sim | Versão do contrato, inicialmente 0.1 |
+| contentType | Sim | phc.installation.knowledge.package |
+| packageId | Sim | UUID único deste pacote físico |
+| producedAtUtc | Sim | Data/hora de criação do ZIP |
+| producer.productId | Sim | Identificador do produto emissor, ex. PhcKnowledgeScanner |
+| producer.productVersion | Sim | Versão do Scanner |
+| producer.exportTool | Não | CLI, Desktop ou outro host |
+| capture.captureId | Sim | UUID gerado pelo Scanner no início da recolha |
+| capture.startedAtUtc | Sim | Início da recolha |
+| capture.completedAtUtc | Sim | Fim da recolha; nulo se a captura foi interrompida, quando permitido |
+| capture.mode | Sim | Modo/escopo geral da captura |
+| origin.engine | Sim | Motor de origem, nesta fase sqlserver |
+| origin.databaseName | Recomendado | Nome técnico da base de dados, sujeito a política de privacidade |
+| origin.serverLabel | Opcional | Etiqueta não sensível, não necessariamente FQDN |
+| origin.originFingerprint | Opcional | Fingerprint técnico para ajudar a reconhecer a origem; nunca é InstallationId |
+| origin.phcVersion | Opcional | Versão PHC detetada |
+| origin.phcSignatureDetected | Opcional | Evidência/assinatura da deteção PHC |
+| sharing.safeForPublicShare | Sim | Declaração do emissor, não certificação de segurança |
+| sharing.assessment | Opcional | Informação sobre verificações realizadas e respetiva versão |
 
-### 4.3 Associação à instalação na importação `[acordado]` + `[proposta]`
+Não existe EnvironmentId no modelo. O utilizador não precisa de separar ambientes dentro da mesma instalação: cada base de dados registada é uma instalação própria. Uma base de dados de testes restaurada de produção é uma instalação diferente, ligada por linhagem.
 
-1. Utilizador autenticado escolhe organização.  
-2. Sistema apresenta: instalação existente (match por `originFingerprint` / hints / histórico) **ou** criar nova **ou** deixar **pendente** se ambíguo.  
-3. `InstallationId` / `EnvironmentId` da plataforma são gravados no registo de importação — **não** reescritos no ZIP (pacote imutável).  
-4. Reimportação do mesmo `packageId` + mesmo package checksum ⇒ idempotente.  
+### 4.2 Identificadores e âmbito
 
----
+| Conceito | Origem | Regra |
+|---|---|---|
+| PackageId | Scanner | Identifica o pacote físico; novo por cada pacote produzido |
+| CaptureId | Scanner | Identifica uma recolha; pode originar vários pacotes |
+| InstallationId | PHC Knowledge | Atribuído/confirmado na importação; nunca incluído como ID autoritativo no IKP |
+| SourceObjectId | Scanner | Identificador do objeto na captura, referenciável dentro do pacote |
+| SourceIdentity | Origem PHC/SQL | Identificadores nativos e respetivo âmbito |
+| EntityIdentity | PHC Knowledge | Identidade lógica da entidade no âmbito da instalação |
+| ObservationIdentity | PHC Knowledge | Entidade observada numa captura |
+| MetadataFingerprint | Scanner/plataforma | Fingerprint dos metadados relevantes |
+| DefinitionFingerprint | Scanner/plataforma | Fingerprint da definição técnica original |
 
-## 5. Manifesto de artefactos `[proposta]`
+CaptureId e PackageId nunca entram na identidade lógica da entidade. Stamps PHC, nomes SQL, object_id e column_id são evidências com âmbito e estabilidade diferentes; nenhum deve ser tratado como identificador universal.
 
-Além da identidade, `manifest.json` inclui `artifacts[]`:
+### 4.3 Associação à instalação
 
-| Campo | Obrig. | Descrição |
-| --- | --- | --- |
-| `artifactId` | sim | Estável dentro do pacote (ex. path normalizado) |
-| `path` | sim | Caminho relativo no ZIP (`payload/...`) |
-| `category` | sim | `schema` \| `customizations` \| `relations` \| `knowledge` \| `diagnostics` \| `meta` |
-| `format` | sim | Ex. `application/json`, `text/plain`, `text/x-prg` |
-| `formatVersion` | não | Versão do schema desse artefacto |
-| `byteLength` | sim | |
-| `sha256` | sim | Deve coincidir com `checksums.json` |
-| `required` | sim | Se `true`, ausência ⇒ validação falha |
-| `role` | não | Ex. `tables`, `relationships`, `brule-source` |
+Na importação:
+1. O utilizador escolhe a organização.
+2. A plataforma apresenta uma instalação existente candidata, permite criar uma instalação nova ou deixa a associação pendente quando há ambiguidade.
+3. A decisão e as evidências de associação ficam registadas na plataforma.
+4. O pacote permanece imutável; a plataforma não escreve o seu InstallationId no ZIP.
+5. Reimportar o mesmo PackageId com o mesmo checksum do ZIP é idempotente. Mesmo CaptureId em pacotes diferentes deve ser tratado como a mesma captura com múltiplas representações/pacotes, não como recolhas independentes.
 
-`checksums.json`: mapa `path → sha256` (hex lowercase) de **todas** as entradas listadas em `artifacts` e dos ficheiros de contrato (`manifest.json` pode autoexcluir-se do próprio hash de pacote — ver §7).
+A correspondência por fingerprint da origem ou hints é sugestão, não associação automática irrevogável.
 
-### Distinção de hashes `[proposta]` + `[código]`
+## 5. Capacidades — capabilities.json
 
-| Tipo | Uso no IKP 0.1 |
-| --- | --- |
-| Package checksum | SHA-256 do ZIP (ou conjunto canónico de entradas) — integridade do transporte |
-| Artifact SHA-256 | Por ficheiro em `checksums.json` |
-| Structural fingerprint | Ex. `snapshotHash` do schema — igualdade de conteúdo estrutural |
-| Search index hash | **Fora do IKP** — só plataforma/FTS |
+Este ficheiro declara o que a versão do Scanner sabe recolher, independentemente do que foi solicitado ou executado nesta captura.
 
----
+Cada operação tem:
+- categoryId: categoria de conhecimento estável;
+- operationId: identificador estável da operação lógica;
+- capabilityVersion: versão da semântica/âmbito dessa capacidade;
+- collectorId: collector responsável;
+- supported: declaração explícita de suporte;
+- description: descrição curta opcional.
 
-## 6. Conteúdo `[proposta]`
+Exemplo:
 
-### 6.1 `payload/schema/` (base = schema snapshot atual)
-
-Reutilizar a forma JSON já produzida `[código]`:
-
-- Tabelas/colunas/PK (ficheiro por tabela).  
-- FK, índices, views, triggers, procedures, functions, UDTs, synonyms.  
-- Classificação `sql_system` / `candidate_custom` / `unknown` — **sem** afirmar PHC Standard.  
-- `includesSqlDefinitions` / `safeForPublicShare`.  
-
-EntityIdentity sugerida (plataforma, na ingestão):  
-`table:{schema}.{name}`, `column:{schema}.{table}.{column}`, etc., preservando casing original nas propriedades e documentando regra de normalização.
-
-### 6.2 `payload/customizations/` (opcional)
-
-Espelhar pastas do `WorkspaceExportService` `[código]`. Cada ficheiro = artefacto original. Metadados mínimos recomendados (ficheiro índice JSON opcional em 0.1+): `objectKind`, `name`, `schemaName`, `sourceStamp` se conhecido.
-
-Kinds já existentes no Scanner (`ObjectKind`): eventos, regras, udefs, campos `u_*`, formc/formb, ftu, etc.
-
-### 6.3 `payload/relations/` (opcional)
-
-Factos REL/DTL/FK e interpretações versionadas (`parserVersion`). Não misturar com projeções KR.
-
-### 6.4 `payload/knowledge/` (opcional)
-
-KR / FieldMapping marcados como `derived: true`, regeneráveis. Ausência não implica ausência de factos.
-
-### 6.5 Evolução
-
-Categorias novas = entradas opcionais + `coverage` + `artifacts`. Consumidores 0.1 **ignoram** propriedades JSON desconhecidas nos artefactos conhecidos; **rejeitam** `ikpContractVersion` major desconhecida.
-
----
-
-## 7. Cobertura (`coverage.json`) `[proposta]`
-
-### 7.1 Modelo
-
-```json
+~~~json
 {
-  "captureId": "...",
-  "categories": [
+  "schemaVersion": "1",
+  "scannerVersion": "2.0.0",
+  "operations": [
     {
-      "categoryId": "schema.tables",
-      "status": "Succeeded",
-      "scope": "all_user_tables",
-      "observedCount": 8229,
-      "detail": null
+      "categoryId": "phc.customizations.brule",
+      "operationId": "phc.customizations.brule.inventory",
+      "capabilityVersion": "1.0",
+      "collectorId": "phc.customizations",
+      "supported": true
+    },
+    {
+      "categoryId": "phc.customizations.brule",
+      "operationId": "phc.customizations.brule.definition",
+      "capabilityVersion": "1.0",
+      "collectorId": "phc.customizations",
+      "supported": true
     }
-  ],
-  "limitations": [ "..." ]
+  ]
 }
-```
+~~~
 
-`status` alinhado ao Scanner onde fizer sentido `[código]` `CollectorStatus` / `SchemaSnapshotCompletionStatus`:  
-`Succeeded` | `SucceededWithWarnings` | `Partial` | `Failed` | `Skipped` | `NotAttempted`
+Inventário e recuperação de definições são operações separadas quando podem ter resultados independentes. O mesmo princípio aplica-se a outras categorias quando necessário; não se deve multiplicar operações por cada coluna ou consulta SQL sem benefício semântico.
 
-### 7.2 Observed / NotObserved / Removed
+A plataforma mantém regras explícitas de compatibilidade entre versões de capacidade. O mesmo operationId não prova automaticamente comparabilidade entre versões.
 
-| Termo | Significado no IKP / ingestão |
-| --- | --- |
-| **Observed** | Objeto presente no payload com cobertura da categoria bem-sucedida (ou parcial **e** o objeto incluído) |
-| **NotObserved** | Objeto não aparece; categoria incompleta, falhada, skipped, ou fora de âmbito — **não** é remoção |
-| **Removed** | **Não** é um estado do pacote isolado. Só pode ser concluído pela plataforma ao comparar duas capturas com cobertura relevante **completa** e bem-sucedida em ambas |
+## 6. Cobertura — coverage.json
 
-O comparador atual do schema snapshot (`DatabaseSchemaSnapshotComparer`) trata ausência como Removed — **incompatível** com esta regra `[lacuna]` / `[código]`.
+### 6.1 Três dimensões independentes
 
----
+Cada entrada corresponde a uma operação lógica declarada em capabilities.json.
 
-## 8. Proveniência `[proposta]`
+**Resultado da operação:**
+- Succeeded
+- SucceededWithWarnings
+- Partial
+- Failed
+- Skipped
+- NotAttempted
 
-Por observação materializada na plataforma (não necessariamente serializado por linha no ZIP 0.1):
+**Disponibilidade da estrutura:**
+- Present
+- NotPresent
+- NotApplicable
+- Unknown
 
-- `producer.productId` / `productVersion`  
-- `origin.*`  
-- `captureId`, timestamps  
-- `packageId`, path do artefacto, `sha256`  
-- `EntityIdentity` + `ObservationIdentity` + `ContentFingerprint` (quando calculável)
+**Disponibilidade do conteúdo:**
+- Available
+- Partial
+- Unavailable
+- NotCollected
+- Empty
 
-CaptureId **não** entra em EntityIdentity. `[acordado]`
+Estas dimensões não se substituem. Uma consulta bem-sucedida pode encontrar zero registos; uma estrutura pode estar ausente; um inventário pode ser completo apesar de algumas definições não estarem disponíveis.
 
----
+### 6.2 Exemplo
 
-## 9. Integridade e segurança `[proposta]`
+~~~json
+{
+  "schemaVersion": "1",
+  "captureId": "b1b2c3d4-1111-4222-8333-123456789abc",
+  "operations": [
+    {
+      "operationId": "phc.customizations.brule.inventory",
+      "capabilityVersion": "1.0",
+      "requested": true,
+      "result": "Succeeded",
+      "sourceAvailability": "Present",
+      "contentAvailability": "Available",
+      "scope": {
+        "source": "dbo.brule",
+        "filter": "all records"
+      },
+      "observedCount": 65,
+      "issueIds": []
+    },
+    {
+      "operationId": "phc.customizations.brule.definition",
+      "capabilityVersion": "1.0",
+      "requested": true,
+      "result": "Partial",
+      "sourceAvailability": "Present",
+      "contentAvailability": "Partial",
+      "scope": {
+        "source": "dbo.brule"
+      },
+      "observedCount": 61,
+      "issueIds": ["issue-004"]
+    }
+  ]
+}
+~~~
 
-Requisitos mínimos na receção:
+### 6.3 Regras de interpretação
 
-1. ZIP legível; entradas sem `..` nem caminhos absolutos (já há padrão em `ZipScanExporter.NormalizeEntryPath` `[código]`).  
-2. `manifest.json` + `checksums.json` + `coverage.json` presentes.  
-3. `ikpContractVersion` = `0.1` (ou compatível segundo §11).  
-4. Cada `artifacts[].path` existe; SHA-256 confere; `byteLength` confere.  
-5. Entradas no ZIP não declaradas → **rejeitar** (0.1).  
-6. Artefactos `required: true` em falta → rejeitar.  
-7. Limites configuráveis: tamanho ZIP, nº de entradas, tamanho por ficheiro.  
-8. Pacote **não** é confiável só por `producer.productId`; validar sempre.  
-9. Duplicados de `artifactId` ou path → rejeitar.  
-10. JSON inválido / encoding não UTF-8 onde exigido → rejeitar.
+- Operação não suportada pela versão do Scanner: não consta como capacidade suportada.
+- Operação suportada mas não solicitada: requested=false e resultado Skipped; nunca é ausência/remoção.
+- Operação solicitada mas não iniciada: NotAttempted.
+- Estrutura não encontrada: NotPresent; não significa automaticamente NotApplicable.
+- Estrutura não aplicável: só declarar NotApplicable quando houver evidência suficiente.
+- Operação concluída com zero registos: resultado bem-sucedido e observedCount=0.
+- Inventário concluído e conteúdo não recolhido: manter a observação do objeto e declarar NotCollected para a definição.
+- Falhas e limitações referenciam issues identificadas no payload de diagnósticos ou no manifesto.
+- Cobertura por operação não precisa de ser detalhada por coluna/consulta. Descer ao nível de suboperação apenas quando os resultados forem independentes.
 
-Falha em qualquer passo de validação ⇒ **não** avança para staging de conhecimento; archive opcional do blob rejeitado para auditoria.
+Removed não é estado do Scanner nem do IKP. É uma conclusão da plataforma após comparação de capturas compatíveis e cobertura relevante completa.
 
----
+## 7. Índice de objetos — object-index.json
 
-## 10. Processo conceptual de importação `[proposta]` + `[acordado]`
+Este índice enumera os objetos observados na captura e liga-os às respetivas evidências e artefactos. Não é um histórico; cada IKP descreve apenas a captura a que pertence.
 
-```text
-1. Receção          → ImportAttemptId; armazenar blob imutável
-2. Validação estrutural (layout + manifesto)
-3. Integridade (checksums + package checksum)
-4. Associação instalação/ambiente (guiada; pode ficar Pending)
-5. Interpretação do manifesto + coverage
-6. Compatibilidade (ikpContractVersion, perfis)
-7. Staging          → KnowledgeRevision candidata (não publicada)
-8. Duplicados / diff vs revisão publicada (coverage-aware)
-9. Preparação da publicação (relatório Ready / bloqueios)
-10. Publicação atómica (pointer swap; revisão anterior intacta até sucesso)
-11. Registo resultado + proveniência + notificação (SignalR)
-```
+Campos mínimos por objeto:
+- sourceObjectId: ID único no âmbito da captura/pacote, referenciável por relações e artefactos;
+- objectKind: tipo normalizado;
+- sourceIdentity: identificadores nativos disponíveis e âmbito;
+- name e schemaName, quando aplicáveis;
+- metadata: metadados estruturados relevantes;
+- metadataFingerprint, quando calculável;
+- definition: estado de disponibilidade e referência(s) a artefactos;
+- definitionFingerprint, quando calculável;
+- operationId: operação que observou o objeto;
+- parentSourceObjectId, quando exista relação hierárquica.
 
-| Estado | Significado |
-| --- | --- |
-| Received / Archived | Blob guardado; **ainda não** é conhecimento publicado |
-| Validated | Contrato OK |
-| AssociationPending | Falta decisão humana de instalação |
-| Staged | Candidato materializado |
-| Published | Revisão ativa |
-| Rejected / Failed | Sem substituir revisão publicada |
+Exemplo:
 
-Receber ou arquivar um ZIP **≠** conhecimento importado. Sem `ReplaceExisting` sobre a revisão ativa.
+~~~json
+{
+  "schemaVersion": "1",
+  "captureId": "b1b2c3d4-1111-4222-8333-123456789abc",
+  "objects": [
+    {
+      "sourceObjectId": "phc.brule:7F3A...",
+      "objectKind": "phc.brule",
+      "sourceIdentity": {
+        "scheme": "phc.stamp",
+        "value": "7F3A...",
+        "scope": "dbo.brule"
+      },
+      "name": "Regra de validação",
+      "schemaName": "dbo",
+      "metadata": {
+        "table": "FT",
+        "inactive": false,
+        "order": 10
+      },
+      "metadataFingerprint": {
+        "algorithm": "sha256",
+        "value": "..."
+      },
+      "definition": {
+        "status": "Available",
+        "artifactIds": ["artifact-brule-7f3a"],
+        "definitionFingerprint": {
+          "algorithm": "sha256",
+          "value": "..."
+        }
+      },
+      "operationId": "phc.customizations.brule.inventory"
+    }
+  ]
+}
+~~~
 
----
+Estados individuais de definição:
+- Available: conteúdo recuperado e referenciado;
+- Empty: a definição existe, mas o conteúdo é genuinamente vazio;
+- Unavailable: tentou-se recuperar, mas não foi possível;
+- NotCollected: a definição não foi solicitada/recolhida.
 
-## 11. Versionamento e evolução `[proposta]`
+A ausência de um objeto no índice só pode ser interpretada à luz da cobertura da operação correspondente. Não criar objetos artificiais para representar ausências.
 
-| Aspeto | Regra 0.1 |
-| --- | --- |
-| Significado de `0.1` | Primeiro contrato documentado; pode mudar com breaking changes até `1.0` |
-| Campos obrigatórios | Os marcados “sim” nesta especificação |
-| Campos opcionais | Extensíveis; desconhecidos no manifesto de topo → rejeitar se críticos à identidade; em JSON de payload conhecido → ignorar com aviso |
-| Categorias novas | Opcionais + coverage |
-| Scanner antigo | Continua a emitir exports atuais até implementar emissor IKP; plataforma pode ter **adaptadores de ingestão** (fora do contrato IKP) `[pendente]` se útil |
-| Compatibilidade | Consumidor declara versões aceites; `0.1` não promete forward-compat estável |
+### 7.1 Identidade da origem
 
----
+O Scanner deve preservar, quando disponíveis e úteis:
+- stamp PHC;
+- object_id SQL Server;
+- column_id SQL Server;
+- schema, tabela, nome e outros atributos nativos;
+- tipo e âmbito em que o identificador é válido.
 
-## 12. Lacunas e incompatibilidades Scanner ↔ IKP 0.1
+Os identificadores nativos são evidência contextual. Não substituem a identidade lógica da plataforma. Correspondências incertas são resolvidas na plataforma, sem fusão automática baseada apenas em nome ou conteúdo semelhante.
 
-| Lacuna | Impacto |
-| --- | --- |
-| Nenhum export é IKP | Scanner precisa de emissor futuro ou adaptador na plataforma |
-| Schema snapshot sem `packageId`/`captureId` UUID / `checksums.json` | Envelope incompleto |
-| ZIP personalizações sem manifesto/coverage/checksums | Não importável como IKP sem adaptação |
-| ZIP scan usa `server/database` como InstallationId | Contradiz política de IDs `[acordado]` |
-| KR/FieldMapping não exportados | Perfil `knowledge` vazio inicialmente |
-| REL/DTL só no workspace SQLite | Perfil `relations` exige export novo |
-| Comparador schema = Removed sem coverage | Não usar como motor de diff da plataforma tal como está |
-| Sem package checksum no schema ZIP | Integridade de transporte a acrescentar |
+## 8. Artefactos e integridade
 
----
+### 8.1 Manifesto de artefactos
 
-## 13. Decisões, recomendações e pendentes
+O manifesto principal inclui artifacts[]:
 
-### Fundamentadas / alinhadas a decisões já acordadas
+| Campo | Obrigatório | Descrição |
+|---|---:|---|
+| artifactId | Sim | Identificador único dentro do pacote |
+| path | Sim | Caminho relativo no ZIP |
+| category | Sim | Perfil/categoria do artefacto |
+| format | Sim | MIME type ou formato identificado |
+| formatVersion | Não | Versão do formato interno |
+| byteLength | Sim | Tamanho exato em bytes |
+| sha256 | Sim | Hash dos bytes exatos do ficheiro |
+| required | Sim | Se a ausência invalida o pacote |
+| role | Não | Papel semântico do ficheiro |
 
-- IKP a partir do schema snapshot; Scanner fora do runtime; instalação centralizada.  
-- InstallationId de plataforma ≠ origin técnica.  
-- Staging + publicação; NotObserved ≠ Removed.  
-- Separação Entity / Observation / ContentFingerprint.
+Os objetos do índice referenciam artefactos por artifactId, não por caminhos reconstruídos ou nomes de ficheiro adivinhados.
 
-### Recomendações específicas do IKP 0.1 (para validar)
+### 8.2 Três níveis de integridade
 
-1. Nome `captureId` (em vez de sobrecarregar `snapshotId`) para a recolha.  
-2. Rejeitar ficheiros ZIP não declarados no manifesto.  
-3. Três ficheiros de topo obrigatórios: `manifest.json`, `checksums.json`, `coverage.json`.  
-4. Perfis de conteúdo todos opcionais no pacote, mas coerentes com coverage.  
-5. Adaptadores temporários Scanner→IKP na plataforma **vs** emissor nativo no Scanner — preferir emissor nativo a médio prazo; adaptador só se desbloquear importações piloto `[pendente]`.
+1. **Checksum do ZIP recebido:** SHA-256 dos bytes exatos do ZIP, calculado pela plataforma à receção e guardado no registo de importação. Não é possível incluí-lo no próprio ZIP sem autorreferência.
+2. **SHA-256 por ficheiro:** checksums.json contém hashes dos ficheiros de contrato e payload, exceto o próprio checksums.json.
+3. **Digest canónico do conteúdo lógico:** calculado a partir de caminhos normalizados, tamanhos e hashes dos ficheiros, ordenados de forma determinística; exclui checksums.json e o próprio digest. Permite comparar conteúdo independentemente da recompressão ZIP.
 
-### Questões que precisam de validação conjunta `[pendente]`
+O snapshotHash estrutural existente pode ser preservado como fingerprint específico do schema, mas não substitui estes mecanismos.
 
-| # | Questão | Alternativas |
-| --- | --- | --- |
-| Q1 | O Scanner deve emitir IKP nativamente na próxima evolução, ou a plataforma adapta schema snapshot + ZIP custom no curto prazo? | Emissor nativo (mais limpo) vs adaptador (mais rápido para protótipo) |
-| Q2 | `captureId` gerado pelo Scanner ou pela plataforma na receção se ausente? | Scanner (rastreio ponta-a-ponta) vs plataforma (compatibilidade com exports atuais) |
-| Q3 | Incluir `payload/schema/manifest.json` duplicado do snapshot ou fundir tudo no IKP `manifest.json`? | Duplicar (menos transformação) vs fundir (um só sítio) |
-| Q4 | Política de privacidade (`safeForPublicShare`) — a plataforma rejeita pacotes com SQL definitions ou só etiqueta? | Rejeitar em orgs sem permissão vs aceitar com flag |
-| Q5 | Algoritmo exato do package checksum (ZIP bytes vs canonical entry set) | ZIP bytes (simples) vs conjunto canónico (estável a recompressão) |
+### 8.3 Exemplo de checksums
 
----
+~~~json
+{
+  "schemaVersion": "1",
+  "algorithm": "SHA-256",
+  "files": [
+    { "path": "manifest.json", "sha256": "..." },
+    { "path": "capabilities.json", "sha256": "..." },
+    { "path": "coverage.json", "sha256": "..." },
+    { "path": "object-index.json", "sha256": "..." },
+    { "path": "payload/customizations/brule/7F3A.prg", "sha256": "..." }
+  ],
+  "logicalContentDigest": {
+    "algorithm": "SHA-256",
+    "value": "..."
+  }
+}
+~~~
 
-## 14. Próximos passos (após aprovação desta especificação)
+O algoritmo de digest canónico deve ser especificado com precisão na implementação, incluindo normalização de separadores de caminho, encoding, ordenação ordinal, representação do tamanho e tratamento de duplicados. Checksums provam integridade, não autoria. Assinatura digital pode ser considerada numa versão futura.
 
-1. Validação conjunta deste documento (não está aprovado automaticamente).  
-2. Comparação campo-a-campo com exports reais + amostras (`samples/database-schema-snapshot/`) — refinar lacunas.  
-3. Decidir Q1–Q5.  
-4. Só depois: fixtures sintéticas IKP e esboço de API de importação (**sem** implementação até ordem explícita).
+## 9. Conteúdo técnico e proveniência
 
----
+### 9.1 Schema
+
+Reutilizar os artefactos estruturais do Database Schema Snapshot, preservando:
+- tabelas e colunas;
+- PK/FK e índices;
+- views, procedures, triggers e funções;
+- tipos e synonyms;
+- classificação conservadora (sql_system, candidate_custom, unknown).
+
+A classificação do Scanner não deve afirmar por si só que um objeto é PHC Standard. A distinção PHC Standard vs personalização deve respeitar os mapeamentos e convenções PHC existentes e a responsabilidade da plataforma.
+
+### 9.2 Personalizações
+
+O perfil deve transportar inventário estruturado e definições originais. Não limitar o inventário a objetos com código executável.
+
+Exemplos: tabelas/campos de utilizador, BRULE/EBRULE, eventos, UDEFS/EUDEFS, teclas, ecrãs, grelhas, PDU, análises, IDU, funções e objetos SQL personalizados, conforme as capacidades efetivamente suportadas.
+
+Não recolher dados operacionais dos clientes (faturação, clientes, documentos, movimentos, stocks, etc.). Recolher metadados e definições técnicas. Elementos standard devem ser omitidos quando reconhecidos como standard, salvo metadados de alteração/customização que justifiquem a sua observação.
+
+### 9.3 Relações
+
+payload/relations/ preserva separadamente:
+- relações declaradas PHC REL/DTL;
+- foreign keys físicas SQL;
+- interpretações versionadas das expressões;
+- evidências e diagnósticos de resolução.
+
+Não fundir uma relação PHC com uma FK SQL apenas porque têm os mesmos extremos. Correspondências prováveis não devem ser apresentadas como factos confirmados.
+
+### 9.4 Conhecimento derivado
+
+payload/knowledge/ pode transportar projeções como KR/FieldMapping, desde que identifique:
+- derived: true;
+- versão do analisador;
+- referências às evidências de origem;
+- confiança e diagnósticos, quando aplicável.
+
+As projeções são regeneráveis. A sua ausência não significa ausência de factos.
+
+### 9.5 Privacidade e partilha
+
+O IKP pode declarar safeForPublicShare, mas essa declaração não certifica o pacote.
+
+Antes de partilha global, deve existir validação técnica e de segurança efetiva, incluindo deteção/tratamento de:
+- dados pessoais;
+- credenciais e segredos;
+- informação confidencial;
+- código proprietário ou outros conteúdos que não devam ser divulgados.
+
+A política de partilha pode permitir ou bloquear um pacote conforme o resultado da validação. Partilhar um pacote não transforma automaticamente o seu conteúdo em PHC Standard; a proveniência e o contexto original mantêm-se.
+
+## 10. Linhagem entre instalações
+
+O IKP identifica a origem técnica da captura, mas não é o registo autoritativo da linhagem global.
+
+A plataforma mantém acontecimentos de cópia/restauro entre instalações:
+- instalação de origem e instalação de destino;
+- tipo de operação (cópia, restore, clone ou outra);
+- instante, método e ator, quando conhecidos;
+- evidências e origem da declaração;
+- estado de confirmação;
+- CaptureId de origem/destino, quando conhecidos.
+
+Hints de linhagem podem ser transportados se forem úteis e não autoritativos. Stamps iguais, hashes iguais ou semelhança de schema não provam que um conteúdo foi transportado por uma operação de cópia. Igualdade de conteúdo prova igualdade do conteúdo observado, não a trajetória.
+
+Uma cópia/restauro não funde instalações nem históricos. Permite comparar estados relacionados e distinguir, quando existe evidência, alterações locais de alterações transportadas. Sem evento ou evidência de cópia, a direção causal não pode ser afirmada.
+
+## 11. Validação e importação
+
+### 11.1 Validação estrutural e de segurança
+
+Na receção, a plataforma deve:
+1. calcular e guardar o SHA-256 dos bytes exatos do ZIP;
+2. validar ZIP legível e limites configuráveis de tamanho, entradas e ficheiros;
+3. rejeitar caminhos absolutos, traversal (..), caminhos duplicados após normalização e entradas malformadas;
+4. exigir os cinco ficheiros de contrato de topo;
+5. validar versão, tipos, campos obrigatórios e referências cruzadas;
+6. validar que todas as entradas são declaradas e que não existem entradas extra;
+7. validar existência, tamanho e SHA-256 dos artefactos;
+8. validar coerência entre capacidades, cobertura, índice de objetos e payload;
+9. aplicar as verificações de privacidade e segurança antes de partilha/publicação;
+10. rejeitar JSON inválido, encoding incompatível e IDs duplicados.
+
+Qualquer falha bloqueia a materialização/publicação. O blob recebido pode ser retido em quarentena segundo política de auditoria, sem ser tratado como conhecimento válido.
+
+### 11.2 Pipeline conceptual
+
+~~~text
+Receção
+  → armazenamento imutável do pacote
+  → validação estrutural e integridade
+  → associação guiada à organização/instalação
+  → interpretação de capacidades e cobertura
+  → staging de observações e artefactos
+  → comparação coverage-aware
+  → relatório de validação/publicação
+  → publicação atómica
+  → registo de auditoria e notificação
+~~~
+
+Estados conceptuais:
+- Received: pacote recebido;
+- Rejected: contrato/integridade/segurança inválidos;
+- Validated: contrato e integridade válidos;
+- AssociationPending: falta associar a instalação;
+- Staged: observações preparadas, ainda não publicadas;
+- ReadyToPublish: validações concluídas;
+- Published: revisão publicada;
+- Failed: processamento falhou sem substituir a revisão ativa.
+
+A revisão ativa anterior mantém-se intacta até publicação atómica bem-sucedida. Não existe operação destrutiva ReplaceExisting sobre o conhecimento publicado.
+
+## 12. Comparação de observações
+
+A plataforma compara observações, não listas de ficheiros.
+
+Estados conceptuais:
+- Added: objeto observado pela primeira vez numa operação comparável, com cobertura anterior adequada;
+- Modified: metadados e/ou definição alterados;
+- Unchanged: sem alterações relevantes;
+- NotObserved: não há evidência suficiente para concluir presença ou ausência;
+- Removed: conclusão da plataforma após ausência numa captura compatível e com cobertura relevante completa.
+
+O comparador deve separar alteração de metadados e alteração de definição. Não pode produzir Removed quando a operação não era suportada, não foi solicitada, falhou, ficou parcial ou não era aplicável.
+
+A confirmação de remoção em capturas completas sucessivas pode ser introduzida como política da plataforma para reduzir falsos positivos; não altera a semântica do IKP.
+
+## 13. Versionamento e compatibilidade
+
+- ikpContractVersion identifica a estrutura e semântica do pacote.
+- capabilityVersion identifica a semântica de cada operação do Scanner.
+- A versão global do Scanner identifica o build do produtor, mas não substitui as versões das capacidades.
+- A plataforma mantém uma matriz de compatibilidade explícita por operação/capabilityVersion.
+- Categorias e operações novas podem ser opcionais; consumidores antigos não devem inferir cobertura para operações desconhecidas.
+- Contratos incompatíveis são rejeitados ou encaminhados para conversor explicitamente suportado.
+- Adaptadores para ZIPs antigos são conversores de legado, não uma segunda via de aquisição permanente. A direção preferida é o Scanner emitir IKP nativamente.
+
+## 14. Estado real e lacunas Scanner ↔ IKP
+
+O Scanner atual não emite IKP. Os exports atuais são:
+- Database Schema Snapshot;
+- ZIP de personalizações via WorkspaceExportService;
+- ZIP de scan via ZipScanExporter.
+
+Nenhum constitui, isoladamente, um IKP completo.
+
+Lacunas principais confirmadas:
+- falta emissor IKP e os cinco ficheiros de contrato;
+- falta declaração de capabilities por operação e capabilityVersion;
+- cobertura atual agregada por collector, não por operação lógica;
+- falta índice estruturado unificado de objetos observados;
+- falta separar de forma consistente inventário e disponibilidade individual da definição;
+- falta formalizar fingerprints de metadados e definição no contrato;
+- falta exportar REL/DTL, interpretações e projeções de forma coerente;
+- os artefactos de personalizações persistidos no workspace não são todos incluídos no ZIP geral pelo caminho atual do ZipScanExporter;
+- comparador do schema snapshot não pode ser reutilizado como comparador histórico da plataforma sem cobertura;
+- alguns identificadores nativos SQL já são recolhidos, mas parte está apenas em SummaryJson e não existe contrato uniforme;
+- os exports atuais não transportam o modelo de linhagem, que pertence sobretudo à plataforma.
+
+A matriz detalhada por ficheiro/componente será criada na etapa seguinte; esta lista não substitui essa análise.
+
+## 15. Decisões já fechadas
+
+| Tema | Decisão |
+|---|---|
+| Emissor | Scanner produz IKP nativamente; plataforma valida/importa |
+| PackageId | Gerado pelo Scanner por pacote |
+| CaptureId | Gerado pelo Scanner no início da recolha |
+| Manifestos | Um manifesto IKP na raiz; manifesto original do Schema Snapshot preservado em payload/schema/source-manifest.json |
+| Extensibilidade | Categorias/payloads opcionais com regras comuns de extensão |
+| Partilha | Permitida após validação técnica e de segurança efetiva |
+| Integridade | SHA-256 do ZIP recebido, SHA-256 por ficheiro e digest canónico lógico |
+| Instalação | Um InstallationId por base de dados PHC registada |
+| Ambientes | Não existe entidade EnvironmentId no modelo |
+| Histórico | Mantido na plataforma, não no Scanner nem em cada IKP |
+| Identidade | Identidade lógica separada de identidade da origem e fingerprints |
+| Linhagem | Relações/eventos de cópia/restauro sem fusão de instalações |
+| Remoções | Conclusão da plataforma, dependente de cobertura compatível e completa |
+
+## 16. Próximas tarefas
+
+1. Criar fixtures JSON completas e validadas para manifesto, capabilities, coverage, índice de objetos, checksums, relações e diagnósticos.
+2. Criar matriz campo-a-campo entre o contrato e os modelos/collectors/exporters atuais do Scanner.
+3. Identificar incompatibilidades e decidir a sequência de alterações por componente, sem reescrever o Scanner inteiro.
+4. Definir exemplos de compatibilidade de capabilities entre versões.
+5. Definir a representação de eventos de linhagem na plataforma e os dados de origem que podem ser transportados como hints.
+6. Só depois preparar tarefas de implementação separadas para Scanner e PHC Knowledge.
+
+A implementação de código e o importador funcional continuam fora desta etapa. O próximo resultado deve ser artefactos de referência verificáveis e uma matriz de trabalho baseada no código real, não mais uma ronda de opções abstratas.
 
 ## Referências
 
-- Scanner: `DatabaseSchemaSnapshotWriter`, `SchemaSnapshotHasher`, `WorkspaceExportService`, `ZipScanExporter`, `ScanAppService`, `ObjectKind`, ADR 0014.  
-- Arquitetura: `technology-and-import-contract-assessment.md`, `product-boundaries.md`, `knowledge-layers.md`, `PROJECT_GUIDELINES.md`.  
-- Investigação 05/11 (GitHub): identidade, coverage, anti-ReplaceExisting.
+- [Contrato de observação, identidade e linhagem](observation-identity-and-lineage-contract.md)
+- [Investigação de cobertura dos collectors](collector-coverage-investigation-2026-11-06.md)
+- [Avaliação tecnológica e contrato de importação](technology-and-import-contract-assessment.md)
+- [Orientações do projeto](../../PROJECT_GUIDELINES.md)
+- Código do Scanner independente: Jhouinho/PhcKnowledgeScanner, branch main
