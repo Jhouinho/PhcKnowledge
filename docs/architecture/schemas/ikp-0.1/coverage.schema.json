@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phcknowledge.local/schemas/ikp-0.1/coverage.schema.json",
+  "title": "IKP 0.1 coverage",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "captureId",
+    "operations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1"
+    },
+    "captureId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "operationId",
+          "capabilityVersion",
+          "requested",
+          "result",
+          "sourceAvailability",
+          "contentAvailability",
+          "observedCount",
+          "issueIds"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "capabilityVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requested": {
+            "type": "boolean"
+          },
+          "result": {
+            "enum": [
+              "Succeeded",
+              "SucceededWithWarnings",
+              "Partial",
+              "Failed",
+              "Skipped",
+              "NotAttempted"
+            ]
+          },
+          "sourceAvailability": {
+            "enum": [
+              "Present",
+              "NotPresent",
+              "NotApplicable",
+              "Unknown"
+            ]
+          },
+          "contentAvailability": {
+            "enum": [
+              "Available",
+              "Partial",
+              "Unavailable",
+              "NotCollected",
+              "Empty"
+            ]
+          },
+          "scope": {
+            "type": "object"
+          },
+          "observedCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "issueIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          }
+        },
+        "additionalProperties": true
+      },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": true
+}
