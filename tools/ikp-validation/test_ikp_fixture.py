@@ -112,6 +112,24 @@ class IkpFixtureValidationTests(unittest.TestCase):
         extra.write_text("unexpected", encoding="utf-8")
         self.assert_invalid("ficheiros não declarados")
 
+    def test_payload_file_missing_from_artifact_manifest_is_rejected(self):
+        doc = self.read_json("manifest.json")
+        doc["artifacts"] = doc["artifacts"][:-1]
+        self.write_json("manifest.json", doc)
+        self.assert_invalid("lista de artefactos não corresponde")
+
+    def test_capability_missing_coverage_entry_is_rejected(self):
+        doc = self.read_json("coverage.json")
+        doc["operations"].pop()
+        self.write_json("coverage.json", doc)
+        self.assert_invalid("cada capability declarada")
+
+    def test_path_traversal_is_rejected(self):
+        doc = self.read_json("checksums.json")
+        doc["files"][0]["path"] = "../manifest.json"
+        self.write_json("checksums.json", doc)
+        self.assert_invalid("traversal")
+
     def test_tampered_checksum_manifest_is_rejected(self):
         doc = self.read_json("checksums.json")
         doc["files"][0]["sha256"] = "0" * 64
