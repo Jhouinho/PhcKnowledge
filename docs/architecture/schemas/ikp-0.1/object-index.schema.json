@@ -116,7 +116,7 @@
                       "minItems": 1
                     },
                     "definitionFingerprint": {
-                      "$ref": "https://phcknowledge.local/schemas/ikp-0.1/fingerprint.schema.json"
+                      "$ref": "#/$defs/fingerprint"
                     }
                   },
                   "required": [
