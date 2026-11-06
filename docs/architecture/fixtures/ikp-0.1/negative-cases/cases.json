@@ -88,6 +88,13 @@
       "automatedTest": "test_not_requested_operation_must_be_skipped"
     },
     {
+      "caseId": "extra-root-file",
+      "kind": "structure",
+      "mutation": "Adicionar unexpected.txt na raiz do pacote",
+      "expected": "Ficheiro extra na raiz rejeitado",
+      "automatedTest": "test_extra_root_file_is_rejected"
+    },
+    {
       "caseId": "partial-definition",
       "kind": "boundary-valid",
       "mutation": "Manter inventário concluído e definição com SucceededWithWarnings/Partial",
