@@ -1,3 +1,5 @@
+using PhcKnowledgeScanner.Abstractions.Coverage;
+
 namespace PhcKnowledgeScanner.Abstractions.Collectors;
 
 /// <summary>
@@ -11,6 +13,12 @@ public interface ICollector
 
     /// <summary>Nome legível para CLI e manifests.</summary>
     string DisplayName { get; }
+
+    /// <summary>
+    /// Capacidades lógicas que este collector declara saber executar.
+    /// Catálogo independente dos resultados de uma captura concreta.
+    /// </summary>
+    IReadOnlyList<DeclaredCapability> DeclaredCapabilities { get; }
 
     /// <summary>
     /// Indica se o collector pode executar no contexto atual (versão, permissões, objetos disponíveis).

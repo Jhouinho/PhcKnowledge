@@ -3,8 +3,10 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Data.SqlClient;
 using PhcKnowledgeScanner.Abstractions.Collectors;
+using PhcKnowledgeScanner.Abstractions.Coverage;
 using PhcKnowledgeScanner.Abstractions.Inventory;
 using PhcKnowledgeScanner.Abstractions.Progress;
+using PhcKnowledgeScanner.Collectors.Coverage;
 
 namespace PhcKnowledgeScanner.Collectors.Sql;
 
@@ -19,6 +21,7 @@ public sealed class SqlServerStructureCollector : ICollector
 
     public string Id => CollectorId;
     public string DisplayName => "Estrutura SQL Server";
+    public IReadOnlyList<DeclaredCapability> DeclaredCapabilities => ScannerCapabilityCatalog.ForSqlServerStructure;
 
     public async Task<CollectorCapability> ProbeAsync(ScanContext context, CancellationToken cancellationToken)
     {
@@ -55,6 +58,9 @@ public sealed class SqlServerStructureCollector : ICollector
         await using var connection = new SqlConnection(context.SqlConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
+        var tracker = new OperationCoverageTracker(issues);
+        var caps = DeclaredCapabilities.ToDictionary(c => c.OperationId, StringComparer.OrdinalIgnoreCase);
+
         async Task Report(string message)
         {
             context.Progress?.Report(new ScanProgressEvent(
@@ -71,21 +77,40 @@ public sealed class SqlServerStructureCollector : ICollector
             await Task.CompletedTask;
         }
 
-        await CollectDatabaseAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken)
+        await tracker.RunAsync(
+                caps[KnownOperations.SqlDatabase],
+                () => CollectDatabaseAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => objectCount)
             .ConfigureAwait(false);
-        // Inventário leve de todas as tabelas físicas (sem colunas/índices em massa das standard).
-        await CollectAllTablesAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken)
+        await tracker.RunAsync(
+                caps[KnownOperations.SqlTablesInventory],
+                () => CollectAllTablesAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => objectCount)
             .ConfigureAwait(false);
-        await CollectPrimaryKeysAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken)
+        await tracker.RunAsync(
+                caps[KnownOperations.SqlPrimaryKeys],
+                () => CollectPrimaryKeysAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => objectCount)
             .ConfigureAwait(false);
-        await CollectForeignKeysAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken)
+        await tracker.RunAsync(
+                caps[KnownOperations.SqlForeignKeys],
+                () => CollectForeignKeysAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => objectCount)
             .ConfigureAwait(false);
-        // Índices: não recolhidos (ruído; não necessários no explorador).
-        await CollectViewsAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken)
+        await tracker.RunAsync(
+                caps[KnownOperations.SqlViews],
+                () => CollectViewsAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => objectCount)
             .ConfigureAwait(false);
-        await CollectProceduresAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken)
+        await tracker.RunAsync(
+                caps[KnownOperations.SqlProcedures],
+                () => CollectProceduresAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => objectCount)
             .ConfigureAwait(false);
-        await CollectTriggersAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken)
+        await tracker.RunAsync(
+                caps[KnownOperations.SqlTriggers],
+                () => CollectTriggersAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => objectCount)
             .ConfigureAwait(false);
 
         foreach (var issue in issues)
@@ -99,7 +124,7 @@ public sealed class SqlServerStructureCollector : ICollector
                 ? CollectorStatus.SucceededWithWarnings
                 : CollectorStatus.Succeeded;
 
-        return new CollectorResult(Id, status, Array.Empty<CollectedArtifact>(), issues, sw.Elapsed);
+        return new CollectorResult(Id, status, Array.Empty<CollectedArtifact>(), issues, sw.Elapsed, tracker.Coverages);
     }
 
     private static async Task CollectDatabaseAsync(

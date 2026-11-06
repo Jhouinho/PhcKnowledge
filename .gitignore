@@ -44,10 +44,12 @@ tmp/
 temp/
 *.tmp
 
-# Test / coverage
+# Test / coverage reports (not source folders named Coverage)
 TestResults/
-coverage/
+/coverage/
 *.coverage
+!**/src/**/Coverage/
+!**/src/**/Coverage/**
 
 # Local databases / caches
 *.db

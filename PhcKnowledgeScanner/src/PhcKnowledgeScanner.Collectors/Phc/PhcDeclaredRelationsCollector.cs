@@ -2,8 +2,10 @@ using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Data.SqlClient;
 using PhcKnowledgeScanner.Abstractions.Collectors;
+using PhcKnowledgeScanner.Abstractions.Coverage;
 using PhcKnowledgeScanner.Abstractions.Inventory;
 using PhcKnowledgeScanner.Abstractions.Progress;
+using PhcKnowledgeScanner.Collectors.Coverage;
 
 namespace PhcKnowledgeScanner.Collectors.Phc;
 
@@ -19,6 +21,7 @@ public sealed class PhcDeclaredRelationsCollector : ICollector
 
     public string Id => CollectorId;
     public string DisplayName => "Relações declaradas PHC (rel/dtl)";
+    public IReadOnlyList<DeclaredCapability> DeclaredCapabilities => ScannerCapabilityCatalog.ForPhcDeclaredRelations;
 
     public async Task<CollectorCapability> ProbeAsync(ScanContext context, CancellationToken cancellationToken)
     {
@@ -58,6 +61,11 @@ public sealed class PhcDeclaredRelationsCollector : ICollector
         await using var connection = new SqlConnection(context.SqlConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
+        var tracker = new OperationCoverageTracker(issues);
+        var caps = DeclaredCapabilities.ToDictionary(c => c.OperationId, StringComparer.OrdinalIgnoreCase);
+        var relCount = 0;
+        var dtlCount = 0;
+
         async Task Report(string message)
         {
             context.Progress?.Report(new ScanProgressEvent(
@@ -74,78 +82,49 @@ public sealed class PhcDeclaredRelationsCollector : ICollector
             await Task.CompletedTask;
         }
 
-        var hasRel = await TableExistsAsync(connection, "rel", cancellationToken).ConfigureAwait(false);
-        var hasDtl = await TableExistsAsync(connection, "dtl", cancellationToken).ConfigureAwait(false);
-
-        if (!hasRel)
-        {
-            issues.Add(new CollectionIssue(
-                CollectionIssueSeverity.Warning,
-                "phc.rel.absent",
-                "Tabela dbo.rel inexistente nesta instalação."));
-            await Report("dbo.rel: ausente.").ConfigureAwait(false);
-        }
-        else
-        {
-            try
-            {
-                var relRows = await CollectRelAsync(connection, context, collectedAt, cancellationToken)
-                    .ConfigureAwait(false);
-                records.AddRange(relRows);
-                await Report($"dbo.rel: {relRows.Count} registos.").ConfigureAwait(false);
-                if (relRows.Count == 0)
+        await tracker.RunOptionalAsync(
+                caps[KnownOperations.PhcRel],
+                () => TableExistsAsync(connection, "rel", cancellationToken),
+                async () =>
                 {
-                    issues.Add(new CollectionIssue(
-                        CollectionIssueSeverity.Info,
-                        "phc.rel.empty",
-                        "Tabela dbo.rel existe mas não contém registos."));
-                }
-            }
-            catch (Exception ex)
-            {
-                issues.Add(new CollectionIssue(
-                    CollectionIssueSeverity.Error,
-                    "phc.rel.read",
-                    "Erro ao ler dbo.rel: " + ex.Message,
-                    Detail: ex.ToString()));
-                await Report("dbo.rel: erro de leitura.").ConfigureAwait(false);
-            }
-        }
+                    var relRows = await CollectRelAsync(connection, context, collectedAt, cancellationToken)
+                        .ConfigureAwait(false);
+                    records.AddRange(relRows);
+                    relCount = relRows.Count;
+                    await Report($"dbo.rel: {relRows.Count} registos.").ConfigureAwait(false);
+                    if (relRows.Count == 0)
+                    {
+                        issues.Add(new CollectionIssue(
+                            CollectionIssueSeverity.Info,
+                            "phc.rel.empty",
+                            "Tabela dbo.rel existe mas não contém registos."));
+                    }
+                },
+                () => relCount,
+                "dbo.rel")
+            .ConfigureAwait(false);
 
-        if (!hasDtl)
-        {
-            issues.Add(new CollectionIssue(
-                CollectionIssueSeverity.Warning,
-                "phc.dtl.absent",
-                "Tabela dbo.dtl inexistente nesta instalação."));
-            await Report("dbo.dtl: ausente.").ConfigureAwait(false);
-        }
-        else
-        {
-            try
-            {
-                var dtlRows = await CollectDtlAsync(connection, context, collectedAt, cancellationToken)
-                    .ConfigureAwait(false);
-                records.AddRange(dtlRows);
-                await Report($"dbo.dtl: {dtlRows.Count} registos.").ConfigureAwait(false);
-                if (dtlRows.Count == 0)
+        await tracker.RunOptionalAsync(
+                caps[KnownOperations.PhcDtl],
+                () => TableExistsAsync(connection, "dtl", cancellationToken),
+                async () =>
                 {
-                    issues.Add(new CollectionIssue(
-                        CollectionIssueSeverity.Info,
-                        "phc.dtl.empty",
-                        "Tabela dbo.dtl existe mas não contém registos."));
-                }
-            }
-            catch (Exception ex)
-            {
-                issues.Add(new CollectionIssue(
-                    CollectionIssueSeverity.Error,
-                    "phc.dtl.read",
-                    "Erro ao ler dbo.dtl: " + ex.Message,
-                    Detail: ex.ToString()));
-                await Report("dbo.dtl: erro de leitura.").ConfigureAwait(false);
-            }
-        }
+                    var dtlRows = await CollectDtlAsync(connection, context, collectedAt, cancellationToken)
+                        .ConfigureAwait(false);
+                    records.AddRange(dtlRows);
+                    dtlCount = dtlRows.Count;
+                    await Report($"dbo.dtl: {dtlRows.Count} registos.").ConfigureAwait(false);
+                    if (dtlRows.Count == 0)
+                    {
+                        issues.Add(new CollectionIssue(
+                            CollectionIssueSeverity.Info,
+                            "phc.dtl.empty",
+                            "Tabela dbo.dtl existe mas não contém registos."));
+                    }
+                },
+                () => dtlCount,
+                "dbo.dtl")
+            .ConfigureAwait(false);
 
         var withCorrespondence = DeclaredRelationCorrespondence.Apply(records);
         await context.Workspace.UpsertDeclaredRelationsAsync(withCorrespondence, cancellationToken)
@@ -197,7 +176,7 @@ public sealed class PhcDeclaredRelationsCollector : ICollector
                 ? CollectorStatus.SucceededWithWarnings
                 : CollectorStatus.Succeeded;
 
-        return new CollectorResult(Id, status, Array.Empty<CollectedArtifact>(), issues, sw.Elapsed);
+        return new CollectorResult(Id, status, Array.Empty<CollectedArtifact>(), issues, sw.Elapsed, tracker.Coverages);
     }
 
     private static async Task<List<DeclaredRelationRecord>> CollectRelAsync(

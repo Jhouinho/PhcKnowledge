@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using PhcKnowledgeScanner.Abstractions.Collectors;
+using PhcKnowledgeScanner.Abstractions.Coverage;
 using PhcKnowledgeScanner.Abstractions.Inventory;
 using PhcKnowledgeScanner.Abstractions.Inventory.Expression;
 using PhcKnowledgeScanner.Abstractions.Workspace;
@@ -11,6 +12,8 @@ namespace PhcKnowledgeScanner.Workspace;
 
 public sealed class SqliteScanWorkspace : IScanWorkspace
 {
+    private static readonly JsonSerializerOptions CoverageJsonOptions = new() { WriteIndented = false };
+
     private readonly SqliteConnection _connection;
     private bool _disposed;
 
@@ -23,6 +26,8 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
     public string RootPath { get; }
 
     public string ScanId { get; private set; } = string.Empty;
+
+    public string? CaptureId { get; private set; }
 
     public static async Task<SqliteScanWorkspace> CreateAsync(string rootPath, CancellationToken cancellationToken)
     {
@@ -93,12 +98,45 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
             workspace.ScanId = scanId;
         }
 
+        // Workspaces antigos (read-only) podem não ter capture_id; não falhar a abertura.
+        if (await ColumnExistsAsync(connection, "scan_meta", "capture_id", cancellationToken).ConfigureAwait(false))
+        {
+            await using var captureCmd = connection.CreateCommand();
+            captureCmd.CommandText = "SELECT capture_id FROM scan_meta LIMIT 1;";
+            var captureId = await captureCmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) as string;
+            if (!string.IsNullOrWhiteSpace(captureId))
+            {
+                workspace.CaptureId = captureId;
+            }
+        }
+
         return workspace;
+    }
+
+    private static async Task<bool> ColumnExistsAsync(
+        SqliteConnection connection,
+        string table,
+        string column,
+        CancellationToken cancellationToken)
+    {
+        await using var info = connection.CreateCommand();
+        info.CommandText = $"PRAGMA table_info({table});";
+        await using var reader = await info.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            if (string.Equals(reader.GetString(1), column, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public async Task InitializeAsync(string scanId, string installationLabel, CancellationToken cancellationToken)
     {
         ScanId = scanId;
+        CaptureId = null;
         await using var cmd = _connection.CreateCommand();
         cmd.CommandText =
             """
@@ -109,12 +147,44 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
             DELETE FROM declared_relations;
             DELETE FROM declared_relation_interpretations;
             DELETE FROM scan_meta;
-            INSERT INTO scan_meta(scan_id, installation_label, status, created_at_utc)
-            VALUES ($id, $label, 'initialized', $created);
+            INSERT INTO scan_meta(scan_id, installation_label, status, created_at_utc, capture_id, capabilities_json, coverage_json)
+            VALUES ($id, $label, 'initialized', $created, NULL, NULL, NULL);
             """;
         cmd.Parameters.AddWithValue("$id", scanId);
         cmd.Parameters.AddWithValue("$label", installationLabel);
         cmd.Parameters.AddWithValue("$created", DateTimeOffset.UtcNow.ToString("O"));
+        await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task SetCaptureIdAsync(string captureId, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(captureId);
+        CaptureId = captureId;
+        await using var cmd = _connection.CreateCommand();
+        cmd.CommandText = "UPDATE scan_meta SET capture_id = $capture;";
+        cmd.Parameters.AddWithValue("$capture", captureId);
+        await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task SaveCaptureCoverageAsync(
+        string captureId,
+        IReadOnlyList<DeclaredCapability> capabilityCatalog,
+        IReadOnlyList<OperationCoverage> operationCoverages,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(captureId);
+        CaptureId = captureId;
+        await using var cmd = _connection.CreateCommand();
+        cmd.CommandText =
+            """
+            UPDATE scan_meta
+            SET capture_id = $capture,
+                capabilities_json = $capabilities,
+                coverage_json = $coverage;
+            """;
+        cmd.Parameters.AddWithValue("$capture", captureId);
+        cmd.Parameters.AddWithValue("$capabilities", JsonSerializer.Serialize(capabilityCatalog, CoverageJsonOptions));
+        cmd.Parameters.AddWithValue("$coverage", JsonSerializer.Serialize(operationCoverages, CoverageJsonOptions));
         await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -217,8 +287,8 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
         await using var cmd = _connection.CreateCommand();
         cmd.CommandText =
             """
-            INSERT INTO issues(collector_id, severity, code, message, object_name, detail, created_at_utc)
-            VALUES ($collector, $severity, $code, $message, $object, $detail, $created);
+            INSERT INTO issues(collector_id, severity, code, message, object_name, detail, created_at_utc, issue_id, operation_id)
+            VALUES ($collector, $severity, $code, $message, $object, $detail, $created, $issueId, $operationId);
             """;
         cmd.Parameters.AddWithValue("$collector", (object?)collectorId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("$severity", issue.Severity.ToString());
@@ -227,6 +297,8 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
         cmd.Parameters.AddWithValue("$object", (object?)issue.ObjectName ?? DBNull.Value);
         cmd.Parameters.AddWithValue("$detail", (object?)issue.Detail ?? DBNull.Value);
         cmd.Parameters.AddWithValue("$created", DateTimeOffset.UtcNow.ToString("O"));
+        cmd.Parameters.AddWithValue("$issueId", (object?)issue.IssueId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$operationId", (object?)issue.OperationId ?? DBNull.Value);
         await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -353,8 +425,20 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
 
     public async Task<IReadOnlyList<CollectionIssue>> GetIssuesAsync(CancellationToken cancellationToken = default)
     {
+        var hasIssueId = await ColumnExistsAsync(_connection, "issues", "issue_id", cancellationToken)
+            .ConfigureAwait(false);
         await using var cmd = _connection.CreateCommand();
-        cmd.CommandText = "SELECT severity, code, message, object_name, detail FROM issues ORDER BY rowid;";
+        cmd.CommandText = hasIssueId
+            ? """
+              SELECT severity, code, message, object_name, detail, issue_id, operation_id
+              FROM issues
+              ORDER BY rowid;
+              """
+            : """
+              SELECT severity, code, message, object_name, detail
+              FROM issues
+              ORDER BY rowid;
+              """;
         var list = new List<CollectionIssue>();
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -367,7 +451,9 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
                 reader.GetString(1),
                 reader.GetString(2),
                 reader.IsDBNull(3) ? null : reader.GetString(3),
-                reader.IsDBNull(4) ? null : reader.GetString(4)));
+                reader.IsDBNull(4) ? null : reader.GetString(4),
+                hasIssueId && !reader.IsDBNull(5) ? reader.GetString(5) : null,
+                hasIssueId && !reader.IsDBNull(6) ? reader.GetString(6) : null));
         }
 
         return list;
@@ -780,7 +866,10 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
               scan_id TEXT PRIMARY KEY,
               installation_label TEXT NOT NULL,
               status TEXT NOT NULL,
-              created_at_utc TEXT NOT NULL
+              created_at_utc TEXT NOT NULL,
+              capture_id TEXT,
+              capabilities_json TEXT,
+              coverage_json TEXT
             );
             CREATE TABLE IF NOT EXISTS objects (
               object_id TEXT PRIMARY KEY,
@@ -810,7 +899,9 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
               message TEXT NOT NULL,
               object_name TEXT,
               detail TEXT,
-              created_at_utc TEXT NOT NULL
+              created_at_utc TEXT NOT NULL,
+              issue_id TEXT,
+              operation_id TEXT
             );
             CREATE TABLE IF NOT EXISTS relations (
               relation_id TEXT PRIMARY KEY,
@@ -867,6 +958,35 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
             CREATE INDEX IF NOT EXISTS ix_decl_interp_status ON declared_relation_interpretations(parse_status);
             """;
         await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+
+        // Migração mínima para workspaces já criados antes de CaptureId/coverage.
+        await EnsureColumnAsync("scan_meta", "capture_id", "TEXT", cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync("scan_meta", "capabilities_json", "TEXT", cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync("scan_meta", "coverage_json", "TEXT", cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync("issues", "issue_id", "TEXT", cancellationToken).ConfigureAwait(false);
+        await EnsureColumnAsync("issues", "operation_id", "TEXT", cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task EnsureColumnAsync(
+        string table,
+        string column,
+        string typeSql,
+        CancellationToken cancellationToken)
+    {
+        await using var info = _connection.CreateCommand();
+        info.CommandText = $"PRAGMA table_info({table});";
+        await using var reader = await info.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            if (string.Equals(reader.GetString(1), column, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+        }
+
+        await using var alter = _connection.CreateCommand();
+        alter.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {typeSql};";
+        await alter.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

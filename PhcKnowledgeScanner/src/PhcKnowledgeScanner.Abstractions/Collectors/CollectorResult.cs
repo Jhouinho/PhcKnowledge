@@ -1,3 +1,5 @@
+using PhcKnowledgeScanner.Abstractions.Coverage;
+
 namespace PhcKnowledgeScanner.Abstractions.Collectors;
 
 public sealed record CollectorResult(
@@ -5,4 +7,9 @@ public sealed record CollectorResult(
     CollectorStatus Status,
     IReadOnlyList<CollectedArtifact> Artifacts,
     IReadOnlyList<CollectionIssue> Issues,
-    TimeSpan Duration);
+    TimeSpan Duration,
+    IReadOnlyList<OperationCoverage>? OperationCoverages = null)
+{
+    public IReadOnlyList<OperationCoverage> Coverages =>
+        OperationCoverages ?? Array.Empty<OperationCoverage>();
+}

@@ -5,4 +5,6 @@ public sealed record CollectionIssue(
     string Code,
     string Message,
     string? ObjectName = null,
-    string? Detail = null);
+    string? Detail = null,
+    string? IssueId = null,
+    string? OperationId = null);

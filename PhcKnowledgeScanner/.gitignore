@@ -9,11 +9,15 @@ publish/
 *.userosscache
 *.sln.docstates
 
-## Test / coverage
+## Test / coverage reports (not source folders named Coverage)
 TestResults/
-coverage/
+/coverage/
+**/TestResults/
 *.coverage
 *.coveragexml
+# Keep IKP/source Coverage namespaces versioned
+!**/src/**/Coverage/
+!**/src/**/Coverage/**
 
 ## IDE
 .vs/

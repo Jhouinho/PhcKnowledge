@@ -4,8 +4,10 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using PhcKnowledgeScanner.Abstractions.Collectors;
+using PhcKnowledgeScanner.Abstractions.Coverage;
 using PhcKnowledgeScanner.Abstractions.Inventory;
 using PhcKnowledgeScanner.Abstractions.Progress;
+using PhcKnowledgeScanner.Collectors.Coverage;
 
 namespace PhcKnowledgeScanner.Collectors.Phc;
 
@@ -21,6 +23,7 @@ public sealed class PhcCustomizationsCollector : ICollector
 
     public string Id => CollectorId;
     public string DisplayName => "Personalizações PHC";
+    public IReadOnlyList<DeclaredCapability> DeclaredCapabilities => ScannerCapabilityCatalog.ForPhcCustomizations;
 
     public async Task<CollectorCapability> ProbeAsync(ScanContext context, CancellationToken cancellationToken)
     {
@@ -68,6 +71,9 @@ public sealed class PhcCustomizationsCollector : ICollector
         await using var connection = new SqlConnection(context.SqlConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
+        var tracker = new OperationCoverageTracker(issues);
+        var caps = DeclaredCapabilities.ToDictionary(c => c.OperationId, StringComparer.OrdinalIgnoreCase);
+
         async Task Report(string message)
         {
             context.Progress?.Report(new ScanProgressEvent(
@@ -84,60 +90,95 @@ public sealed class PhcCustomizationsCollector : ICollector
             await Task.CompletedTask;
         }
 
-        await CollectBruleAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken)
+        Task<bool> Exists(string table) => TableExistsAsync(connection, table, cancellationToken);
+
+        await tracker.RunAsync(
+                caps[KnownOperations.PhcBrule],
+                () => CollectBruleAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => objectCount)
             .ConfigureAwait(false);
-        await CollectOptionalAsync(
-                "ebrule",
+        await tracker.RunOptionalAsync(
+                caps[KnownOperations.PhcEbrule],
+                () => Exists("ebrule"),
                 () => CollectEbruleAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
-                Report)
+                () => objectCount,
+                "dbo.ebrule")
             .ConfigureAwait(false);
-        await CollectTeclasAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken)
+        await tracker.RunAsync(
+                caps[KnownOperations.PhcTeclas],
+                () => CollectTeclasAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => objectCount)
             .ConfigureAwait(false);
-        await CollectUdefsAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken)
+        await tracker.RunAsync(
+                caps[KnownOperations.PhcUdefs],
+                () => CollectUdefsAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => objectCount)
             .ConfigureAwait(false);
-        await CollectOptionalAsync(
-                "eudefs",
+        await tracker.RunOptionalAsync(
+                caps[KnownOperations.PhcEudefs],
+                () => Exists("eudefs"),
                 () => CollectEudefsAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
-                Report)
+                () => objectCount,
+                "dbo.eudefs")
             .ConfigureAwait(false);
-        await CollectEventosAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken)
+        await tracker.RunAsync(
+                caps[KnownOperations.PhcEventos],
+                () => CollectEventosAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => objectCount)
             .ConfigureAwait(false);
-        await CollectOptionalAsync(
-                "eeventos",
+        await tracker.RunOptionalAsync(
+                caps[KnownOperations.PhcEeventos],
+                () => Exists("eeventos"),
                 () => CollectEeventosAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
-                Report)
+                () => objectCount,
+                "dbo.eeventos")
             .ConfigureAwait(false);
-        await CollectUserFieldsAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken)
+        await tracker.RunAsync(
+                caps[KnownOperations.PhcUserFields],
+                () => CollectUserFieldsAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => objectCount)
             .ConfigureAwait(false);
-        await CollectOptionalAsync(
-                "escr",
+        await tracker.RunOptionalAsync(
+                caps[KnownOperations.PhcEscr],
+                () => Exists("escr"),
                 () => CollectEscrAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
-                Report)
+                () => objectCount,
+                "dbo.escr")
             .ConfigureAwait(false);
-        await CollectOptionalAsync(
-                "jsu",
+        await tracker.RunOptionalAsync(
+                caps[KnownOperations.PhcJsu],
+                () => Exists("jsu"),
                 () => CollectJsuAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
-                Report)
+                () => objectCount,
+                "dbo.jsu")
             .ConfigureAwait(false);
-        await CollectOptionalAsync(
-                "cssjs",
+        await tracker.RunOptionalAsync(
+                caps[KnownOperations.PhcCssjs],
+                () => Exists("cssjs"),
                 () => CollectCssjsAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
-                Report)
+                () => objectCount,
+                "dbo.cssjs")
             .ConfigureAwait(false);
-        await CollectOptionalAsync(
-                "formc",
+        await tracker.RunOptionalAsync(
+                caps[KnownOperations.PhcFormc],
+                () => Exists("formc"),
                 () => CollectFormcHiddenAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
-                Report)
+                () => objectCount,
+                "dbo.formc")
             .ConfigureAwait(false);
-        await CollectOptionalAsync(
-                "formb",
+        await tracker.RunOptionalAsync(
+                caps[KnownOperations.PhcFormb],
+                () => Exists("formb"),
                 () => CollectFormbAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
-                Report)
+                () => objectCount,
+                "dbo.formb")
             .ConfigureAwait(false);
-        await CollectOptionalAsync(
-                "ftu",
+        await tracker.RunOptionalAsync(
+                caps[KnownOperations.PhcFtu],
+                () => Exists("ftu"),
                 () => CollectFtuAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
-                Report)
+                () => objectCount,
+                "dbo.ftu")
             .ConfigureAwait(false);
 
         foreach (var issue in issues)
@@ -151,18 +192,7 @@ public sealed class PhcCustomizationsCollector : ICollector
                 ? CollectorStatus.SucceededWithWarnings
                 : CollectorStatus.Succeeded;
 
-        return new CollectorResult(Id, status, Array.Empty<CollectedArtifact>(), issues, sw.Elapsed);
-
-        async Task CollectOptionalAsync(string table, Func<Task> collect, Func<string, Task> report)
-        {
-            if (!await TableExistsAsync(connection, table, cancellationToken).ConfigureAwait(false))
-            {
-                await report($"{table}: ausente (ignorado).").ConfigureAwait(false);
-                return;
-            }
-
-            await collect().ConfigureAwait(false);
-        }
+        return new CollectorResult(Id, status, Array.Empty<CollectedArtifact>(), issues, sw.Elapsed, tracker.Coverages);
     }
 
     private static async Task CollectBruleAsync(

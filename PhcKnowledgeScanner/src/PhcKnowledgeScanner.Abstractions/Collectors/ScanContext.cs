@@ -8,6 +8,12 @@ namespace PhcKnowledgeScanner.Abstractions.Collectors;
 /// </summary>
 public sealed class ScanContext
 {
+    /// <summary>
+    /// Identificador UUID da captura (IKP CaptureId). Gerado no início da recolha.
+    /// Não confundir com InstallationId, scanId do workspace ou PackageId.
+    /// </summary>
+    public string CaptureId { get; set; } = string.Empty;
+
     public required string InstallationId { get; init; }
 
     public required string OutputRoot { get; init; }

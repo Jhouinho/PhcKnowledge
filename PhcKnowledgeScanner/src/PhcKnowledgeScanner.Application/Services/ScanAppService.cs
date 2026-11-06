@@ -66,6 +66,7 @@ public sealed class ScanAppService : IScanAppService
 
         var context = new ScanContext
         {
+            CaptureId = Guid.NewGuid().ToString("D"),
             InstallationId = $"{request.Server}/{request.Database}",
             OutputRoot = workspaceRoot,
             Mode = selected.Count == 0 ? ScanMode.Full : ScanMode.Selective,

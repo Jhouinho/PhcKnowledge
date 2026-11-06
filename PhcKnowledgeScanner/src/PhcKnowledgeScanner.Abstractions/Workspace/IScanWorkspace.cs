@@ -1,4 +1,5 @@
 using PhcKnowledgeScanner.Abstractions.Collectors;
+using PhcKnowledgeScanner.Abstractions.Coverage;
 using PhcKnowledgeScanner.Abstractions.Inventory;
 using PhcKnowledgeScanner.Abstractions.Inventory.Expression;
 
@@ -9,7 +10,18 @@ public interface IScanWorkspace : IAsyncDisposable
     string RootPath { get; }
     string ScanId { get; }
 
+    /// <summary>CaptureId IKP da captura representada por este workspace (uma captura, não histórico).</summary>
+    string? CaptureId { get; }
+
     Task InitializeAsync(string scanId, string installationLabel, CancellationToken cancellationToken);
+
+    Task SetCaptureIdAsync(string captureId, CancellationToken cancellationToken);
+
+    Task SaveCaptureCoverageAsync(
+        string captureId,
+        IReadOnlyList<DeclaredCapability> capabilityCatalog,
+        IReadOnlyList<OperationCoverage> operationCoverages,
+        CancellationToken cancellationToken);
 
     Task UpsertObjectAsync(TechnicalObjectRecord record, CancellationToken cancellationToken);
 
