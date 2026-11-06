@@ -577,12 +577,12 @@ A matriz detalhada por ficheiro/componente será criada na etapa seguinte; esta 
 
 ## 16. Próximas tarefas
 
-1. Criar fixtures JSON completas e validadas para manifesto, capabilities, coverage, índice de objetos, checksums, relações e diagnósticos.
-2. Criar matriz campo-a-campo entre o contrato e os modelos/collectors/exporters atuais do Scanner.
-3. Identificar incompatibilidades e decidir a sequência de alterações por componente, sem reescrever o Scanner inteiro.
-4. Definir exemplos de compatibilidade de capabilities entre versões.
-5. Definir a representação de eventos de linhagem na plataforma e os dados de origem que podem ser transportados como hints.
-6. Só depois preparar tarefas de implementação separadas para Scanner e PHC Knowledge.
+1. ~~Criar uma fixture JSON completa com referências cruzadas e checksums calculados.~~ **Concluído:** [fixture mínima IKP 0.1](fixtures/ikp-0.1/minimal-valid/README.md), com [relatório de validação](fixtures/ikp-0.1/minimal-valid/VALIDATION.md).
+2. ~~Criar matriz de compatibilidade entre o contrato e os modelos/collectors/exporters atuais do Scanner.~~ **Concluído:** [matriz de compatibilidade](ikp-0.1-scanner-compatibility-matrix.md).
+3. Criar schemas JSON executáveis para os cinco ficheiros de contrato e validar a fixture com um validador standard.
+4. Acrescentar fixtures de casos negativos e fronteira: pacote adulterado, cobertura incompleta, operação não suportada/não solicitada e referências inválidas.
+5. Definir exemplos de compatibilidade de capabilities entre versões e fechar os casos de linhagem.
+6. Preparar tarefas de implementação separadas para Scanner e PHC Knowledge, por componente e com testes de aceitação.
 
 A implementação de código e o importador funcional continuam fora desta etapa. O próximo resultado deve ser artefactos de referência verificáveis e uma matriz de trabalho baseada no código real, não mais uma ronda de opções abstratas.
 
@@ -590,6 +590,8 @@ A implementação de código e o importador funcional continuam fora desta etapa
 
 - [Contrato de observação, identidade e linhagem](observation-identity-and-lineage-contract.md)
 - [Investigação de cobertura dos collectors](collector-coverage-investigation-2026-11-06.md)
+- [Fixture IKP 0.1 mínima](fixtures/ikp-0.1/minimal-valid/README.md)
+- [Relatório de validação da fixture](fixtures/ikp-0.1/minimal-valid/VALIDATION.md)
 - [Avaliação tecnológica e contrato de importação](technology-and-import-contract-assessment.md)
 - [Orientações do projeto](../../PROJECT_GUIDELINES.md)
 - Código do Scanner independente: Jhouinho/PhcKnowledgeScanner, branch main
