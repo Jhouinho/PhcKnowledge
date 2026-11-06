@@ -134,7 +134,7 @@ Não existe EnvironmentId no modelo. O utilizador não precisa de separar ambien
 | MetadataFingerprint | Scanner/plataforma | Fingerprint dos metadados relevantes |
 | DefinitionFingerprint | Scanner/plataforma | Fingerprint da definição técnica original |
 
-CaptureId e PackageId nunca entram na identidade lógica da entidade. Stamps PHC, nomes SQL, object_id e column_id são evidências com âmbito e estabilidade diferentes; nenhum deve ser tratado como identificador universal.
+CaptureId e PackageId nunca entram na identidade lógica da entidade. Stamps PHC, nomes SQL, object_id e column_id são evidências com âmbito e estabilidade diferentes; nenhum deve ser tratado como identificador universal.\n\n### 4.2.1 Cálculo dos fingerprints\n\n- Todos os fingerprints usam SHA-256 e hexadecimal minúsculo de 64 caracteres.\n- MetadataFingerprint: SHA-256 dos bytes UTF-8 do objeto `metadata` serializado segundo JSON Canonicalization Scheme (RFC 8785). Excluir datas de recolha, timestamps voláteis, caminhos temporários e dados de execução que não descrevam o objeto. A política de inclusão de cada campo pertence ao contrato da respetiva categoria.\n- DefinitionFingerprint: SHA-256 dos bytes exatos da definição original, sem normalização de espaços, encoding ou quebras de linha. O encoding e o formato devem ser identificados pelo artefacto.\n- Se uma definição for composta por vários artefactos, calcular um digest composto a partir da lista ordenada ordinalmente de `artifactId + LF + sha256 + LF`, em UTF-8, e aplicar SHA-256 ao resultado.\n- Não calcular DefinitionFingerprint para estados `Empty`, `Unavailable` ou `NotCollected`. A ausência de fingerprint nesses estados não equivale a hash vazio.
 
 ### 4.3 Associação à instalação
 
@@ -392,7 +392,7 @@ O snapshotHash estrutural existente pode ser preservado como fingerprint especí
 }
 ~~~
 
-O algoritmo de digest canónico deve ser especificado com precisão na implementação, incluindo normalização de separadores de caminho, encoding, ordenação ordinal, representação do tamanho e tratamento de duplicados. Checksums provam integridade, não autoria. Assinatura digital pode ser considerada numa versão futura.
+O digest lógico é calculado sobre todos os ficheiros do pacote exceto `checksums.json`, incluindo os ficheiros de contrato e payload. Para cada ficheiro, normalizar o caminho para separadores `/`, rejeitar caminhos absolutos, segmentos `.`/ `..` e duplicados após normalização; usar o caminho relativo em Unicode NFC; ordenar por comparação ordinal dos caminhos; calcular o tamanho em bytes; usar o SHA-256 minúsculo dos bytes exatos. Para cada entrada concatenar exatamente `path + LF + byteLength decimal + LF + sha256 + LF`, sem BOM, em UTF-8. O digest lógico é SHA-256 dos bytes dessa concatenação. `checksums.json` é excluído para evitar autorreferência. Checksums provam integridade, não autoria. Assinatura digital pode ser considerada numa versão futura.
 
 ## 9. Conteúdo técnico e proveniência
 
