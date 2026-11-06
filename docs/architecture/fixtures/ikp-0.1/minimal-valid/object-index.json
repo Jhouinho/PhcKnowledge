@@ -13,12 +13,14 @@
       "name": "FT",
       "schemaName": "dbo",
       "metadata": {
-        "objectId": 123456,
-        "createDate": "2024-01-01T10:00:00Z"
+        "columnCount": 3,
+        "primaryKey": [
+          "FTSTAMP"
+        ]
       },
       "metadataFingerprint": {
         "algorithm": "sha256",
-        "value": "demo-metadata-ft"
+        "value": "edbd09a947413fba4ab124e27fbbd5cf7f1fa05747bd8386c36e3b1f9c3886d9"
       },
       "definition": {
         "status": "Available",
@@ -27,7 +29,7 @@
         ],
         "definitionFingerprint": {
           "algorithm": "sha256",
-          "value": "demo-definition-ft"
+          "value": "d8cb31f102bad14680e617a5bc8250ddcd3ebfff4a5b59b91aaf2b08de86a260"
         }
       },
       "operationId": "sql.schema.tables.inventory"
@@ -49,7 +51,7 @@
       },
       "metadataFingerprint": {
         "algorithm": "sha256",
-        "value": "demo-metadata-brule"
+        "value": "a119b64b9afded75a3c272adc7d8eb91d256a27d42882c6b88aee8c18a023f25"
       },
       "definition": {
         "status": "Available",
@@ -58,7 +60,7 @@
         ],
         "definitionFingerprint": {
           "algorithm": "sha256",
-          "value": "demo-definition-brule"
+          "value": "d1e847aeed26bf2ee3dc3fab175a5a62ad4ad608e23fe3b637bc798eeaa189b6"
         }
       },
       "operationId": "phc.customizations.brule.inventory"
@@ -78,7 +80,7 @@
       },
       "metadataFingerprint": {
         "algorithm": "sha256",
-        "value": "demo-metadata-rel"
+        "value": "6dca3e868246635aeae3cb003a35b39a56fb52674c49537b6338e6a4f7e54488"
       },
       "definition": {
         "status": "Empty",
