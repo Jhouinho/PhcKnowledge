@@ -88,6 +88,7 @@ Documentos de arquitetura relevantes:
 - `docs/architecture/product-boundaries.md`
 - `docs/architecture/knowledge-layers.md`
 - `docs/architecture/extract-2026-11-conversation.md`
+- `docs/architecture/technology-and-import-contract-assessment.md` (proposta; aguarda validação)
 
 ## Regras de trabalho
 
@@ -127,4 +128,4 @@ Não avançar automaticamente para a fase seguinte sem validação conjunta.
 
 ## Próxima etapa prevista
 
-Definir a arquitetura tecnológica do PHC Knowledge e o contrato de importação dos exports do Scanner, com base em `docs/architecture/` e no código incluído — com validação conjunta antes de implementar.
+Validar em conjunto a proposta em `docs/architecture/technology-and-import-contract-assessment.md`. Só depois redigir ADRs curtos / evoluir o contrato de exportação do Scanner — sem implementação até ordem explícita.

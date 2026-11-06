@@ -8,9 +8,7 @@ Integra conhecimento PHC standard com conhecimento específico de instalações 
 
 Repositório inicializado. O projeto `PhcKnowledgeScanner` está em [`PhcKnowledgeScanner/`](PhcKnowledgeScanner/).
 
-Documentação de arquitetura inicial (fronteiras de produto e camadas de conhecimento) em [`docs/architecture/`](docs/architecture/), extraída da conversa arquivada em [`docs/sources/`](docs/sources/).
-
-A stack definitiva e a decisão sobre o que reutilizar do Scanner / `ConsoleApp` serão definidas em etapas posteriores.
+Documentação de arquitetura em [`docs/architecture/`](docs/architecture/), incluindo a proposta [`technology-and-import-contract-assessment.md`](docs/architecture/technology-and-import-contract-assessment.md) (aguarda validação conjunta). Fontes brutas em [`docs/sources/`](docs/sources/).
 
 ## Orientações do projeto
 
