@@ -10,7 +10,7 @@
     {
       "path": "coverage.json",
       "byteLength": 1603,
-      "sha256": "1737feb60ff6a4194ec5665949872d9d008dfbef49e09779f6b2034813732889"
+      "sha256": "e4d96aeda671121460a6dd77fdcff0335f1e1eb573745a01b234bd2c408dd2b3"
     },
     {
       "path": "manifest.json",
@@ -19,8 +19,8 @@
     },
     {
       "path": "object-index.json",
-      "byteLength": 2525,
-      "sha256": "40d802fb13445566848c7dadd20da314e59e64bd1d89b1157ab9cd9e4056f622"
+      "byteLength": 3198,
+      "sha256": "f62e7bc4a6beb169e9a6f02607c41ed21327f2565dd668b6ec2e9b7cd50b70ec"
     },
     {
       "path": "payload/customizations/brule/7F3A.prg",
@@ -29,8 +29,8 @@
     },
     {
       "path": "payload/diagnostics/issues.json",
-      "byteLength": 460,
-      "sha256": "747218c97847ae1a6bdff5690171ae9689d428657dc08540c3cfa9396dd9e435"
+      "byteLength": 487,
+      "sha256": "71be628c9511b9d35ac40b8d759c43064b38336caa3d998ac4a79b128d5ce28f"
     },
     {
       "path": "payload/relations/declared-relations.json",
@@ -45,6 +45,6 @@
   ],
   "logicalContentDigest": {
     "algorithm": "SHA-256",
-    "value": "e40038101b3ace67ea5349bc35361bad5d7920b7c372a66780d5ccf9f146af11"
+    "value": "0af0c97178fb1bae568c555f67d2752471b57231ccd152fa82c0a62355ed3f32"
   }
 }
