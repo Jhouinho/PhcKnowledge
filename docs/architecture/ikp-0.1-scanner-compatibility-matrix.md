@@ -31,8 +31,9 @@ O Scanner gera `CaptureId` por captura, declara um catálogo de capabilities por
 1. CaptureId UUID no início da captura (≠ InstallationId, scanId, PackageId).
 2. Catálogo `DeclaredCapability` / `ScannerCapabilityCatalog` independente da execução; conflitos de `operationId` incompatíveis são rejeitados; duplicados idênticos colapsam na primeira ocorrência.
 3. `OperationCoverage` com result / sourceAvailability / contentAvailability / observedCount / issueIds; `SucceededWithWarnings` só com issues `Warning` (não por meros IssueIds/`Info`).
-4. Issues com `IssueId` e `OperationId`; falha não tratada do collector fica sem `OperationId` e deixa operações como `NotAttempted`.
-5. Selective, ProbeOnly, empty, NotPresent, Failed, NotAttempted cobertos por testes.
+4. Issues com `IssueId` e `OperationId`; falha não tratada do collector fica sem `OperationId`. Coverages já publicadas em `CollectorExecutionProgress` são preservadas; só as operações sem resultado conclusivo ficam `NotAttempted`.
+5. Selective, ProbeOnly, empty, NotPresent, Failed, NotAttempted e preservação pós-exceção cobertos por testes.
+6. Limite IKP: não há estado separado de “persistência falhou”; se a execução da operação já ficou registada e a finalização/persistência agregada falha, o `result` da operação mantém-se e a falha fica na issue `collector.unhandled`.
 
 ### P1 — Objetos e identidade
 1. Gerar object-index.json a partir do workspace e do snapshot.

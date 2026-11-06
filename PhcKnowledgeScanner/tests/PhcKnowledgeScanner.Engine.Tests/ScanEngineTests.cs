@@ -584,6 +584,214 @@ public class ScanEngineTests
         Assert.Contains("op.x", ex.Message);
     }
 
+    [Fact]
+    public async Task ExceptionAfterSuccessfulOperation_PreservesKnownCoverage()
+    {
+        var ok = new DeclaredCapability("cat", "op.ok", "1.0", "c", true);
+        var later = new DeclaredCapability("cat", "op.later", "1.0", "c", true);
+        var okCoverage = CoverageSemantics.Succeeded(ok, true, 4, Array.Empty<string>());
+        var collector = new FakeCollector(
+            "c",
+            true,
+            capabilities: [ok, later],
+            throwOnCollect: true,
+            beforeThrow: ctx => ctx.ExecutionProgress.CompleteOperation(okCoverage));
+
+        var manifest = await new ScanEngine([collector]).RunAsync(new ScanContext
+        {
+            InstallationId = "test",
+            OutputRoot = Path.GetTempPath(),
+            Mode = ScanMode.Full
+        });
+
+        var preserved = Assert.Single(manifest.OperationCoverages, c => c.OperationId == "op.ok");
+        Assert.Equal(OperationExecutionResult.Succeeded, preserved.Result);
+        Assert.Equal(4, preserved.ObservedCount);
+        Assert.Equal(ContentAvailability.Available, preserved.ContentAvailability);
+
+        var pending = Assert.Single(manifest.OperationCoverages, c => c.OperationId == "op.later");
+        Assert.Equal(OperationExecutionResult.NotAttempted, pending.Result);
+
+        Assert.Equal(2, manifest.OperationCoverages.Count);
+        Assert.Equal(2, manifest.OperationCoverages.Select(c => c.OperationId).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task ExceptionAfterMixedResults_PreservesSuccessAndFailure()
+    {
+        var ok = new DeclaredCapability("cat", "op.ok", "1.0", "mix", true);
+        var fail = new DeclaredCapability("cat", "op.fail", "1.0", "mix", true);
+        var pending = new DeclaredCapability("cat", "op.pending", "1.0", "mix", true);
+        var failIssue = new CollectionIssue(
+            CollectionIssueSeverity.Error,
+            "op.fail.read",
+            "falhou",
+            IssueId: "issue:op.fail",
+            OperationId: "op.fail");
+
+        var collector = new FakeCollector(
+            "mix",
+            true,
+            capabilities: [ok, fail, pending],
+            throwOnCollect: true,
+            beforeThrow: ctx =>
+            {
+                ctx.ExecutionProgress.CompleteOperation(
+                    CoverageSemantics.Succeeded(ok, true, 2, Array.Empty<string>()));
+                ctx.ExecutionProgress.ReportIssue(failIssue);
+                ctx.ExecutionProgress.CompleteOperation(
+                    CoverageSemantics.Failed(fail, true, 0, ["issue:op.fail"]));
+            });
+
+        var manifest = await new ScanEngine([collector]).RunAsync(new ScanContext
+        {
+            InstallationId = "test",
+            OutputRoot = Path.GetTempPath(),
+            Mode = ScanMode.Full
+        });
+
+        Assert.Equal(OperationExecutionResult.Succeeded,
+            Assert.Single(manifest.OperationCoverages, c => c.OperationId == "op.ok").Result);
+        var failed = Assert.Single(manifest.OperationCoverages, c => c.OperationId == "op.fail");
+        Assert.Equal(OperationExecutionResult.Failed, failed.Result);
+        Assert.Contains("issue:op.fail", failed.IssueIds);
+        Assert.Equal(OperationExecutionResult.NotAttempted,
+            Assert.Single(manifest.OperationCoverages, c => c.OperationId == "op.pending").Result);
+        Assert.Equal(3, manifest.OperationCoverages.Count);
+    }
+
+    [Fact]
+    public async Task ExceptionWhileOperationInFlight_LeavesItNotAttempted()
+    {
+        var inFlight = new DeclaredCapability("cat", "op.inflight", "1.0", "f", true);
+        var other = new DeclaredCapability("cat", "op.other", "1.0", "f", true);
+        var collector = new FakeCollector(
+            "f",
+            true,
+            capabilities: [inFlight, other],
+            throwOnCollect: true,
+            beforeThrow: ctx => ctx.ExecutionProgress.BeginOperation(inFlight.OperationId));
+
+        var manifest = await new ScanEngine([collector]).RunAsync(new ScanContext
+        {
+            InstallationId = "test",
+            OutputRoot = Path.GetTempPath(),
+            Mode = ScanMode.Full
+        });
+
+        Assert.All(
+            manifest.OperationCoverages,
+            c => Assert.Equal(OperationExecutionResult.NotAttempted, c.Result));
+        Assert.DoesNotContain(
+            manifest.OperationCoverages,
+            c => c.Result is OperationExecutionResult.Succeeded or OperationExecutionResult.Failed);
+        Assert.Equal(2, manifest.OperationCoverages.Count);
+    }
+
+    [Fact]
+    public async Task ExceptionBeforeAnyOperation_AllNotAttempted_CollectorIssueOnly()
+    {
+        var caps = new[]
+        {
+            new DeclaredCapability("cat", "op.a", "1.0", "early", true),
+            new DeclaredCapability("cat", "op.b", "1.0", "early", true)
+        };
+        var collector = new FakeCollector("early", true, capabilities: caps, throwOnCollect: true);
+        var manifest = await new ScanEngine([collector]).RunAsync(new ScanContext
+        {
+            InstallationId = "test",
+            OutputRoot = Path.GetTempPath(),
+            Mode = ScanMode.Full
+        });
+
+        Assert.All(manifest.OperationCoverages, c => Assert.Equal(OperationExecutionResult.NotAttempted, c.Result));
+        var issue = Assert.Single(manifest.Results[0].Issues);
+        Assert.Equal("collector.unhandled", issue.Code);
+        Assert.Null(issue.OperationId);
+    }
+
+    [Fact]
+    public async Task PartialProgressAndFinalResult_DoNotDuplicateCoverages()
+    {
+        var cap = new DeclaredCapability("cat", "op.one", "1.0", "d", true);
+        var coverage = CoverageSemantics.Succeeded(cap, true, 1, Array.Empty<string>());
+        var collector = new FakeCollector(
+            "d",
+            true,
+            capabilities: [cap],
+            collectCoverages: [coverage, coverage],
+            beforeThrow: null);
+
+        var manifest = await new ScanEngine([collector]).RunAsync(new ScanContext
+        {
+            InstallationId = "test",
+            OutputRoot = Path.GetTempPath(),
+            Mode = ScanMode.Full
+        });
+
+        Assert.Single(manifest.OperationCoverages);
+        Assert.Single(manifest.Results[0].Coverages);
+    }
+
+    [Fact]
+    public async Task PersistenceFailureAfterKnownCoverage_KeepsExecutionResult()
+    {
+        // Simula falha de finalização/persistência após operações já publicadas no progresso.
+        var rel = new DeclaredCapability("cat", "op.rel", "1.0", "persist", true);
+        var dtl = new DeclaredCapability("cat", "op.dtl", "1.0", "persist", true);
+        var relCov = CoverageSemantics.Succeeded(rel, true, 10, Array.Empty<string>());
+        var dtlCov = CoverageSemantics.Succeeded(dtl, true, 3, Array.Empty<string>());
+        var collector = new FakeCollector(
+            "persist",
+            true,
+            capabilities: [rel, dtl],
+            throwOnCollect: true,
+            beforeThrow: ctx =>
+            {
+                ctx.ExecutionProgress.CompleteOperation(relCov);
+                ctx.ExecutionProgress.CompleteOperation(dtlCov);
+            });
+
+        var manifest = await new ScanEngine([collector]).RunAsync(new ScanContext
+        {
+            InstallationId = "test",
+            OutputRoot = Path.GetTempPath(),
+            Mode = ScanMode.Full
+        });
+
+        Assert.Equal(CollectorStatus.Failed, manifest.Results[0].Status);
+        Assert.All(
+            manifest.OperationCoverages,
+            c => Assert.Equal(OperationExecutionResult.Succeeded, c.Result));
+        Assert.Equal(10, Assert.Single(manifest.OperationCoverages, c => c.OperationId == "op.rel").ObservedCount);
+        Assert.Equal(3, Assert.Single(manifest.OperationCoverages, c => c.OperationId == "op.dtl").ObservedCount);
+
+        var collectorIssue = Assert.Single(
+            manifest.Results[0].Issues,
+            i => i.Code == "collector.unhandled");
+        Assert.Null(collectorIssue.OperationId);
+        Assert.All(manifest.OperationCoverages, c => Assert.DoesNotContain(collectorIssue.IssueId!, c.IssueIds));
+    }
+
+    [Fact]
+    public void MergeKnownCoverages_DeduplicatesAndFillsNotAttempted()
+    {
+        var a = new DeclaredCapability("cat", "op.a", "1.0", "m", true);
+        var b = new DeclaredCapability("cat", "op.b", "1.0", "m", true);
+        var known = new[]
+        {
+            CoverageSemantics.Succeeded(a, true, 1, Array.Empty<string>()),
+            CoverageSemantics.Succeeded(a, true, 99, Array.Empty<string>())
+        };
+
+        var merged = ScanEngine.MergeKnownCoveragesWithNotAttempted([a, b], known);
+
+        Assert.Equal(2, merged.Count);
+        Assert.Equal(1, Assert.Single(merged, c => c.OperationId == "op.a").ObservedCount);
+        Assert.Equal(OperationExecutionResult.NotAttempted,
+            Assert.Single(merged, c => c.OperationId == "op.b").Result);
+    }
+
     private sealed class FakeCollector : ICollector
     {
         private readonly bool _available;
@@ -593,6 +801,7 @@ public class ScanEngineTests
         private readonly IReadOnlyList<CollectionIssue> _collectIssues;
         private readonly CollectorStatus _collectStatus;
         private readonly bool _throwOnCollect;
+        private readonly Action<ScanContext>? _beforeThrow;
 
         public FakeCollector(
             string id,
@@ -602,7 +811,8 @@ public class ScanEngineTests
             IReadOnlyList<OperationCoverage>? collectCoverages = null,
             IReadOnlyList<CollectionIssue>? collectIssues = null,
             CollectorStatus collectStatus = CollectorStatus.Succeeded,
-            bool throwOnCollect = false)
+            bool throwOnCollect = false,
+            Action<ScanContext>? beforeThrow = null)
         {
             Id = id;
             _available = available;
@@ -615,6 +825,7 @@ public class ScanEngineTests
             _collectIssues = collectIssues ?? Array.Empty<CollectionIssue>();
             _collectStatus = collectStatus;
             _throwOnCollect = throwOnCollect;
+            _beforeThrow = beforeThrow;
         }
 
         public string Id { get; }
@@ -632,6 +843,7 @@ public class ScanEngineTests
         public Task<CollectorResult> CollectAsync(ScanContext context, CancellationToken cancellationToken)
         {
             CollectCalls++;
+            _beforeThrow?.Invoke(context);
             if (_throwOnCollect)
             {
                 throw new InvalidOperationException("boom");

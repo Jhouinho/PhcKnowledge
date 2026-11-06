@@ -5,17 +5,20 @@ namespace PhcKnowledgeScanner.Collectors.Coverage;
 
 /// <summary>
 /// Instrumentação mínima de coverage por operação lógica dentro de um collector.
+/// Publica resultados conclusivos em <see cref="CollectorExecutionProgress"/> quando fornecido.
 /// </summary>
 internal sealed class OperationCoverageTracker
 {
     private readonly List<CollectionIssue> _issues;
+    private readonly CollectorExecutionProgress? _progress;
     private readonly List<OperationCoverage> _coverages = new();
     private readonly HashSet<string> _completed = new(StringComparer.OrdinalIgnoreCase);
     private int _issueSeq;
 
-    public OperationCoverageTracker(List<CollectionIssue> issues)
+    public OperationCoverageTracker(List<CollectionIssue> issues, CollectorExecutionProgress? progress = null)
     {
         _issues = issues;
+        _progress = progress;
     }
 
     public IReadOnlyList<OperationCoverage> Coverages => _coverages;
@@ -28,24 +31,29 @@ internal sealed class OperationCoverageTracker
     {
         var startIssues = _issues.Count;
         var startObserved = observedCount();
+        _progress?.BeginOperation(capability.OperationId);
         try
         {
             await action().ConfigureAwait(false);
             StampIssues(startIssues, capability.OperationId);
             var slice = _issues.Skip(startIssues).ToList();
+            PublishIssues(slice);
             var observed = Math.Max(0, observedCount() - startObserved);
-            _coverages.Add(CoverageSemantics.FromIssues(
-                capability,
-                requested: true,
-                observed,
-                slice,
-                SourceAvailability.Present,
-                scope));
-            _completed.Add(capability.OperationId);
+            Complete(
+                CoverageSemantics.FromIssues(
+                    capability,
+                    requested: true,
+                    observed,
+                    slice,
+                    SourceAvailability.Present,
+                    scope));
         }
         catch (OperationCanceledException)
         {
             StampIssues(startIssues, capability.OperationId);
+            PublishIssues(_issues.Skip(startIssues).ToList());
+            // Sem resultado conclusivo: abandona in-flight; o motor trata como NotAttempted.
+            _progress?.AbandonInFlight();
             throw;
         }
         catch (Exception ex)
@@ -61,14 +69,15 @@ internal sealed class OperationCoverageTracker
             var observed = Math.Max(0, observedCount() - startObserved);
             StampIssues(startIssues, capability.OperationId);
             var slice = _issues.Skip(startIssues).ToList();
-            _coverages.Add(CoverageSemantics.FromIssues(
-                capability,
-                requested: true,
-                observed,
-                slice,
-                SourceAvailability.Present,
-                scope));
-            _completed.Add(capability.OperationId);
+            PublishIssues(slice);
+            Complete(
+                CoverageSemantics.FromIssues(
+                    capability,
+                    requested: true,
+                    observed,
+                    slice,
+                    SourceAvailability.Present,
+                    scope));
         }
     }
 
@@ -80,6 +89,7 @@ internal sealed class OperationCoverageTracker
         string sourceName,
         IReadOnlyDictionary<string, string>? scope = null)
     {
+        _progress?.BeginOperation(capability.OperationId);
         var exists = await sourceExistsAsync().ConfigureAwait(false);
         if (!exists)
         {
@@ -90,15 +100,17 @@ internal sealed class OperationCoverageTracker
                 IssueId: NextIssueId(capability.OperationId),
                 OperationId: capability.OperationId);
             _issues.Add(issue);
-            _coverages.Add(CoverageSemantics.NotPresent(
+            PublishIssues([issue]);
+            Complete(CoverageSemantics.NotPresent(
                 capability,
                 requested: true,
                 [issue.IssueId!],
                 scope ?? ScopeSource(sourceName)));
-            _completed.Add(capability.OperationId);
             return;
         }
 
+        // RunAsync volta a fazer BeginOperation — abandonar o begin preliminar.
+        _progress?.AbandonInFlight();
         await RunAsync(capability, action, observedCount, scope ?? ScopeSource(sourceName))
             .ConfigureAwait(false);
     }
@@ -112,8 +124,27 @@ internal sealed class OperationCoverageTracker
                 continue;
             }
 
-            _coverages.Add(CoverageSemantics.NotAttempted(capability, requested));
-            _completed.Add(capability.OperationId);
+            Complete(CoverageSemantics.NotAttempted(capability, requested));
+        }
+    }
+
+    private void Complete(OperationCoverage coverage)
+    {
+        _coverages.Add(coverage);
+        _completed.Add(coverage.OperationId);
+        _progress?.CompleteOperation(coverage);
+    }
+
+    private void PublishIssues(IEnumerable<CollectionIssue> issues)
+    {
+        if (_progress is null)
+        {
+            return;
+        }
+
+        foreach (var issue in issues)
+        {
+            _progress.ReportIssue(issue);
         }
     }
 

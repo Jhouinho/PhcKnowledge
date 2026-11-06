@@ -1,3 +1,4 @@
+using PhcKnowledgeScanner.Abstractions.Coverage;
 using PhcKnowledgeScanner.Abstractions.Progress;
 using PhcKnowledgeScanner.Abstractions.Workspace;
 
@@ -33,4 +34,10 @@ public sealed class ScanContext
     public IScanWorkspace? Workspace { get; init; }
 
     public IScanProgressSink? Progress { get; init; }
+
+    /// <summary>
+    /// Progresso de coverage do collector em execução.
+    /// O motor limpa no início de cada CollectAsync e lê em caso de exceção.
+    /// </summary>
+    public CollectorExecutionProgress ExecutionProgress { get; } = new();
 }

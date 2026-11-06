@@ -71,7 +71,7 @@ public sealed class PhcCustomizationsCollector : ICollector
         await using var connection = new SqlConnection(context.SqlConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-        var tracker = new OperationCoverageTracker(issues);
+        var tracker = new OperationCoverageTracker(issues, context.ExecutionProgress);
         var caps = DeclaredCapabilities.ToDictionary(c => c.OperationId, StringComparer.OrdinalIgnoreCase);
 
         async Task Report(string message)

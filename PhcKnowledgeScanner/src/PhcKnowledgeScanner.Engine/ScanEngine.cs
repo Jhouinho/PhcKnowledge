@@ -161,13 +161,15 @@ public sealed class ScanEngine
             }
 
             var sw = Stopwatch.StartNew();
+            context.ExecutionProgress.Reset();
             try
             {
                 var result = await collector.CollectAsync(context, cancellationToken).ConfigureAwait(false);
                 sw.Stop();
-                var coverages = result.Coverages.Count > 0
-                    ? result.Coverages
-                    : SynthesizeCollectorCoverage(collector, result);
+                var coverages = DeduplicateCoverages(
+                    result.Coverages.Count > 0
+                        ? result.Coverages
+                        : SynthesizeCollectorCoverage(collector, result));
                 var finalized = result with
                 {
                     Duration = result.Duration == TimeSpan.Zero ? sw.Elapsed : result.Duration,
@@ -200,9 +202,8 @@ public sealed class ScanEngine
                 sw.Stop();
                 errors++;
                 processed++;
-                // Falha ao nível do collector: sem evidência de qual operação falhou,
-                // não atribuir a causa a uma operação concreta. Operações não executadas
-                // ficam NotAttempted; a issue fica sem OperationId.
+                // Preservar coverages já publicadas no progresso; completar o resto com NotAttempted.
+                // A exceção fica ao nível do collector (OperationId null) — não inventar a operação responsável.
                 var failIssue = new CollectionIssue(
                     CollectionIssueSeverity.Error,
                     "collector.unhandled",
@@ -210,15 +211,17 @@ public sealed class ScanEngine
                     Detail: ex.GetType().FullName + ": " + ex.Message,
                     IssueId: $"issue:{collector.Id}:unhandled",
                     OperationId: null);
-                var failCoverages = collector.DeclaredCapabilities
-                    .Select(c => CoverageSemantics.NotAttempted(c, requested: true))
-                    .ToArray();
+                var known = context.ExecutionProgress.Coverages;
+                var failCoverages = MergeKnownCoveragesWithNotAttempted(
+                    collector.DeclaredCapabilities,
+                    known);
+                var issues = MergeIssues(context.ExecutionProgress.Issues, failIssue);
 
                 results.Add(new CollectorResult(
                     collector.Id,
                     CollectorStatus.Failed,
                     Array.Empty<CollectedArtifact>(),
-                    [failIssue],
+                    issues,
                     sw.Elapsed,
                     failCoverages));
                 operationCoverages.AddRange(failCoverages);
@@ -294,6 +297,82 @@ public sealed class ScanEngine
                 0,
                 issueIds))
             .ToArray();
+    }
+
+    /// <summary>
+    /// Combina coverages já conhecidas com NotAttempted para operações declaradas sem resultado.
+    /// Operações in-flight sem CompleteOperation não estão em <paramref name="known"/> e ficam NotAttempted.
+    /// </summary>
+    public static IReadOnlyList<OperationCoverage> MergeKnownCoveragesWithNotAttempted(
+        IReadOnlyList<DeclaredCapability> declared,
+        IReadOnlyList<OperationCoverage> known)
+    {
+        var merged = new List<OperationCoverage>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var coverage in known)
+        {
+            if (!seen.Add(coverage.OperationId))
+            {
+                continue;
+            }
+
+            merged.Add(coverage);
+        }
+
+        foreach (var capability in declared)
+        {
+            if (!seen.Add(capability.OperationId))
+            {
+                continue;
+            }
+
+            merged.Add(CoverageSemantics.NotAttempted(capability, requested: true));
+        }
+
+        return merged;
+    }
+
+    private static IReadOnlyList<OperationCoverage> DeduplicateCoverages(
+        IReadOnlyList<OperationCoverage> coverages)
+    {
+        var merged = new List<OperationCoverage>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var coverage in coverages)
+        {
+            if (!seen.Add(coverage.OperationId))
+            {
+                continue;
+            }
+
+            merged.Add(coverage);
+        }
+
+        return merged;
+    }
+
+    private static IReadOnlyList<CollectionIssue> MergeIssues(
+        IReadOnlyList<CollectionIssue> known,
+        CollectionIssue collectorIssue)
+    {
+        var list = new List<CollectionIssue>();
+        var seenIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var issue in known)
+        {
+            if (!string.IsNullOrWhiteSpace(issue.IssueId) && !seenIds.Add(issue.IssueId))
+            {
+                continue;
+            }
+
+            list.Add(issue);
+        }
+
+        if (string.IsNullOrWhiteSpace(collectorIssue.IssueId) || seenIds.Add(collectorIssue.IssueId))
+        {
+            list.Add(collectorIssue);
+        }
+
+        return list;
     }
 
     private static (OperationExecutionResult Result, SourceAvailability Source, ContentAvailability Content)
