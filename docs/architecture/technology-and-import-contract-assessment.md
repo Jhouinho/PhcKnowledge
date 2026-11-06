@@ -4,7 +4,7 @@
 | --- | --- |
 | Data inicial | 2026-11-06 |
 | Última consolidação | 2026-11-06 (modelo de utilização centralizado) |
-| Estado | Stack, fronteiras e **modelo de utilização centralizado** acordados; IKP 0.1 **ainda não especificado** |
+| Estado | Stack, fronteiras e utilização centralizada acordados; IKP 0.1 em **proposta documental** (não aprovado) — ver [`ikp-0.1-specification.md`](ikp-0.1-specification.md) |
 | Âmbito | Stack da plataforma PHC Knowledge + bases do contrato de importação do Scanner independente |
 | Implementação | Nenhuma nesta etapa |
 
@@ -28,7 +28,7 @@ Legenda:
 
 **Fronteiras** `[acordado]`: Scanner independente produz pacotes; PHC Knowledge importa e transforma; sem runtime do Scanner na plataforma; sem recuperar Discovery/Fusion do ConsoleApp.
 
-**IKP** `[acordado]` (rumo; especificação detalhada = tarefa posterior): evoluir a partir do Database Schema Snapshot (não juntar ZIPs atuais nem recuperar Snapshot V1 histórico). Incluir estrutura, personalizações, relações, cobertura, evidências/proveniência, artefactos originais, manifesto e checksums.
+**IKP** `[acordado]` (rumo) + **especificação 0.1 proposta** (revisão conjunta): [`ikp-0.1-specification.md`](ikp-0.1-specification.md). Parte do Database Schema Snapshot; não junta ZIPs atuais nem recupera Snapshot V1 histórico.
 
 **Instalações** `[acordado]`: IDs próprios na plataforma; associação guiada na 1.ª importação (existente / nova / pendente se ambígua); servidor/BD **não** são identificadores definitivos.
 
@@ -36,7 +36,7 @@ Legenda:
 
 **Modelo de utilização** `[acordado]`: instalação **centralizada** num servidor da organização; clientes (browser / desktop WebView2) ligam ao mesmo backend e PostgreSQL; sem modo autónomo offline e sem sincronização entre bases locais — ver §5.
 
-**Sequência acordada** `[acordado]`: (1) consolidar decisões de stack → (2) fechar modelo de utilização → (3) especificar IKP 0.1 sem código → (4) comparar com exports reais do Scanner → (5) documentar lacunas → (6) só depois fixtures e esboço de API. Os passos 1–2 estão concluídos documentalmente.
+**Sequência acordada** `[acordado]`: (1) consolidar stack → (2) fechar utilização → (3) especificar IKP 0.1 → (4) comparar com exports Scanner → (5) lacunas → (6) fixtures/API. Passos 1–2 concluídos; passo 3 em **proposta** (aguarda validação); passo 4 parcialmente coberto na especificação (§1 e §12 do IKP).
 
 Fontes: este repositório (`product-boundaries.md`, `knowledge-layers.md`, `extract-2026-11-conversation.md`, `PROJECT_GUIDELINES.md`); Scanner incluído; investigação [`2026-11-05.md`](https://github.com/Jhouinho/ConsoleApp/blob/master/docs/investigation/2026-11-05.md) no GitHub `master`.
 
@@ -254,25 +254,22 @@ Referências:
 - `…/Export/SchemaSnapshot/DatabaseSchemaSnapshotComparer.cs`  
 - ADR 0014 / `docs/database-schema-snapshot.md`
 
-### 6.2 Pacote alvo (unificado) — rumo `[acordado]`; detalhe normativo ainda não escrito
+### 6.2 Pacote alvo (unificado) — rumo `[acordado]`; especificação 0.1 proposta
 
 Nome conceptual: **Installation Knowledge Package (IKP)**.  
-A especificação IKP 0.1 é a **próxima etapa documental** (modelo de utilização já fechado) — **sem implementação**.
+Especificação normativa proposta (não aprovada automaticamente): **[`ikp-0.1-specification.md`](ikp-0.1-specification.md)**.
+
+Resumo do layout (detalhe no documento IKP):
 
 ```text
 {packageId}.zip
-├── manifest.json          # contrato versionado
-├── checksums.json         # SHA-256 por ficheiro do payload
-├── coverage.json          # cobertura por capability/collector
-└── payload/
-    ├── schema/            # evolui a partir do Database Schema Snapshot
-    ├── customizations/    # artefactos originais (pastas atuais do WorkspaceExport)
-    ├── relations/         # factos REL/DTL + FK + interpretações (ou ponteiros)
-    ├── knowledge/         # projeção opcional KR/FieldMapping (derivada, regenerável)
-    └── diagnostics/       # issues, limitações
+├── manifest.json
+├── checksums.json
+├── coverage.json
+└── payload/{schema|customizations|relations|knowledge|diagnostics}/
 ```
 
-Transportes: ZIP (canónico) e envelope JSON base64 (como Phase 7.10) se útil. `[doc]` 7.10
+Transporte canónico: ZIP. Envelope JSON (estilo Phase 7.10) fica fora do 0.1 salvo decisão futura.
 
 ### 6.3 Identificação do pacote
 
@@ -458,8 +455,8 @@ Sem DDL nesta fase.
 
 ### Ainda pendente
 
-1. **Fornecedor concreto de object storage** (quando não bastar filesystem no servidor).  
-2. **Detalhe normativo IKP 0.1** — próxima etapa documental; não iniciada aqui.  
+1. **Validação conjunta da especificação IKP 0.1** (inclui Q1–Q5 em [`ikp-0.1-specification.md`](ikp-0.1-specification.md) §13).  
+2. **Fornecedor concreto de object storage** (quando não bastar filesystem no servidor).  
 3. Detalhe de autenticação on-prem (contas locais vs AD/OIDC) — não bloqueia o modelo §5.  
 4. Opcional: obter `docs/investigation/` no clone local do ConsoleApp.
 
@@ -473,14 +470,14 @@ Sem DDL nesta fase.
 
 ## 10. Sequência de trabalho acordada `[acordado]`
 
-1. ~~Consolidar as decisões arquiteturais de stack/fronteiras.~~ **Concluído.**  
-2. ~~Fechar o modelo de utilização.~~ **Concluído** — centralizado (§5).  
-3. **Especificar** o IKP 0.1 **sem implementação**.  
-4. **Comparar** o IKP proposto com as capacidades reais dos exports do Scanner atual.  
-5. **Identificar e documentar** as lacunas.  
-6. **Só depois** preparar fixtures e esboçar a API de importação.
+1. ~~Consolidar stack/fronteiras.~~ **Concluído.**  
+2. ~~Fechar modelo de utilização.~~ **Concluído** — centralizado (§5).  
+3. ~~Especificar IKP 0.1 (documento).~~ **Proposta entregue** — [`ikp-0.1-specification.md`](ikp-0.1-specification.md); **aguarda validação**.  
+4. **Comparar** em profundidade com exports reais (amostras + gaps §12 do IKP) e fechar Q1–Q5.  
+5. **Consolidar lacunas** após validação.  
+6. **Só depois** fixtures e esboço de API de importação.
 
-Não antecipar etapas. Não implementar código nesta fase.
+Não implementar código nesta fase. A existência da especificação **não** implica aprovação.
 
 ---
 
@@ -488,19 +485,18 @@ Não antecipar etapas. Não implementar código nesta fase.
 
 ### Coerência
 
-- Stack, fronteiras e modelo de utilização centralizado estão **acordados** (§4–§5).  
-- Análise do Scanner/exports (§6–8) mantém-se como base factual para o IKP 0.1.  
-- `PROJECT_GUIDELINES.md` / `README.md` alinhados neste commit documental.
+- Stack, fronteiras e utilização centralizada **acordados**.  
+- IKP 0.1 em **proposta** dedicada; este documento aponta para ela.  
+- Sem alterações de código / Scanner.
 
-### Lacunas / contradições documentais
+### Lacunas / contradições (mantidas)
 
 | Item | Nota |
 | --- | --- |
-| `InstallationId` no Scanner = `server/database` | Contradiz IDs próprios da plataforma — a tratar no rumo IKP |
-| Três exports Scanner vs um IKP | Documentado; unificação ainda não especificada |
-| Guidelines (“possibilidade de utilização local”) | Reformulado para on-prem centralizado, não autónomo offline |
-| Investigação 05/11 | No GitHub `master`; pode faltar no clone local |
+| Scanner não emite IKP | Três exports legados; ver IKP §12 |
+| `InstallationId` = `server/database` no ZIP scan | Contradiz IDs de plataforma |
+| Comparador schema → Removed sem coverage | Incompatível com regra NotObserved |
 
 ### Próximo passo recomendado
 
-Iniciar a especificação documental do **IKP 0.1** (sem código, sem alterar o Scanner).
+**Revisão conjunta** de [`ikp-0.1-specification.md`](ikp-0.1-specification.md) (decidir Q1–Q5). Só depois fixtures / API.

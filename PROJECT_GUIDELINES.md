@@ -50,9 +50,9 @@ Decisões consolidadas em [`docs/architecture/technology-and-import-contract-ass
 | Pesquisa inicial | PostgreSQL Full-Text Search (sem OpenSearch nesta fase) |
 | Tempo real | SignalR |
 | Scanner | Produto independente; Knowledge não o executa em runtime |
-| Importação | IKP a evoluir a partir do Database Schema Snapshot (especificação 0.1 posterior) |
+| Importação | IKP a partir do Database Schema Snapshot — especificação 0.1 em proposta ([`ikp-0.1-specification.md`](docs/architecture/ikp-0.1-specification.md); não aprovada automaticamente) |
 
-Não instalar dependências nem criar projetos de produção até a sequência acordada o permitir (próximo: especificar IKP 0.1).
+Não instalar dependências nem criar projetos de produção até validação do IKP 0.1 e ordem explícita para a etapa seguinte.
 
 ## Projetos anteriores
 
@@ -94,7 +94,8 @@ Documentos de arquitetura relevantes:
 - `docs/architecture/product-boundaries.md`
 - `docs/architecture/knowledge-layers.md`
 - `docs/architecture/extract-2026-11-conversation.md`
-- `docs/architecture/technology-and-import-contract-assessment.md` (stack + utilização centralizada acordadas; IKP 0.1 pendente)
+- `docs/architecture/technology-and-import-contract-assessment.md` (stack + utilização centralizada)
+- `docs/architecture/ikp-0.1-specification.md` (contrato de importação 0.1 — proposta)
 
 ## Regras de trabalho
 
@@ -134,4 +135,4 @@ Não avançar automaticamente para a fase seguinte sem validação conjunta.
 
 ## Próxima etapa prevista
 
-Especificar o IKP 0.1 **sem implementação**, comparar com os exports reais do Scanner, documentar lacunas e só depois fixtures / esboço de API.
+Validar em conjunto a proposta [`docs/architecture/ikp-0.1-specification.md`](docs/architecture/ikp-0.1-specification.md). Depois fechar lacunas/Q1–Q5 e só então fixtures / esboço de API — sem implementação até ordem explícita.

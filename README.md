@@ -8,7 +8,7 @@ Integra conhecimento PHC standard com conhecimento específico de instalações 
 
 Repositório inicializado. O projeto `PhcKnowledgeScanner` está em [`PhcKnowledgeScanner/`](PhcKnowledgeScanner/).
 
-Documentação de arquitetura em [`docs/architecture/`](docs/architecture/). Stack, fronteiras e **modelo de utilização centralizado** em [`technology-and-import-contract-assessment.md`](docs/architecture/technology-and-import-contract-assessment.md). Próximo passo documental: IKP 0.1. Fontes brutas em [`docs/sources/`](docs/sources/). Sem implementação de plataforma nesta fase.
+Documentação de arquitetura em [`docs/architecture/`](docs/architecture/). Stack e utilização centralizada em [`technology-and-import-contract-assessment.md`](docs/architecture/technology-and-import-contract-assessment.md). Contrato de importação: proposta [`ikp-0.1-specification.md`](docs/architecture/ikp-0.1-specification.md) (aguarda validação). Fontes brutas em [`docs/sources/`](docs/sources/). Sem implementação de plataforma nesta fase.
 
 ## Orientações do projeto
 
