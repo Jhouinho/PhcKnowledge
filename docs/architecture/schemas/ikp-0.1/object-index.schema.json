@@ -70,7 +70,7 @@
             "type": "object"
           },
           "metadataFingerprint": {
-            "$ref": "https://phcknowledge.local/schemas/ikp-0.1/fingerprint.schema.json"
+            "$ref": "#/$defs/fingerprint"
           },
           "definition": {
             "type": "object",
@@ -96,7 +96,7 @@
                 "uniqueItems": true
               },
               "definitionFingerprint": {
-                "$ref": "https://phcknowledge.local/schemas/ikp-0.1/fingerprint.schema.json"
+                "$ref": "#/$defs/fingerprint"
               }
             },
             "allOf": [
@@ -165,5 +165,24 @@
       "uniqueItems": true
     }
   },
-  "additionalProperties": true
+  "additionalProperties": true,
+  "$defs": {
+    "fingerprint": {
+      "type": "object",
+      "required": [
+        "algorithm",
+        "value"
+      ],
+      "properties": {
+        "algorithm": {
+          "const": "sha256"
+        },
+        "value": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
 }
