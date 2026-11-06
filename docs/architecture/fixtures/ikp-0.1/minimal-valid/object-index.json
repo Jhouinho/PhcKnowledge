@@ -89,6 +89,31 @@
         ]
       },
       "operationId": "phc.relations.declared.inventory"
+    },
+    {
+      "sourceObjectId": "phc.brule:7F3B",
+      "objectKind": "phc.brule",
+      "sourceIdentity": {
+        "scheme": "phc.stamp",
+        "value": "7F3B",
+        "scope": "dbo.brule"
+      },
+      "name": "Validação de lote",
+      "schemaName": "dbo",
+      "metadata": {
+        "table": "FT",
+        "inactive": true,
+        "order": 20
+      },
+      "metadataFingerprint": {
+        "algorithm": "sha256",
+        "value": "3ee02b177ed39fda483086c8fbfd05d07aace43ea6a96e98754a251b41a824f6"
+      },
+      "definition": {
+        "status": "Unavailable",
+        "artifactIds": []
+      },
+      "operationId": "phc.customizations.brule.inventory"
     }
   ]
 }
