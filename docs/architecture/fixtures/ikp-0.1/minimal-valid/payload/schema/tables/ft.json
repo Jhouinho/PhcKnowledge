@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1",
+  "schema": "dbo",
+  "name": "FT",
+  "sourceObjectId": "sql.table:dbo.FT",
+  "sourceIdentity": {
+    "scheme": "sqlserver.object_id",
+    "value": "123456",
+    "scope": "PHC_DEMO"
+  },
+  "columns": [
+    {
+      "name": "FTSTAMP",
+      "type": "varchar",
+      "length": 25,
+      "nullable": false
+    },
+    {
+      "name": "FNO",
+      "type": "int",
+      "nullable": false
+    },
+    {
+      "name": "U_OBRA",
+      "type": "varchar",
+      "length": 30,
+      "nullable": true
+    }
+  ],
+  "primaryKey": {
+    "name": "PK_FT",
+    "columns": [
+      "FTSTAMP"
+    ]
+  }
+}
