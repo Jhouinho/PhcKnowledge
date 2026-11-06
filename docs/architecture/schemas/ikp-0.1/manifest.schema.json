@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phcknowledge.local/schemas/ikp-0.1/manifest.schema.json",
+  "title": "IKP 0.1 manifest",
+  "type": "object",
+  "required": [
+    "ikpContractVersion",
+    "contentType",
+    "packageId",
+    "producedAtUtc",
+    "producer",
+    "capture",
+    "origin",
+    "artifacts"
+  ],
+  "properties": {
+    "ikpContractVersion": {
+      "const": "0.1"
+    },
+    "contentType": {
+      "const": "phc.installation.knowledge.package"
+    },
+    "packageId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "producedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "producer": {
+      "type": "object",
+      "required": [
+        "productId",
+        "productVersion"
+      ],
+      "properties": {
+        "productId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "productVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exportTool": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "capture": {
+      "type": "object",
+      "required": [
+        "captureId",
+        "startedAtUtc",
+        "completedAtUtc",
+        "mode"
+      ],
+      "properties": {
+        "captureId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "startedAtUtc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAtUtc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "mode": {
+          "enum": [
+            "Full",
+            "Selective",
+            "ProbeOnly"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "origin": {
+      "type": "object",
+      "required": [
+        "engine"
+      ],
+      "properties": {
+        "engine": {
+          "const": "sqlserver"
+        },
+        "databaseName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "serverLabel": {
+          "type": "string"
+        },
+        "originFingerprint": {
+          "type": "string"
+        },
+        "phcVersion": {
+          "type": "string"
+        },
+        "phcSignatureDetected": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "sharing": {
+      "type": "object",
+      "properties": {
+        "safeForPublicShare": {
+          "type": "boolean"
+        },
+        "assessment": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "minLength": 1
+            },
+            "policyVersion": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "artifactId",
+          "path",
+          "category",
+          "format",
+          "byteLength",
+          "sha256",
+          "required"
+        ],
+        "properties": {
+          "artifactId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.?/)(?!.*\\\\).+$"
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1
+          },
+          "format": {
+            "type": "string",
+            "minLength": 1
+          },
+          "formatVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "byteLength": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": true
+      },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": true
+}
