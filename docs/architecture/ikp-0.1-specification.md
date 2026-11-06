@@ -8,7 +8,8 @@
 | Transporte canónico | ZIP |
 | Estado | **Contrato consolidado para revisão técnica através de fixtures e matriz de compatibilidade** |
 | Implementação | Ainda não implementado |
-| Contrato complementar normativo | [P1 — Identidade, proveniência e fingerprints](p1-identity-provenance-contract.md) |\n| Contexto arquitetural | [Contrato de observação, identidade e linhagem](observation-identity-and-lineage-contract.md) |
+| Contrato complementar normativo | [P1 — Identidade, proveniência e fingerprints](p1-identity-provenance-contract.md) |
+| Contexto arquitetural | [Contrato de observação, identidade e linhagem](observation-identity-and-lineage-contract.md) |
 
 Este documento define o pacote de transferência entre o Scanner PHC independente e a plataforma PHC Knowledge. Distingue o contrato pretendido da capacidade atualmente existente no Scanner. A especificação não significa que o Scanner já emita IKP nem que a plataforma já o importe. Para a semântica normativa de SourceObjectId, SourceIdentity, estados individuais de definição, proveniência e fingerprints, prevalece o [contrato P1 de identidade e proveniência](p1-identity-provenance-contract.md); este documento define a sua representação no pacote.
 
