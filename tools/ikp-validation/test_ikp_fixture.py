@@ -20,6 +20,9 @@ class IkpFixtureValidationTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.package = Path(self.temp.name) / "package"
         shutil.copytree(FIXTURE, self.package)
+        # README and validation notes document the fixture; they are not ZIP entries.
+        for helper in ("README.md", "VALIDATION.md"):
+            (self.package / helper).unlink(missing_ok=True)
 
     def tearDown(self):
         self.temp.cleanup()
@@ -127,6 +130,10 @@ class IkpFixtureValidationTests(unittest.TestCase):
         doc["captureId"] = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         self.write_json("object-index.json", doc)
         self.assert_invalid("CaptureId divergente")
+
+    def test_extra_root_file_is_rejected(self):
+        (self.package / "unexpected.txt").write_text("unexpected", encoding="utf-8")
+        self.assert_invalid("ficheiro extra na raiz")
 
     def test_extra_unchecksummed_payload_file_is_rejected(self):
         extra = self.package / "payload/extra.txt"
