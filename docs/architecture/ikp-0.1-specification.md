@@ -597,4 +597,4 @@ A implementação de código e o importador funcional continuam fora desta etapa
 - [Validador e testes automatizados](../../tools/ikp-validation/README.md)
 - [Avaliação tecnológica e contrato de importação](technology-and-import-contract-assessment.md)
 - [Orientações do projeto](../../PROJECT_GUIDELINES.md)
-- Código do Scanner independente: Jhouinho/PhcKnowledgeScanner, branch main
+- Código canónico do Scanner: [`PhcKnowledgeScanner/`](../../PhcKnowledgeScanner/), neste monorepo.
