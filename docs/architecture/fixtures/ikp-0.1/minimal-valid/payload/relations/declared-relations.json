@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1",
+  "captureId": "b1b2c3d4-1111-4222-8333-123456789abc",
+  "declaredRelations": [
+    {
+      "sourceObjectId": "phc.rel:REL001",
+      "sourceStamp": "REL001",
+      "sourceTable": "FT",
+      "targetTable": "FI",
+      "rawExpression": "FT.FTSTAMP = FI.FTSTAMP",
+      "interpretationIds": [
+        "interpretation-rel001-v1"
+      ]
+    }
+  ],
+  "interpretations": [
+    {
+      "interpretationId": "interpretation-rel001-v1",
+      "sourceObjectId": "phc.rel:REL001",
+      "parserId": "phc.rel-expression-parser",
+      "parserVersion": "1.0.0",
+      "status": "Resolved",
+      "confidence": "High",
+      "fieldMappings": [
+        {
+          "sourceTable": "FT",
+          "sourceField": "FTSTAMP",
+          "targetTable": "FI",
+          "targetField": "FTSTAMP"
+        }
+      ],
+      "issueIds": []
+    }
+  ]
+}
