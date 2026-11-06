@@ -4,6 +4,13 @@
   "note": "Casos de teste negativos e de fronteira. As mutações são aplicadas sobre cópias temporárias da fixture mínima; nunca alterar a fixture de referência.",
   "cases": [
     {
+      "caseId": "reference-valid",
+      "kind": "positive",
+      "mutation": "Sem mutações; validar a fixture de referência",
+      "expected": "Pacote válido e referências consistentes",
+      "automatedTest": "test_reference_fixture_is_valid"
+    },
+    {
       "caseId": "schema-invalid-enum",
       "kind": "schema",
       "mutation": "coverage.operations[0].result = 'Unknown'",
@@ -100,6 +107,27 @@
       "mutation": "Manter inventário concluído e definição com SucceededWithWarnings/Partial",
       "expected": "Pacote válido; não inferir remoção nem perda do objeto",
       "automatedTest": "test_partial_definition_coverage_is_valid_and_preserved"
+    },
+    {
+      "caseId": "payload-file-not-in-manifest",
+      "kind": "semantic",
+      "mutation": "Remover um artefacto de manifest.artifacts mantendo o ficheiro payload",
+      "expected": "Lista de artefactos não corresponde ao payload",
+      "automatedTest": "test_payload_file_missing_from_artifact_manifest_is_rejected"
+    },
+    {
+      "caseId": "capability-without-coverage",
+      "kind": "semantic",
+      "mutation": "Remover uma operação de coverage mantendo a capability",
+      "expected": "Cada capability tem exatamente uma entrada de cobertura",
+      "automatedTest": "test_capability_missing_coverage_entry_is_rejected"
+    },
+    {
+      "caseId": "path-traversal",
+      "kind": "security",
+      "mutation": "Definir um path em checksums.json como ../manifest.json",
+      "expected": "Path traversal rejeitado pelo schema e pelo validador",
+      "automatedTest": "test_path_traversal_is_rejected"
     }
   ]
 }
