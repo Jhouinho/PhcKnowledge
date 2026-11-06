@@ -2,31 +2,43 @@
 
 | Campo | Valor |
 | --- | --- |
-| Data | 2026-11-06 |
-| Estado | Proposta para validação conjunta — **sem implementação** |
-| Âmbito | Stack da plataforma PHC Knowledge + contrato de importação do Scanner independente |
-| Origem do pedido | Etapa de arquitetura pós-inicialização do repositório |
+| Data inicial | 2026-11-06 |
+| Última consolidação | 2026-11-06 |
+| Estado | **Decisões de stack e fronteiras consolidadas**; modelo de utilização local **pendente**; IKP 0.1 **ainda não especificado** |
+| Âmbito | Stack da plataforma PHC Knowledge + bases do contrato de importação do Scanner independente |
+| Implementação | Nenhuma nesta etapa |
 
-Legenda de proveniência das conclusões:
+Legenda:
 
 | Marca | Significado |
 | --- | --- |
+| `[acordado]` | Decisão consolidada nesta documentação (com condições indicadas) |
+| `[pendente]` | Exige validação explícita do responsável do projeto |
 | `[código]` | Confirmado em código/teste analisado |
 | `[doc]` | Documento arquitetural / investigação 05/11 (GitHub) |
 | `[guideline]` | `PROJECT_GUIDELINES.md` / docs PHC Knowledge |
 | `[inferência]` | Inferência a partir de evidências |
-| `[proposta]` | Proposta ainda não validada |
+| `[proposta]` | Orientação técnica ainda não elevada a decisão |
 
 ---
 
 ## 1. Resumo executivo
 
-Recomenda-se construir o PHC Knowledge como **plataforma .NET 10 / ASP.NET Core + React/TypeScript**, com **PostgreSQL** como base central multiempresa, **SQLite** apenas para workspace/cache local, e **SignalR** para atualizações em tempo real. A interface desktop deve **reutilizar a mesma SPA** (anfitrião WebView2 ou equivalente), evitando duas UIs divergentes.
+**Stack acordada** `[acordado]`: .NET 10 + ASP.NET Core; React + TypeScript; PostgreSQL central; SQLite só auxiliar (workspace/cache/local); pesquisa inicial com PostgreSQL FTS; tempo real com SignalR; desktop Windows-first via WebView2 da mesma SPA. OpenSearch **fora** desta fase (evolução futura permitida, sem antecipar complexidade).
 
-O Scanner independente (`PhcKnowledgeScanner`) deve permanecer **fora do runtime** da plataforma. A ponte é um **contrato de pacote versionado**, ainda incompleto no Scanner atual: existem exports úteis (ZIP de personalizações, ZIP/manifesto de scan, **Database Schema Snapshot**), mas **não** um pacote de instalação unificado com identidade, cobertura e proveniência ao nível exigido pela plataforma.
+**Fronteiras** `[acordado]`: Scanner independente produz pacotes; PHC Knowledge importa e transforma; sem runtime do Scanner na plataforma; sem recuperar Discovery/Fusion do ConsoleApp.
 
-**Fonte obrigatória:** [`ConsoleApp/docs/investigation/2026-11-05.md`](https://github.com/Jhouinho/ConsoleApp/blob/master/docs/investigation/2026-11-05.md) — presente no GitHub (`master`). Na cópia local de `ConsoleApp` (branch `feat/adr0049-t1-scanner-dictionary`) a pasta `docs/investigation/` **não está presente**; a análise foi refeita a partir do ficheiro remoto. Complementada com ADR-0049, Phase 7.8 / 7.10 / 7.11a / 7.12 e código do Scanner independente.
+**IKP** `[acordado]` (rumo; especificação detalhada = tarefa posterior): evoluir a partir do Database Schema Snapshot (não juntar ZIPs atuais nem recuperar Snapshot V1 histórico). Incluir estrutura, personalizações, relações, cobertura, evidências/proveniência, artefactos originais, manifesto e checksums.
 
+**Instalações** `[acordado]`: IDs próprios na plataforma; associação guiada na 1.ª importação (existente / nova / pendente se ambígua); servidor/BD **não** são identificadores definitivos.
+
+**Armazenamento de pacotes** `[acordado]`: abstração de armazenamento — filesystem (dev/local) e object storage (plataforma central); pacotes imutáveis; fornecedor concreto em aberto `[pendente]`.
+
+**Utilização local / rede** `[pendente]`: dois cenários distintos (autónomo offline vs servidor de rede) — ver §5; não decidir aqui.
+
+**Sequência acordada** `[acordado]`: (1) consolidar decisões → (2) clarificar modelo local → (3) especificar IKP 0.1 sem código → (4) comparar com exports reais do Scanner → (5) documentar lacunas → (6) só depois fixtures e esboço de API.
+
+Fontes: este repositório (`product-boundaries.md`, `knowledge-layers.md`, `extract-2026-11-conversation.md`, `PROJECT_GUIDELINES.md`); Scanner incluído; investigação [`2026-11-05.md`](https://github.com/Jhouinho/ConsoleApp/blob/master/docs/investigation/2026-11-05.md) no GitHub `master`.
 ---
 
 ## 2. Requisitos considerados
@@ -89,121 +101,136 @@ Idempotência de ingestão (mesmo SnapshotId + checksum) permanece válida via P
 ### 3.3 Aviso crítico
 
 A investigação analisa sobretudo o **ConsoleApp / Scanner V1 histórico**. As lições de identidade, cobertura e publicação aplicam-se ao PHC Knowledge; **não** descrevem o Scanner independente atual (`PhcKnowledgeScanner`, ADR 0003).
+
 ---
 
-## 4. Arquitetura tecnológica proposta
+## 4. Decisões arquiteturais consolidadas
 
-### 4.1 Vista lógica `[proposta]`
+### 4.1 Vista lógica `[acordado]`
 
 ```text
-┌─────────────────────┐     pacote versionado      ┌──────────────────────────────┐
+┌─────────────────────┐     pacote IKP (futuro)    ┌──────────────────────────────┐
 │ PhcKnowledgeScanner │ ─────────────────────────► │  PHC Knowledge Platform      │
 │ (independente)      │   (sem runtime partilhado)  │                              │
-│ Desktop WPF / CLI   │                            │  ASP.NET Core API            │
+│ Desktop WPF / CLI   │                            │  ASP.NET Core API (.NET 10)  │
 │ SQLite workspace    │                            │  Serviços de domínio         │
-│ Export pacotes      │                            │  Importação / Staging / Pub. │
+│ Export → IKP        │                            │  Importação / Staging / Pub. │
 └─────────────────────┘                            │  PostgreSQL (central)        │
-                                                   │  Blob/FS para artefactos     │
-                                                   │  SignalR                     │
+                                                   │  Package store (abstração)   │
+                                                   │  SignalR + PG FTS            │
                                                    │         ▲                    │
                                                    │         │ mesma SPA          │
                                                    │  React+TS Web ◄── WebView2   │
-                                                   │                 Desktop host │
+                                                   │           Desktop (Win-first)│
                                                    └──────────────────────────────┘
 ```
 
-### 4.2 Backend — .NET 10 / ASP.NET Core
+### 4.2 Stack tecnológica `[acordado]`
 
-| Aspeto | Recomendação |
-| --- | --- |
-| Runtime | .NET 10 (LTS), alinhado ao Scanner (`global.json` → SDK 10.0.403) `[código]` Scanner |
-| API | ASP.NET Core Minimal APIs ou Controllers + camadas Application / Domain / Infrastructure |
-| Partilha com Scanner | **Mesma família tecnológica**, **sem** project references ao Scanner (ADR 0003) `[doc]` |
-| Local vs servidor | Mesmo host: perfil `Local` (Kestrel + PostgreSQL embutido ou remoto) e perfil `Server` |
-| Autenticação | OpenID Connect / Identity; claims de organização; autorização por recurso |
-
-**Vantagens:** alinhamento com Scanner; produtividade; SignalR nativo; um só ecossistema de testes.  
-**Riscos:** tentação de referenciar assemblies do Scanner — proibir por política.
-
-### 4.3 Interface web — React + TypeScript
-
-Recomendado face a Blazor (usado no Explorer histórico do ConsoleApp):
-
-| Critério | React+TS | Blazor (histórico) |
-| --- | --- | --- |
-| Ecossistema UI exploração / grafos / editores de código | Maduro | Mais limitado |
-| Independência do backend | Alta | Acoplamento .NET |
-| Reutilização no desktop via WebView | Natural | Possível mas menos padrão |
-| Património ConsoleApp Explorer | Não reutiliza UI | Poderia copiar componentes |
-
-**Proposta:** React + TypeScript + cliente OpenAPI gerado a partir da API. `[proposta]`  
-Blazor do ConsoleApp fica património de referência UX, não stack obrigatória. `[inferência]`
-
-### 4.4 Interface desktop
-
-| Opção | Prós | Contras |
-| --- | --- | --- |
-| **WebView2 + mesma SPA** | Uma UI; coerência; custo baixo | Windows-first (WebView2); shell nativo mínimo |
-| **WPF** | Já usado no Scanner | Segunda UI; só Windows; duplicação |
-| **Avalonia** | Multiplataforma | Segunda UI; curva e ecossistema menores |
-
-**Recomendação:** Desktop da plataforma = **anfitrião da SPA** (WebView2 no Windows; avaliar WebKit/outro depois se multi-OS for requisito duro). O Scanner mantém WPF próprio (recolha local). `[proposta]`
-
-A desktop da plataforma **não** replica lógica de negócio: consome a mesma API. Ficheiros locais (abrir pacote ZIP) via diálogo nativo → upload à API.
-
-### 4.5 Base de dados central — PostgreSQL
-
-| Critério | PostgreSQL | SQL Server |
-| --- | --- | --- |
-| Multiempresa / RLS | Maduro (`ROW LEVEL SECURITY`) | Possível com schemas/filtering |
-| JSON / jsonb | Excelente | Bom (JSON) |
-| Full-text | Bom (`tsvector`) | Bom |
-| Licenciamento | Sem custo de licença servidor | Custo/edição a gerir |
-| Alinhamento PHC origem | Diferente do SQL Server das instalações | Mesmo motor das origens |
-
-**Recomendação:** PostgreSQL como BD central. SQL Server das instalações fica **só** no Scanner. `[proposta]`  
-Isolamento: `organization_id` em todas as tabelas de instalação + RLS (e testes de isolamento). Dados PHC Standard em schemas/tabelas **globais** sem `organization_id` de cliente (ou org sistema).
-
-### 4.6 Armazenamento local — SQLite
-
-| Uso | Papel |
-| --- | --- |
-| Workspace do Scanner | Já existe (`SqliteScanWorkspace`) `[código]` |
-| Cache offline da plataforma | Opcional: réplica de revisão publicada + anotações em rascunho |
-| BD central multiutilizador | **Não** |
-
-Sincronização: pull da revisão publicada + push de anotações via API; conflitos resolvidos por revisão/autoria, não por merge cego de SQLite. `[proposta]`
-
-### 4.7 Pesquisa
-
-Ordem:
-
-1. **PostgreSQL FTS** + índices B-tree/GIN em identificadores, nomes, stamps, tags.  
-2. Pesquisa em código: FTS sobre artefactos indexados (texto extraído), não grep em blobs em tempo real.  
-3. **OpenSearch** só se FTS + índices forem insuficientes (volume, facetas complexas, ranking).  
-
-Distinguir: pesquisa **exata** (IDs/stamps), **textual**, **contextual** (grafo/relações), **semântica** (fase futura, com evidências). `[proposta]`
-
-### 4.8 Tempo real
-
-**ASP.NET Core SignalR**, grupos por `organizationId` + `installationId`. Eventos: anotação criada, revisão publicada, importação concluída. Alternativas (SSE, polling) só se SignalR for bloqueado por infra. `[proposta]`
-
----
-
-## 5. Comparação das alternativas (síntese)
-
-| Área | Escolha | Alternativa rejeitada / adiada | Motivo principal |
+| Área | Decisão | Justificação (resumo) | Condições / limites |
 | --- | --- | --- | --- |
-| Backend | .NET 10 + ASP.NET Core | Node / Java | Alinhamento Scanner; um só talento |
-| Web | React + TS | Blazor | UI rica + partilha com desktop host |
-| Desktop plataforma | SPA host | WPF/Avalonia full UI | Evitar duas plataformas |
-| BD central | PostgreSQL | SQL Server / SQLite central | Multiempresa, custo, jsonb/FTS |
-| Pesquisa | PG FTS primeiro | OpenSearch imediato | Simplicidade até haver prova de insuficiência |
-| Realtime | SignalR | Polling | Nativo no stack |
+| Backend | .NET 10 + ASP.NET Core | Alinhamento com Scanner (`global.json` 10.x) `[código]`; um ecossistema; SignalR nativo | Sem project references ao Scanner (ADR 0003) |
+| Web | React + TypeScript | UI rica; partilha com desktop via WebView; Blazor do ConsoleApp fica referência UX, não stack | Cliente OpenAPI a partir da API `[proposta]` de detalhe |
+| Desktop plataforma | Windows-first, SPA em WebView2 | Uma UI/lógica; evita WPF/Avalonia duplicados | Não impede evolução multiplataforma futura; Scanner mantém WPF próprio |
+| BD central | PostgreSQL | Multiempresa, jsonb, FTS, licenciamento | SQL Server das instalações PHC fica só no Scanner |
+| SQLite | Workspace / cache / auxiliar local | Já usado no Scanner `[código]`; não é BD multiutilizador | **Não** substitui PostgreSQL em cenário multiutilizador |
+| Pesquisa | PostgreSQL FTS primeiro | Suficiente para começar; evita complexidade | OpenSearch **não** nesta fase; arquitetura deve permitir evolução sem antecipar |
+| Tempo real | SignalR | Nativo no stack ASP.NET | Grupos por organização/instalação `[proposta]` de detalhe |
+
+### 4.3 Scanner e PHC Knowledge `[acordado]`
+
+| Regra | Estado |
+| --- | --- |
+| Scanner = produto independente (recolha + pacotes) | Acordado — alinhado a `product-boundaries.md` e ADR-0049 |
+| PHC Knowledge = recebe, valida, importa, transforma em conhecimento | Acordado |
+| PHC Knowledge **não** executa Scanner em runtime | Acordado |
+| Não recuperar Discovery/Fusion como arquitetura operacional | Acordado — investigação §15; guidelines |
+
+### 4.4 Contrato de importação (IKP) — rumo `[acordado]`
+
+**Decisão:** evoluir o IKP a partir do **Database Schema Snapshot** do Scanner atual (ADR 0014), enriquecendo-o — **não** juntar simplesmente os ZIP existentes nem recuperar o formato histórico Scanner V1.
+
+Elementos a considerar no contrato (especificação detalhada = **tarefa posterior**):
+
+- Estrutura da base de dados  
+- Personalizações e desenvolvimentos específicos  
+- Relações entre objetos  
+- Cobertura da recolha  
+- Evidências e proveniência  
+- Artefactos originais  
+- Manifesto e checksums  
+
+Princípios já assumidos na avaliação (não são ainda o IKP 0.1 normativo): EntityIdentity / ObservationIdentity / ContentFingerprint; coverage-aware diffs (`NotObserved` ≠ `Removed`); staging antes de publicação; anti-`ReplaceExisting` destrutivo. `[doc]` investigação §§61–67
+
+### 4.5 Identificação de instalações `[acordado]`
+
+- A plataforma possui **identificadores próprios** de instalação.  
+- Na primeira importação: **associação guiada** — ligar a instalação existente, registar nova, ou deixar **pendente** se ambígua.  
+- Nome do servidor ou da base de dados **não** é identificador definitivo (hoje o Scanner usa `$"{Server}/{Database}"` no manifesto de scan `[código]` `ScanAppService` — isto é lacuna a corrigir no rumo IKP, não política da plataforma).
+
+### 4.6 Armazenamento dos pacotes `[acordado]`
+
+- Abstração de armazenamento **sem** fornecedor concreto obrigatório.  
+- Orientação inicial: **filesystem** (desenvolvimento / instalações locais); **object storage** (plataforma central).  
+- Pacotes originais = artefactos **imutáveis**.  
+- Escolha do fornecedor object storage: `[pendente]`.
+
+### 4.7 Alternativas consideradas e rejeitadas / adiadas
+
+| Área | Alternativa | Motivo |
+| --- | --- | --- |
+| Backend | Node / Java | Menos alinhamento com Scanner |
+| Web | Blazor | Menos partilha natural com WebView; acoplamento UI-.NET |
+| Desktop | WPF ou Avalonia full UI | Duplicaria interface e lógica |
+| BD central | SQL Server ou SQLite multiutilizador | Custo / inadequação multiempresa |
+| Pesquisa | OpenSearch já na 1.ª fatia | Complexidade sem prova de insuficiência do FTS |
+| Import | ZIP V1 histórico / união ingénua dos 3 exports | Contrato errado / envelope frágil |
 
 ---
 
-## 6. Contrato de importação proposto
+## 5. Utilização local e em rede — **decisão pendente** `[pendente]`
+
+A arquitetura deve distinguir **dois cenários**. **Nenhuma escolha entre eles está acordada nesta consolidação.**
+
+### Cenário A — Instalação autónoma num computador
+
+Sem servidor dedicado nem Internet obrigatória; dados próprios; eventual sincronização posterior com uma plataforma central.
+
+| Aspeto | Implicações |
+| --- | --- |
+| PostgreSQL | Exige instância local (serviço Windows, contentor, ou distribuição embutida). Mais pesado que SQLite, mas alinha o modelo de dados com o servidor. Embutir/operar PG num portátil é o principal custo deste cenário se se insistir na mesma BD. |
+| Autenticação | Tipicamente utilizador local / conta de máquina; Identity “single-user” ou modo offline. Federação com IdP central só quando houver rede. |
+| Armazenamento | Filesystem local para pacotes imutáveis e ficheiros. |
+| Sincronização | Export/import de revisões ou pacotes quando voltar a haver conectividade; conflitos de anotações a resolver por política (ainda não definida). |
+| Offline | Deve funcionar sem API remota; toda a stack (API + PG + SPA/WebView) no mesmo host. |
+| Atualizações | Atualização do binário/app no posto; migrações PG locais. |
+
+**Nota:** SQLite pode auxiliar cache/workspace, mas **não** está decidido — e **não** deve ser assumido — como substituto de PostgreSQL para multiutilizador. Para autónomo single-user, usar PG local vs perfil SQLite “compatível” continua `[pendente]`.
+
+### Cenário B — Servidor na rede da empresa
+
+Um servidor na LAN; restantes PCs acedem (browser e/ou desktop WebView2).
+
+| Aspeto | Implicações |
+| --- | --- |
+| PostgreSQL | Instância no servidor (ou VM/contentor); clientes **não** instalarm PG. Perfil natural da stack acordada. |
+| Autenticação | Contas partilhadas / AD / OIDC na rede; multiutilizador e permissões por organização. |
+| Armazenamento | Filesystem no servidor ou object storage interno; pacotes imutáveis partilhados. |
+| Sincronização | Clientes consomem API; sem “sync de base local” obrigatório. Desktop = cliente fino. |
+| Offline | Postos sem rede perdem acesso (salvo cache read-only futuro — não acordado). |
+| Atualizações | Atualizar o servidor; clientes web sem redeploy; desktop host com updates pontuais. |
+
+### O que isto não decide
+
+- Se o produto v1 privilegia A, B, ou ambos com o mesmo binário e perfis de deployment.  
+- Se autónomo (A) embute PostgreSQL ou adota um perfil de persistência diferente (ainda sujeito a não violar a regra “SQLite ≠ multiutilizador”).  
+- Política concreta de sincronização A → plataforma central.
+
+**Estado:** aguarda validação do responsável do projeto antes da especificação do IKP 0.1 e do desenho de deployment.
+
+---
+
+## 6. Contrato de importação — estado da análise
 
 ### 6.1 O que o Scanner independente produz hoje `[código]`
 
@@ -222,9 +249,10 @@ Referências:
 - `…/Export/SchemaSnapshot/DatabaseSchemaSnapshotComparer.cs`  
 - ADR 0014 / `docs/database-schema-snapshot.md`
 
-### 6.2 Pacote alvo (unificado) `[proposta]`
+### 6.2 Pacote alvo (unificado) — rumo `[acordado]`; detalhe normativo ainda não escrito
 
-Nome conceptual: **Installation Knowledge Package (IKP)**.
+Nome conceptual: **Installation Knowledge Package (IKP)**.  
+A especificação IKP 0.1 é a **próxima etapa documental** após clarificar o modelo de utilização local — **sem implementação**.
 
 ```text
 {packageId}.zip
@@ -399,82 +427,77 @@ Sem DDL nesta fase.
 
 ---
 
-## 9. Riscos e decisões em aberto
+## 9. Riscos, acordado e pendente
 
-### Riscos
+### Riscos (permanecem válidos)
 
 | Risco | Impacto | Mitigação |
 | --- | --- | --- |
-| Continuar com 3 formatos de export divergentes | Importação frágil | Unificar IKP numa evolução controlada do Scanner (**depois** desta validação) |
-| Comparar absences como Removed | Falsos negativos de “remoção” | Coverage no contrato + comparador honest |
-| Importar ReplaceExisting na BD partilhada | Perda de anotações/histórico | Staging + revisões |
-| Duas UIs (WPF plataforma + React) | Custo e divergência | SPA única + host |
-| OpenSearch cedo demais | Complexidade operacional | PG FTS primeiro |
-| Reintroduzir SQL direto na plataforma | Viola ADR-0049 | Gate de arquitetura / reviews |
-| Usar Phase 7.* como se fosse o Scanner atual | Contrato errado | Basear no código do Scanner independente |
+| Continuar com 3 formatos de export divergentes | Importação frágil | IKP evolutivo a partir do schema snapshot (após especificação) |
+| Ausência classificada como Removed | Falsos “removidos” | Coverage + `NotObserved` no contrato |
+| ReplaceExisting na BD partilhada | Perda de histórico/anotações | Staging + publicação atómica |
+| Reintroduzir SQL direto na plataforma | Viola fronteira Scanner | Gate de arquitetura |
+| Antecipar OpenSearch / IKP detalhado / API | Complexidade precoce | Seguir sequência §10 |
+| Assumir deployment local sem validação | Stack desalinhada com uso real | §5 permanece `[pendente]` |
 
-### Decisões que precisam de validação conjunta
+### Decisões acordadas (consolidadas nesta revisão)
 
-1. Aceitar stack: .NET 10 + ASP.NET Core + React/TS + PostgreSQL + SignalR + desktop SPA-host?  
-2. Aceitar IKP unificado como evolução do Schema Snapshot + customizations (em vez de adotar ZIP V1 do ConsoleApp)?  
-3. `installationId` na plataforma: registo manual prévio vs auto-registo na primeira importação?  
-4. Desktop multiplataforma é requisito imediato ou Windows-first basta?  
-5. Onde vive o arquivo imutável de pacotes (FS local vs object storage)?  
-6. Prioridade: evoluir export do Scanner **antes** de API, ou esboçar API contra fixtures do schema snapshot atual?
+- Stack: .NET 10, ASP.NET Core, React+TS, PostgreSQL, SQLite auxiliar, PG FTS, SignalR.  
+- Desktop Windows-first WebView2 (mesma SPA); evolução multiplataforma não bloqueada.  
+- Scanner independente; Knowledge sem runtime Scanner; sem Discovery/Fusion operacional.  
+- IKP a partir do Database Schema Snapshot (não ZIP V1; não união ingénua dos exports).  
+- Associação guiada de instalações; IDs próprios; servidor/BD ≠ identidade definitiva.  
+- Abstração de package store (FS + object storage); pacotes imutáveis.  
+- Sequência de trabalho da §10.
 
-### Decisões consideradas suficientemente fundamentadas (para validação, não para implementar ainda)
+### Ainda pendente de validação
 
-- Scanner fora do runtime da plataforma (ADR-0049 + guidelines).  
-- Não reativar Discovery/Fusion como caminho operacional.  
-- Distinguir EntityIdentity / Observation / ContentFingerprint.  
-- Staging antes de publicação; anti-ReplaceExisting.  
-- Coverage-aware diffs.  
-- PostgreSQL central; SQLite só local.  
-- Não introduzir OpenSearch na primeira fatia.
-
----
-
-## 10. Recomendação final
-
-1. **Arquitetura:** plataforma .NET 10 / ASP.NET Core, React+TS, PostgreSQL, SignalR, desktop como host da mesma SPA; Scanner permanece independente.  
-2. **Importação:** definir IKP versionado, partindo do **Database Schema Snapshot** + ZIP de personalizações + cobertura/evidências; **não** clonar o ZIP V1 histórico como SSOT.  
-3. **Aprendizagens da investigação 05/11 + património ConsoleApp:** Entity/Observation/ContentFingerprint, coverage-aware diffs, staging anti-ReplaceExisting, descontinuação do percurso Discovery/Fusion — como **princípios**, não como runtime a portar.  
-4. **Sincronização local:** alinhar o clone de `ConsoleApp` com `master` (ou obter `docs/investigation/`) para análises futuras offline.
-
----
-
-## 11. Próximos passos sugeridos (não executar)
-
-1. Validar consigo as decisões da secção 9.  
-2. Se aprovado: redigir ADR curto da stack + esboço normativo do IKP (`exportContractVersion = 0.1-draft`) **sem código**.  
-3. Inventariar gaps concretos no Scanner para emitir IKP 0.1 (lista de campos em falta) — ainda sem alterar runtime até ordem explícita.  
-4. Definir fixture de importação (usar `samples/database-schema-snapshot/`) para testes futuros da plataforma.  
+1. **Modelo de utilização local vs servidor de rede** (§5) — autónomo offline e/ou servidor LAN; implicações PG/auth/sync.  
+2. **Fornecedor concreto de object storage** (S3-compatível, Azure Blob, MinIO, outro).  
+3. **Detalhe normativo IKP 0.1** — tarefa posterior; não iniciada aqui.  
+4. **Política de sincronização** entre autónomo e plataforma central (se o cenário A for adotado).  
 5. Opcional: sincronizar `docs/investigation/` no clone local do ConsoleApp.
 
+### Princípios técnicos assumidos (não são ADRs de implementação)
+
+- EntityIdentity / ObservationIdentity / ContentFingerprint.  
+- Coverage-aware diffs; anti-merge silencioso.  
+- Staging antes de publicação.
+
 ---
 
-## Reflexão obrigatória
+## 10. Sequência de trabalho acordada `[acordado]`
 
-### O que existe e funciona
+1. **Consolidar** as decisões arquiteturais *(esta tarefa)*.  
+2. **Clarificar** o modelo de utilização local (§5) — validação do utilizador.  
+3. **Especificar** o IKP 0.1 **sem implementação**.  
+4. **Comparar** o IKP proposto com as capacidades reais dos exports do Scanner atual.  
+5. **Identificar e documentar** as lacunas.  
+6. **Só depois** preparar fixtures e esboçar a API de importação.
 
-- Repositório PHC Knowledge com guidelines e fronteiras.  
-- Scanner independente com recolha, workspace SQLite, relações/evidências, schema snapshot e exports parciais.  
-- Património ConsoleApp rico em lições de ingestão/identidade (e em complexidade a não transportar).
+Não antecipar etapas. Não implementar código nesta fase.
 
-### O que falta
+---
 
-- Cópia local sincronizada da investigação 05/11 (existe no GitHub `master`).  
-- Contrato de exportação unificado no Scanner.  
-- Plataforma (API, BD, UI, importação).  
-- Modelo multiempresa implementado.
+## 11. Estado documental e próximo passo
 
-### O que aprendemos
+### Coerência
 
-- A investigação 05/11 está no GitHub `master`; a ausência local era só desalinhamento de branch.  
-- O Scanner atual **já ultrapassa** o Snapshot V1 histórico em personalizações e relações, mas o **envelope de pacote** ainda é mais fraco que o desenho Phase 7.8.  
-- O schema snapshot é o melhor embrião de contrato estrutural.  
-- O risco maior não é escolher React vs Blazor — é importar sem cobertura/identidade/staging e repetir `ReplaceExisting` (confirmado na investigação §63 / §66–67).
+- Decisões de stack e fronteiras passaram de “proposta” a **acordadas** (§4).  
+- Utilização local permanece explicitamente **pendente** (§5).  
+- Análise do Scanner/exports (§6–8) mantém-se como base factual para o futuro IKP 0.1.  
+- `PROJECT_GUIDELINES.md` / `README.md` devem apontar para este estado (atualizados em conjunto).
 
-### Próximo passo
+### Lacunas / contradições documentais encontradas
 
-**Parar e aguardar validação** das recomendações tecnológicas e do rumo do contrato IKP antes de qualquer implementação ou alteração ao Scanner.
+| Item | Nota |
+| --- | --- |
+| `InstallationId` no Scanner = `server/database` | Contradiz a política acordada de IDs próprios — a corrigir no rumo IKP, não na plataforma a aceitar como definitivo |
+| Três exports Scanner vs um IKP | Documentado; unificação ainda não especificada |
+| Guidelines antigas (“tecnologias candidatas”) | Desatualizadas face a §4 — alinhar no mesmo commit documental |
+| Investigação 05/11 | No GitHub `master`; pode faltar no clone local |
+
+### Próximo passo recomendado
+
+**Clarificar o modelo de utilização local** (cenário A, B, ou ambos) com o responsável do projeto.  
+Só depois iniciar a especificação documental do **IKP 0.1** (sem código).

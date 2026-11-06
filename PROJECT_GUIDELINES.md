@@ -34,19 +34,25 @@ Pretende-se uma base de conhecimento estruturada, com proveniência, evidências
 - Cada informação deverá preservar a sua proveniência.
 - Distinguir factos confirmados, informação recolhida, inferências e conclusões ainda não validadas.
 
-## Tecnologias candidatas
+## Arquitetura tecnológica
 
-A arquitetura tecnológica **não está fechada**. Candidatas a avaliar numa etapa própria:
+Decisões consolidadas em [`docs/architecture/technology-and-import-contract-assessment.md`](docs/architecture/technology-and-import-contract-assessment.md) (§4):
 
-- .NET 10 e C# para o núcleo tecnológico.
-- ASP.NET Core para os serviços e API.
-- React e TypeScript para a interface web.
-- WPF ou alternativa multiplataforma para a interface desktop.
-- PostgreSQL como candidato à base de dados central.
-- SQLite para armazenamento e utilização local.
-- Pesquisa textual e eventual motor de pesquisa especializado.
+| Área | Decisão |
+| --- | --- |
+| Backend | .NET 10 + ASP.NET Core |
+| Web | React + TypeScript |
+| Desktop plataforma | Windows-first, mesma SPA via WebView2 |
+| BD central | PostgreSQL |
+| SQLite | Apenas workspace / cache / auxiliar local (não multiutilizador) |
+| Pesquisa inicial | PostgreSQL Full-Text Search (sem OpenSearch nesta fase) |
+| Tempo real | SignalR |
+| Scanner | Produto independente; Knowledge não o executa em runtime |
+| Importação | IKP a evoluir a partir do Database Schema Snapshot (especificação 0.1 posterior) |
 
-Não instalar dependências nem criar projetos de produção até essa decisão ser tomada.
+**Pendente:** modelo de utilização local (autónomo offline vs servidor na rede da empresa) — ver §5 do mesmo documento.
+
+Não instalar dependências nem criar projetos de produção até a sequência acordada o permitir (após clarificar utilização local e especificar IKP 0.1).
 
 ## Projetos anteriores
 
@@ -88,7 +94,7 @@ Documentos de arquitetura relevantes:
 - `docs/architecture/product-boundaries.md`
 - `docs/architecture/knowledge-layers.md`
 - `docs/architecture/extract-2026-11-conversation.md`
-- `docs/architecture/technology-and-import-contract-assessment.md` (proposta; aguarda validação)
+- `docs/architecture/technology-and-import-contract-assessment.md` (decisões de stack consolidadas; utilização local pendente)
 
 ## Regras de trabalho
 
@@ -128,4 +134,4 @@ Não avançar automaticamente para a fase seguinte sem validação conjunta.
 
 ## Próxima etapa prevista
 
-Validar em conjunto a proposta em `docs/architecture/technology-and-import-contract-assessment.md`. Só depois redigir ADRs curtos / evoluir o contrato de exportação do Scanner — sem implementação até ordem explícita.
+Clarificar o modelo de utilização local (§5 de `technology-and-import-contract-assessment.md`). Em seguida especificar o IKP 0.1 **sem implementação**, comparar com os exports reais do Scanner e só depois fixtures / esboço de API.
