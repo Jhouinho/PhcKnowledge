@@ -29,9 +29,9 @@ O Scanner gera `CaptureId` por captura, declara um catálogo de capabilities por
 
 ### P0 — Captura e cobertura — **feito**
 1. CaptureId UUID no início da captura (≠ InstallationId, scanId, PackageId).
-2. Catálogo `DeclaredCapability` / `ScannerCapabilityCatalog` independente da execução.
-3. `OperationCoverage` com result / sourceAvailability / contentAvailability / observedCount / issueIds.
-4. Issues com `IssueId` e `OperationId`.
+2. Catálogo `DeclaredCapability` / `ScannerCapabilityCatalog` independente da execução; conflitos de `operationId` incompatíveis são rejeitados; duplicados idênticos colapsam na primeira ocorrência.
+3. `OperationCoverage` com result / sourceAvailability / contentAvailability / observedCount / issueIds; `SucceededWithWarnings` só com issues `Warning` (não por meros IssueIds/`Info`).
+4. Issues com `IssueId` e `OperationId`; falha não tratada do collector fica sem `OperationId` e deixa operações como `NotAttempted`.
 5. Selective, ProbeOnly, empty, NotPresent, Failed, NotAttempted cobertos por testes.
 
 ### P1 — Objetos e identidade

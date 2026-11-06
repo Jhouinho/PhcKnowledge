@@ -438,7 +438,7 @@ public class ScanEngineTests
     }
 
     [Fact]
-    public async Task RunAsync_UnhandledException_MarksRemainingNotAttempted()
+    public async Task RunAsync_UnhandledException_IsCollectorLevel_AllOperationsNotAttempted()
     {
         var caps = new[]
         {
@@ -456,8 +456,132 @@ public class ScanEngineTests
         });
 
         Assert.Equal(CollectorStatus.Failed, manifest.Results[0].Status);
-        Assert.Contains(manifest.OperationCoverages, c => c.Result == OperationExecutionResult.Failed);
-        Assert.Contains(manifest.OperationCoverages, c => c.Result == OperationExecutionResult.NotAttempted);
+        var issue = Assert.Single(manifest.Results[0].Issues);
+        Assert.Equal("collector.unhandled", issue.Code);
+        Assert.Null(issue.OperationId);
+        Assert.All(
+            manifest.OperationCoverages,
+            c => Assert.Equal(OperationExecutionResult.NotAttempted, c.Result));
+        Assert.All(
+            manifest.OperationCoverages,
+            c => Assert.Empty(c.IssueIds));
+        Assert.DoesNotContain(
+            manifest.OperationCoverages,
+            c => c.Result is OperationExecutionResult.Failed or OperationExecutionResult.Succeeded);
+    }
+
+    [Fact]
+    public void FromIssues_InfoOnly_RemainsSucceededWithEmptyContent()
+    {
+        var cap = new DeclaredCapability("cat", "op.info", "1.0", "c", true);
+        var coverage = CoverageSemantics.FromIssues(
+            cap,
+            requested: true,
+            observedCount: 0,
+            [
+                new CollectionIssue(
+                    CollectionIssueSeverity.Info,
+                    "op.info.empty",
+                    "sem registos",
+                    IssueId: "issue:info",
+                    OperationId: "op.info")
+            ]);
+
+        Assert.Equal(OperationExecutionResult.Succeeded, coverage.Result);
+        Assert.Equal(ContentAvailability.Empty, coverage.ContentAvailability);
+        Assert.Contains("issue:info", coverage.IssueIds);
+    }
+
+    [Fact]
+    public void FromIssues_Warning_YieldsSucceededWithWarnings()
+    {
+        var cap = new DeclaredCapability("cat", "op.warn", "1.0", "c", true);
+        var coverage = CoverageSemantics.FromIssues(
+            cap,
+            requested: true,
+            observedCount: 2,
+            [
+                new CollectionIssue(
+                    CollectionIssueSeverity.Warning,
+                    "op.warn.partial_meta",
+                    "metadados incompletos",
+                    IssueId: "issue:warn",
+                    OperationId: "op.warn")
+            ]);
+
+        Assert.Equal(OperationExecutionResult.SucceededWithWarnings, coverage.Result);
+        Assert.Equal(ContentAvailability.Available, coverage.ContentAvailability);
+        Assert.Contains("issue:warn", coverage.IssueIds);
+    }
+
+    [Fact]
+    public void FromIssues_Error_YieldsFailed()
+    {
+        var cap = new DeclaredCapability("cat", "op.err", "1.0", "c", true);
+        var coverage = CoverageSemantics.FromIssues(
+            cap,
+            requested: true,
+            observedCount: 0,
+            [
+                new CollectionIssue(
+                    CollectionIssueSeverity.Error,
+                    "op.err.read",
+                    "falha de leitura",
+                    IssueId: "issue:err",
+                    OperationId: "op.err")
+            ]);
+
+        Assert.Equal(OperationExecutionResult.Failed, coverage.Result);
+        Assert.Equal(ContentAvailability.Unavailable, coverage.ContentAvailability);
+        Assert.Equal(SourceAvailability.Present, coverage.SourceAvailability);
+        Assert.Contains("issue:err", coverage.IssueIds);
+    }
+
+    [Fact]
+    public void Succeeded_DoesNotInferWarningsFromIssueIdsAlone()
+    {
+        var cap = new DeclaredCapability("cat", "op.ids", "1.0", "c", true);
+        var coverage = CoverageSemantics.Succeeded(cap, true, 0, ["issue:any"]);
+
+        Assert.Equal(OperationExecutionResult.Succeeded, coverage.Result);
+        Assert.Equal(ContentAvailability.Empty, coverage.ContentAvailability);
+    }
+
+    [Fact]
+    public void BuildCapabilityCatalog_CollapsesIdenticalDuplicates()
+    {
+        var cap = new DeclaredCapability("cat", "op.same", "1.0", "a", true, "primeira");
+        var identical = cap with { Description = "segunda descrição" };
+        var a = new FakeCollector("a", true, capabilities: [cap, identical]);
+        var engine = new ScanEngine([a]);
+
+        var catalog = engine.BuildCapabilityCatalog();
+        var entry = Assert.Single(catalog, c => c.OperationId == "op.same");
+        Assert.Equal("primeira", entry.Description);
+    }
+
+    [Fact]
+    public void BuildCapabilityCatalog_RejectsIncompatibleDuplicates()
+    {
+        var left = new DeclaredCapability("cat", "op.conflict", "1.0", "a", true);
+        var right = new DeclaredCapability("cat", "op.conflict", "2.0", "a", true);
+        var a = new FakeCollector("a", true, capabilities: [left]);
+        var b = new FakeCollector("b", true, capabilities: [right with { CollectorId = "b" }]);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => new ScanEngine([a, b]));
+        Assert.Contains("op.conflict", ex.Message);
+        Assert.Contains("incompatíveis", ex.Message);
+    }
+
+    [Fact]
+    public void CapabilityCatalogBuilder_RejectsDifferentCollectorSameOperation()
+    {
+        var left = new DeclaredCapability("cat", "op.x", "1.0", "a", true);
+        var right = new DeclaredCapability("cat", "op.x", "1.0", "b", true);
+
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => CapabilityCatalogBuilder.Build([left, right]));
+        Assert.Contains("op.x", ex.Message);
     }
 
     private sealed class FakeCollector : ICollector

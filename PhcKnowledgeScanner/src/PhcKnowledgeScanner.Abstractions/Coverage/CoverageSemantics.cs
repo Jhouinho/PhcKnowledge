@@ -5,6 +5,10 @@ namespace PhcKnowledgeScanner.Abstractions.Coverage;
 /// <summary>Regras partilhadas para construir coverage a partir de contagens e issues.</summary>
 public static class CoverageSemantics
 {
+    /// <summary>
+    /// Sucesso sem avisos. A presença de issues informativas não altera o resultado;
+    /// use <see cref="FromIssues"/> quando a severidade real das issues for conhecida.
+    /// </summary>
     public static OperationCoverage Succeeded(
         DeclaredCapability capability,
         bool requested,
@@ -12,19 +16,34 @@ public static class CoverageSemantics
         IReadOnlyList<string> issueIds,
         SourceAvailability sourceAvailability = SourceAvailability.Present,
         IReadOnlyDictionary<string, string>? scope = null)
-    {
-        var hasWarnings = issueIds.Count > 0;
-        return new OperationCoverage(
+        => new(
             capability.OperationId,
             capability.CapabilityVersion,
             requested,
-            hasWarnings ? OperationExecutionResult.SucceededWithWarnings : OperationExecutionResult.Succeeded,
+            OperationExecutionResult.Succeeded,
             sourceAvailability,
             observedCount == 0 ? ContentAvailability.Empty : ContentAvailability.Available,
             observedCount,
             issueIds,
             scope);
-    }
+
+    public static OperationCoverage SucceededWithWarnings(
+        DeclaredCapability capability,
+        bool requested,
+        int observedCount,
+        IReadOnlyList<string> issueIds,
+        SourceAvailability sourceAvailability = SourceAvailability.Present,
+        IReadOnlyDictionary<string, string>? scope = null)
+        => new(
+            capability.OperationId,
+            capability.CapabilityVersion,
+            requested,
+            OperationExecutionResult.SucceededWithWarnings,
+            sourceAvailability,
+            observedCount == 0 ? ContentAvailability.Empty : ContentAvailability.Available,
+            observedCount,
+            issueIds,
+            scope);
 
     public static OperationCoverage NotPresent(
         DeclaredCapability capability,
@@ -121,6 +140,10 @@ public static class CoverageSemantics
             0,
             Array.Empty<string>());
 
+    /// <summary>
+    /// Constrói coverage a partir das issues da operação, usando severidade real:
+    /// Error → Failed/Partial; Warning → SucceededWithWarnings; Info/nenhuma → Succeeded.
+    /// </summary>
     public static OperationCoverage FromIssues(
         DeclaredCapability capability,
         bool requested,
@@ -134,10 +157,20 @@ public static class CoverageSemantics
             .Where(id => !string.IsNullOrWhiteSpace(id))
             .ToArray();
 
-        var hasError = operationIssues.Any(i => i.Severity == CollectionIssueSeverity.Error);
-        if (hasError)
+        if (operationIssues.Any(i => i.Severity == CollectionIssueSeverity.Error))
         {
             return Failed(capability, requested, observedCount, issueIds, sourceAvailability, scope);
+        }
+
+        if (operationIssues.Any(i => i.Severity == CollectionIssueSeverity.Warning))
+        {
+            return SucceededWithWarnings(
+                capability,
+                requested,
+                observedCount,
+                issueIds,
+                sourceAvailability,
+                scope);
         }
 
         return Succeeded(capability, requested, observedCount, issueIds, sourceAvailability, scope);

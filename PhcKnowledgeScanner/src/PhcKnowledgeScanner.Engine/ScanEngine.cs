@@ -33,17 +33,16 @@ public sealed class ScanEngine
                 $"IDs de collector duplicados: {string.Join(", ", duplicates)}",
                 nameof(collectors));
         }
+
+        // Valida o catálogo na construção (conflitos de operationId incompatíveis).
+        _ = BuildCapabilityCatalog();
     }
 
     public IReadOnlyList<ICollector> Collectors => _collectors;
 
     /// <summary>Catálogo agregado das capabilities declaradas pelos collectors registados.</summary>
     public IReadOnlyList<DeclaredCapability> BuildCapabilityCatalog()
-        => _collectors
-            .SelectMany(c => c.DeclaredCapabilities)
-            .GroupBy(c => c.OperationId, StringComparer.OrdinalIgnoreCase)
-            .Select(g => g.First())
-            .ToArray();
+        => CapabilityCatalogBuilder.Build(_collectors.SelectMany(c => c.DeclaredCapabilities));
 
     public async Task<ScanManifest> RunAsync(ScanContext context, CancellationToken cancellationToken = default)
     {
@@ -201,43 +200,19 @@ public sealed class ScanEngine
                 sw.Stop();
                 errors++;
                 processed++;
+                // Falha ao nível do collector: sem evidência de qual operação falhou,
+                // não atribuir a causa a uma operação concreta. Operações não executadas
+                // ficam NotAttempted; a issue fica sem OperationId.
                 var failIssue = new CollectionIssue(
                     CollectionIssueSeverity.Error,
                     "collector.unhandled",
                     "Exceção não tratada no collector.",
                     Detail: ex.GetType().FullName + ": " + ex.Message,
-                    IssueId: $"issue:{collector.Id}:unhandled");
+                    IssueId: $"issue:{collector.Id}:unhandled",
+                    OperationId: null);
                 var failCoverages = collector.DeclaredCapabilities
                     .Select(c => CoverageSemantics.NotAttempted(c, requested: true))
                     .ToArray();
-                if (failCoverages.Length > 0)
-                {
-                    failCoverages = failCoverages
-                        .Select((c, idx) => idx == 0
-                            ? c with
-                            {
-                                Result = OperationExecutionResult.Failed,
-                                ContentAvailability = ContentAvailability.Unavailable,
-                                IssueIds = [failIssue.IssueId!]
-                            }
-                            : c)
-                        .ToArray();
-                }
-                else
-                {
-                    failCoverages =
-                    [
-                        new OperationCoverage(
-                            collector.Id,
-                            KnownOperations.Version,
-                            Requested: true,
-                            OperationExecutionResult.Failed,
-                            SourceAvailability.Unknown,
-                            ContentAvailability.Unavailable,
-                            0,
-                            [failIssue.IssueId!])
-                    ];
-                }
 
                 results.Add(new CollectorResult(
                     collector.Id,
@@ -247,6 +222,12 @@ public sealed class ScanEngine
                     sw.Elapsed,
                     failCoverages));
                 operationCoverages.AddRange(failCoverages);
+
+                if (context.Workspace is not null)
+                {
+                    await context.Workspace.AddIssueAsync(collector.Id, failIssue, cancellationToken)
+                        .ConfigureAwait(false);
+                }
             }
         }
 
