@@ -50,16 +50,19 @@ Não instalar dependências nem criar projetos de produção até essa decisão 
 
 ## Projetos anteriores
 
-Projetos que poderão conter conhecimento, código ou componentes reutilizáveis:
+### Incluído neste repositório
 
-- `PhcKnowledgeScanner` — Scanner, recolha de informação PHC, workspace local e exportação de snapshots.
+- `PhcKnowledgeScanner/` — cópia do código versionado do Scanner (recolha PHC, workspace local, exportação de snapshots). Origem: commit `4c6345e` do repositório `Jhouinho/PhcKnowledgeScanner` (branch `feature/database-schema-snapshot`). O repositório original permanece independente.
+
+### Ainda externo
+
 - `ConsoleApp` — exploração de conhecimento e componentes associados.
 
 Regras:
 
-- Analisar numa etapa posterior, antes de reutilizar.
-- Não copiar, mover, referenciar ou importar código automaticamente.
-- Não recuperar arquiteturas, mecanismos ou modelos de processamento já abandonados.
+- Analisar antes de reutilizar código ou arquitetura do Scanner no núcleo da plataforma.
+- Não recuperar automaticamente mecanismos ou modelos de processamento já abandonados.
+- Preservar conhecimento PHC standard já confirmado; não confundir com personalizações de clientes.
 - Aproveitar apenas o que demonstrar valor real para a nova solução.
 
 ## Estrutura do repositório
@@ -73,7 +76,8 @@ PhcKnowledge/
 │   └── architecture/
 ├── src/
 ├── tests/
-└── tools/
+├── tools/
+└── PhcKnowledgeScanner/   # projeto Scanner incluído para análise e evolução
 ```
 
 Não criar pastas adicionais sem justificação.
@@ -116,4 +120,4 @@ Não avançar automaticamente para a fase seguinte sem validação conjunta.
 
 ## Próxima etapa prevista
 
-Analisar o que pode ser aproveitado dos projetos anteriores e definir a arquitetura tecnológica definitiva do PHC Knowledge.
+Analisar o `PhcKnowledgeScanner/` incluído (e, se útil, o `ConsoleApp`) e definir a arquitetura tecnológica definitiva do PHC Knowledge.

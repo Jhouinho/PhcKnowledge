@@ -1,0 +1,7 @@
+[
+  {
+    "schemaName": "dbo",
+    "name": "syn_fixture",
+    "baseObjectName": "[dbo].[FT]"
+  }
+]

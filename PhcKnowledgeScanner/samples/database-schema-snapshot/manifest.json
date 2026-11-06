@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0.0",
+  "scannerVersion": "test",
+  "phcSignatureDetected": true,
+  "sqlServerVersion": "Microsoft SQL Server 2022 (fixture)",
+  "sqlServerProductVersion": "16.0.1000.5",
+  "collectedAtUtc": "2026-11-04T12:00:00+00:00",
+  "originFingerprint": "a1b2c3d4e5f60718",
+  "snapshotHash": "80a1fd99b288981938c31e2fb3edd8d52bd81e8becd78eb561031319d3926ae3",
+  "completionStatus": "Succeeded",
+  "includesSqlDefinitions": false,
+  "safeForPublicShare": true,
+  "objectCounts": {
+    "tables": 2,
+    "columns": 6,
+    "primaryKeys": 2,
+    "foreignKeys": 1,
+    "indexes": 2,
+    "views": 1,
+    "triggers": 1,
+    "procedures": 1,
+    "functions": 1,
+    "userTypes": 1,
+    "synonyms": 1
+  },
+  "classification": {
+    "sqlSystem": 0,
+    "candidateCustom": 2,
+    "unknown": 4,
+    "policy": "Conservative: ms_shipped → sql_system; name prefix u_ → candidate_custom; remaining → unknown. Never asserts PHC standard."
+  },
+  "warnings": [],
+  "limitations": [
+    "Fixture de teste — sem dados de cliente.",
+    "Extração limitada a metadados de catálogo (sys.*). Sem registos de negócio."
+  ],
+  "categoryStatuses": []
+}

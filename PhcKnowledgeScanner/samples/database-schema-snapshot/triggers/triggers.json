@@ -1,0 +1,21 @@
+[
+  {
+    "schemaName": "dbo",
+    "name": "tr_u_HcaPmPedido_ins",
+    "parentSchema": "dbo",
+    "parentObject": "u_HcaPmPedido",
+    "parentObjectType": "USER_TABLE",
+    "isDisabled": false,
+    "isInsteadOf": false,
+    "events": [
+      "INSERT",
+      "UPDATE"
+    ],
+    "classification": {
+      "classification": "candidate_custom",
+      "criterion": "name_prefix_u_",
+      "source": "TableInventoryClassification"
+    },
+    "hasDefinitionAvailable": true
+  }
+]

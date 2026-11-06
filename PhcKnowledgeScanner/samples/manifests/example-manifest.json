@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "0.1-draft",
+  "installationId": "example-installation",
+  "startedAtUtc": "2026-10-30T12:00:00Z",
+  "finishedAtUtc": "2026-10-30T12:01:00Z",
+  "mode": "Full",
+  "scannerVersion": "0.1.0-dev",
+  "results": [
+    {
+      "collectorId": "smoke.demo",
+      "status": "Succeeded",
+      "durationMs": 12,
+      "artifactCount": 1,
+      "issues": [],
+      "artifacts": [
+        {
+          "relativePath": "demo.txt",
+          "contentType": "text/plain",
+          "byteLength": 21
+        }
+      ]
+    }
+  ]
+}

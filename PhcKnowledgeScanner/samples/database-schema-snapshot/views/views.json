@@ -1,0 +1,13 @@
+[
+  {
+    "schemaName": "dbo",
+    "name": "v_fixture",
+    "isMsShipped": false,
+    "classification": {
+      "classification": "unknown",
+      "criterion": "no_positive_standard_or_custom_evidence",
+      "source": "TableInventoryClassification"
+    },
+    "hasDefinitionAvailable": true
+  }
+]

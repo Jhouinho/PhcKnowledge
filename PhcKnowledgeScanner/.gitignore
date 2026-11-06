@@ -1,0 +1,53 @@
+## Build
+bin/
+obj/
+out/
+artifacts/
+publish/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Test / coverage
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+## IDE
+.vs/
+.idea/
+*.swp
+*~
+
+## OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+## Local secrets / machine-specific config
+**/appsettings.*.local.json
+**/appsettings.Local.json
+*.local.json
+.env
+.env.*
+
+## Scan outputs (never commit installation data)
+scans/
+exports/
+*.zip
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Local publish drops (binaries; rebuild with dotnet publish)
+publish-estado/
+publish-formc/
+publish-search/
+publish-*/

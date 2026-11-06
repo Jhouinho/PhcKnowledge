@@ -1,0 +1,12 @@
+[
+  {
+    "schemaName": "dbo",
+    "name": "udt_fixture",
+    "systemTypeName": "nvarchar",
+    "maxLength": 100,
+    "precision": 0,
+    "scale": 0,
+    "isNullable": true,
+    "isTableType": false
+  }
+]

@@ -6,9 +6,9 @@ Integra conhecimento PHC standard com conhecimento específico de instalações 
 
 ## Estado atual
 
-Repositório inicializado. Estrutura base criada. Sem implementação de funcionalidades nesta etapa.
+Repositório inicializado. O projeto `PhcKnowledgeScanner` está incluído em [`PhcKnowledgeScanner/`](PhcKnowledgeScanner/) (cópia do código versionado; sem pastas de publish nem dados locais de instalação).
 
-A arquitetura tecnológica e o aproveitamento de projetos anteriores serão definidos em etapas posteriores.
+A arquitetura tecnológica definitiva e a decisão sobre o que reutilizar do Scanner / `ConsoleApp` serão definidas em etapas posteriores.
 
 ## Orientações do projeto
 

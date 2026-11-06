@@ -1,0 +1,52 @@
+{
+  "schemaName": "dbo",
+  "name": "u_HcaPmPedido",
+  "objectType": "BASE TABLE",
+  "isMsShipped": false,
+  "classification": {
+    "classification": "candidate_custom",
+    "criterion": "name_prefix_u_",
+    "source": "TableInventoryClassification"
+  },
+  "columns": [
+    {
+      "name": "u_id",
+      "sqlType": "uniqueidentifier",
+      "isNullable": false,
+      "isIdentity": false,
+      "ordinal": 1,
+      "isComputed": false,
+      "isPrimaryKey": true
+    },
+    {
+      "name": "u_ftstamp",
+      "sqlType": "char",
+      "maxLength": 25,
+      "isNullable": true,
+      "isIdentity": false,
+      "ordinal": 2,
+      "isComputed": false,
+      "isPrimaryKey": false
+    },
+    {
+      "name": "u_computed",
+      "sqlType": "int",
+      "isNullable": true,
+      "isIdentity": false,
+      "ordinal": 3,
+      "isComputed": true,
+      "computedDefinition": "([u_id])",
+      "isPrimaryKey": false
+    }
+  ],
+  "primaryKey": {
+    "constraintName": "PK_u_HcaPmPedido",
+    "columns": [
+      {
+        "columnName": "u_id",
+        "ordinal": 1
+      }
+    ],
+    "isDisabled": false
+  }
+}

@@ -55,3 +55,14 @@ coverage/
 *.db-wal
 *.sqlite
 *.sqlite3
+
+# Scanner / .NET publish drops and scan outputs
+artifacts/
+publish/
+publish-*/
+scans/
+exports/
+*.zip
+*.nupkg
+*.snupkg
+**/appsettings.*.local.json

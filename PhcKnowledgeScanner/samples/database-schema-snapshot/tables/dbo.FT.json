@@ -1,0 +1,64 @@
+{
+  "schemaName": "dbo",
+  "name": "FT",
+  "objectType": "USER_TABLE",
+  "description": "Fixture table — not real client data",
+  "isMsShipped": false,
+  "classification": {
+    "classification": "unknown",
+    "criterion": "no_positive_standard_or_custom_evidence",
+    "source": "TableInventoryClassification"
+  },
+  "columns": [
+    {
+      "name": "ft",
+      "sqlType": "int",
+      "precision": 10,
+      "scale": 0,
+      "isNullable": false,
+      "isIdentity": true,
+      "identitySeed": 1,
+      "identityIncrement": 1,
+      "ordinal": 1,
+      "isComputed": false,
+      "isPrimaryKey": true
+    },
+    {
+      "name": "total",
+      "sqlType": "decimal",
+      "precision": 18,
+      "scale": 5,
+      "isNullable": false,
+      "isIdentity": false,
+      "defaultDefinition": "((0))",
+      "ordinal": 2,
+      "isComputed": false,
+      "isPrimaryKey": false
+    },
+    {
+      "name": "ftstamp",
+      "sqlType": "char",
+      "maxLength": 25,
+      "isNullable": false,
+      "isIdentity": false,
+      "ordinal": 3,
+      "collation": "Latin1_General_CI_AS",
+      "isComputed": false,
+      "isPrimaryKey": true
+    }
+  ],
+  "primaryKey": {
+    "constraintName": "PK_FT",
+    "columns": [
+      {
+        "columnName": "ft",
+        "ordinal": 1
+      },
+      {
+        "columnName": "ftstamp",
+        "ordinal": 2
+      }
+    ],
+    "isDisabled": false
+  }
+}

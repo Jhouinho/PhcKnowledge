@@ -1,0 +1,25 @@
+[
+  {
+    "schemaName": "dbo",
+    "name": "fn_fixture",
+    "routineKind": "SQL_SCALAR_FUNCTION",
+    "returnType": "int",
+    "isMsShipped": false,
+    "classification": {
+      "classification": "unknown",
+      "criterion": "no_positive_standard_or_custom_evidence",
+      "source": "TableInventoryClassification"
+    },
+    "parameters": [
+      {
+        "name": "@value",
+        "ordinal": 1,
+        "sqlType": "int",
+        "isOutput": false,
+        "isReadonly": false,
+        "hasDefaultValue": false
+      }
+    ],
+    "hasDefinitionAvailable": true
+  }
+]

@@ -1,0 +1,46 @@
+[
+  {
+    "schemaName": "dbo",
+    "tableName": "FT",
+    "indexName": "PK_FT",
+    "indexType": "CLUSTERED",
+    "isUnique": true,
+    "isPrimaryKey": true,
+    "isUniqueConstraint": false,
+    "isDisabled": false,
+    "keyColumns": [
+      {
+        "columnName": "ft",
+        "ordinal": 1,
+        "isDescending": false
+      },
+      {
+        "columnName": "ftstamp",
+        "ordinal": 2,
+        "isDescending": false
+      }
+    ],
+    "includedColumns": []
+  },
+  {
+    "schemaName": "dbo",
+    "tableName": "u_HcaPmPedido",
+    "indexName": "IX_u_HcaPmPedido_ftstamp",
+    "indexType": "NONCLUSTERED",
+    "isUnique": false,
+    "isPrimaryKey": false,
+    "isUniqueConstraint": false,
+    "isDisabled": false,
+    "filterDefinition": "([u_ftstamp] IS NOT NULL)",
+    "keyColumns": [
+      {
+        "columnName": "u_ftstamp",
+        "ordinal": 1,
+        "isDescending": false
+      }
+    ],
+    "includedColumns": [
+      "u_id"
+    ]
+  }
+]

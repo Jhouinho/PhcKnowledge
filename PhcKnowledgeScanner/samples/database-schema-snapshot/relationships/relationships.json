@@ -1,0 +1,26 @@
+[
+  {
+    "constraintName": "FK_u_HcaPmPedido_FT",
+    "parentSchema": "dbo",
+    "parentTable": "u_HcaPmPedido",
+    "referencedSchema": "dbo",
+    "referencedTable": "FT",
+    "columns": [
+      {
+        "parentColumn": "u_ftstamp",
+        "referencedColumn": "ftstamp",
+        "ordinal": 1
+      },
+      {
+        "parentColumn": "u_id",
+        "referencedColumn": "ft",
+        "ordinal": 2
+      }
+    ],
+    "onDeleteAction": "NO_ACTION",
+    "onUpdateAction": "NO_ACTION",
+    "isDisabled": false,
+    "isNotTrusted": false,
+    "relationSource": "sql.foreign_key"
+  }
+]
