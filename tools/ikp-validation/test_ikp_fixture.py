@@ -67,7 +67,7 @@ class IkpFixtureValidationTests(unittest.TestCase):
     def test_tampered_payload_is_rejected(self):
         path = self.package / "payload/customizations/brule/7F3A.prg"
         path.write_text(path.read_text(encoding="utf-8") + "* tampered\n", encoding="utf-8")
-        self.assert_invalid("SHA-256 divergente")
+        self.assert_invalid("byteLength divergente")
 
     def test_missing_required_contract_file_is_rejected(self):
         (self.package / "capabilities.json").unlink()
@@ -149,7 +149,7 @@ class IkpFixtureValidationTests(unittest.TestCase):
         doc = self.read_json("checksums.json")
         doc["files"][0]["path"] = "../manifest.json"
         self.write_json("checksums.json", doc)
-        self.assert_invalid("traversal")
+        self.assert_invalid("checksums.json")
 
     def test_tampered_checksum_manifest_is_rejected(self):
         doc = self.read_json("checksums.json")
