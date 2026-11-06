@@ -7,8 +7,8 @@
 
 ## 1. Fontes analisadas
 
-- Conversa exportada: `Analisar base PHC.txt` (338 páginas; SHA `be1b030c6b2ce2181eea9764e24c2a7c48f12019`).
-- Exportação de triggers: `triggers phc.sql` (957 KB; 352 triggers identificados; SHA `4ab635747718a8bee1e4243a0a9fcbb7d3ae0f39`).
+- Conversa exportada: `docs/sources/analisar-base-phc-2026-11.txt` (338 páginas; SHA-256 `97289240b484381e886bbe84d34072ebc70fc70cb23eb21026061ff8a5f01a8a`). Extrato consolidado em `docs/architecture/extract-2026-11-conversation.md`.
+- Exportação de triggers: `PhcKnowledgeScanner/triggers phc.sql` (957 KB; 352 triggers identificados; SHA `4ab635747718a8bee1e4243a0a9fcbb7d3ae0f39`).
 - Resultados SQL e observações do Profiler reproduzidos na conversa exportada. O ficheiro bruto de trace (.trc) não foi localizado na árvore atual do repositório; por isso, a cronologia fina dos eventos continua dependente desses resultados transcritos.
 
 ## 2. Cenário observado

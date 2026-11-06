@@ -73,14 +73,21 @@ PhcKnowledge/
 ├── PROJECT_GUIDELINES.md
 ├── .gitignore
 ├── docs/
-│   └── architecture/
+│   ├── architecture/   # decisões e princípios consolidados
+│   └── sources/        # fontes brutas (proveniência; não canónicas)
 ├── src/
 ├── tests/
 ├── tools/
-└── PhcKnowledgeScanner/   # projeto Scanner incluído para análise e evolução
+└── PhcKnowledgeScanner/   # Scanner incluído para análise e evolução
 ```
 
 Não criar pastas adicionais sem justificação.
+
+Documentos de arquitetura relevantes:
+
+- `docs/architecture/product-boundaries.md`
+- `docs/architecture/knowledge-layers.md`
+- `docs/architecture/extract-2026-11-conversation.md`
 
 ## Regras de trabalho
 
@@ -120,4 +127,4 @@ Não avançar automaticamente para a fase seguinte sem validação conjunta.
 
 ## Próxima etapa prevista
 
-Analisar o `PhcKnowledgeScanner/` incluído (e, se útil, o `ConsoleApp`) e definir a arquitetura tecnológica definitiva do PHC Knowledge.
+Definir a arquitetura tecnológica do PHC Knowledge e o contrato de importação dos exports do Scanner, com base em `docs/architecture/` e no código incluído — com validação conjunta antes de implementar.
