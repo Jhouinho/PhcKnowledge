@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1",
+  "algorithm": "SHA-256",
+  "files": [
+    {
+      "path": "capabilities.json",
+      "byteLength": 1173,
+      "sha256": "b3856da856d4d7631485a0f850721ecfe72ab461c4d9f380cf629a200203f356"
+    },
+    {
+      "path": "coverage.json",
+      "byteLength": 1603,
+      "sha256": "b4590eb79fe9ed1ba27d1bb417ed7248df9843bfa0fa9cd0ac5854f2aed15dbd"
+    },
+    {
+      "path": "manifest.json",
+      "byteLength": 2341,
+      "sha256": "966bb68f298407d925fb57ca89923d87dae17c80f67221afa384f71635044335"
+    },
+    {
+      "path": "object-index.json",
+      "byteLength": 2289,
+      "sha256": "b2e0cf8214c305b7d607cb518e24ffcfd287104dd52af107a28ea746958485e6"
+    },
+    {
+      "path": "payload/customizations/brule/7F3A.prg",
+      "byteLength": 153,
+      "sha256": "32e4d2965bb785188def4a5de8cd81b16b22dc122184f82ad5489e03ec9bf9a3"
+    },
+    {
+      "path": "payload/diagnostics/issues.json",
+      "byteLength": 460,
+      "sha256": "d8513ce918f8168094d4a3252054363d4118d6178af61db052eceee3c358d094"
+    },
+    {
+      "path": "payload/relations/declared-relations.json",
+      "byteLength": 852,
+      "sha256": "c6526eee3c7887817685ad271326974a2652a038b298368b539988a94f924d17"
+    },
+    {
+      "path": "payload/schema/tables/ft.json",
+      "byteLength": 606,
+      "sha256": "e6236cd3d30176be7e598bdc1121b89184febd003e2a03d4498dec8ff00406d7"
+    }
+  ],
+  "logicalContentDigest": {
+    "algorithm": "SHA-256",
+    "value": "567adf56022e234cf536c897d29ed58b2a951173b73e417136405319b5ab390f"
+  }
+}
