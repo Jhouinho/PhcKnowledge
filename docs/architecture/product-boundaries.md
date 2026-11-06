@@ -1,7 +1,7 @@
 # Fronteiras de produto — Scanner, PHC Knowledge e investigação
 
 Fonte consolidada a partir de [`../sources/analisar-base-phc-2026-11.txt`](../sources/analisar-base-phc-2026-11.txt).  
-Estado: orientação de produto aceite na conversa de origem; arquitetura tecnológica da plataforma ainda em aberto.
+Estado: orientação de produto aceite. Stack e modelo de utilização centralizado: ver [`technology-and-import-contract-assessment.md`](technology-and-import-contract-assessment.md).
 
 ## Objetivo do PHC Knowledge
 

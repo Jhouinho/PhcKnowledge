@@ -3,8 +3,8 @@
 | Campo | Valor |
 | --- | --- |
 | Data inicial | 2026-11-06 |
-| Última consolidação | 2026-11-06 |
-| Estado | **Decisões de stack e fronteiras consolidadas**; modelo de utilização local **pendente**; IKP 0.1 **ainda não especificado** |
+| Última consolidação | 2026-11-06 (modelo de utilização centralizado) |
+| Estado | Stack, fronteiras e **modelo de utilização centralizado** acordados; IKP 0.1 **ainda não especificado** |
 | Âmbito | Stack da plataforma PHC Knowledge + bases do contrato de importação do Scanner independente |
 | Implementação | Nenhuma nesta etapa |
 
@@ -32,14 +32,16 @@ Legenda:
 
 **Instalações** `[acordado]`: IDs próprios na plataforma; associação guiada na 1.ª importação (existente / nova / pendente se ambígua); servidor/BD **não** são identificadores definitivos.
 
-**Armazenamento de pacotes** `[acordado]`: abstração de armazenamento — filesystem (dev/local) e object storage (plataforma central); pacotes imutáveis; fornecedor concreto em aberto `[pendente]`.
+**Armazenamento de pacotes** `[acordado]`: abstração de armazenamento — filesystem (dev / servidor on-prem) e object storage (quando aplicável); pacotes imutáveis; fornecedor concreto em aberto `[pendente]`.
 
-**Utilização local / rede** `[pendente]`: dois cenários distintos (autónomo offline vs servidor de rede) — ver §5; não decidir aqui.
+**Modelo de utilização** `[acordado]`: instalação **centralizada** num servidor da organização; clientes (browser / desktop WebView2) ligam ao mesmo backend e PostgreSQL; sem modo autónomo offline e sem sincronização entre bases locais — ver §5.
 
-**Sequência acordada** `[acordado]`: (1) consolidar decisões → (2) clarificar modelo local → (3) especificar IKP 0.1 sem código → (4) comparar com exports reais do Scanner → (5) documentar lacunas → (6) só depois fixtures e esboço de API.
+**Sequência acordada** `[acordado]`: (1) consolidar decisões de stack → (2) fechar modelo de utilização → (3) especificar IKP 0.1 sem código → (4) comparar com exports reais do Scanner → (5) documentar lacunas → (6) só depois fixtures e esboço de API. Os passos 1–2 estão concluídos documentalmente.
 
 Fontes: este repositório (`product-boundaries.md`, `knowledge-layers.md`, `extract-2026-11-conversation.md`, `PROJECT_GUIDELINES.md`); Scanner incluído; investigação [`2026-11-05.md`](https://github.com/Jhouinho/ConsoleApp/blob/master/docs/investigation/2026-11-05.md) no GitHub `master`.
+
 ---
+
 
 ## 2. Requisitos considerados
 
@@ -48,11 +50,13 @@ Fontes: [`PROJECT_GUIDELINES.md`](../../PROJECT_GUIDELINES.md), [`product-bounda
 ### Interfaces e deployment
 
 - Web + desktop com experiência coerente; não duas plataformas independentes. `[guideline]`
-- Utilização local e em servidor; instalação central partilhada. `[guideline]`
+- Instalação centralizada no servidor da organização; clientes acedem por browser ou desktop. `[acordado]` §5  
+- Funcionamento diário possível em rede local on-prem, sem depender de serviços externos. `[acordado]` §5  
+- Futura disponibilização central alojada externamente permitida sem mudar o modelo funcional. `[acordado]` §5
 
 ### Multiempresa / multiutilizador
 
-- Organizações isoladas; utilizadores em várias organizações; colaboração simultânea na mesma instalação; histórico, autoria, permissões e proveniência. `[guideline]`
+- Organizações isoladas; utilizadores em várias organizações; colaboração simultânea sobre o **mesmo** conhecimento partilhado no servidor; histórico, autoria, permissões e proveniência. `[guideline]` `[acordado]`
 
 ### Conhecimento
 
@@ -133,7 +137,7 @@ A investigação analisa sobretudo o **ConsoleApp / Scanner V1 histórico**. As 
 | Web | React + TypeScript | UI rica; partilha com desktop via WebView; Blazor do ConsoleApp fica referência UX, não stack | Cliente OpenAPI a partir da API `[proposta]` de detalhe |
 | Desktop plataforma | Windows-first, SPA em WebView2 | Uma UI/lógica; evita WPF/Avalonia duplicados | Não impede evolução multiplataforma futura; Scanner mantém WPF próprio |
 | BD central | PostgreSQL | Multiempresa, jsonb, FTS, licenciamento | SQL Server das instalações PHC fica só no Scanner |
-| SQLite | Workspace / cache / auxiliar local | Já usado no Scanner `[código]`; não é BD multiutilizador | **Não** substitui PostgreSQL em cenário multiutilizador |
+| SQLite | Workspace Scanner / cache auxiliar no cliente ou servidor | Já usado no Scanner `[código]`; auxiliar apenas | **Não** substitui PostgreSQL; desktop **não** mantém knowledge DB autónoma |
 | Pesquisa | PostgreSQL FTS primeiro | Suficiente para começar; evita complexidade | OpenSearch **não** nesta fase; arquitetura deve permitir evolução sem antecipar |
 | Tempo real | SignalR | Nativo no stack ASP.NET | Grupos por organização/instalação `[proposta]` de detalhe |
 
@@ -188,47 +192,48 @@ Princípios já assumidos na avaliação (não são ainda o IKP 0.1 normativo): 
 
 ---
 
-## 5. Utilização local e em rede — **decisão pendente** `[pendente]`
+## 5. Modelo de utilização — instalação centralizada `[acordado]`
 
-A arquitetura deve distinguir **dois cenários**. **Nenhuma escolha entre eles está acordada nesta consolidação.**
+### 5.1 Decisão
 
-### Cenário A — Instalação autónoma num computador
+O PHC Knowledge adota um **modelo de instalação centralizada**.
 
-Sem servidor dedicado nem Internet obrigatória; dados próprios; eventual sincronização posterior com uma plataforma central.
-
-| Aspeto | Implicações |
+| Característica | Orientação |
 | --- | --- |
-| PostgreSQL | Exige instância local (serviço Windows, contentor, ou distribuição embutida). Mais pesado que SQLite, mas alinha o modelo de dados com o servidor. Embutir/operar PG num portátil é o principal custo deste cenário se se insistir na mesma BD. |
-| Autenticação | Tipicamente utilizador local / conta de máquina; Identity “single-user” ou modo offline. Federação com IdP central só quando houver rede. |
-| Armazenamento | Filesystem local para pacotes imutáveis e ficheiros. |
-| Sincronização | Export/import de revisões ou pacotes quando voltar a haver conectividade; conflitos de anotações a resolver por política (ainda não definida). |
-| Offline | Deve funcionar sem API remota; toda a stack (API + PG + SPA/WebView) no mesmo host. |
-| Atualizações | Atualização do binário/app no posto; migrações PG locais. |
+| Onde corre a plataforma | Servidor da organização (on-premises na rede local) |
+| Como os utilizadores acedem | Browser e/ou aplicação desktop (WebView2), nos seus computadores |
+| Backend e PostgreSQL | Centrais no servidor — uma base partilhada |
+| Conhecimento | Partilhado: descobertas e alterações ficam disponíveis aos utilizadores autorizados |
+| Rede externa | O funcionamento diário **não** depende de serviços externos (LAN on-prem suficiente) |
+| Evolução | Continua permitido alojar a mesma plataforma de forma central externa no futuro, **sem** alterar o modelo funcional (clientes → um backend → um PostgreSQL) |
 
-**Nota:** SQLite pode auxiliar cache/workspace, mas **não** está decidido — e **não** deve ser assumido — como substituto de PostgreSQL para multiutilizador. Para autónomo single-user, usar PG local vs perfil SQLite “compatível” continua `[pendente]`.
+### 5.2 Consequências explícitas
 
-### Cenário B — Servidor na rede da empresa
-
-Um servidor na LAN; restantes PCs acedem (browser e/ou desktop WebView2).
-
-| Aspeto | Implicações |
+| Fora do âmbito da arquitetura inicial | Em vigor |
 | --- | --- |
-| PostgreSQL | Instância no servidor (ou VM/contentor); clientes **não** instalarm PG. Perfil natural da stack acordada. |
-| Autenticação | Contas partilhadas / AD / OIDC na rede; multiutilizador e permissões por organização. |
-| Armazenamento | Filesystem no servidor ou object storage interno; pacotes imutáveis partilhados. |
-| Sincronização | Clientes consomem API; sem “sync de base local” obrigatório. Desktop = cliente fino. |
-| Offline | Postos sem rede perdem acesso (salvo cache read-only futuro — não acordado). |
-| Atualizações | Atualizar o servidor; clientes web sem redeploy; desktop host com updates pontuais. |
+| Modo autónomo offline (stack completa num posto sem servidor) | **Não** |
+| Sincronização entre bases de dados autónomas / instalações locais independentes | **Não** |
+| Resolução de conflitos entre knowledge DBs locais | **Não necessário** |
+| PostgreSQL como BD de conhecimento em on-prem | **Sim** (central) |
+| SQLite como substituto de PostgreSQL para o knowledge partilhado | **Não** — só auxiliar / workspace Scanner / cache eventual |
+| Desktop com base de conhecimento independente | **Não** — o desktop liga ao backend central |
 
-### O que isto não decide
+**Distinção importante:** “sincronização entre bases autónomas” (fora do âmbito) ≠ mecanismos normais cliente–servidor (HTTP/API, SignalR, atualização de índices FTS no servidor, refresh da UI). Estes últimos são comunicação com o servidor central, não sync peer-to-peer de dados.
 
-- Se o produto v1 privilegia A, B, ou ambos com o mesmo binário e perfis de deployment.  
-- Se autónomo (A) embute PostgreSQL ou adota um perfil de persistência diferente (ainda sujeito a não violar a regra “SQLite ≠ multiutilizador”).  
-- Política concreta de sincronização A → plataforma central.
+### 5.3 Desktop e Web neste modelo `[acordado]`
 
-**Estado:** aguarda validação do responsável do projeto antes da especificação do IKP 0.1 e do desenho de deployment.
+- Interface React + TypeScript **partilhada**.  
+- Browser para acesso web.  
+- Desktop Windows-first via WebView2.  
+- Desktop e browser consomem o **mesmo** backend; o desktop **não** mantém uma base de dados autónoma com conhecimento independente.
+
+### 5.4 Histórico desta decisão
+
+Na consolidação anterior, o §5 apresentava dois cenários candidatos (A = autónomo offline; B = servidor de rede) como `[pendente]`.  
+**Decisão posterior do responsável do projeto:** adotar o modelo centralizado (equivalente ao antigo cenário B) e **eliminar** o cenário autónomo offline do âmbito inicial. Esta secção substitui essa alternativa pendente.
 
 ---
+
 
 ## 6. Contrato de importação — estado da análise
 
@@ -252,7 +257,7 @@ Referências:
 ### 6.2 Pacote alvo (unificado) — rumo `[acordado]`; detalhe normativo ainda não escrito
 
 Nome conceptual: **Installation Knowledge Package (IKP)**.  
-A especificação IKP 0.1 é a **próxima etapa documental** após clarificar o modelo de utilização local — **sem implementação**.
+A especificação IKP 0.1 é a **próxima etapa documental** (modelo de utilização já fechado) — **sem implementação**.
 
 ```text
 {packageId}.zip
@@ -277,7 +282,7 @@ Transportes: ZIP (canónico) e envelope JSON base64 (como Phase 7.10) se útil. 
 | `snapshotId` | sim | UUID da observação/recolha |
 | `installationId` | sim | ID de registo na plataforma (**não** `server/db` cru) |
 | `environmentId` | sim | ex. `production` / `test` |
-| `organizationId` | na ingestão | Associado na plataforma; pode não ir no pacote se o Scanner for offline |
+| `organizationId` | na ingestão | Associado na plataforma; o Scanner pode gerar o pacote sem estar ligado ao Knowledge |
 | `scannerVersion` | sim | SemVer build Scanner |
 | `exportContractVersion` | sim | Versão do contrato IKP |
 | `payloadSchemaVersion` | sim | Versão do schema dos JSON internos (≠ versão PHC) |
@@ -327,7 +332,7 @@ Regras:
 | Hash por ficheiro | `checksums.json` |
 | Fingerprint de artefacto | SHA do conteúdo original (já em workspace `artifacts.sha256`) `[código]` `SqliteScanWorkspace` |
 | Fingerprint estrutural canónico | Ex.: `SchemaSnapshotHasher.Compute` `[código]` |
-| Hash de índice de pesquisa | Só sincronização FTS — **não** prova igualdade de conteúdo |
+| Hash de índice de pesquisa | Só atualização/manutenção do índice FTS no servidor — **não** prova igualdade de conteúdo |
 
 ### 6.7 Cobertura e comparação
 
@@ -438,25 +443,25 @@ Sem DDL nesta fase.
 | ReplaceExisting na BD partilhada | Perda de histórico/anotações | Staging + publicação atómica |
 | Reintroduzir SQL direto na plataforma | Viola fronteira Scanner | Gate de arquitetura |
 | Antecipar OpenSearch / IKP detalhado / API | Complexidade precoce | Seguir sequência §10 |
-| Assumir deployment local sem validação | Stack desalinhada com uso real | §5 permanece `[pendente]` |
+| Assumir knowledge DB no desktop | Divergência e “sync” indevido | Modelo centralizado §5; desktop = cliente fino |
 
-### Decisões acordadas (consolidadas nesta revisão)
+### Decisões acordadas
 
 - Stack: .NET 10, ASP.NET Core, React+TS, PostgreSQL, SQLite auxiliar, PG FTS, SignalR.  
 - Desktop Windows-first WebView2 (mesma SPA); evolução multiplataforma não bloqueada.  
+- **Utilização centralizada** no servidor da organização; sem autónomo offline; sem sync entre bases locais (§5).  
 - Scanner independente; Knowledge sem runtime Scanner; sem Discovery/Fusion operacional.  
 - IKP a partir do Database Schema Snapshot (não ZIP V1; não união ingénua dos exports).  
 - Associação guiada de instalações; IDs próprios; servidor/BD ≠ identidade definitiva.  
 - Abstração de package store (FS + object storage); pacotes imutáveis.  
-- Sequência de trabalho da §10.
+- Sequência de trabalho da §10 (passos 1–2 concluídos).
 
-### Ainda pendente de validação
+### Ainda pendente
 
-1. **Modelo de utilização local vs servidor de rede** (§5) — autónomo offline e/ou servidor LAN; implicações PG/auth/sync.  
-2. **Fornecedor concreto de object storage** (S3-compatível, Azure Blob, MinIO, outro).  
-3. **Detalhe normativo IKP 0.1** — tarefa posterior; não iniciada aqui.  
-4. **Política de sincronização** entre autónomo e plataforma central (se o cenário A for adotado).  
-5. Opcional: sincronizar `docs/investigation/` no clone local do ConsoleApp.
+1. **Fornecedor concreto de object storage** (quando não bastar filesystem no servidor).  
+2. **Detalhe normativo IKP 0.1** — próxima etapa documental; não iniciada aqui.  
+3. Detalhe de autenticação on-prem (contas locais vs AD/OIDC) — não bloqueia o modelo §5.  
+4. Opcional: obter `docs/investigation/` no clone local do ConsoleApp.
 
 ### Princípios técnicos assumidos (não são ADRs de implementação)
 
@@ -468,8 +473,8 @@ Sem DDL nesta fase.
 
 ## 10. Sequência de trabalho acordada `[acordado]`
 
-1. **Consolidar** as decisões arquiteturais *(esta tarefa)*.  
-2. **Clarificar** o modelo de utilização local (§5) — validação do utilizador.  
+1. ~~Consolidar as decisões arquiteturais de stack/fronteiras.~~ **Concluído.**  
+2. ~~Fechar o modelo de utilização.~~ **Concluído** — centralizado (§5).  
 3. **Especificar** o IKP 0.1 **sem implementação**.  
 4. **Comparar** o IKP proposto com as capacidades reais dos exports do Scanner atual.  
 5. **Identificar e documentar** as lacunas.  
@@ -483,21 +488,19 @@ Não antecipar etapas. Não implementar código nesta fase.
 
 ### Coerência
 
-- Decisões de stack e fronteiras passaram de “proposta” a **acordadas** (§4).  
-- Utilização local permanece explicitamente **pendente** (§5).  
-- Análise do Scanner/exports (§6–8) mantém-se como base factual para o futuro IKP 0.1.  
-- `PROJECT_GUIDELINES.md` / `README.md` devem apontar para este estado (atualizados em conjunto).
+- Stack, fronteiras e modelo de utilização centralizado estão **acordados** (§4–§5).  
+- Análise do Scanner/exports (§6–8) mantém-se como base factual para o IKP 0.1.  
+- `PROJECT_GUIDELINES.md` / `README.md` alinhados neste commit documental.
 
-### Lacunas / contradições documentais encontradas
+### Lacunas / contradições documentais
 
 | Item | Nota |
 | --- | --- |
-| `InstallationId` no Scanner = `server/database` | Contradiz a política acordada de IDs próprios — a corrigir no rumo IKP, não na plataforma a aceitar como definitivo |
+| `InstallationId` no Scanner = `server/database` | Contradiz IDs próprios da plataforma — a tratar no rumo IKP |
 | Três exports Scanner vs um IKP | Documentado; unificação ainda não especificada |
-| Guidelines antigas (“tecnologias candidatas”) | Desatualizadas face a §4 — alinhar no mesmo commit documental |
+| Guidelines (“possibilidade de utilização local”) | Reformulado para on-prem centralizado, não autónomo offline |
 | Investigação 05/11 | No GitHub `master`; pode faltar no clone local |
 
 ### Próximo passo recomendado
 
-**Clarificar o modelo de utilização local** (cenário A, B, ou ambos) com o responsável do projeto.  
-Só depois iniciar a especificação documental do **IKP 0.1** (sem código).
+Iniciar a especificação documental do **IKP 0.1** (sem código, sem alterar o Scanner).

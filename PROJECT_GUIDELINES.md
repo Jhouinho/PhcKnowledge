@@ -14,18 +14,19 @@ Pretende-se uma base de conhecimento estruturada, com proveniência, evidências
 
 ### Utilização
 
-- Interface web.
-- Interface desktop.
-- Possibilidade de utilização local.
-- Possibilidade de utilização num servidor.
+- Interface web (browser).
+- Interface desktop (Windows-first, mesma SPA via WebView2).
+- Instalação **centralizada** num servidor da organização (on-premises na rede local).
+- Clientes ligam ao backend central; sem modo autónomo offline nem knowledge DB local independente.
+- O mesmo modelo funcional pode, no futuro, ser alojado de forma central externa, sem obrigar a redesenho.
 
 ### Modelo de utilização
 
 - Plataforma central partilhada por várias organizações.
 - Cada organização terá os seus dados isolados.
 - Um utilizador poderá pertencer a várias organizações.
-- Vários consultores poderão trabalhar simultaneamente sobre a mesma instalação.
-- As alterações e descobertas deverão ficar disponíveis aos restantes utilizadores autorizados.
+- Vários consultores poderão trabalhar simultaneamente sobre a mesma instalação e o **mesmo** conhecimento partilhado no servidor.
+- As alterações e descobertas deverão ficar disponíveis aos restantes utilizadores autorizados (sem sincronização entre bases autónomas).
 
 ### Conhecimento
 
@@ -36,23 +37,22 @@ Pretende-se uma base de conhecimento estruturada, com proveniência, evidências
 
 ## Arquitetura tecnológica
 
-Decisões consolidadas em [`docs/architecture/technology-and-import-contract-assessment.md`](docs/architecture/technology-and-import-contract-assessment.md) (§4):
+Decisões consolidadas em [`docs/architecture/technology-and-import-contract-assessment.md`](docs/architecture/technology-and-import-contract-assessment.md) (§4–§5):
 
 | Área | Decisão |
 | --- | --- |
+| Utilização | Centralizada no servidor da organização; clientes browser/desktop |
 | Backend | .NET 10 + ASP.NET Core |
 | Web | React + TypeScript |
-| Desktop plataforma | Windows-first, mesma SPA via WebView2 |
-| BD central | PostgreSQL |
-| SQLite | Apenas workspace / cache / auxiliar local (não multiutilizador) |
+| Desktop plataforma | Windows-first, mesma SPA via WebView2 (cliente do backend central) |
+| BD central | PostgreSQL (inclui on-premises) |
+| SQLite | Apenas workspace Scanner / cache auxiliar (não substitui PostgreSQL) |
 | Pesquisa inicial | PostgreSQL Full-Text Search (sem OpenSearch nesta fase) |
 | Tempo real | SignalR |
 | Scanner | Produto independente; Knowledge não o executa em runtime |
 | Importação | IKP a evoluir a partir do Database Schema Snapshot (especificação 0.1 posterior) |
 
-**Pendente:** modelo de utilização local (autónomo offline vs servidor na rede da empresa) — ver §5 do mesmo documento.
-
-Não instalar dependências nem criar projetos de produção até a sequência acordada o permitir (após clarificar utilização local e especificar IKP 0.1).
+Não instalar dependências nem criar projetos de produção até a sequência acordada o permitir (próximo: especificar IKP 0.1).
 
 ## Projetos anteriores
 
@@ -94,7 +94,7 @@ Documentos de arquitetura relevantes:
 - `docs/architecture/product-boundaries.md`
 - `docs/architecture/knowledge-layers.md`
 - `docs/architecture/extract-2026-11-conversation.md`
-- `docs/architecture/technology-and-import-contract-assessment.md` (decisões de stack consolidadas; utilização local pendente)
+- `docs/architecture/technology-and-import-contract-assessment.md` (stack + utilização centralizada acordadas; IKP 0.1 pendente)
 
 ## Regras de trabalho
 
@@ -134,4 +134,4 @@ Não avançar automaticamente para a fase seguinte sem validação conjunta.
 
 ## Próxima etapa prevista
 
-Clarificar o modelo de utilização local (§5 de `technology-and-import-contract-assessment.md`). Em seguida especificar o IKP 0.1 **sem implementação**, comparar com os exports reais do Scanner e só depois fixtures / esboço de API.
+Especificar o IKP 0.1 **sem implementação**, comparar com os exports reais do Scanner, documentar lacunas e só depois fixtures / esboço de API.
