@@ -5,9 +5,9 @@
       "issueId": "issue-brule-definition-warning",
       "operationId": "phc.customizations.brule.definition",
       "severity": "Warning",
-      "code": "phc.brule.definition.partial",
-      "message": "Exemplo: uma definição não pôde ser recuperada.",
-      "sourceObjectId": "phc.brule:7F3A",
+      "code": "phc.brule.definition.unavailable",
+      "message": "A definição desta regra foi identificada, mas não pôde ser recuperada.",
+      "sourceObjectId": "phc.brule:7F3B",
       "details": {
         "reason": "Fixture demonstrativa; não representa uma falha real."
       }
