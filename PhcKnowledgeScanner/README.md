@@ -1,26 +1,30 @@
 # PhcKnowledgeScanner
 
-Ferramenta **independente** de recolha técnica de instalações PHC (CS Desktop / Web / XL / Manufactor).
+Componente autónomo de recolha técnica de instalações PHC, incluído no monorepo **PHC Knowledge**.
 
-> **Fase atual:** Desktop WPF + collector estrutural SQL + personalizações PHC + **relações declaradas** (`dbo.rel` / `dbo.dtl`, Camada A) + export ZIP só com pastas `brule`/`ebrule`/`udefs`/`eudefs`/`eventos`/`eeventos`/`teclas`/`campos`/`formc`/`formb`/`ftu` + **Database Schema Snapshot** (metadados estruturais versionáveis, modo seguro sem SQL completo).  
-> Contrato alinhado com `PhcCustomizationCodeExport`.  
-> **Pendente:** parser de expressões `tliga`/`expliga`, `lt`/`ltli`, mapa de dependências visual, abertura de workspaces offline.
+O Scanner continua a ser uma aplicação independente do ponto de vista funcional e de execução: pode ser instalado e executado sem iniciar a plataforma PHC Knowledge. A sua localização e versionamento, contudo, são neste repositório, em `PhcKnowledgeScanner/`.
 
-## Objetivo
+> **Estado atual:** Desktop WPF + CLI, collector estrutural SQL, personalizações PHC, relações declaradas (`dbo.rel` / `dbo.dtl`) e Database Schema Snapshot (metadados estruturais versionáveis, com proteção de privacidade).
 
-Recolher informação técnica de instalações distintas (versões, configurações e personalizações), **preservando conteúdos originais**, com inventário do que foi / não foi possível recolher e porquê. Exportação em **ZIP estruturado**.
+## Responsabilidades
 
-Este projeto **não** depende do `ConsoleApp` nem do Scanner V1.
+- Ligar a uma base de dados PHC em modo read-only.
+- Recolher inventário técnico, definições de personalizações e relações.
+- Preservar conteúdos originais, metadados, proveniência e limitações da recolha.
+- Manter workspace local SQLite e artefactos locais.
+- Produzir exportações que evoluirão para o contrato IKP.
+
+O Scanner **não** mantém o conhecimento central nem executa a importação na plataforma. O PHC Knowledge recebe e valida os pacotes produzidos pelo Scanner. O Scanner não depende do backend, da base de dados PostgreSQL nem do runtime da plataforma.
 
 ## Stack
 
 | Item | Escolha |
 | --- | --- |
-| Runtime | **.NET 10 (LTS)** |
-| UI desktop | **WPF** (`PhcKnowledgeScanner.Desktop`) — nativa Windows, sem WebView/HTTP |
-| Host headless | `PhcKnowledgeScanner.Cli` |
-| Persistência | SQLite (metadados) + ficheiros (artefactos) + SHA-256 |
-| SQL | `Microsoft.Data.SqlClient` com `ApplicationIntent=ReadOnly` |
+| Runtime | .NET 10 |
+| UI desktop | WPF nativa Windows |
+| Host headless | CLI |
+| Workspace | SQLite + ficheiros de artefactos |
+| SQL | Microsoft.Data.SqlClient, apenas leitura |
 
 ## Projetos
 
@@ -29,47 +33,39 @@ src/
   PhcKnowledgeScanner.Abstractions/
   PhcKnowledgeScanner.Application/
   PhcKnowledgeScanner.Engine/
-  PhcKnowledgeScanner.Collectors/     # sql.server.structure + phc.customizations + phc.declared-relations
+  PhcKnowledgeScanner.Collectors/
   PhcKnowledgeScanner.Workspace/
   PhcKnowledgeScanner.Analysis/
   PhcKnowledgeScanner.Export/
-  PhcKnowledgeScanner.Desktop/        # WPF
+  PhcKnowledgeScanner.Desktop/
   PhcKnowledgeScanner.Cli/
 tests/
   PhcKnowledgeScanner.Engine.Tests/
   PhcKnowledgeScanner.Tests/
+tools/
+  ValidateRelationalKnowledge/
 ```
 
 ## Comandos
 
+A partir da raiz do monorepo, consultar o [README principal](../README.md). Para trabalhar isoladamente a partir desta pasta:
+
 ```bash
 dotnet build PhcKnowledgeScanner.sln
 dotnet test PhcKnowledgeScanner.sln
-
-# Desktop
 dotnet run --project src/PhcKnowledgeScanner.Desktop
-
-# CLI — teste de ligação (password via env, nunca em logs)
-set PHC_SCANNER_SQL_PASSWORD=***
-dotnet run --project src/PhcKnowledgeScanner.Cli -- test-connection --server HOST\INSTANCE --database BD --auth sql --user sa
-dotnet run --project src/PhcKnowledgeScanner.Cli -- scan --server HOST\INSTANCE --database BD --auth sql --user sa
-
-# Schema snapshot (metadados estruturais; sem registos; sem SQL completo por omissão)
-dotnet run --project src/PhcKnowledgeScanner.Cli -- schema-snapshot --server HOST\INSTANCE --database BD --output .\database-schema
-dotnet run --project src/PhcKnowledgeScanner.Cli -- compare-schema-snapshot --left .\schema-a --right .\schema-b
 ```
 
 ## Princípios
 
-- SQL **apenas leitura**
-- Factos ≠ relações derivadas ≠ inferências
-- Sem truncagem silenciosa; issues registadas por objeto/categoria
-- Sem passwords em disco, logs, manifesto ou ZIP
-- Schema snapshot partilhável: só metadados; sem código SQL de módulos por omissão
+- SQL apenas leitura.
+- Factos originais, relações derivadas e inferências mantêm-se separados.
+- Sem truncagem silenciosa; limitações e issues devem ser registadas.
+- Passwords não são guardadas em ficheiros, logs, manifestos ou ZIPs.
+- Schema Snapshot partilhável contém metadados; definições SQL completas são opcionais e sujeitas a validação de privacidade.
 
 ## Documentação
 
-- [docs/architecture.md](docs/architecture.md)
-- [docs/database-schema-snapshot.md](docs/database-schema-snapshot.md)
-- [docs/architecture-proposal.md](docs/architecture-proposal.md) (histórico; UI escolhida: WPF, não WebView2)
-- [docs/decisions/](docs/decisions/)
+- [Arquitetura](docs/architecture.md)
+- [Schema Snapshot](docs/database-schema-snapshot.md)
+- [Decisões](docs/decisions/)
