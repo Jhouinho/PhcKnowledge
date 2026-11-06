@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1",
+  "scannerVersion": "2.0.0",
+  "operations": [
+    {
+      "categoryId": "sql.schema.tables",
+      "operationId": "sql.schema.tables.inventory",
+      "capabilityVersion": "1.0",
+      "collectorId": "sql.structure",
+      "supported": true,
+      "description": "Inventário de tabelas e colunas SQL"
+    },
+    {
+      "categoryId": "phc.customizations.brule",
+      "operationId": "phc.customizations.brule.inventory",
+      "capabilityVersion": "1.0",
+      "collectorId": "phc.customizations",
+      "supported": true,
+      "description": "Inventário de regras PHC"
+    },
+    {
+      "categoryId": "phc.customizations.brule",
+      "operationId": "phc.customizations.brule.definition",
+      "capabilityVersion": "1.0",
+      "collectorId": "phc.customizations",
+      "supported": true,
+      "description": "Recuperação da definição das regras"
+    },
+    {
+      "categoryId": "phc.relations.declared",
+      "operationId": "phc.relations.declared.inventory",
+      "capabilityVersion": "1.0",
+      "collectorId": "phc.declared-relations",
+      "supported": true,
+      "description": "Relações declaradas REL/DTL"
+    }
+  ]
+}
