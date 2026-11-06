@@ -140,4 +140,4 @@ Não avançar automaticamente para a fase seguinte sem validação conjunta.
 
 ## Próxima etapa prevista
 
-Consolidar a especificação IKP 0.1 com os princípios validados, criar fixtures JSON verificáveis e completar a matriz de compatibilidade do Scanner. Depois preparar tarefas de implementação por componente, mantendo a implementação sujeita a revisão técnica do contrato e instrução explícita.
+O contrato IKP 0.1 já dispõe de schemas, fixture verificável, validador e testes positivos/negativos. A próxima etapa é implementar gradualmente no PhcKnowledgeScanner (neste monorepo) a identificação da captura, capabilities, cobertura por operação e índice de objetos. Depois, evoluir a exportação para IKP e preparar a importação na plataforma, preservando a separação funcional entre Scanner e Knowledge.
