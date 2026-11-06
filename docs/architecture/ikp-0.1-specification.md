@@ -115,7 +115,7 @@ O pacote pode transportar apenas um perfil ou vários. A ausência de knowledge 
 | origin.originFingerprint | Opcional | Fingerprint técnico para ajudar a reconhecer a origem; nunca é InstallationId |
 | origin.phcVersion | Opcional | Versão PHC detetada |
 | origin.phcSignatureDetected | Opcional | Evidência/assinatura da deteção PHC |
-| sharing.safeForPublicShare | Sim | Declaração do emissor, não certificação de segurança |
+| sharing.safeForPublicShare | Não | Declaração opcional do emissor, não certificação de segurança |
 | sharing.assessment | Opcional | Informação sobre verificações realizadas e respetiva versão |
 
 Não existe EnvironmentId no modelo. O utilizador não precisa de separar ambientes dentro da mesma instalação: cada base de dados registada é uma instalação própria. Uma base de dados de testes restaurada de produção é uma instalação diferente, ligada por linhagem.
@@ -437,7 +437,7 @@ As projeções são regeneráveis. A sua ausência não significa ausência de f
 
 ### 9.5 Privacidade e partilha
 
-O IKP pode declarar safeForPublicShare, mas essa declaração não certifica o pacote.
+O IKP pode declarar safeForPublicShare, mas essa declaração não certifica o pacote nem substitui a validação técnica e de segurança. O campo é opcional.
 
 Antes de partilha global, deve existir validação técnica e de segurança efetiva, incluindo deteção/tratamento de:
 - dados pessoais;
