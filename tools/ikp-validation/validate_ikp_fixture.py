@@ -154,9 +154,12 @@ def validate_package(package_dir: Path, schema_dir: Path) -> dict:
     coverage_ids = [item["operationId"] for item in coverage["operations"]]
     if len(set(coverage_ids)) != len(coverage_ids):
         raise ValueError("coverage: operationId duplicado")
+    coverage_by_id = {item["operationId"]: item for item in coverage["operations"]}
     for operation in coverage["operations"]:
         if operation["operationId"] not in supported:
             raise ValueError(f"coverage: operação não suportada ou não declarada: {operation['operationId']}")
+        if not operation["requested"] and operation["result"] != "Skipped":
+            raise ValueError(f"coverage: operação não solicitada deve ter resultado Skipped: {operation['operationId']}")
         for issue_id in operation["issueIds"]:
             if issue_id not in issue_id_set:
                 raise ValueError(f"coverage: issueId não resolvido: {issue_id}")
@@ -169,6 +172,9 @@ def validate_package(package_dir: Path, schema_dir: Path) -> dict:
     for obj in objects:
         if obj["operationId"] not in supported:
             raise ValueError(f"object-index: operationId não suportado: {obj['operationId']}")
+        observed_operation = coverage_by_id.get(obj["operationId"])
+        if observed_operation is None or not observed_operation["requested"] or observed_operation["result"] in ("Failed", "Skipped", "NotAttempted"):
+            raise ValueError(f"object-index: objeto ligado a operação sem observação válida: {obj['sourceObjectId']}")
         definition = obj["definition"]
         for artifact_id in definition["artifactIds"]:
             if artifact_id not in artifact_by_id:
