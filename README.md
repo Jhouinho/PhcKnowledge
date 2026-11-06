@@ -1,15 +1,67 @@
 # PHC Knowledge
 
-Plataforma de conhecimento técnico sobre PHC, destinada a recolher, organizar, relacionar, pesquisar e reutilizar conhecimento — com proveniência, evidências, relações e contexto técnico.
+Plataforma de conhecimento técnico sobre PHC, destinada a recolher, organizar, relacionar, pesquisar e reutilizar conhecimento com proveniência, evidências e contexto.
 
-Integra conhecimento PHC standard com conhecimento específico de instalações e desenvolvimentos personalizados, respeitando o isolamento por organização.
+O repositório reúne a plataforma PHC Knowledge e o componente de recolha **PhcKnowledgeScanner**. O Scanner mantém autonomia funcional e executável, mas o seu código é versionado neste mesmo repositório.
 
-## Estado atual
+## Estrutura
 
-Repositório inicializado. O projeto `PhcKnowledgeScanner` está em [`PhcKnowledgeScanner/`](PhcKnowledgeScanner/).
+```text
+PhcKnowledge/
+├── PhcKnowledge.sln
+├── global.json
+├── src/                       # plataforma PHC Knowledge (em desenvolvimento)
+├── tests/                     # testes da plataforma
+├── tools/                     # ferramentas e validação do contrato IKP
+├── PhcKnowledgeScanner/       # aplicação de recolha PHC autónoma
+│   ├── src/
+│   ├── tests/
+│   ├── tools/
+│   └── docs/
+└── docs/                      # arquitetura e contrato de importação
+```
 
-Documentação de arquitetura em [`docs/architecture/`](docs/architecture/). Stack e utilização centralizada em [`technology-and-import-contract-assessment.md`](docs/architecture/technology-and-import-contract-assessment.md). Contrato de importação: proposta [`ikp-0.1-specification.md`](docs/architecture/ikp-0.1-specification.md) (aguarda validação). Fontes brutas em [`docs/sources/`](docs/sources/). Sem implementação de plataforma nesta fase.
+## Limites entre componentes
 
-## Orientações do projeto
+- **PhcKnowledgeScanner:** liga-se às instalações PHC em modo de leitura, recolhe metadados e personalizações, mantém o workspace local e produz artefactos/pacotes.
+- **PHC Knowledge:** recebe, valida e importa pacotes IKP; mantém o conhecimento central, histórico, identidade e proveniência.
+- A plataforma não executa o Scanner em runtime nem acede ao workspace SQLite do Scanner.
+- Ambos evoluem no mesmo repositório, mas mantêm projetos, dependências, testes e responsabilidades separados.
 
-Consultar [`PROJECT_GUIDELINES.md`](PROJECT_GUIDELINES.md) para as decisões de produto, regras de trabalho e orientação geral do projeto.
+## Desenvolvimento
+
+Requisito: .NET SDK 10.0.403 ou posterior compatível com `global.json`.
+
+A partir da raiz do repositório:
+
+```bash
+dotnet restore PhcKnowledge.sln
+dotnet build PhcKnowledge.sln --no-restore
+dotnet test PhcKnowledge.sln --no-build
+```
+
+Executar a aplicação desktop (Windows):
+
+```bash
+dotnet run --project PhcKnowledgeScanner/src/PhcKnowledgeScanner.Desktop
+```
+
+Executar a CLI:
+
+```bash
+dotnet run --project PhcKnowledgeScanner/src/PhcKnowledgeScanner.Cli -- --help
+```
+
+Também se mantém a solução específica do Scanner em `PhcKnowledgeScanner/PhcKnowledgeScanner.sln` para desenvolvimento isolado do componente.
+
+## Estado da plataforma
+
+A arquitetura, decisões de produto e contrato de importação estão documentados em:
+
+- [Orientações do projeto](PROJECT_GUIDELINES.md)
+- [Arquitetura](docs/architecture/)
+- [Especificação IKP 0.1](docs/architecture/ikp-0.1-specification.md)
+- [Schemas e validação IKP 0.1](docs/architecture/schemas/ikp-0.1/README.md)
+- [Validador e testes de contrato](tools/ikp-validation/README.md)
+
+A implementação da plataforma central ainda está numa fase inicial. O Scanner é o componente executável já existente; a integração funcional entre a exportação IKP e a importação na plataforma será desenvolvida através do contrato definido.
