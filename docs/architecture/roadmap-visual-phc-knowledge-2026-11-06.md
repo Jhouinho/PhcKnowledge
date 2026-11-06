@@ -214,3 +214,12 @@ Cada fase deve produzir uma capacidade verificável:
 - `docs/architecture/p1b-projector-workspace-read-contract-2026-11-06.md` — leitura read-only do workspace.
 
 **Nota de rigor:** este roadmap é uma síntese de estado documental e de código na branch `main), em 2026-11-06. Não representa uma auditoria de execução recente nem percentagens de conclusão.
+
+
+## 7. Decisão transversal — preparação para RAG
+
+O PHC Knowledge deve ser preparado desde já para poder evoluir para um RAG híbrido e fundamentado em evidências, mas a implementação do motor RAG fica para depois da construção da base de conhecimento estruturada. Não antecipar escolhas de LLM, embeddings ou base vetorial.
+
+Princípio: **conhecimento fiável primeiro; recuperação aumentada por IA depois**.
+
+A decisão arquitetural, os princípios a preservar e os critérios de prontidão estão documentados em [rag-readiness-and-knowledge-first-decision-2026-11-06.md](rag-readiness-and-knowledge-first-decision-2026-11-06.md).
