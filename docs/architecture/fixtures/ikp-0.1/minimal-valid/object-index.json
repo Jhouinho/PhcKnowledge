@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "1",
+  "captureId": "b1b2c3d4-1111-4222-8333-123456789abc",
+  "objects": [
+    {
+      "sourceObjectId": "sql.table:dbo.FT",
+      "objectKind": "sql.table",
+      "sourceIdentity": {
+        "scheme": "sqlserver.object_id",
+        "value": "123456",
+        "scope": "PHC_DEMO"
+      },
+      "name": "FT",
+      "schemaName": "dbo",
+      "metadata": {
+        "objectId": 123456,
+        "createDate": "2024-01-01T10:00:00Z"
+      },
+      "metadataFingerprint": {
+        "algorithm": "sha256",
+        "value": "demo-metadata-ft"
+      },
+      "definition": {
+        "status": "Available",
+        "artifactIds": [
+          "artifact-schema-ft"
+        ],
+        "definitionFingerprint": {
+          "algorithm": "sha256",
+          "value": "demo-definition-ft"
+        }
+      },
+      "operationId": "sql.schema.tables.inventory"
+    },
+    {
+      "sourceObjectId": "phc.brule:7F3A",
+      "objectKind": "phc.brule",
+      "sourceIdentity": {
+        "scheme": "phc.stamp",
+        "value": "7F3A",
+        "scope": "dbo.brule"
+      },
+      "name": "Validação de artigo",
+      "schemaName": "dbo",
+      "metadata": {
+        "table": "FT",
+        "inactive": false,
+        "order": 10
+      },
+      "metadataFingerprint": {
+        "algorithm": "sha256",
+        "value": "demo-metadata-brule"
+      },
+      "definition": {
+        "status": "Available",
+        "artifactIds": [
+          "artifact-brule-001"
+        ],
+        "definitionFingerprint": {
+          "algorithm": "sha256",
+          "value": "demo-definition-brule"
+        }
+      },
+      "operationId": "phc.customizations.brule.inventory"
+    },
+    {
+      "sourceObjectId": "phc.rel:REL001",
+      "objectKind": "phc.declared_relation",
+      "sourceIdentity": {
+        "scheme": "phc.stamp",
+        "value": "REL001",
+        "scope": "dbo.rel"
+      },
+      "name": "FT para FI",
+      "metadata": {
+        "sourceTable": "FT",
+        "targetTable": "FI"
+      },
+      "metadataFingerprint": {
+        "algorithm": "sha256",
+        "value": "demo-metadata-rel"
+      },
+      "definition": {
+        "status": "Empty",
+        "artifactIds": [
+          "artifact-relations"
+        ]
+      },
+      "operationId": "phc.relations.declared.inventory"
+    }
+  ]
+}
