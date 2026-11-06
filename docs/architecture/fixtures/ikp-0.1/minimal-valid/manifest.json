@@ -68,8 +68,8 @@
       "category": "diagnostics",
       "format": "application/json",
       "formatVersion": "1",
-      "byteLength": 460,
-      "sha256": "747218c97847ae1a6bdff5690171ae9689d428657dc08540c3cfa9396dd9e435",
+      "byteLength": 487,
+      "sha256": "71be628c9511b9d35ac40b8d759c43064b38336caa3d998ac4a79b128d5ce28f",
       "required": false,
       "role": "collection-diagnostics"
     }
