@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phcknowledge.local/schemas/ikp-0.1/fingerprint.schema.json",
+  "title": "IKP fingerprint",
+  "type": "object",
+  "required": [
+    "algorithm",
+    "value"
+  ],
+  "properties": {
+    "algorithm": {
+      "const": "sha256"
+    },
+    "value": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "additionalProperties": false
+}
