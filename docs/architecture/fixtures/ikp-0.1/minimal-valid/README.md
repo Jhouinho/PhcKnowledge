@@ -21,4 +21,4 @@ Esta pasta contém um exemplo demonstrativo de pacote IKP 0.1. Não contém dado
 
 O digest lógico exclui `checksums.json). O checksum do ZIP completo é calculado pela plataforma sobre os bytes recebidos, não dentro do próprio ZIP.
 
-Os valores `demo-*` nos fingerprints são marcadores ilustrativos, não hashes SHA-256 válidos. Os hashes de integridade em `checksums.json` e `manifest.json.artifacts` são valores calculados.
+Os fingerprints de metadados são SHA-256 do JSON canónico dos metadados; os fingerprints de definição correspondem ao SHA-256 dos bytes originais do artefacto. Todos os hashes de integridade e o digest lógico foram calculados.
