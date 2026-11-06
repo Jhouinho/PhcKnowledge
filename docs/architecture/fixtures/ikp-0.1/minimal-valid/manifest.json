@@ -1,0 +1,77 @@
+{
+  "ikpContractVersion": "0.1",
+  "contentType": "phc.installation.knowledge.package",
+  "packageId": "9d5e4f70-4a1d-4c9d-9a1b-1b7f9d4c0101",
+  "producedAtUtc": "2026-11-06T09:00:00Z",
+  "producer": {
+    "productId": "PhcKnowledgeScanner",
+    "productVersion": "2.0.0",
+    "exportTool": "Desktop"
+  },
+  "capture": {
+    "captureId": "b1b2c3d4-1111-4222-8333-123456789abc",
+    "startedAtUtc": "2026-11-06T08:55:00Z",
+    "completedAtUtc": "2026-11-06T08:58:00Z",
+    "mode": "Full"
+  },
+  "origin": {
+    "engine": "sqlserver",
+    "databaseName": "PHC_DEMO",
+    "serverLabel": "DEMO-SQL",
+    "originFingerprint": "sha256:demo-origin-fingerprint",
+    "phcVersion": "2026.03",
+    "phcSignatureDetected": true
+  },
+  "sharing": {
+    "safeForPublicShare": false,
+    "assessment": {
+      "status": "NotAssessed",
+      "policyVersion": "1.0"
+    }
+  },
+  "artifacts": [
+    {
+      "artifactId": "artifact-schema-ft",
+      "path": "payload/schema/tables/ft.json",
+      "category": "schema",
+      "format": "application/json",
+      "formatVersion": "1",
+      "byteLength": 606,
+      "sha256": "e6236cd3d30176be7e598bdc1121b89184febd003e2a03d4498dec8ff00406d7",
+      "required": true,
+      "role": "table-definition"
+    },
+    {
+      "artifactId": "artifact-brule-001",
+      "path": "payload/customizations/brule/7F3A.prg",
+      "category": "customizations",
+      "format": "text/x-xbase",
+      "byteLength": 153,
+      "sha256": "32e4d2965bb785188def4a5de8cd81b16b22dc122184f82ad5489e03ec9bf9a3",
+      "required": true,
+      "role": "source-definition"
+    },
+    {
+      "artifactId": "artifact-relations",
+      "path": "payload/relations/declared-relations.json",
+      "category": "relations",
+      "format": "application/json",
+      "formatVersion": "1",
+      "byteLength": 852,
+      "sha256": "c6526eee3c7887817685ad271326974a2652a038b298368b539988a94f924d17",
+      "required": true,
+      "role": "declared-relations"
+    },
+    {
+      "artifactId": "artifact-diagnostics",
+      "path": "payload/diagnostics/issues.json",
+      "category": "diagnostics",
+      "format": "application/json",
+      "formatVersion": "1",
+      "byteLength": 460,
+      "sha256": "d8513ce918f8168094d4a3252054363d4118d6178af61db052eceee3c358d094",
+      "required": false,
+      "role": "collection-diagnostics"
+    }
+  ]
+}
