@@ -49,16 +49,16 @@ Decisões consolidadas em [`docs/architecture/technology-and-import-contract-ass
 | SQLite | Apenas workspace Scanner / cache auxiliar (não substitui PostgreSQL) |
 | Pesquisa inicial | PostgreSQL Full-Text Search (sem OpenSearch nesta fase) |
 | Tempo real | SignalR |
-| Scanner | Produto independente; Knowledge não o executa em runtime |
+| Scanner | Componente funcionalmente autónomo, versionado neste monorepo; Knowledge não o executa em runtime |
 | Importação | IKP a partir do Database Schema Snapshot — especificação 0.1 em proposta ([`ikp-0.1-specification.md`](docs/architecture/ikp-0.1-specification.md); não aprovada automaticamente) |
 
-Não instalar dependências nem criar projetos de produção até validação do IKP 0.1 e ordem explícita para a etapa seguinte.
+A implementação do Scanner e da plataforma deve manter limites claros. Alterações ao contrato IKP devem ser acompanhadas por schemas, fixtures e testes. Não ligar o Scanner ao backend em runtime.
 
 ## Projetos anteriores
 
 ### Incluído neste repositório
 
-- `PhcKnowledgeScanner/` — cópia do código versionado do Scanner (recolha PHC, workspace local, exportação de snapshots). Origem: commit `4c6345e` do repositório `Jhouinho/PhcKnowledgeScanner` (branch `feature/database-schema-snapshot`). O repositório original permanece independente.
+- `PhcKnowledgeScanner/` — componente de recolha autónomo, incluído e versionado neste monorepo. Mantém projetos, solução, testes e dependências próprios, mas o repositório canónico de desenvolvimento é `Jhouinho/PhcKnowledge`.
 
 ### Ainda externo
 
@@ -76,6 +76,8 @@ Regras:
 ```text
 PhcKnowledge/
 ├── README.md
+├── PhcKnowledge.sln          # solução agregadora na raiz
+├── global.json
 ├── PROJECT_GUIDELINES.md
 ├── .gitignore
 ├── docs/
@@ -84,7 +86,7 @@ PhcKnowledge/
 ├── src/
 ├── tests/
 ├── tools/
-└── PhcKnowledgeScanner/   # Scanner incluído para análise e evolução
+└── PhcKnowledgeScanner/   # componente Scanner autónomo, no mesmo repositório
 ```
 
 Não criar pastas adicionais sem justificação.
