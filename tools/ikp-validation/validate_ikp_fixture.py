@@ -164,8 +164,6 @@ def validate_package(package_dir: Path, schema_dir: Path) -> dict:
     coverage_ids = [item["operationId"] for item in coverage["operations"]]
     if len(set(coverage_ids)) != len(coverage_ids):
         raise ValueError("coverage: operationId duplicado")
-    if set(coverage_ids) != set(operation_ids):
-        raise ValueError("coverage: cada capability declarada deve ter exatamente uma entrada de cobertura")
     coverage_by_id = {item["operationId"]: item for item in coverage["operations"]}
     for operation in coverage["operations"]:
         if operation["operationId"] not in supported:
@@ -175,6 +173,8 @@ def validate_package(package_dir: Path, schema_dir: Path) -> dict:
         for issue_id in operation["issueIds"]:
             if issue_id not in issue_id_set:
                 raise ValueError(f"coverage: issueId não resolvido: {issue_id}")
+    if set(coverage_ids) != set(operation_ids):
+        raise ValueError("coverage: cada capability declarada deve ter exatamente uma entrada de cobertura")
 
     objects = object_index["objects"]
     object_ids = [item["sourceObjectId"] for item in objects]
