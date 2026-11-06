@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "1",
+  "contract": "IKP 0.1",
+  "note": "Casos de teste negativos e de fronteira. As mutações são aplicadas sobre cópias temporárias da fixture mínima; nunca alterar a fixture de referência.",
+  "cases": [
+    {
+      "caseId": "schema-invalid-enum",
+      "kind": "schema",
+      "mutation": "coverage.operations[0].result = 'Unknown'",
+      "expected": "JSON Schema rejeita enum desconhecido",
+      "automatedTest": "test_invalid_coverage_enum_is_rejected_by_schema"
+    },
+    {
+      "caseId": "missing-contract-file",
+      "kind": "structure",
+      "mutation": "Remover capabilities.json",
+      "expected": "Pacote rejeitado por falta de ficheiro obrigatório",
+      "automatedTest": "test_missing_required_contract_file_is_rejected"
+    },
+    {
+      "caseId": "tampered-payload",
+      "kind": "integrity",
+      "mutation": "Acrescentar bytes a payload/customizations/brule/7F3A.prg sem atualizar checksums",
+      "expected": "SHA-256/tamanho divergente",
+      "automatedTest": "test_tampered_payload_is_rejected"
+    },
+    {
+      "caseId": "tampered-checksum",
+      "kind": "integrity",
+      "mutation": "Alterar um SHA-256 em checksums.json",
+      "expected": "SHA-256 divergente",
+      "automatedTest": "test_tampered_checksum_manifest_is_rejected"
+    },
+    {
+      "caseId": "unknown-operation",
+      "kind": "semantic",
+      "mutation": "Alterar coverage.operations[0].operationId para um ID não declarado",
+      "expected": "Operação não suportada ou não declarada",
+      "automatedTest": "test_unknown_operation_in_coverage_is_rejected"
+    },
+    {
+      "caseId": "unsupported-operation",
+      "kind": "semantic",
+      "mutation": "Definir supported=false numa capability usada pela cobertura",
+      "expected": "Cobertura não pode afirmar execução de operação não suportada",
+      "automatedTest": "test_unsupported_operation_cannot_have_coverage"
+    },
+    {
+      "caseId": "unresolved-artifact",
+      "kind": "semantic",
+      "mutation": "Referenciar artifactId inexistente no object-index.json",
+      "expected": "Referência de artefacto não resolvida",
+      "automatedTest": "test_reference_to_missing_artifact_is_rejected"
+    },
+    {
+      "caseId": "duplicate-source-object",
+      "kind": "semantic",
+      "mutation": "Duplicar sourceObjectId de dois objetos",
+      "expected": "Identidade de objeto duplicada no pacote",
+      "automatedTest": "test_duplicate_source_object_id_is_rejected"
+    },
+    {
+      "caseId": "unresolved-issue",
+      "kind": "semantic",
+      "mutation": "Referenciar issueId inexistente na cobertura",
+      "expected": "Referência de diagnóstico não resolvida",
+      "automatedTest": "test_unresolved_issue_reference_is_rejected"
+    },
+    {
+      "caseId": "capture-id-mismatch",
+      "kind": "semantic",
+      "mutation": "Alterar CaptureId do índice sem alterar o manifesto",
+      "expected": "CaptureId divergente",
+      "automatedTest": "test_capture_id_mismatch_is_rejected"
+    },
+    {
+      "caseId": "extra-payload-file",
+      "kind": "structure",
+      "mutation": "Adicionar ficheiro ao payload sem o declarar em checksums.json",
+      "expected": "Ficheiro extra não declarado",
+      "automatedTest": "test_extra_unchecksummed_payload_file_is_rejected"
+    },
+    {
+      "caseId": "not-requested-but-succeeded",
+      "kind": "semantic",
+      "mutation": "requested=false com result=Succeeded",
+      "expected": "Operação não solicitada deve ser Skipped",
+      "automatedTest": "test_not_requested_operation_must_be_skipped"
+    },
+    {
+      "caseId": "partial-definition",
+      "kind": "boundary-valid",
+      "mutation": "Manter inventário concluído e definição com SucceededWithWarnings/Partial",
+      "expected": "Pacote válido; não inferir remoção nem perda do objeto",
+      "automatedTest": "test_partial_definition_coverage_is_valid_and_preserved"
+    }
+  ]
+}
