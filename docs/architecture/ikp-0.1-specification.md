@@ -580,7 +580,7 @@ A matriz detalhada por ficheiro/componente será criada na etapa seguinte; esta 
 1. ~~Criar uma fixture JSON completa com referências cruzadas e checksums calculados.~~ **Concluído:** [fixture mínima IKP 0.1](fixtures/ikp-0.1/minimal-valid/README.md), com [relatório de validação](fixtures/ikp-0.1/minimal-valid/VALIDATION.md).
 2. ~~Criar matriz de compatibilidade entre o contrato e os modelos/collectors/exporters atuais do Scanner.~~ **Concluído:** [matriz de compatibilidade](ikp-0.1-scanner-compatibility-matrix.md).
 3. ~~Criar schemas JSON executáveis para os cinco ficheiros de contrato.~~ **Concluído:** JSON Schema Draft 2020-12 em [schemas/ikp-0.1](schemas/ikp-0.1/README.md).
-4. ~~Criar catálogo de casos negativos e de fronteira e validador executável.~~ **Concluído documentalmente e com testes automatizados preparados:** [casos negativos](fixtures/ikp-0.1/negative-cases/cases.json) e [validador/testes Python](../../tools/ikp-validation/README.md). A execução CI fica registada no workflow.
+4. ~~Criar catálogo de casos negativos e de fronteira e validador executável.~~ **Concluído:** [casos negativos](fixtures/ikp-0.1/negative-cases/cases.json) e [validador/testes Python](../../tools/ikp-validation/README.md). Os 18 cenários positivos/negativos foram executados localmente (18/18 PASS); o workflow CI está preparado para repetição automática, sem resultado CI confirmado nesta revisão.
 5. Executar e estabilizar a validação CI; depois definir exemplos de compatibilidade de capabilities entre versões e fechar os casos de linhagem.
 6. Preparar tarefas de implementação separadas para Scanner e PHC Knowledge, por componente e com testes de aceitação.
 
