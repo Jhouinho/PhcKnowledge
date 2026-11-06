@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phcknowledge.local/schemas/ikp-0.1/object-index.schema.json",
+  "title": "IKP 0.1 object index",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "captureId",
+    "objects"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1"
+    },
+    "captureId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sourceObjectId",
+          "objectKind",
+          "metadata",
+          "metadataFingerprint",
+          "definition",
+          "operationId"
+        ],
+        "properties": {
+          "sourceObjectId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "objectKind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceIdentity": {
+            "type": "object",
+            "required": [
+              "scheme",
+              "value",
+              "scope"
+            ],
+            "properties": {
+              "scheme": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scope": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "schemaName": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "metadataFingerprint": {
+            "$ref": "https://phcknowledge.local/schemas/ikp-0.1/fingerprint.schema.json"
+          },
+          "definition": {
+            "type": "object",
+            "required": [
+              "status",
+              "artifactIds"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "Available",
+                  "Empty",
+                  "Unavailable",
+                  "NotCollected"
+                ]
+              },
+              "artifactIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              },
+              "definitionFingerprint": {
+                "$ref": "https://phcknowledge.local/schemas/ikp-0.1/fingerprint.schema.json"
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "Available"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "artifactIds": {
+                      "minItems": 1
+                    },
+                    "definitionFingerprint": {
+                      "$ref": "https://phcknowledge.local/schemas/ikp-0.1/fingerprint.schema.json"
+                    }
+                  },
+                  "required": [
+                    "definitionFingerprint"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "Empty",
+                        "Unavailable",
+                        "NotCollected"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "not": {
+                    "required": [
+                      "definitionFingerprint"
+                    ]
+                  }
+                }
+              }
+            ],
+            "additionalProperties": true
+          },
+          "operationId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parentSourceObjectId": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": true
+      },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": true
+}
