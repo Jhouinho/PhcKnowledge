@@ -579,9 +579,9 @@ A matriz detalhada por ficheiro/componente será criada na etapa seguinte; esta 
 
 1. ~~Criar uma fixture JSON completa com referências cruzadas e checksums calculados.~~ **Concluído:** [fixture mínima IKP 0.1](fixtures/ikp-0.1/minimal-valid/README.md), com [relatório de validação](fixtures/ikp-0.1/minimal-valid/VALIDATION.md).
 2. ~~Criar matriz de compatibilidade entre o contrato e os modelos/collectors/exporters atuais do Scanner.~~ **Concluído:** [matriz de compatibilidade](ikp-0.1-scanner-compatibility-matrix.md).
-3. Criar schemas JSON executáveis para os cinco ficheiros de contrato e validar a fixture com um validador standard.
-4. Acrescentar fixtures de casos negativos e fronteira: pacote adulterado, cobertura incompleta, operação não suportada/não solicitada e referências inválidas.
-5. Definir exemplos de compatibilidade de capabilities entre versões e fechar os casos de linhagem.
+3. ~~Criar schemas JSON executáveis para os cinco ficheiros de contrato.~~ **Concluído:** JSON Schema Draft 2020-12 em [schemas/ikp-0.1](schemas/ikp-0.1/README.md).
+4. ~~Criar catálogo de casos negativos e de fronteira e validador executável.~~ **Concluído documentalmente e com testes automatizados preparados:** [casos negativos](fixtures/ikp-0.1/negative-cases/cases.json) e [validador/testes Python](../../tools/ikp-validation/README.md). A execução CI fica registada no workflow.
+5. Executar e estabilizar a validação CI; depois definir exemplos de compatibilidade de capabilities entre versões e fechar os casos de linhagem.
 6. Preparar tarefas de implementação separadas para Scanner e PHC Knowledge, por componente e com testes de aceitação.
 
 A implementação de código e o importador funcional continuam fora desta etapa. O próximo resultado deve ser artefactos de referência verificáveis e uma matriz de trabalho baseada no código real, não mais uma ronda de opções abstratas.
@@ -592,6 +592,9 @@ A implementação de código e o importador funcional continuam fora desta etapa
 - [Investigação de cobertura dos collectors](collector-coverage-investigation-2026-11-06.md)
 - [Fixture IKP 0.1 mínima](fixtures/ikp-0.1/minimal-valid/README.md)
 - [Relatório de validação da fixture](fixtures/ikp-0.1/minimal-valid/VALIDATION.md)
+- [JSON Schemas IKP 0.1](schemas/ikp-0.1/README.md)
+- [Casos negativos e de fronteira](fixtures/ikp-0.1/negative-cases/cases.json)
+- [Validador e testes automatizados](../../tools/ikp-validation/README.md)
 - [Avaliação tecnológica e contrato de importação](technology-and-import-contract-assessment.md)
 - [Orientações do projeto](../../PROJECT_GUIDELINES.md)
 - Código do Scanner independente: Jhouinho/PhcKnowledgeScanner, branch main
