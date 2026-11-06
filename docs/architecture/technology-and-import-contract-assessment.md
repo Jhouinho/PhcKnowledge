@@ -12,11 +12,10 @@ Legenda de proveniência das conclusões:
 | Marca | Significado |
 | --- | --- |
 | `[código]` | Confirmado em código/teste analisado |
-| `[doc]` | Documento arquitetural existente |
+| `[doc]` | Documento arquitetural / investigação 05/11 (GitHub) |
 | `[guideline]` | `PROJECT_GUIDELINES.md` / docs PHC Knowledge |
 | `[inferência]` | Inferência a partir de evidências |
 | `[proposta]` | Proposta ainda não validada |
-| `[lacuna]` | Fonte pedida em falta |
 
 ---
 
@@ -26,7 +25,7 @@ Recomenda-se construir o PHC Knowledge como **plataforma .NET 10 / ASP.NET Core 
 
 O Scanner independente (`PhcKnowledgeScanner`) deve permanecer **fora do runtime** da plataforma. A ponte é um **contrato de pacote versionado**, ainda incompleto no Scanner atual: existem exports úteis (ZIP de personalizações, ZIP/manifesto de scan, **Database Schema Snapshot**), mas **não** um pacote de instalação unificado com identidade, cobertura e proveniência ao nível exigido pela plataforma.
 
-**Fonte obrigatória em falta:** `ConsoleApp/docs/investigation/2026-11-05.md` **não existe** no disco (`docs/investigation/` inexistente). A análise usa, em alternativa documentada, o corpus de 05/11/2026 e fases relacionadas: sobretudo [`ADR-0049`](../../../ConsoleApp/docs/architecture/ADR-0049-Scanner-Sole-Installation-Acquisition-Boundary.md), Phase 7.8 / 7.10 / 7.11a / 7.12, e o código de identidade `EntityIdentityPolicy`. Os requisitos de identidade/cobertura/staging do pedido são tratados como **requisitos de produto confirmados pelo utilizador**, cruzados com esse corpus — não como citação direta do ficheiro em falta. `[lacuna]`
+**Fonte obrigatória:** [`ConsoleApp/docs/investigation/2026-11-05.md`](https://github.com/Jhouinho/ConsoleApp/blob/master/docs/investigation/2026-11-05.md) — presente no GitHub (`master`). Na cópia local de `ConsoleApp` (branch `feat/adr0049-t1-scanner-dictionary`) a pasta `docs/investigation/` **não está presente**; a análise foi refeita a partir do ficheiro remoto. Complementada com ADR-0049, Phase 7.8 / 7.10 / 7.11a / 7.12 e código do Scanner independente.
 
 ---
 
@@ -58,40 +57,38 @@ Promoção a geral só com curadoria humana. `[guideline]` [`knowledge-layers.md
 
 ---
 
-## 3. Descobertas relevantes (05/11 e património ConsoleApp)
+## 3. Descobertas relevantes (investigação 05/11 e património ConsoleApp)
 
-### 3.1 Lacuna da investigação pedida
+### 3.1 Fonte principal
 
-| Pedido | Estado |
+| Fonte | Estado |
 | --- | --- |
-| `ConsoleApp/docs/investigation/2026-11-05.md` | **Ausente** — pasta `docs/investigation/` não existe `[lacuna]` |
+| [`docs/investigation/2026-11-05.md`](https://github.com/Jhouinho/ConsoleApp/blob/master/docs/investigation/2026-11-05.md) | **Consultada** no GitHub (`master`, ~374 KB) `[doc]` |
+| Cópia local `ConsoleApp/docs/investigation/` | Ausente nesta máquina (branch local `feat/adr0049-t1-scanner-dictionary` ≠ `master`) |
 
-Substitutos consultados (mesma data / mesmo tema de aquisição e ingestão):
+Complementos: ADR-0049, Phase 7.8 / 7.10 / 7.11a / 7.12, `EntityIdentityPolicy.cs`.
 
-| Documento | Relevância |
-| --- | --- |
-| `ADR-0049-Scanner-Sole-Installation-Acquisition-Boundary.md` | Fronteira Scanner vs Knowledge; sem SQL direto na plataforma |
-| `phase7-8-snapshot-contract-final-specification.md` | Manifesto Snapshot V1 histórico (IDs, checksums, compatibilidade) |
-| `phase7-10-snapshot-platform-ingestion-boundary.md` | Receive → Validate → Archive; idempotência |
-| `phase7-11a-snapshot-to-store-materialization-contract.md` | Snapshot ≠ Twin completo; perfis de completude; anti-ReplaceExisting cego |
-| `phase7-12-candidate-readiness-activation-boundary.md` | Staging Candidate → Ready → Activation; publicação controlada |
-| `PHC.Knowledge.Contracts/Identity/EntityIdentityPolicy.cs` | Chaves scoped por instalação; anti-merge silencioso |
+### 3.2 Conclusões da investigação (não reinvestigar sem necessidade)
 
-### 3.2 Conclusões aproveitáveis (não reinvestigar sem necessidade)
+De `docs/investigation/2026-11-05.md` (GitHub):
 
-1. **Dois percursos históricos de aquisição** — Discovery/Fusion (live SQL → Twin) vs Scanner/Snapshot (pacote → ingestão). A arquitetura alvo é só o segundo para dados de instalação. `[doc]` ADR-0049  
-2. **Materialização ≠ ativação** — arquivar e materializar num Candidate não substitui o conhecimento publicado até haver readiness + publicação controlada. `[doc]` 7.11a / 7.12  
-3. **Completude explícita** — um pacote parcial não pode fingir paridade com um Twin “completo”; perfis de completude são obrigatórios. `[doc]` 7.11a (`SqlCatalogPartial`)  
-4. **Identidade com âmbito de instalação** — `EntityIdentityPolicy.BuildInstallationScopedKey` evita colisões entre instalações; merge só com chave completa. `[código]` `EntityIdentityPolicy.cs`  
-5. **Fuzzy ≠ identidade** — comentário e API do mesmo ficheiro: matching fuzzy nunca confirma identidade. `[código]`  
-6. **Idempotência de ingestão** — mesmo SnapshotId + mesmo checksum ⇒ duplicado idempotente; mesmo SnapshotId + checksum diferente ⇒ rejeição. `[doc]` 7.10  
-7. **ReplaceExisting destrutivo** — rebuild que apaga DB partilhada perde conhecimento; preservação/staging são necessários. `[doc]` phase10-8 / knowledge-store-materialization  
-8. **Explorer sticky root** — troca de revisão ativa exige reload consciente do consumidor, não só pointer em disco. `[doc]` 7.12 findings  
+1. **Dois percursos distintos, não um único pipeline** — Twin operacional = Discovery/Evidence/Fusion/Store; percurso novo = Scanner → Snapshot → Ingestion → Candidate → Activation. `[doc]` §2  
+2. **Materialização ≠ Active Twin** — Candidate isolado; Activation separada; Explorer precisa de reload de KnowledgeRoot. `[doc]` §2  
+3. **Sistema antigo a descontinuar** — conhecimento Discovery/Fusion excluído do conjunto ativo; nova aquisição só via Scanner; quarentena lógica antes de apagar. `[doc]` §15  
+4. **Candidate isolado não resolve identidade multi-origem** — `SqlCatalogPartialMapper` gera `knowledge:{type}:{id}` sem Install/Env/Snapshot; inadequado para catálogo unificado. `[doc]` §61  
+5. **Separar StandardEntityId / ObservationId / DeviationId** — standard sem InstallationId; observação temporal; desvio vs revisão de referência. `[doc]` §61.4  
+6. **EntityIdentity ≠ ObservationIdentity ≠ ContentFingerprint** — SnapshotId **não** entra na identidade estável. `[doc]` §65.4–65.5  
+7. **Colisões estruturais** — FK só por nome é frágil; `ToLowerInvariant` pode colapsar nomes sob collation case-sensitive; preservar original + chave normalizada condicionada. `[doc]` §65.2–65.3  
+8. **Três hashes distintos** — checksum de pacote ≠ fingerprint de artefacto ≠ ContentHash de pesquisa (truncado). `[doc]` §66.1  
+9. **Comparador inseguro para remoções** — ausência ⇒ Removed; duplicados com `Last()`; teste `Detects_removed_artifacts` consagra o antipadrão; falta `NotObserved`. `[doc]` §66.2, §67.2  
+10. **ReplaceExisting / atomicidade** — Builder apaga `knowledge.db` antes de reconstruir; falha a meio sem rollback da revisão anterior ⇒ staging + swap. `[doc]` §63  
+11. **Completude explícita** — perfil `SqlCatalogPartial`; pacote parcial ≠ Twin completo. `[doc]` §2  
+
+Idempotência de ingestão (mesmo SnapshotId + checksum) permanece válida via Phase 7.10. `[doc]`
 
 ### 3.3 Aviso crítico
 
-Os documentos Phase 7.* descrevem sobretudo o **Scanner V1 histórico** (`tools/PhcKnowledgeScannerV1`, ZIP `manifest.json` + `checksums.json` + `payload/`). **Não** descrevem integralmente o Scanner independente atual. `[doc]` ADR 0003 do Scanner + 7.11a §3.1
-
+A investigação analisa sobretudo o **ConsoleApp / Scanner V1 histórico**. As lições de identidade, cobertura e publicação aplicam-se ao PHC Knowledge; **não** descrevem o Scanner independente atual (`PhcKnowledgeScanner`, ADR 0003).
 ---
 
 ## 4. Arquitetura tecnológica proposta
@@ -441,8 +438,8 @@ Sem DDL nesta fase.
 
 1. **Arquitetura:** plataforma .NET 10 / ASP.NET Core, React+TS, PostgreSQL, SignalR, desktop como host da mesma SPA; Scanner permanece independente.  
 2. **Importação:** definir IKP versionado, partindo do **Database Schema Snapshot** + ZIP de personalizações + cobertura/evidências; **não** clonar o ZIP V1 histórico como SSOT.  
-3. **Aprendizagens do património ConsoleApp:** fronteira de aquisição, ingestão idempotente, candidate/activation, identidade scoped, anti-merge — como **princípios**, não como runtime a portar.  
-4. **Bloqueio documental:** recuperar ou recriar `ConsoleApp/docs/investigation/2026-11-05.md` se contiver conclusões adicionais não cobertas por ADR-0049 / Phase 7.*; até lá, esta avaliação marca a lacuna explicitamente.
+3. **Aprendizagens da investigação 05/11 + património ConsoleApp:** Entity/Observation/ContentFingerprint, coverage-aware diffs, staging anti-ReplaceExisting, descontinuação do percurso Discovery/Fusion — como **princípios**, não como runtime a portar.  
+4. **Sincronização local:** alinhar o clone de `ConsoleApp` com `master` (ou obter `docs/investigation/`) para análises futuras offline.
 
 ---
 
@@ -452,7 +449,7 @@ Sem DDL nesta fase.
 2. Se aprovado: redigir ADR curto da stack + esboço normativo do IKP (`exportContractVersion = 0.1-draft`) **sem código**.  
 3. Inventariar gaps concretos no Scanner para emitir IKP 0.1 (lista de campos em falta) — ainda sem alterar runtime até ordem explícita.  
 4. Definir fixture de importação (usar `samples/database-schema-snapshot/`) para testes futuros da plataforma.  
-5. Localizar/restaurar a investigação 05/11 se existir noutro suporte e anexar diff de conclusões.
+5. Opcional: sincronizar `docs/investigation/` no clone local do ConsoleApp.
 
 ---
 
@@ -466,16 +463,17 @@ Sem DDL nesta fase.
 
 ### O que falta
 
-- Ficheiro `docs/investigation/2026-11-05.md`.  
+- Cópia local sincronizada da investigação 05/11 (existe no GitHub `master`).  
 - Contrato de exportação unificado no Scanner.  
 - Plataforma (API, BD, UI, importação).  
 - Modelo multiempresa implementado.
 
 ### O que aprendemos
 
+- A investigação 05/11 está no GitHub `master`; a ausência local era só desalinhamento de branch.  
 - O Scanner atual **já ultrapassa** o Snapshot V1 histórico em personalizações e relações, mas o **envelope de pacote** ainda é mais fraco que o desenho Phase 7.8.  
 - O schema snapshot é o melhor embrião de contrato estrutural.  
-- O risco maior não é escolher React vs Blazor — é importar sem cobertura/identidade/staging e repetir `ReplaceExisting`.
+- O risco maior não é escolher React vs Blazor — é importar sem cobertura/identidade/staging e repetir `ReplaceExisting` (confirmado na investigação §63 / §66–67).
 
 ### Próximo passo
 
