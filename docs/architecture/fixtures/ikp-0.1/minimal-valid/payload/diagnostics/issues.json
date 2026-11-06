@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1",
+  "issues": [
+    {
+      "issueId": "issue-brule-definition-warning",
+      "operationId": "phc.customizations.brule.definition",
+      "severity": "Warning",
+      "code": "phc.brule.definition.partial",
+      "message": "Exemplo: uma definição não pôde ser recuperada.",
+      "sourceObjectId": "phc.brule:7F3A",
+      "details": {
+        "reason": "Fixture demonstrativa; não representa uma falha real."
+      }
+    }
+  ]
+}
