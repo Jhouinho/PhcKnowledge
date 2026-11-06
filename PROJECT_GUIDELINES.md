@@ -96,6 +96,7 @@ Documentos de arquitetura relevantes:
 - `docs/architecture/extract-2026-11-conversation.md`
 - `docs/architecture/technology-and-import-contract-assessment.md` (stack + utilização centralizada)
 - `docs/architecture/ikp-0.1-specification.md` (contrato de importação 0.1 — proposta)
+- `docs/architecture/observation-identity-and-lineage-contract.md` (princípios validados de cobertura, identidade, observações, histórico e linhagem)
 
 ## Regras de trabalho
 
@@ -135,4 +136,4 @@ Não avançar automaticamente para a fase seguinte sem validação conjunta.
 
 ## Próxima etapa prevista
 
-Validar em conjunto a proposta [`docs/architecture/ikp-0.1-specification.md`](docs/architecture/ikp-0.1-specification.md). Depois fechar lacunas/Q1–Q5 e só então fixtures / esboço de API — sem implementação até ordem explícita.
+Consolidar a especificação IKP 0.1 com os princípios validados em [`observation-identity-and-lineage-contract.md`](docs/architecture/observation-identity-and-lineage-contract.md), resolver as lacunas do contrato e criar fixtures de referência. Depois produzir uma matriz concreta de alterações necessárias no Scanner e no PHC Knowledge. A implementação só começa após revisão do contrato e instrução explícita.
