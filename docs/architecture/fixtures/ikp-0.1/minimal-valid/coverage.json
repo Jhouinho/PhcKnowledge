@@ -27,7 +27,7 @@
         "source": "dbo.brule",
         "filter": "all records"
       },
-      "observedCount": 1,
+      "observedCount": 2,
       "issueIds": []
     },
     {
@@ -40,7 +40,7 @@
       "scope": {
         "source": "dbo.brule"
       },
-      "observedCount": 1,
+      "observedCount": 2,
       "issueIds": [
         "issue-brule-definition-warning"
       ]
