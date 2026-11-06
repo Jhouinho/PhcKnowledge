@@ -45,7 +45,7 @@ Não é: clone do PHC, explorador SQL genérico, repositório de ficheiros, nem 
 ## Decisões de produto já expressas
 
 1. O Scanner usado para extrair instalações é o `PhcKnowledgeScanner`.
-2. Preferência por Scanner independente; o PHC Knowledge trabalha sobre dados exportados.
+2. O Scanner é autónomo na execução e na responsabilidade de aquisição; o PHC Knowledge trabalha sobre os pacotes exportados. Ambos são versionados neste monorepo.
 3. Exportação deve servir importação no PHC Knowledge (além do ZIP atual).
 4. Ferramenta de recolha deve ser simples de transportar (ligação, progresso, exportação).
 5. Evolução começa por conhecimento estruturado, pesquisável e rastreável — não por chatbot.
