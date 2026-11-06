@@ -37,7 +37,7 @@
       "format": "application/json",
       "formatVersion": "1",
       "byteLength": 606,
-      "sha256": "e6236cd3d30176be7e598bdc1121b89184febd003e2a03d4498dec8ff00406d7",
+      "sha256": "d8cb31f102bad14680e617a5bc8250ddcd3ebfff4a5b59b91aaf2b08de86a260",
       "required": true,
       "role": "table-definition"
     },
@@ -47,7 +47,7 @@
       "category": "customizations",
       "format": "text/x-xbase",
       "byteLength": 153,
-      "sha256": "32e4d2965bb785188def4a5de8cd81b16b22dc122184f82ad5489e03ec9bf9a3",
+      "sha256": "d1e847aeed26bf2ee3dc3fab175a5a62ad4ad608e23fe3b637bc798eeaa189b6",
       "required": true,
       "role": "source-definition"
     },
@@ -58,7 +58,7 @@
       "format": "application/json",
       "formatVersion": "1",
       "byteLength": 852,
-      "sha256": "c6526eee3c7887817685ad271326974a2652a038b298368b539988a94f924d17",
+      "sha256": "29b5f94e05b50439451e127bd3eaa7fcc13f2e98d4ebd1c76cf228e6953eef3a",
       "required": true,
       "role": "declared-relations"
     },
@@ -69,7 +69,7 @@
       "format": "application/json",
       "formatVersion": "1",
       "byteLength": 460,
-      "sha256": "d8513ce918f8168094d4a3252054363d4118d6178af61db052eceee3c358d094",
+      "sha256": "747218c97847ae1a6bdff5690171ae9689d428657dc08540c3cfa9396dd9e435",
       "required": false,
       "role": "collection-diagnostics"
     }
