@@ -90,6 +90,13 @@ def validate_package(package_dir: Path, schema_dir: Path) -> dict:
             raise ValueError(f"checksums: caminho duplicado: {path}")
         checksum_entries[path] = entry
 
+    allowed_root_files = set(CONTRACT_FILES) | {"README.md", "VALIDATION.md"}
+    for child in package_dir.iterdir():
+        if child.is_file() and child.name not in allowed_root_files:
+            raise ValueError(f"ficheiro extra na raiz do pacote: {child.name}")
+        if child.is_dir() and child.name != "payload":
+            raise ValueError(f"diretório extra na raiz do pacote: {child.name}")
+
     actual_files = set()
     for path in package_dir.glob("*.json"):
         if path.name != "checksums.json":
@@ -115,7 +122,7 @@ def validate_package(package_dir: Path, schema_dir: Path) -> dict:
             raise ValueError(f"checksums: SHA-256 divergente: {relative}")
 
     canonical_lines = []
-    for relative in sorted(checksum_entries):
+    for relative in sorted(checksum_entries, key=lambda value: value.encode("utf-16-be")):
         entry = checksum_entries[relative]
         canonical_lines.append(f"{relative}\n{entry['byteLength']}\n{entry['sha256']}\n")
     logical_digest = sha256("".join(canonical_lines).encode("utf-8"))
@@ -137,6 +144,9 @@ def validate_package(package_dir: Path, schema_dir: Path) -> dict:
         data = (package_dir / relative).read_bytes()
         if len(data) != item["byteLength"] or sha256(data) != item["sha256"]:
             raise ValueError(f"manifest: integridade do artefacto divergente: {relative}")
+    payload_files = {path for path in actual_files if path.startswith("payload/")}
+    if payload_files != set(artifact_paths):
+        raise ValueError("manifest: lista de artefactos não corresponde aos ficheiros payload")
 
     operations = capabilities["operations"]
     operation_ids = [item["operationId"] for item in operations]
@@ -154,6 +164,8 @@ def validate_package(package_dir: Path, schema_dir: Path) -> dict:
     coverage_ids = [item["operationId"] for item in coverage["operations"]]
     if len(set(coverage_ids)) != len(coverage_ids):
         raise ValueError("coverage: operationId duplicado")
+    if set(coverage_ids) != set(operation_ids):
+        raise ValueError("coverage: cada capability declarada deve ter exatamente uma entrada de cobertura")
     coverage_by_id = {item["operationId"]: item for item in coverage["operations"]}
     for operation in coverage["operations"]:
         if operation["operationId"] not in supported:
