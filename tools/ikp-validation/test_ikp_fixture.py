@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import shutil
 import tempfile
 import unittest
@@ -27,11 +28,31 @@ class IkpFixtureValidationTests(unittest.TestCase):
         path = self.package / relative
         return json.loads(path.read_text(encoding="utf-8"))
 
+    def refresh_checksums(self):
+        checksum_path = self.package / "checksums.json"
+        checksums = json.loads(checksum_path.read_text(encoding="utf-8"))
+        for entry in checksums["files"]:
+            data = (self.package / entry["path"]).read_bytes()
+            entry["byteLength"] = len(data)
+            entry["sha256"] = hashlib.sha256(data).hexdigest()
+        ordered = sorted(checksums["files"], key=lambda item: item["path"].encode("utf-16-be"))
+        canonical = "".join(
+            f'{item["path"]}\n{item["byteLength"]}\n{item["sha256"]}\n'
+            for item in ordered
+        ).encode("utf-8")
+        checksums["logicalContentDigest"]["value"] = hashlib.sha256(canonical).hexdigest()
+        checksum_path.write_text(
+            json.dumps(checksums, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
     def write_json(self, relative, value):
         (self.package / relative).write_text(
             json.dumps(value, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
+        if relative != "checksums.json":
+            self.refresh_checksums()
 
     def assert_invalid(self, expected_fragment):
         with self.assertRaisesRegex(ValueError, expected_fragment):
