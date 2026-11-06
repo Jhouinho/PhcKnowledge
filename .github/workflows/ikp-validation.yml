@@ -5,13 +5,13 @@ on:
     branches: [main]
     paths:
       - "docs/architecture/schemas/ikp-0.1/**"
-      - "docs/architecture/fixtures/ikp-0.1/minimal-valid/**"
+      - "docs/architecture/fixtures/ikp-0.1/**"
       - "tools/ikp-validation/**"
       - ".github/workflows/ikp-validation.yml"
   pull_request:
     paths:
       - "docs/architecture/schemas/ikp-0.1/**"
-      - "docs/architecture/fixtures/ikp-0.1/minimal-valid/**"
+      - "docs/architecture/fixtures/ikp-0.1/**"
       - "tools/ikp-validation/**"
       - ".github/workflows/ikp-validation.yml"
 
