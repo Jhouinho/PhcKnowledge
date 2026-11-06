@@ -90,7 +90,7 @@ def validate_package(package_dir: Path, schema_dir: Path) -> dict:
             raise ValueError(f"checksums: caminho duplicado: {path}")
         checksum_entries[path] = entry
 
-    allowed_root_files = set(CONTRACT_FILES) | {"README.md", "VALIDATION.md"}
+    allowed_root_files = set(CONTRACT_FILES)
     for child in package_dir.iterdir():
         if child.is_file() and child.name not in allowed_root_files:
             raise ValueError(f"ficheiro extra na raiz do pacote: {child.name}")
