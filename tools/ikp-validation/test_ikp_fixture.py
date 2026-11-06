@@ -52,6 +52,19 @@ class IkpFixtureValidationTests(unittest.TestCase):
         (self.package / "capabilities.json").unlink()
         self.assert_invalid("capabilities.json")
 
+    def test_partial_definition_coverage_is_valid_and_preserved(self):
+        doc = self.read_json("coverage.json")
+        definition = next(x for x in doc["operations"] if x["operationId"].endswith(".definition"))
+        self.assertEqual("SucceededWithWarnings", definition["result"])
+        self.assertEqual("Partial", definition["contentAvailability"])
+        self.assertEqual("PASS", validate_package(self.package, SCHEMAS)["status"])
+
+    def test_not_requested_operation_must_be_skipped(self):
+        doc = self.read_json("coverage.json")
+        doc["operations"][0]["requested"] = False
+        self.write_json("coverage.json", doc)
+        self.assert_invalid("não solicitada deve ter resultado Skipped")
+
     def test_invalid_coverage_enum_is_rejected_by_schema(self):
         doc = self.read_json("coverage.json")
         doc["operations"][0]["result"] = "Unknown"
@@ -87,6 +100,17 @@ class IkpFixtureValidationTests(unittest.TestCase):
         doc["operations"][0]["supported"] = False
         self.write_json("capabilities.json", doc)
         self.assert_invalid("operação não suportada")
+
+    def test_capture_id_mismatch_is_rejected(self):
+        doc = self.read_json("object-index.json")
+        doc["captureId"] = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+        self.write_json("object-index.json", doc)
+        self.assert_invalid("CaptureId divergente")
+
+    def test_extra_unchecksummed_payload_file_is_rejected(self):
+        extra = self.package / "payload/extra.txt"
+        extra.write_text("unexpected", encoding="utf-8")
+        self.assert_invalid("ficheiros não declarados")
 
     def test_tampered_checksum_manifest_is_rejected(self):
         doc = self.read_json("checksums.json")
