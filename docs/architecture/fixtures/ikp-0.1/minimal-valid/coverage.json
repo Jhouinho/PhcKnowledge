@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "1",
+  "captureId": "b1b2c3d4-1111-4222-8333-123456789abc",
+  "operations": [
+    {
+      "operationId": "sql.schema.tables.inventory",
+      "capabilityVersion": "1.0",
+      "requested": true,
+      "result": "Succeeded",
+      "sourceAvailability": "Present",
+      "contentAvailability": "Available",
+      "scope": {
+        "source": "sys.tables",
+        "filter": "user tables"
+      },
+      "observedCount": 1,
+      "issueIds": []
+    },
+    {
+      "operationId": "phc.customizations.brule.inventory",
+      "capabilityVersion": "1.0",
+      "requested": true,
+      "result": "Succeeded",
+      "sourceAvailability": "Present",
+      "contentAvailability": "Available",
+      "scope": {
+        "source": "dbo.brule",
+        "filter": "all records"
+      },
+      "observedCount": 1,
+      "issueIds": []
+    },
+    {
+      "operationId": "phc.customizations.brule.definition",
+      "capabilityVersion": "1.0",
+      "requested": true,
+      "result": "SucceededWithWarnings",
+      "sourceAvailability": "Present",
+      "contentAvailability": "Partial",
+      "scope": {
+        "source": "dbo.brule"
+      },
+      "observedCount": 1,
+      "issueIds": [
+        "issue-brule-definition-warning"
+      ]
+    },
+    {
+      "operationId": "phc.relations.declared.inventory",
+      "capabilityVersion": "1.0",
+      "requested": true,
+      "result": "Succeeded",
+      "sourceAvailability": "Present",
+      "contentAvailability": "Available",
+      "scope": {
+        "source": "dbo.rel;dbo.dtl"
+      },
+      "observedCount": 1,
+      "issueIds": []
+    }
+  ]
+}
