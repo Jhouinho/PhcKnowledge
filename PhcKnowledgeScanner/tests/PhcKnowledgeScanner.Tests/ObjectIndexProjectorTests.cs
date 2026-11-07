@@ -97,6 +97,41 @@ public sealed class ObjectIndexProjectorTests
     }
 
     [Fact]
+    public void Project_Fails_When_Operation_Is_Not_Declared_In_Capture_Capabilities()
+    {
+        var record = new TechnicalObjectRecord(
+            "database:PHC_DEMO",
+            ObjectKind.Database,
+            "PHC_DEMO",
+            null,
+            null,
+            "sql.server.structure",
+            null,
+            """{"versionProperty":"16"}""",
+            DateTimeOffset.UnixEpoch);
+        var capture = new WorkspaceCaptureMetadata(
+            "b1b2c3d4-1111-4222-8333-123456789abc",
+            "completed",
+            Array.Empty<DeclaredCapability>(),
+            Array.Empty<OperationCoverage>(),
+            true,
+            true,
+            true);
+        var input = ObjectIndexProjectionInput.Success(
+            capture,
+            [record],
+            Array.Empty<CollectionIssue>(),
+            Array.Empty<WorkspaceArtifactMetadata>(),
+            Array.Empty<DefinitionArtifactSnapshot>(),
+            Array.Empty<ObjectIndexProjectionDiagnostic>());
+
+        var result = new ObjectIndexProjector().Project(input);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Diagnostics, x => x.Code == "object_index_operation_not_declared_supported");
+    }
+
+    [Fact]
     public async Task Workspace_Projector_Connects_Read_Only_Reader_To_Pure_Projector()
     {
         var root = Path.Combine(Path.GetTempPath(), "PhcKnowledgeScanner-tests", Guid.NewGuid().ToString("N"));
