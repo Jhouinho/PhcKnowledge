@@ -178,3 +178,12 @@ O repositório contém código, schemas e samples de Schema Snapshot, mas não c
 5. Só depois decidir se existe alguma lacuna irrecuperável que justifique alterar o modelo SQLite ou os collectors.
 
 Nenhuma alteração funcional, de schema SQLite ou de contrato IKP foi efetuada nesta investigação.
+
+
+### Estado da implementação do mapping — 2026-11-07
+
+O mapping deixou de existir apenas em documentação: foi acrescentado `ObjectOperationResolver` em `PhcKnowledgeScanner.Export.ObjectIndex`, com cobertura unitária para os 7 kinds SQL, os 14 kinds PHC (incluindo as duas variantes de função T-SQL) e falhas de mapping/collector/JSON. O resolver não usa fallback por nome nem por prefixo.
+
+Foi também acrescentado `SourceIdentityResolver`, que opera sobre o inventário completo da captura para resolver o scope SQL da base de dados e da tabela-pai. Não emite identidade para funções `sys.objects`, PK/FK, módulos SQL ou database quando a evidência atual não chega.
+
+Os testes do mapping e da projeção de identidade passaram no GitHub Actions. O projector completo, a projeção de metadata/definition e a leitura tipada de artefactos continuam por implementar. Nenhuma alteração ao schema SQLite ou aos collectors foi feita.
