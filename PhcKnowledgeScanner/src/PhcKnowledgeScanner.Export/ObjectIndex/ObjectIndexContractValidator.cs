@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace PhcKnowledgeScanner.Export.ObjectIndex;
 
 /// <summary>
-/// Validates the structural constraints used by the IKP 0.1 object-index schema
-/// and the additional invariants required by the projector. The repository's
-/// JSON Schema validator remains the authoritative full Draft 2020-12 validator.
+/// Checks the structural constraints and conditional invariants of the IKP 0.1
+/// object-index contract. The repository's JSON Schema validator remains the
+/// authoritative full Draft 2020-12 validator.
 /// </summary>
 public static class ObjectIndexContractValidator
 {
@@ -29,7 +29,8 @@ public static class ObjectIndexContractValidator
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object)
             {
-                return [new ObjectIndexProjectionDiagnostic("object_index_root_invalid", "The object-index root must be a JSON object.")];
+                Add("object_index_root_invalid", "The object-index root must be a JSON object.");
+                return diagnostics;
             }
 
             if (!TryString(root, "schemaVersion", out var schemaVersion) || schemaVersion != "1")
@@ -68,18 +69,13 @@ public static class ObjectIndexContractValidator
 
                 if (TryProperty(item, "sourceIdentity", out var identity))
                     ValidateIdentity(identity, prefix);
-
                 if (TryProperty(item, "metadataFingerprint", out var metadataFingerprint))
                     ValidateFingerprint(metadataFingerprint, $"{prefix}.metadataFingerprint");
 
                 if (!TryProperty(item, "definition", out var definition) || definition.ValueKind != JsonValueKind.Object)
-                {
                     Add("object_index_definition_invalid", $"{prefix}.definition must be an object.");
-                }
                 else
-                {
                     ValidateDefinition(definition, prefix);
-                }
 
                 if (TryProperty(item, "name", out var name) && name.ValueKind != JsonValueKind.String)
                     Add("object_index_name_invalid", $"{prefix}.name must be a string.");
@@ -98,55 +94,70 @@ public static class ObjectIndexContractValidator
             diagnostics.Add(new ObjectIndexProjectionDiagnostic(code, message));
     }
 
-    private static void ValidateIdentity(JsonElement identity, string prefix)
+    private static void ValidateIdentity(
+        JsonElement identity,
+        string prefix,
+        Action<string, string> add)
     {
-        if (identity.ValueKind != JsonValueKind.Object)
-            return;
-        foreach (var field in new[] { "scheme", "value", "scope" })
+        if (identity.ValueKind != JsonValueKind.Object
+            || !TryString(identity, "scheme", out _)
+            || !TryString(identity, "value", out _)
+            || !TryString(identity, "scope", out _))
         {
-            if (!TryString(identity, field, out _))
-                return;
+            add("object_index_source_identity_invalid", $"{prefix}.sourceIdentity must contain non-empty scheme, value and scope strings.");
         }
     }
 
-    private static void ValidateDefinition(JsonElement definition, string prefix)
+    private static void ValidateDefinition(
+        JsonElement definition,
+        string prefix,
+        Action<string, string> add)
     {
         if (!TryString(definition, "status", out var status)
             || status is not ("Available" or "Empty" or "Unavailable" or "NotCollected"))
         {
+            add("object_index_definition_status_invalid", $"{prefix}.definition.status is not a supported IKP state.");
             return;
         }
 
         if (!TryProperty(definition, "artifactIds", out var artifactIds)
             || artifactIds.ValueKind != JsonValueKind.Array)
         {
+            add("object_index_definition_artifacts_invalid", $"{prefix}.definition.artifactIds must be an array.");
             return;
         }
 
         var ids = new HashSet<string>(StringComparer.Ordinal);
         foreach (var artifactId in artifactIds.EnumerateArray())
         {
-            if (!IsNonEmptyString(artifactId))
+            if (!IsNonEmptyString(artifactId) || !ids.Add(artifactId.GetString()!))
+            {
+                add("object_index_definition_artifacts_invalid", $"{prefix}.definition.artifactIds must contain unique non-empty strings.");
                 return;
-            if (!ids.Add(artifactId.GetString()!))
-                return;
+            }
         }
 
         var hasFingerprint = TryProperty(definition, "definitionFingerprint", out var fingerprint);
         if (status == "Available")
         {
             if (artifactIds.GetArrayLength() == 0 || !hasFingerprint)
+            {
+                add("object_index_definition_available_invalid", $"{prefix}.definition Available requires at least one artifact and a definitionFingerprint.");
                 return;
-            ValidateFingerprint(fingerprint, $"{prefix}.definition.definitionFingerprint");
+            }
+
+            ValidateFingerprint(fingerprint, $"{prefix}.definition.definitionFingerprint", add);
         }
         else if (hasFingerprint)
         {
-            // JSON Schema explicitly forbids a definitionFingerprint for non-Available states.
-            return;
+            add("object_index_definition_fingerprint_forbidden", $"{prefix}.definitionFingerprint is only allowed when status is Available.");
         }
     }
 
-    private static void ValidateFingerprint(JsonElement fingerprint, string path)
+    private static void ValidateFingerprint(
+        JsonElement fingerprint,
+        string path,
+        Action<string, string> add)
     {
         if (fingerprint.ValueKind != JsonValueKind.Object
             || !TryString(fingerprint, "algorithm", out var algorithm)
@@ -155,16 +166,17 @@ public static class ObjectIndexContractValidator
             || value.Length != 64
             || value.Any(character => character is not (>= '0' and <= '9') and not (>= 'a' and <= 'f')))
         {
-            // The caller reports a generic schema diagnostic if it needs a strict rejection.
+            add("object_index_fingerprint_invalid", $"{path} must be a lowercase SHA-256 fingerprint.");
         }
     }
 
     private static bool TryString(JsonElement element, string propertyName, out string value)
     {
         value = string.Empty;
-        return TryProperty(element, propertyName, out var property)
-            && IsNonEmptyString(property)
-            && (value = property.GetString()!) is not null;
+        if (!TryProperty(element, propertyName, out var property) || !IsNonEmptyString(property))
+            return false;
+        value = property.GetString()!;
+        return true;
     }
 
     private static bool IsNonEmptyString(JsonElement element) =>
