@@ -184,8 +184,9 @@ O projector end-to-end ainda não está implementado. Já foram implementados co
 
 - `ObjectOperationResolver`: mapping explícito dos 21 kinds emitidos para a operação observadora, validando collector e variante PHC;
 - `SourceIdentityResolver`: projeção dos identificadores nativos e scopes sustentados pelos registos da mesma captura;
-- testes unitários para mapeamentos válidos, variantes desconhecidas, ausência de dados, resolução de parent e scopes ambíguos.
+- `MetadataProjectionResolver`: metadata descritivo e projeção semântica separada, com normalização conservadora da atividade PHC;
+- testes unitários para mapeamentos válidos, variantes desconhecidas, ausência de dados, resolução de parent, scopes ambíguos, metadata e atividade desconhecida.
 
-A compilação e os testes desses componentes passaram no GitHub Actions. A validação dos pressupostos com uma captura real continua pendente.
+A compilação e os testes desses componentes passaram no GitHub Actions. A canonicalização RFC 8785/SHA-256, o estado das definições e a validação dos pressupostos com uma captura real continuam pendentes.
 
-Próximo passo sem captura: implementar as projeções puras de metadata e as regras de estado de definição sobre entradas tipadas/fakes, sem ligar ainda ao workspace SQLite. Quando houver acesso ao PC, recolher uma captura controlada (idealmente primeiro uma base demo sem personalizações e depois uma instalação personalizada), copiar SQLite + artefactos para ambiente de teste e integrar o leitor read-only e o projector end-to-end.
+Próximo passo sem captura: implementar e testar canonicalização/hash sobre a projeção semântica; depois fechar as regras de estado de definição com entradas tipadas, sem ligar ainda ao workspace SQLite. Quando houver acesso ao PC, recolher uma captura controlada (idealmente primeiro uma base demo sem personalizações e depois uma instalação personalizada), copiar SQLite + artefactos para ambiente de teste e integrar o leitor read-only e o projector end-to-end.
