@@ -198,7 +198,7 @@ Regras implementadas no projector:
 - ordena objetos e artefactos deterministicamente e serializa com nomes camelCase do contrato IKP.
 
 Validação automatizada:
-- GitHub Actions, run `42415572239`: **build concluído com sucesso; 240 testes aprovados**;
+- GitHub Actions, run `42416070993`: **build concluído com sucesso; 241 testes aprovados**;
 - testes incluem projeção determinística, operação não resolvida, SourceObjectId duplicado e integração do leitor com o projector através de um workspace SQLite;
 - o teste de leitura read-only confirmou que a abertura e leitura não alteram o conteúdo da base de dados;
 - ainda não foi validado um workspace real produzido por uma captura PHC, nem está integrada nesta etapa a validação automática contra o JSON Schema oficial.
