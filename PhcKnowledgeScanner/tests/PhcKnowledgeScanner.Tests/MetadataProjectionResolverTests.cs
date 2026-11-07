@@ -182,7 +182,7 @@ public sealed class MetadataProjectionResolverTests
         Assert.Equal("dbo", metadata.RootElement.GetProperty("schema").GetString());
         Assert.False(metadata.RootElement.TryGetProperty("nome", out _));
         Assert.False(metadata.RootElement.TryGetProperty("inactivoRaw", out _));
-        Assert.Equal(1, fingerprint.RootElement.EnumerateObject().Count());
+        Assert.Single(fingerprint.RootElement.EnumerateObject().ToArray());
         Assert.Equal("dbo", fingerprint.RootElement.GetProperty("schema").GetString());
     }
 
@@ -194,7 +194,7 @@ public sealed class MetadataProjectionResolverTests
         Assert.Null(result.DiagnosticCode);
         Assert.False(result.HasFingerprintProjection);
         Assert.Equal(JsonValueKind.Object, result.Metadata.ValueKind);
-        Assert.Equal(0, result.Metadata.EnumerateObject().Count());
+        Assert.Empty(result.Metadata.EnumerateObject().ToArray());
     }
 
     [Fact]
