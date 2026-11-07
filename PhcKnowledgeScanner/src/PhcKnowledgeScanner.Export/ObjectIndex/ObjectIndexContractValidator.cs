@@ -35,7 +35,7 @@ public static class ObjectIndexContractValidator
 
             if (!TryString(root, "schemaVersion", out var schemaVersion) || schemaVersion != "1")
                 Add("object_index_schema_version_invalid", "schemaVersion must be the string '1'.");
-            if (!TryString(root, "captureId", out var captureId) || !Guid.TryParse(captureId, out _))
+            if (!TryString(root, "captureId", out var captureId) || !Guid.TryParseExact(captureId, "D", out _))
                 Add("object_index_capture_id_invalid", "captureId must be a UUID string.");
             if (!TryProperty(root, "objects", out var objects) || objects.ValueKind != JsonValueKind.Array)
             {
