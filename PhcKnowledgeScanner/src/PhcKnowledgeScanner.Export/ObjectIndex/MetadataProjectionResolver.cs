@@ -46,7 +46,7 @@ public static class MetadataProjectionResolver
             return MetadataProjectionResolution.Failure(operation.DiagnosticCode!, operation.Message!);
         }
 
-        if (record.Kind is ObjectKind.View or ObjectKind.StoredProcedure
+        if ((record.Kind is ObjectKind.View or ObjectKind.StoredProcedure)
             && string.IsNullOrWhiteSpace(record.SummaryJson))
         {
             return MetadataProjectionResolution.Success(EmptyObject(), null);
