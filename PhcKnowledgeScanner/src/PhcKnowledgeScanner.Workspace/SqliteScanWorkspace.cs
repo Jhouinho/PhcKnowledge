@@ -38,7 +38,9 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
         var connection = new SqliteConnection(new SqliteConnectionStringBuilder
         {
             DataSource = dbPath,
-            Mode = SqliteOpenMode.ReadWriteCreate
+            Mode = SqliteOpenMode.ReadWriteCreate,
+            // A disposed workspace must release the file handle immediately (not return it to a pool).
+            Pooling = false
         }.ToString());
 
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
