@@ -1,6 +1,6 @@
 # P1.B — Matriz SourceIdentity e scopes dos emissores
 **Data:** 2026-11-06  
-**Estado:** proposta de projeção baseada nos dados atualmente recolhidos; não implementada  
+**Estado:** matriz implementada no núcleo puro do Export; integração no projector e validação com captura real pendentes  
 **Âmbito:** primeiro `object-index.json` IKP 0.1
 
 ## 1. Objetivo
@@ -119,8 +119,10 @@ A extração de `operationId` continua a ser uma preocupação separada: o regis
 
 ## 7. Estado
 
-- Matriz baseada nos emissores atuais: proposta documentada.
-- Alterações ao Scanner/SQLite: nenhuma.
-- Novas consultas à base PHC: nenhuma.
-- Validação de unicidade dos stamps em dados reais: pendente.
-- Próximo passo: desenhar o contrato do projetor do object-index, incluindo proveniência por operação e estado da definição, antes de implementar.
+- Matriz baseada nos emissores atuais: documentada e implementada no núcleo puro do Export.
+- `SourceIdentityResolver` projeta stamps PHC, `sqlserver.object_id` e `sqlserver.column_id` apenas quando o scope pode ser resolvido dentro da mesma captura.
+- Funções `sys.objects`, PK/FK, módulos SQL e database continuam sem SourceIdentity, por falta de identidade nativa com scope suficiente.
+- Testes unitários do resolver: aprovados no GitHub Actions.
+- Alterações ao schema SQLite e aos collectors: nenhuma; novas consultas à base PHC: nenhuma.
+- Validação de unicidade dos stamps e dos scopes em dados reais: pendente.
+- Próximo passo: integrar a projeção no projector e avançar para metadata/definition, mantendo a validação final dependente de captura real.
