@@ -68,14 +68,14 @@ public static class ObjectIndexContractValidator
                     Add("object_index_metadata_invalid", $"{prefix}.metadata must be an object.");
 
                 if (TryProperty(item, "sourceIdentity", out var identity))
-                    ValidateIdentity(identity, prefix);
+                    ValidateIdentity(identity, prefix, Add);
                 if (TryProperty(item, "metadataFingerprint", out var metadataFingerprint))
-                    ValidateFingerprint(metadataFingerprint, $"{prefix}.metadataFingerprint");
+                    ValidateFingerprint(metadataFingerprint, $"{prefix}.metadataFingerprint", Add);
 
                 if (!TryProperty(item, "definition", out var definition) || definition.ValueKind != JsonValueKind.Object)
                     Add("object_index_definition_invalid", $"{prefix}.definition must be an object.");
                 else
-                    ValidateDefinition(definition, prefix);
+                    ValidateDefinition(definition, prefix, Add);
 
                 if (TryProperty(item, "name", out var name) && name.ValueKind != JsonValueKind.String)
                     Add("object_index_name_invalid", $"{prefix}.name must be a string.");
