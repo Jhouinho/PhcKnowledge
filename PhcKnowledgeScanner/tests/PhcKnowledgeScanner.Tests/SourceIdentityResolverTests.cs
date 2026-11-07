@@ -6,7 +6,7 @@ namespace PhcKnowledgeScanner.Tests;
 public sealed class SourceIdentityResolverTests
 {
     [Fact]
-    public void Projects_Phс_Stamp_With_Source_Table_Scope()
+    public void Projects_Phc_Stamp_With_Source_Table_Scope()
     {
         var record = Create(
             "phc.brule:stamp-1",
@@ -36,7 +36,7 @@ public sealed class SourceIdentityResolverTests
     }
 
     [Fact]
-    public void Ftu_Function_Uses_Phс_Stamp_But_SysObjects_Function_Has_No_Native_Identity()
+    public void Ftu_Function_Uses_Phc_Stamp_But_SysObjects_Function_Has_No_Native_Identity()
     {
         var ftu = Create(
             "phc.user_tsql_function:ftu-1",
@@ -162,7 +162,7 @@ public sealed class SourceIdentityResolverTests
     }
 
     [Fact]
-    public void Missing_Phс_Stamp_Is_Reported_Not_Replaced_With_Object_Name()
+    public void Missing_Phc_Stamp_Is_Reported_Not_Replaced_With_Object_Name()
     {
         var record = Create(
             "phc.brule:synthetic-id",
