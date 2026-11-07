@@ -321,6 +321,63 @@ public sealed class ObjectIndexProjectorTests
     }
 
     [Fact]
+    public void Project_Preserves_Parent_Reference_When_Parent_Is_In_Same_Capture()
+    {
+        var parent = new TechnicalObjectRecord(
+            "sql.table:123",
+            ObjectKind.Table,
+            "FT",
+            "dbo",
+            null,
+            "sql.server.structure",
+            null,
+            """{"typeDesc":"USER_TABLE","isMsShipped":false}""",
+            DateTimeOffset.UnixEpoch);
+        var child = new TechnicalObjectRecord(
+            "phc.user_field:456",
+            ObjectKind.PhcUserField,
+            "u_test",
+            "dbo",
+            parent.ObjectId,
+            "phc.customizations",
+            null,
+            """{"source":"sys.columns","columnId":456,"parentObjectId":"123"}""",
+            DateTimeOffset.UnixEpoch);
+
+        var result = new ObjectIndexProjector().Project(CreateInput([child, parent]));
+
+        Assert.True(result.IsSuccess, string.Join("; ", result.Diagnostics.Select(x => x.Code)));
+        using var document = JsonDocument.Parse(result.JsonBytes!);
+        var projectedChild = document.RootElement.GetProperty("objects")
+            .EnumerateArray()
+            .Single(x => x.GetProperty("sourceObjectId").GetString() == child.ObjectId);
+        Assert.Equal(parent.ObjectId, projectedChild.GetProperty("parentSourceObjectId").GetString());
+    }
+
+    [Fact]
+    public void Project_Does_Not_Emit_Unresolved_Parent_Reference()
+    {
+        var child = new TechnicalObjectRecord(
+            "phc.user_field:456",
+            ObjectKind.PhcUserField,
+            "u_test",
+            "dbo",
+            "missing-parent",
+            "phc.customizations",
+            null,
+            """{"source":"sys.columns","columnId":456,"parentObjectId":"123"}""",
+            DateTimeOffset.UnixEpoch);
+
+        var result = new ObjectIndexProjector().Project(CreateInput([child]));
+
+        Assert.True(result.IsSuccess);
+        using var document = JsonDocument.Parse(result.JsonBytes!);
+        var item = Assert.Single(document.RootElement.GetProperty("objects").EnumerateArray());
+        Assert.False(item.TryGetProperty("parentSourceObjectId", out _));
+        Assert.Contains(result.Diagnostics, x => x.Code == "object_index_parent_unresolved");
+    }
+
+    [Fact]
     public void Contract_Validator_Accepts_Minimal_Valid_Object_Index()
     {
         var json = Encoding.UTF8.GetBytes(
