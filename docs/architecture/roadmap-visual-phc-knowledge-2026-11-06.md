@@ -115,6 +115,19 @@ Limites conhecidos:
 
 **Estado: desenho consolidado em partes; implementação do novo contrato ainda incompleta**
 
+**Atualização de implementação — 2026-11-07**
+
+Já foram acrescentados ao projeto `PhcKnowledgeScanner.Export` componentes puros e determinísticos, com testes aprovados no GitHub Actions:
+
+- `ObjectOperationResolver`: mapping explícito dos 21 kinds emitidos para a operação observadora;
+- `SourceIdentityResolver`: projeção de stamps PHC e IDs nativos SQL com scopes resolvidos dentro da captura;
+- `MetadataProjectionResolver`: metadata descritivo separado da projeção semântica;
+- `CanonicalJsonSerializer` e `MetadataFingerprintCalculator`: canonicalização e SHA-256 da projeção semântica.
+
+Não foram alterados schema SQLite, collectors, queries ou schemas IKP.
+
+Continuam pendentes o estado/fingerprint das definições, a leitura read-only tipada do workspace, a integração do projector end-to-end, o alinhamento final da fixture IKP e a validação com captura real.
+
 Já temos:
 - especificação IKP 0.1 documentada;
 - schemas e validador de fixture mínima;
