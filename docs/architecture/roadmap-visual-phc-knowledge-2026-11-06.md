@@ -1,7 +1,7 @@
 # Roadmap visual do PHC Knowledge — visão, fases e estado atual
 
-**Data de referência:** 2026-11-06  
-**Estado:** roadmap estratégico de trabalho, alinhado com as decisões de produto e com o código/documentação existentes.  
+**Data de referência:** 2026-11-07  
+**Estado:** roadmap estratégico atualizado após validação do Object Index e investigação de prontidão para exportação IKP.  
 **Nota:** as percentagens não são estimadas; os estados indicam maturidade qualitativa.
 
 ## 1. Objetivo do produto
@@ -41,11 +41,13 @@ flowchart TB
       B1["Identidade e proveniência<br/>SourceObjectId / SourceIdentity"]
       B2["Object-index<br/>MetadataFingerprint / DefinitionFingerprint"]
       B3["Cobertura e estados individuais<br/>Ausente ≠ vazio ≠ não recolhido"]
-      B4["IKP 0.1<br/>Manifesto, capabilities, coverage, payload, checksums"]
-      B5["Exportação e validação end-to-end<br/>Captura real → ZIP IKP válido"]
+      B4["Validação sintética do Object Index<br/>21 kinds + JSON Schema oficial"]
+      B5["Exportador IKP completo<br/>5 documentos + payload + checksums"]
+      B6["Validação round-trip<br/>ZIP → extração → validador oficial"]
+      B7["Validação com captura real<br/>Demo standard → instalação personalizada"]
       B1 --> B2
       B2 --> B3
-      B3 --> B4 --> B5
+      B3 --> B4 --> B5 --> B6 --> B7
     end
 
     subgraph P2["FASE 2 — Plataforma central"]
@@ -82,8 +84,8 @@ flowchart TB
     classDef validation fill:#fce5cd,stroke:#e69138,color:#783f04
 
     class A1,A2,A3 done
-    class B1,B2,B3,B4 progress
-    class B5 validation
+    class B1,B2,B3,B4 done
+    class B5,B6,B7 validation
     class C1,C2,C3,D1,D2,D3,D4,D5,E1,E2,E3,E4 pending
 ```
 
@@ -113,44 +115,63 @@ Limites conhecidos:
 
 ### Fase 1 — Captura fiável e pacote normalizado
 
-**Estado: projector object-index implementado; validação sintética e fixture IKP aprovadas; falta validar a saída C# contra o schema oficial e integrar captura real**
+**Estado: Object Index implementado e validado sinteticamente contra o schema oficial; exportador IKP completo por implementar; captura real ainda pendente**
 
 **Atualização de implementação — 2026-11-07**
 
-Já estão implementados no projeto `PhcKnowledgeScanner.Export`:
-- `ObjectOperationResolver`: mapping explícito dos 21 kinds emitidos para a operação observadora;
-- `SourceIdentityResolver`: projeção de stamps PHC e IDs nativos SQL com scopes resolvidos dentro da captura;
-- `MetadataProjectionResolver`, `CanonicalJsonSerializer` e `MetadataFingerprintCalculator`: metadata descritivo separado da projeção semântica e fingerprint determinístico;
-- `DefinitionProjectionResolver`: estados individuais de definição e validação de artefactos através dos bytes exatos;
-- `ObjectIndexProjectionInputReader`: leitura tipada de CaptureId, coverage, objetos, issues, metadados e bytes dos artefactos;
-- `ObjectIndexProjector`: geração determinística de `object-index.json`, independente de SQLite;
-- `ObjectIndexWorkspaceProjector`: orquestração entre workspace read-only e projector puro.
+#### P1.B — Object Index: concluído na vertente sintética
 
-**Validação confirmada:** GitHub Actions run `42418465891` — build concluído, **307 testes .NET aprovados** e saída real do projector C# (captura sintética mista com 4 objetos) validada pelo JSON Schema IKP 0.1 Draft 2020-12. GitHub Actions run `42418082661` — fixture IKP validada contra os schemas e verificações cruzadas, com **22 testes Python aprovados**. Os testes .NET cobrem os 21 kinds, variantes, identidade, parent, definições, coverage e determinismo.
+Implementado em `PhcKnowledgeScanner.Export`:
+- `ObjectOperationResolver`: mapping explícito dos 21 kinds emitidos para operações observadoras;
+- `SourceIdentityResolver`: stamps PHC e IDs nativos SQL, com scopes resolvidos dentro da captura;
+- `MetadataProjectionResolver`, `CanonicalJsonSerializer` e `MetadataFingerprintCalculator`: projeção semântica e fingerprints determinísticos;
+- `DefinitionProjectionResolver`: estados individuais Available / Empty / Unavailable / NotCollected, sustentados por evidência;
+- `ObjectIndexProjectionInputReader`: leitura read-only de CaptureId, coverage, objetos, issues, metadados e bytes de artefactos referenciados;
+- `ObjectIndexProjector`: projeção pura e determinística de `object-index.json`;
+- `ObjectIndexWorkspaceProjector`: ligação read-only entre workspace e projector.
 
-Não foram alterados schema SQLite, collectors ou queries PHC/SQL.
+**Validação confirmada — GitHub Actions run `42419610023`:**
+- Build .NET aprovado;
+- **275 testes .NET aprovados**;
+- cenário sintético do projector cobre os **21 kinds**;
+- JSON produzido pelo C# validado contra o JSON Schema oficial IKP 0.1 Draft 2020-12.
 
-Já temos:
-- especificação IKP 0.1, schemas e validador de fixture mínima;
-- matriz de compatibilidade Scanner ↔ IKP;
-- contrato P1 de identidade, proveniência e fingerprints;
-- investigação P1.B dos emissores do object-index;
-- política de fingerprints e matriz de SourceIdentity;
-- projeções de metadata e definição;
-- auditoria estática dos 21 tipos de objetos emitidos;
-- contrato de leitura read-only do workspace;
-- primeiro projector end-to-end do object-index;
-- testes determinísticos e de integração.
+Isto prova o contrato e a projeção com dados sintéticos. **Não prova ainda a fidelidade dos collectors a uma instalação PHC real.**
 
-Em curso:
-- validação formal do JSON produzido contra o schema IKP 0.1;
-- reforço de invariantes semânticas e cobertura de variantes/kinds;
-- alinhamento da fixture IKP com os kinds e operationIds reais.
+Não foram alterados schema SQLite, collectors ou queries PHC/SQL nesta etapa.
 
-Dependência para fechar a validação com dados reais:
-- uma captura Scanner controlada, primeiro de uma base demo standard e depois de uma instalação personalizada, com SQLite e artefactos.
+#### P1.C / IKP — prontidão para exportação investigada
 
-**Este continua a ser o foco atual.** A fixture já está alinhada com a separação REL/DTL: relações declaradas permanecem no payload próprio, fora de `object-index.json`. A saída C# já é validada diretamente contra o schema oficial. O próximo marco é fechar a geração/validação do pacote completo; depois validar com uma captura real.
+Investigação registada em [`p1b-ikp-package-export-readiness-investigation-2026-11-07.md`](p1b-ikp-package-export-readiness-investigation-2026-11-07.md).
+
+O pacote IKP 0.1 exige cinco documentos de raiz:
+1. `manifest.json`
+2. `capabilities.json`
+3. `coverage.json`
+4. `object-index.json`
+5. `checksums.json`
+
+O validador de referência também verifica referências cruzadas, paths seguros, artefactos, tamanhos, SHA-256 e `logicalContentDigest`.
+
+**Decisão de implementação:** criar um `IkpPackageExporter` dedicado, recebendo o `ScanManifest` completo e o workspace como entradas separadas e validando a correspondência entre ambos. O exportador inicial não exige alterações ao schema SQLite.
+
+Limitação identificada: o workspace atual não persiste timestamps reais de início/fim, ScanMode, ScannerVersion nem um origin descriptor estruturado. O exportador não pode inventar esses valores nem inferi-los de `created_at_utc` ou do label da instalação. Para a primeira versão, o manifesto completo terá de estar disponível em memória no momento da exportação.
+
+#### Próximos passos da Fase 1
+
+1. Implementar o pacote IKP mínimo com os cinco documentos obrigatórios.
+2. Incluir os artefactos reais já persistidos no workspace, preservando bytes exatos e paths seguros.
+3. Gerar checksums e `logicalContentDigest` segundo o validador de referência.
+4. Criar teste end-to-end: workspace sintético → ZIP → extração → validador oficial.
+5. Testar falhas de integridade: CaptureId divergente, coverage desatualizada, artefacto em falta, hash/tamanho incorreto, path inseguro e referências inválidas.
+6. Só depois validar com captura real: primeiro base PHC demo standard, depois instalação personalizada.
+
+#### Fase 1 — estado resumido
+
+- **Concluído:** P0 CaptureId/capabilities/coverage.
+- **Concluído:** P1.B Object Index, identidade, fingerprints e estados individuais, validados sinteticamente.
+- **Em curso seguinte:** exportador IKP completo e validação round-trip.
+- **Dependente de validação real:** fidelidade dos collectors e artefactos numa captura PHC demo e numa instalação personalizada.
 
 ### Fase 2 — Plataforma central
 
@@ -195,16 +216,17 @@ A IA não deverá inventar factos nem substituir a proveniência. Deve investiga
 
 ## 4. Próximos marcos recomendados
 
-| Ordem | Marco | Critério de conclusão |
+| Ordem | Marco | Estado / critério de conclusão |
 |---:|---|---|
-| 1 | Fechar P1.B do object-index | Projector determinístico, mapping fechado e testes unitários puros. |
-| 2 | Validar com captura real | SQLite e artefactos lidos em modo read-only; hashes, tamanhos, paths e referências coerentes. |
-| 3 | Corrigir compatibilidade IKP | Fixture e validador representam os kinds, operationIds e relações realmente emitidos. |
-| 4 | Produzir IKP a partir do Scanner | ZIP com manifesto, capabilities, coverage, object-index, checksums e payload validável. |
-| 5 | Implementar importador central | Pacote validado e importado sem duplicação, com captura preservada. |
-| 6 | Implementar histórico e identidade | Duas capturas da mesma instalação podem ser comparadas sem confundir instalação com entidade. |
-| 7 | Construir pesquisa e conhecimento | Consultas devolvem objetos, evidências, contexto e anotações rastreáveis. |
-| 8 | Adicionar investigação assistida | IA responde com referências às evidências e sinaliza incerteza. |
+| 1 | P0 — CaptureId, capabilities e coverage | **Concluído.** Contratos e testes de captura/cobertura existentes. |
+| 2 | P1.B — Object Index | **Concluído na vertente sintética.** 21 kinds, identidade, fingerprints, estados de definição, determinismo e validação do JSON Schema oficial; run `42419610023`, 275 testes .NET. |
+| 3 | Exportador IKP mínimo | **Próximo.** Cinco documentos obrigatórios, payload de artefactos do workspace, paths seguros e checksums. |
+| 4 | Validação round-trip IKP | ZIP extraído e validado por `validate_ikp_fixture.py`; testes positivos e negativos de integridade. |
+| 5 | Captura PHC real controlada | Primeiro demo standard, depois instalação personalizada; confirmar collectors, cobertura, artefactos e fidelidade dos dados. |
+| 6 | Importador da plataforma central | Pacote validado e importado de forma idempotente, sem duplicação e com captura preservada. |
+| 7 | Histórico, identidade e diff | Comparar capturas sem confundir instalação, objeto observado e entidade lógica; só inferir remoções com cobertura suficiente. |
+| 8 | Dependências, conhecimento e pesquisa | Consultas devolvem objetos, evidências, contexto e anotações rastreáveis. |
+| 9 | Investigação assistida por IA | Respostas fundamentadas em evidências, proveniência e incerteza explícita. |
 
 ## 5. Critério para não perder o rumo
 
@@ -227,7 +249,7 @@ Cada fase deve produzir uma capacidade verificável:
 - `docs/architecture/p1b-static-consistency-audit-2026-11-06.md` — auditoria estática do object-index.
 - `docs/architecture/p1b-projector-workspace-read-contract-2026-11-06.md` — leitura read-only do workspace.
 
-**Nota de rigor:** este roadmap é uma síntese de estado documental e de código na branch `main), em 2026-11-06. Não representa uma auditoria de execução recente nem percentagens de conclusão.
+**Nota de rigor:** este roadmap é uma síntese do estado documental, do código e dos resultados de CI observados na branch `main`, em 2026-11-07. Não representa percentagens de conclusão. A validação sintética do Object Index não substitui a validação de integração com uma captura PHC real.
 
 
 ## 7. Decisão transversal — preparação para RAG
