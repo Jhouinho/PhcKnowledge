@@ -108,8 +108,21 @@ public sealed class ObjectIndexProjectorTests
         await workspace.InitializeAsync("scan-projector", "demo", CancellationToken.None);
         await workspace.SaveCaptureCoverageAsync(
             captureId,
-            Array.Empty<PhcKnowledgeScanner.Abstractions.Coverage.DeclaredCapability>(),
-            Array.Empty<PhcKnowledgeScanner.Abstractions.Coverage.OperationCoverage>(),
+            [new DeclaredCapability(
+                "phc.customizations",
+                KnownOperations.PhcBrule,
+                KnownOperations.Version,
+                "phc.customizations",
+                true)],
+            [new OperationCoverage(
+                KnownOperations.PhcBrule,
+                KnownOperations.Version,
+                true,
+                OperationExecutionResult.Succeeded,
+                SourceAvailability.Present,
+                ContentAvailability.Available,
+                1,
+                Array.Empty<string>())],
             CancellationToken.None);
         var artifactId = await workspace.SaveArtifactAsync(
             "phc.customizations",
