@@ -66,7 +66,7 @@ Para os tipos abaixo, o campo `source` identifica a variante fixa do emissor. É
 | `phc.web_cssjs` | `codigo`, `tipo`, `inativo` boolean | Excluir `stamp`, `source`, `estado`. Título e conteúdo não estão no resumo atual | Incluir |
 | `phc.hidden_grid` | `ecran`, `nome`, `tag`, `tvalobj` | Excluir `stamp`, `source`. O código extraído de Xexpressao pertence à definição | Incluir |
 | `phc.custom_screen` | `ecran`, `nome`, `tabela`, `defeito`, `inactivo` boolean | Excluir `stamp`, `source`, `estado`. `ecrannm`, descrição e ordem não estão no resumo atual | Incluir |
-| `phc.user_tsql_function` | Variante `ftu`: `classif`, `inactivo` boolean. Variante `sys.objects`: `schema`, `inactivo` boolean | Excluir `stamp`, `source`, `estado`. A variante deve ser escolhida pelo campo `source` antes de projetar; não incluir o próprio marcador `source` | Incluir com projeção discriminada |
+| `phc.user_tsql_function` | Variante `ftu`: `classif`, `inactivo` boolean. Variante `sys.objects`: apenas `schema` | Excluir `stamp`, `source`, `estado`; na variante `sys.objects`, excluir também `inactivo` e `nome` (o nome já está em `TechnicalObjectRecord.Name`) | Incluir com projeção discriminada |
 
 ### 3.3 Campos PHC com normalização de atividade
 
@@ -78,6 +78,9 @@ O emissor grava `inactivo` como texto (por exemplo, `"0"`) e também grava `esta
 Não incluir simultaneamente `inactivo` e `estado`: isso duplicaria a mesma informação e criaria risco de divergência. A normalização deve ser centralizada e testada contra a função já existente; não deve ser reimplementada com conversões permissivas ad hoc.
 
 Para `phc.user_tsql_function`, o discriminador `source` seleciona a projeção. Se estiver ausente ou tiver valor desconhecido, omitir o fingerprint e emitir diagnóstico; não adivinhar a variante.
+
+**Exceção importante — variante `sys.objects`:** o collector atual escreve `inactivo = false` e `estado = "Activo"` como constantes para funções encontradas em `sys.objects`. A consulta não recolhe um estado de atividade PHC para estas funções. Estes valores são defaults sintéticos, não factos observados; não devem ser projetados para metadata nem usados no `MetadataFingerprint`. O nome já está em `TechnicalObjectRecord.Name`, pelo que também não deve ser duplicado no metadata. Esta regra não altera a variante `ftu`, onde `inactivo` é lido da tabela PHC.
+
 
 ## 4. Limitações reconhecidas
 
