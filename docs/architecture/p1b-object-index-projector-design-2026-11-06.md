@@ -180,6 +180,12 @@ Requisitos:
 
 ## 12. Estado e próximo passo
 
-O desenho do projetor está especificado, mas não implementado. A implementação só deve começar quando houver acesso a um workspace real para validar as premissas de integridade e resolução.
+O projector end-to-end ainda não está implementado. Já foram implementados componentes puros e determinísticos que não dependem de uma captura real:
 
-Próximo passo recomendado quando houver PC: recolher uma captura controlada (idealmente primeiro uma base demo sem personalizações e depois uma instalação personalizada), copiar SQLite + artefactos para ambiente de teste e executar um protótipo read-only do projetor. Antes disso, pode avançar-se com testes unitários puros para as matrizes de projeção sem depender de uma captura real.
+- `ObjectOperationResolver`: mapping explícito dos 21 kinds emitidos para a operação observadora, validando collector e variante PHC;
+- `SourceIdentityResolver`: projeção dos identificadores nativos e scopes sustentados pelos registos da mesma captura;
+- testes unitários para mapeamentos válidos, variantes desconhecidas, ausência de dados, resolução de parent e scopes ambíguos.
+
+A compilação e os testes desses componentes passaram no GitHub Actions. A validação dos pressupostos com uma captura real continua pendente.
+
+Próximo passo sem captura: implementar as projeções puras de metadata e as regras de estado de definição sobre entradas tipadas/fakes, sem ligar ainda ao workspace SQLite. Quando houver acesso ao PC, recolher uma captura controlada (idealmente primeiro uma base demo sem personalizações e depois uma instalação personalizada), copiar SQLite + artefactos para ambiente de teste e integrar o leitor read-only e o projector end-to-end.
