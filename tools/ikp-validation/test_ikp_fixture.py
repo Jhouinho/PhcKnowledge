@@ -64,8 +64,20 @@ class IkpFixtureValidationTests(unittest.TestCase):
     def test_reference_fixture_is_valid(self):
         result = validate_package(self.package, SCHEMAS)
         self.assertEqual("PASS", result["status"])
-        self.assertEqual(4, result["objects"])
+        self.assertEqual(3, result["objects"])
         self.assertEqual(8, result["checksummedFiles"])
+
+    def test_declared_relations_are_separate_from_object_index(self):
+        object_index = self.read_json("object-index.json")
+        relations = json.loads(
+            (self.package / "payload/relations/declared-relations.json").read_text(encoding="utf-8")
+        )
+        object_ids = {item["sourceObjectId"] for item in object_index["objects"]}
+        relation_ids = {item["sourceObjectId"] for item in relations["declaredRelations"]}
+
+        self.assertNotIn("phc.rel:REL001", object_ids)
+        self.assertIn("phc.rel:REL001", relation_ids)
+        self.assertEqual("PASS", validate_package(self.package, SCHEMAS)["status"])
 
     def test_tampered_payload_is_rejected(self):
         path = self.package / "payload/customizations/brule/7F3A.prg"
