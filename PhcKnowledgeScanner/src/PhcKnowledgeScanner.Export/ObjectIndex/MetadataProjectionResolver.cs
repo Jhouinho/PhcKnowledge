@@ -364,7 +364,7 @@ public static class MetadataProjectionResolver
             return false;
         }
 
-        destination[destinationName ?? sourceName] = value;
+        destination[destinationName ?? sourceName] = value.Clone();
         return true;
     }
 
