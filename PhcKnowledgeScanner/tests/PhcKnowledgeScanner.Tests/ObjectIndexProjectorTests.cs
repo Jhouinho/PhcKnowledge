@@ -107,14 +107,30 @@ public sealed class ObjectIndexProjectorTests
             "dbo",
             null,
             "phc.customizations",
-            null,
+            "artifact-rule",
             """{"source":"brule","stamp":"SYNTH-1","tabela":"FT","inactivo":"0"}""",
             DateTimeOffset.UnixEpoch);
 
+        var definitionBytes = Encoding.UTF8.GetBytes("FUNCTION BODY\\r\\n");
+        var definitionHash = Hash(definitionBytes);
+        ObjectIndexProjectionInput CreateMixedInput(IReadOnlyList<TechnicalObjectRecord> sourceObjects) =>
+            ObjectIndexProjectionInput.Success(
+                new WorkspaceCaptureMetadata(
+                    "b1b2c3d4-1111-4222-8333-123456789abc",
+                    "completed", null, null, true, false, false),
+                sourceObjects,
+                Array.Empty<CollectionIssue>(),
+                [new WorkspaceArtifactMetadata(
+                    "artifact-rule", "phc.customizations", "brule/SYNTH-1.prg",
+                    "text/plain", definitionHash, definitionBytes.Length, null)],
+                [new DefinitionArtifactSnapshot(
+                    "artifact-rule", definitionBytes, definitionHash, definitionBytes.Length)],
+                Array.Empty<ObjectIndexProjectionDiagnostic>());
+
         var first = new ObjectIndexProjector().Project(
-            CreateInput([database, table, userField, rule]));
+            CreateMixedInput([database, table, userField, rule]));
         var second = new ObjectIndexProjector().Project(
-            CreateInput([rule, userField, table, database]));
+            CreateMixedInput([rule, userField, table, database]));
 
         Assert.True(first.IsSuccess, string.Join("; ", first.Diagnostics.Select(x => x.Code)));
         Assert.True(second.IsSuccess, string.Join("; ", second.Diagnostics.Select(x => x.Code)));
@@ -150,7 +166,7 @@ public sealed class ObjectIndexProjectorTests
         var projectedRule = objects.Single(x => x.GetProperty("sourceObjectId").GetString() == rule.ObjectId);
         Assert.Equal("phc.stamp", projectedRule.GetProperty("sourceIdentity").GetProperty("scheme").GetString());
         Assert.Equal("SYNTH-1", projectedRule.GetProperty("sourceIdentity").GetProperty("value").GetString());
-        Assert.Equal("Unavailable", projectedRule.GetProperty("definition").GetProperty("status").GetString());
+        Assert.Equal("Available", projectedRule.GetProperty("definition").GetProperty("status").GetString());
     }
 
     [Fact]
