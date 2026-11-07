@@ -126,7 +126,7 @@ Já estão implementados no projeto `PhcKnowledgeScanner.Export`:
 - `ObjectIndexProjector`: geração determinística de `object-index.json`, independente de SQLite;
 - `ObjectIndexWorkspaceProjector`: orquestração entre workspace read-only e projector puro.
 
-**Validação confirmada:** GitHub Actions run `42417563340` — build concluído e **307 testes .NET aprovados**. GitHub Actions run `42417775044` — fixture IKP validada contra os schemas Draft 2020-12 e verificações cruzadas, com **19 testes Python aprovados**. Os testes .NET cobrem os 21 kinds, variantes, identidade, parent, definições, coverage e determinismo. A validação oficial Draft 2020-12 ainda não recebe diretamente os bytes produzidos pelo projector C#.
+**Validação confirmada:** GitHub Actions run `42418465891` — build concluído, **307 testes .NET aprovados** e saída real do projector C# (captura sintética mista com 4 objetos) validada pelo JSON Schema IKP 0.1 Draft 2020-12. GitHub Actions run `42418082661` — fixture IKP validada contra os schemas e verificações cruzadas, com **22 testes Python aprovados**. Os testes .NET cobrem os 21 kinds, variantes, identidade, parent, definições, coverage e determinismo.
 
 Não foram alterados schema SQLite, collectors ou queries PHC/SQL.
 
@@ -150,7 +150,7 @@ Em curso:
 Dependência para fechar a validação com dados reais:
 - uma captura Scanner controlada, primeiro de uma base demo standard e depois de uma instalação personalizada, com SQLite e artefactos.
 
-**Este continua a ser o foco atual.** A fixture já está alinhada com a separação REL/DTL: relações declaradas permanecem no payload próprio, fora de `object-index.json`. O próximo marco é validar diretamente a saída C# contra o schema oficial; depois validar com uma captura real e fechar o pacote ZIP IKP.
+**Este continua a ser o foco atual.** A fixture já está alinhada com a separação REL/DTL: relações declaradas permanecem no payload próprio, fora de `object-index.json`. A saída C# já é validada diretamente contra o schema oficial. O próximo marco é fechar a geração/validação do pacote completo; depois validar com uma captura real.
 
 ### Fase 2 — Plataforma central
 
