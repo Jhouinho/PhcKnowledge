@@ -68,6 +68,81 @@ public sealed class ObjectIndexProjectorTests
     }
 
     [Fact]
+    public void Project_Is_Deterministic_When_Mixed_Synthetic_Capture_Order_Changes()
+    {
+        var database = new TechnicalObjectRecord(
+            "sql.database:demo",
+            ObjectKind.Database,
+            "PHC_DEMO",
+            null,
+            null,
+            "sql.server.structure",
+            null,
+            """{"versionProperty":"16"}""",
+            DateTimeOffset.UnixEpoch);
+        var table = new TechnicalObjectRecord(
+            "sql.table:123",
+            ObjectKind.Table,
+            "FT",
+            "dbo",
+            null,
+            "sql.server.structure",
+            null,
+            """{"objectId":123,"typeDesc":"USER_TABLE","isMsShipped":false}""",
+            DateTimeOffset.UnixEpoch);
+        var userField = new TechnicalObjectRecord(
+            "phc.user_field:456",
+            ObjectKind.PhcUserField,
+            "u_test",
+            "dbo",
+            table.ObjectId,
+            "phc.customizations",
+            null,
+            """{"source":"sys.columns","columnId":456,"parentObjectId":"123","type":"varchar"}""",
+            DateTimeOffset.UnixEpoch);
+        var rule = new TechnicalObjectRecord(
+            "phc.brule:SYNTH-1",
+            ObjectKind.PhcUserRule,
+            "Regra sintética",
+            "dbo",
+            null,
+            "phc.customizations",
+            null,
+            """{"source":"brule","stamp":"SYNTH-1","tabela":"FT","inactivo":"0"}""",
+            DateTimeOffset.UnixEpoch);
+
+        var first = new ObjectIndexProjector().Project(
+            CreateInput([database, table, userField, rule]));
+        var second = new ObjectIndexProjector().Project(
+            CreateInput([rule, userField, table, database]));
+
+        Assert.True(first.IsSuccess, string.Join("; ", first.Diagnostics.Select(x => x.Code)));
+        Assert.True(second.IsSuccess, string.Join("; ", second.Diagnostics.Select(x => x.Code)));
+        Assert.Equal(first.JsonBytes, second.JsonBytes);
+
+        using var document = JsonDocument.Parse(first.JsonBytes!);
+        var objects = document.RootElement.GetProperty("objects").EnumerateArray().ToArray();
+        Assert.Equal(4, objects.Length);
+
+        var projectedTable = objects.Single(x => x.GetProperty("sourceObjectId").GetString() == table.ObjectId);
+        Assert.Equal("sqlserver.object_id", projectedTable.GetProperty("sourceIdentity").GetProperty("scheme").GetString());
+        Assert.Equal("123", projectedTable.GetProperty("sourceIdentity").GetProperty("value").GetString());
+
+        var projectedField = objects.Single(x => x.GetProperty("sourceObjectId").GetString() == userField.ObjectId);
+        Assert.Equal(table.ObjectId, projectedField.GetProperty("parentSourceObjectId").GetString());
+        Assert.Equal("sqlserver.column_id", projectedField.GetProperty("sourceIdentity").GetProperty("scheme").GetString());
+        Assert.Equal("456", projectedField.GetProperty("sourceIdentity").GetProperty("value").GetString());
+        Assert.Equal(
+            "database:PHC_DEMO/object:123",
+            projectedField.GetProperty("sourceIdentity").GetProperty("scope").GetString());
+
+        var projectedRule = objects.Single(x => x.GetProperty("sourceObjectId").GetString() == rule.ObjectId);
+        Assert.Equal("phc.stamp", projectedRule.GetProperty("sourceIdentity").GetProperty("scheme").GetString());
+        Assert.Equal("SYNTH-1", projectedRule.GetProperty("sourceIdentity").GetProperty("value").GetString());
+        Assert.Equal("NotCollected", projectedRule.GetProperty("definition").GetProperty("status").GetString());
+    }
+
+    [Fact]
     public void Project_Fails_When_OperationId_Cannot_Be_Resolved()
     {
         var record = new TechnicalObjectRecord(
