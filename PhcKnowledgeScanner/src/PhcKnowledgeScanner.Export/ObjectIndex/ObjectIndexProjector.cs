@@ -69,6 +69,57 @@ public sealed class ObjectIndexProjector
             return ObjectIndexProjectionResult.Failure(diagnostics);
         }
 
+        if (input.Capture.HasCompleteCoverageMetadata)
+        {
+            var capabilityGroups = input.Capture.Capabilities!
+                .GroupBy(x => x.OperationId, StringComparer.Ordinal)
+                .ToDictionary(x => x.Key, x => x.ToArray(), StringComparer.Ordinal);
+            var coverageGroups = input.Capture.Coverage!
+                .GroupBy(x => x.OperationId, StringComparer.Ordinal)
+                .ToDictionary(x => x.Key, x => x.ToArray(), StringComparer.Ordinal);
+
+            foreach (var operationGroup in operations.GroupBy(x => x.Value.OperationId!, StringComparer.Ordinal))
+            {
+                if (!capabilityGroups.TryGetValue(operationGroup.Key, out var capabilities)
+                    || capabilities.Length != 1
+                    || !capabilities[0].Supported)
+                {
+                    diagnostics.Add(new ObjectIndexProjectionDiagnostic(
+                        "object_index_operation_not_declared_supported",
+                        $"Operation '{operationGroup.Key}' is not declared exactly once as supported in the capture capability catalog."));
+                    continue;
+                }
+
+                if (!coverageGroups.TryGetValue(operationGroup.Key, out var coverages)
+                    || coverages.Length != 1)
+                {
+                    diagnostics.Add(new ObjectIndexProjectionDiagnostic(
+                        "object_index_operation_coverage_missing_or_ambiguous",
+                        $"Operation '{operationGroup.Key}' does not have exactly one coverage entry."));
+                    continue;
+                }
+
+                if (!string.Equals(capabilities[0].CapabilityVersion, coverages[0].CapabilityVersion, StringComparison.Ordinal)
+                    || operationGroup.Any(x => !string.Equals(x.Value.OperationId, capabilities[0].OperationId, StringComparison.Ordinal)))
+                {
+                    diagnostics.Add(new ObjectIndexProjectionDiagnostic(
+                        "object_index_operation_coverage_version_mismatch",
+                        $"Operation '{operationGroup.Key}' has inconsistent capability and coverage versions."));
+                }
+            }
+
+            if (diagnostics.Any(x => x.Code.StartsWith("object_index_operation_", StringComparison.Ordinal)))
+            {
+                return ObjectIndexProjectionResult.Failure(diagnostics);
+            }
+        }
+        else
+        {
+            diagnostics.Add(new ObjectIndexProjectionDiagnostic(
+                "object_index_coverage_metadata_unavailable",
+                "Capability/coverage metadata is unavailable in this workspace; operation provenance could not be cross-checked."));
+        }
+
         var identities = SourceIdentityResolver.ResolveAll(objects);
         var definitions = DefinitionProjectionResolver.ResolveAll(
             objects,
