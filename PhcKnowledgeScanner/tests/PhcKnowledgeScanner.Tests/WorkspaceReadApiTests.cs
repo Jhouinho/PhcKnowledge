@@ -86,7 +86,7 @@ public sealed class WorkspaceReadApiTests
         }
 
         var dbPath = Path.Combine(root, "workspace.db");
-        var before = SHA256.HashData(await File.ReadAllBytesAsync(dbPath));
+        var before = SHA256.HashData(await ReadFileSharedAsync(dbPath));
 
         await using (var readOnly = await SqliteScanWorkspace.OpenExistingAsync(root, readOnly: true))
         {
@@ -103,7 +103,7 @@ public sealed class WorkspaceReadApiTests
             Assert.True(integrity.IsValid);
         }
 
-        var after = SHA256.HashData(await File.ReadAllBytesAsync(dbPath));
+        var after = SHA256.HashData(await ReadFileSharedAsync(dbPath));
         Assert.Equal(before, after);
     }
 
@@ -196,6 +196,20 @@ public sealed class WorkspaceReadApiTests
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => workspace.ReadArtifactBytesAsync("sql.server.structure/../outside.txt"));
+    }
+
+    private static async Task<byte[]> ReadFileSharedAsync(string path)
+    {
+        await using var stream = new FileStream(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete,
+            bufferSize: 4096,
+            useAsync: true);
+        using var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer);
+        return buffer.ToArray();
     }
 
     private static string NewRoot() =>
