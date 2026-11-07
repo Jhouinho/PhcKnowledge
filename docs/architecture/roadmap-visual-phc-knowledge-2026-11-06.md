@@ -113,7 +113,7 @@ Limites conhecidos:
 
 ### Fase 1 — Captura fiável e pacote normalizado
 
-**Estado: contratos principais e primeiro projector do object-index implementados; IKP end-to-end ainda por fechar**
+**Estado: projector object-index implementado; validação sintética e fixture IKP aprovadas; falta validar a saída C# contra o schema oficial e integrar captura real**
 
 **Atualização de implementação — 2026-11-07**
 
@@ -126,7 +126,7 @@ Já estão implementados no projeto `PhcKnowledgeScanner.Export`:
 - `ObjectIndexProjector`: geração determinística de `object-index.json`, independente de SQLite;
 - `ObjectIndexWorkspaceProjector`: orquestração entre workspace read-only e projector puro.
 
-**Validação:** GitHub Actions run `42416070993` — build concluído e **241 testes aprovados**. Inclui integração entre workspace SQLite e projector, validação de operationId contra capabilities/coverage, consistência de versão/collector, estado da operação e contagem mínima de objetos. A validação formal do documento produzido contra o JSON Schema IKP ainda não está integrada no pipeline do projector.
+**Validação confirmada:** GitHub Actions run `42417563340` — build concluído e **307 testes .NET aprovados**. GitHub Actions run `42417775044` — fixture IKP validada contra os schemas Draft 2020-12 e verificações cruzadas, com **19 testes Python aprovados**. Os testes .NET cobrem os 21 kinds, variantes, identidade, parent, definições, coverage e determinismo. A validação oficial Draft 2020-12 ainda não recebe diretamente os bytes produzidos pelo projector C#.
 
 Não foram alterados schema SQLite, collectors ou queries PHC/SQL.
 
@@ -150,7 +150,7 @@ Em curso:
 Dependência para fechar a validação com dados reais:
 - uma captura Scanner controlada, primeiro de uma base demo standard e depois de uma instalação personalizada, com SQLite e artefactos.
 
-**Este continua a ser o foco atual.** O próximo marco é validar o object-index contra o schema e contra uma captura real; só depois avançar para o pacote ZIP IKP completo.
+**Este continua a ser o foco atual.** A fixture já está alinhada com a separação REL/DTL: relações declaradas permanecem no payload próprio, fora de `object-index.json`. O próximo marco é validar diretamente a saída C# contra o schema oficial; depois validar com uma captura real e fechar o pacote ZIP IKP.
 
 ### Fase 2 — Plataforma central
 
