@@ -392,7 +392,7 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
     public async Task<string?> ReadArtifactTextAsync(string artifactId, CancellationToken cancellationToken = default)
     {
         await using var cmd = _connection.CreateCommand();
-        cmd.CommandText = "SELECT collector_id, relative_path FROM artifacts WHERE artifact_id = $id LIMIT 1;";
+        cmd.CommandText = "SELECT artifact_id, collector_id, relative_path FROM artifacts WHERE artifact_id = $id LIMIT 1;";
         cmd.Parameters.AddWithValue("$id", artifactId);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -400,39 +400,21 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
             return null;
         }
 
-        var collectorId = reader.GetString(0);
-        var relative = reader.GetString(1);
-        var fullPath = ResolveArtifactPath(collectorId, relative);
+        var artifact = new WorkspaceArtifactMetadata(
+            reader.GetString(0),
+            reader.GetString(1),
+            reader.GetString(2),
+            string.Empty,
+            string.Empty,
+            0,
+            null);
+        var fullPath = ResolveArtifactPath(artifact);
         if (!File.Exists(fullPath))
         {
             return null;
         }
 
         return await File.ReadAllTextAsync(fullPath, Encoding.UTF8, cancellationToken).ConfigureAwait(false);
-    }
-
-    private string ResolveArtifactPath(string collectorId, string relativePath)
-    {
-        if (string.IsNullOrWhiteSpace(collectorId) || Path.IsPathRooted(collectorId)
-            || string.IsNullOrWhiteSpace(relativePath) || Path.IsPathRooted(relativePath))
-        {
-            throw new InvalidDataException("Artifact path must be relative to the workspace artifact directory.");
-        }
-
-        var artifactsRoot = Path.GetFullPath(Path.Combine(RootPath, "artifacts"));
-        var fullPath = Path.GetFullPath(Path.Combine(
-            artifactsRoot,
-            collectorId,
-            relativePath.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar)));
-        var prefix = artifactsRoot.EndsWith(Path.DirectorySeparatorChar)
-            ? artifactsRoot
-            : artifactsRoot + Path.DirectorySeparatorChar;
-        if (!fullPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidDataException("Artifact path resolves outside the workspace artifact directory.");
-        }
-
-        return fullPath;
     }
 
     public async Task<IReadOnlyDictionary<string, int>> GetObjectCountsByKindAsync(CancellationToken cancellationToken = default)
