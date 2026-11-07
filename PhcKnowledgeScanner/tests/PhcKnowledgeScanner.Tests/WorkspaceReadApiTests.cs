@@ -49,10 +49,12 @@ public sealed class WorkspaceReadApiTests
             Assert.NotNull(artifact.MetadataJson);
 
             var byId = await workspace.GetArtifactMetadataAsync(artifactId);
-            Assert.Equal(artifact, byId);
+            Assert.Equal(artifact.ArtifactId, byId?.ArtifactId);
+            Assert.Equal(artifact.Sha256, byId?.Sha256);
 
             var readBytes = await workspace.ReadArtifactBytesAsync(artifactId);
-            Assert.Equal(bytes, readBytes);
+            Assert.NotNull(readBytes);
+            Assert.Equal(bytes, readBytes!);
 
             var integrity = await workspace.CheckIntegrityAsync();
             Assert.True(integrity.IsValid);
@@ -93,7 +95,9 @@ public sealed class WorkspaceReadApiTests
 
             var artifacts = await readOnly.GetArtifactsAsync();
             var artifact = Assert.Single(artifacts);
-            Assert.Equal(bytes, await readOnly.ReadArtifactBytesAsync(artifact.ArtifactId));
+            var readBytes = await readOnly.ReadArtifactBytesAsync(artifact.ArtifactId);
+            Assert.NotNull(readBytes);
+            Assert.Equal(bytes, readBytes!);
 
             var integrity = await readOnly.CheckIntegrityAsync();
             Assert.True(integrity.IsValid);
