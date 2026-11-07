@@ -111,6 +111,87 @@ public sealed class ObjectIndexProjectorTests
             """{"source":"brule","stamp":"SYNTH-1","tabela":"FT","inactivo":"0"}""",
             DateTimeOffset.UnixEpoch);
 
+        TechnicalObjectRecord Phc(string objectId, string kind, string source) =>
+            new(
+                objectId,
+                kind,
+                $"Synthetic {kind}",
+                "dbo",
+                null,
+                "phc.customizations",
+                null,
+                $"""{"source":"{{source}}","stamp":"{{objectId}}","inactivo":"0","tabela":"FT","ecran":"FT","campo":"u_test","qevento":"1","codigo":"TEST","teclas":"F7","nome":"Synthetic","tag":"TAG","tvalobj":"VALUE","tipo":"JS","defeito":"0","classif":"U"}""",
+                DateTimeOffset.UnixEpoch);
+
+        var primaryKey = new TechnicalObjectRecord(
+            "sql.pk:pk-ft",
+            ObjectKind.PrimaryKey,
+            "PK_FT",
+            "dbo",
+            table.ObjectId,
+            "sql.server.structure",
+            null,
+            """{"columns":[{"name":"FTSTAMP","ordinal":1}]}""",
+            DateTimeOffset.UnixEpoch);
+        var foreignKey = new TechnicalObjectRecord(
+            "sql.fk:fk-ft",
+            ObjectKind.ForeignKey,
+            "FK_FT",
+            "dbo",
+            table.ObjectId,
+            "sql.server.structure",
+            null,
+            """{"referencedSchema":"dbo","referencedTable":"CL","deleteReferentialAction":"NO_ACTION","updateReferentialAction":"NO_ACTION","columns":[{"parent":"CLSTAMP","referenced":"CLSTAMP","ordinal":1}]}""",
+            DateTimeOffset.UnixEpoch);
+        var view = new TechnicalObjectRecord(
+            "sql.view:v-demo",
+            ObjectKind.View,
+            "vw_Demo",
+            "dbo",
+            null,
+            "sql.server.structure",
+            null,
+            null,
+            DateTimeOffset.UnixEpoch);
+        var procedure = new TechnicalObjectRecord(
+            "sql.procedure:p-demo",
+            ObjectKind.StoredProcedure,
+            "sp_Demo",
+            "dbo",
+            null,
+            "sql.server.structure",
+            null,
+            null,
+            DateTimeOffset.UnixEpoch);
+        var trigger = new TechnicalObjectRecord(
+            "sql.trigger:tr-demo",
+            ObjectKind.Trigger,
+            "tr_Demo",
+            "dbo",
+            table.ObjectId,
+            "sql.server.structure",
+            null,
+            """{"isDisabled":false}""",
+            DateTimeOffset.UnixEpoch);
+
+        var completeObjects = new[]
+        {
+            database, table, userField, rule,
+            primaryKey, foreignKey, view, procedure, trigger,
+            Phc("phc.ebrule:SYNTH-2", ObjectKind.PhcWebUserRule, "ebrule"),
+            Phc("phc.ti:SYNTH-3", ObjectKind.PhcHotkey, "ti"),
+            Phc("phc.udefs:SYNTH-4", ObjectKind.PhcDefaultValue, "udefs"),
+            Phc("phc.eudefs:SYNTH-5", ObjectKind.PhcWebDefaultValue, "eudefs"),
+            Phc("phc.eventos:SYNTH-6", ObjectKind.PhcEvent, "eventos"),
+            Phc("phc.eeventos:SYNTH-7", ObjectKind.PhcWebEvent, "eeventos"),
+            Phc("phc.escr:SYNTH-8", ObjectKind.PhcWebScript, "escr"),
+            Phc("phc.jsu:SYNTH-9", ObjectKind.PhcUserJavascript, "jsu"),
+            Phc("phc.cssjs:SYNTH-10", ObjectKind.PhcWebCssJs, "cssjs"),
+            Phc("phc.formc:SYNTH-11", ObjectKind.PhcHiddenGrid, "formc"),
+            Phc("phc.formb:SYNTH-12", ObjectKind.PhcCustomScreen, "formb"),
+            Phc("phc.ftu:SYNTH-13", ObjectKind.PhcUserTsqlFunction, "ftu")
+        };
+
         var definitionBytes = Encoding.UTF8.GetBytes("FUNCTION BODY\\r\\n");
         var definitionHash = Hash(definitionBytes);
         ObjectIndexProjectionInput CreateMixedInput(IReadOnlyList<TechnicalObjectRecord> sourceObjects) =>
@@ -128,9 +209,9 @@ public sealed class ObjectIndexProjectorTests
                 Array.Empty<ObjectIndexProjectionDiagnostic>());
 
         var first = new ObjectIndexProjector().Project(
-            CreateMixedInput([database, table, userField, rule]));
+            CreateMixedInput(completeObjects));
         var second = new ObjectIndexProjector().Project(
-            CreateMixedInput([rule, userField, table, database]));
+            CreateMixedInput(completeObjects.Reverse().ToArray()));
 
         Assert.True(first.IsSuccess, string.Join("; ", first.Diagnostics.Select(x => x.Code)));
         Assert.True(second.IsSuccess, string.Join("; ", second.Diagnostics.Select(x => x.Code)));
@@ -149,7 +230,7 @@ public sealed class ObjectIndexProjectorTests
 
         using var document = JsonDocument.Parse(first.JsonBytes!);
         var objects = document.RootElement.GetProperty("objects").EnumerateArray().ToArray();
-        Assert.Equal(4, objects.Length);
+        Assert.Equal(21, objects.Length);
 
         var projectedTable = objects.Single(x => x.GetProperty("sourceObjectId").GetString() == table.ObjectId);
         Assert.Equal("sqlserver.object_id", projectedTable.GetProperty("sourceIdentity").GetProperty("scheme").GetString());
