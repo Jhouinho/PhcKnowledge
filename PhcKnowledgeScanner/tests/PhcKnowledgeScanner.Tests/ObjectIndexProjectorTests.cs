@@ -108,6 +108,29 @@ public sealed class ObjectIndexProjectorTests
     }
 
     [Fact]
+    public void Contract_Validator_Rejects_NonCanonical_Uuid_And_Invalid_Fingerprint()
+    {
+        var json = Encoding.UTF8.GetBytes(
+            """{"schemaVersion":"1","captureId":"{b1b2c3d4-1111-4222-8333-123456789abc}","objects":[{"sourceObjectId":"x","objectKind":"table","metadata":{},"metadataFingerprint":{"algorithm":"sha256","value":"NOT_A_HASH"},"definition":{"status":"NotCollected","artifactIds":[]},"operationId":"op"}]}""");
+
+        var diagnostics = ObjectIndexContractValidator.Validate(json);
+
+        Assert.Contains(diagnostics, x => x.Code == "object_index_capture_id_invalid");
+        Assert.Contains(diagnostics, x => x.Code == "object_index_fingerprint_invalid");
+    }
+
+    [Fact]
+    public void Contract_Validator_Rejects_Invalid_Source_Identity()
+    {
+        var json = Encoding.UTF8.GetBytes(
+            """{"schemaVersion":"1","captureId":"b1b2c3d4-1111-4222-8333-123456789abc","objects":[{"sourceObjectId":"x","objectKind":"table","sourceIdentity":{"scheme":"sqlserver.object_id","value":"","scope":"database:demo"},"metadata":{},"definition":{"status":"NotCollected","artifactIds":[]},"operationId":"op"}]}""");
+
+        var diagnostics = ObjectIndexContractValidator.Validate(json);
+
+        Assert.Contains(diagnostics, x => x.Code == "object_index_source_identity_invalid");
+    }
+
+    [Fact]
     public void Project_Fails_When_Operation_Is_Not_Declared_In_Capture_Capabilities()
     {
         var record = new TechnicalObjectRecord(
