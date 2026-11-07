@@ -59,7 +59,7 @@ public sealed class MetadataProjectionResolverTests
         var names = metadata.RootElement.GetProperty("columns").EnumerateArray()
             .Select(x => x.GetProperty("name").GetString())
             .ToArray();
-        Assert.Equal(["col_b", "col_a"], names);
+        Assert.Equal(new[] { "col_b", "col_a" }, names);
         Assert.False(metadata.RootElement.TryGetProperty("uniqueIndexId", out _));
     }
 
@@ -115,7 +115,7 @@ public sealed class MetadataProjectionResolverTests
     }
 
     [Fact]
-    public void Unknown_Phс_Activity_Is_Not_Silently_Treated_As_Active()
+    public void Unknown_Phc_Activity_Is_Not_Silently_Treated_As_Active()
     {
         var record = Create(
             ObjectKind.PhcUserRule,
