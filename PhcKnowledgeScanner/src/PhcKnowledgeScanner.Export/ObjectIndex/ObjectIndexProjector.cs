@@ -99,12 +99,15 @@ public sealed class ObjectIndexProjector
                     continue;
                 }
 
+                var operationCollectorMismatch = objects
+                    .Where(x => string.Equals(operations[x.ObjectId].OperationId, operationGroup.Key, StringComparison.Ordinal))
+                    .Any(x => !string.Equals(x.CollectorId, capabilities[0].CollectorId, StringComparison.Ordinal));
                 if (!string.Equals(capabilities[0].CapabilityVersion, coverages[0].CapabilityVersion, StringComparison.Ordinal)
-                    || operationGroup.Any(x => !string.Equals(x.Value.OperationId, capabilities[0].OperationId, StringComparison.Ordinal)))
+                    || operationCollectorMismatch)
                 {
                     diagnostics.Add(new ObjectIndexProjectionDiagnostic(
                         "object_index_operation_coverage_version_mismatch",
-                        $"Operation '{operationGroup.Key}' has inconsistent capability and coverage versions."));
+                        $"Operation '{operationGroup.Key}' has inconsistent capability version or collector provenance."));
                 }
             }
 
