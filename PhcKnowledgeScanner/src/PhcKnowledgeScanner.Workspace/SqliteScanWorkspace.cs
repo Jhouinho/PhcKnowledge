@@ -433,7 +433,8 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
         }
 
         var index = 0;
-        var status = reader.IsDBNull(index) ? null : reader.GetString(index++);
+        var status = reader.IsDBNull(index) ? null : reader.GetString(index);
+        index++;
         string? captureId = null;
         string? capabilitiesJson = null;
         string? coverageJson = null;
