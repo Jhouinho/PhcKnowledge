@@ -180,15 +180,29 @@ Requisitos:
 
 ## 12. Estado e próximo passo
 
-O projector end-to-end ainda não está implementado. Já foram implementados componentes puros e determinísticos que não dependem de uma captura real:
+**Estado atual:** o primeiro projector end-to-end já está implementado na branch `main), com separação entre acesso ao workspace, projeção pura e orquestração.
 
-- `ObjectOperationResolver`: mapping explícito dos 21 kinds emitidos para a operação observadora, validando collector e variante PHC;
-- `SourceIdentityResolver`: projeção dos identificadores nativos e scopes sustentados pelos registos da mesma captura;
-- `MetadataProjectionResolver`: metadata descritivo e projeção semântica separada, com normalização conservadora da atividade PHC;
-- `CanonicalJsonSerializer` + `MetadataFingerprintCalculator`: canonicalização e SHA-256 da projeção semântica;
-- `DefinitionProjectionResolver`: estados individuais de definição, correspondência de issues específicas por operação/objeto e verificação de integridade dos bytes dos artefactos;
-- testes unitários para mapeamentos válidos, variantes desconhecidas, ausência de dados, resolução de parent, scopes ambíguos, metadata, atividade desconhecida, canonicalização, estabilidade de fingerprints, estados de definição e integridade dos artefactos.
+Componentes:
+- `ObjectIndexProjectionInputReader`: valida integridade SQLite e lê CaptureId, coverage/capabilities, objetos, issues, metadados e bytes exatos dos artefactos;
+- `ObjectIndexProjector`: projeta o documento IKP 0.1 sem dependência de SQLite ou filesystem;
+- `ObjectIndexWorkspaceProjector`: liga o leitor read-only ao projector puro;
+- os resolvers de operação, identidade, metadata/fingerprint e definição mantêm-se componentes independentes e reutilizados pelo projector.
 
-A compilação e os testes passaram no GitHub Actions (**228 testes aprovados**). A leitura read-only tipada do workspace, a integração do projector end-to-end e a validação dos pressupostos com uma captura real continuam pendentes.
+Regras implementadas no projector:
+- falha se CaptureId não for UUID, se SourceObjectId não for único ou se operationId não puder ser resolvido;
+- não inventa SourceIdentity quando a evidência é insuficiente;
+- preserva metadata descritivo e só emite metadataFingerprint quando a projeção semântica está completa;
+- valida os bytes, tamanho e SHA-256 dos artefactos antes de declarar uma definição Available;
+- não infere Empty;
+- só emite parentSourceObjectId quando o parent existe na mesma captura;
+- ordena objetos e artefactos deterministicamente e serializa com nomes camelCase do contrato IKP.
 
-Próximo passo sem captura: consolidar o contrato de leitura read-only do workspace para fornecer ao projector os objetos, issues e bytes dos artefactos, sem alterar o schema SQLite nem os collectors. Quando houver acesso ao PC, recolher uma captura controlada (idealmente primeiro uma base demo sem personalizações e depois uma instalação personalizada), copiar SQLite + artefactos para ambiente de teste e integrar o leitor read-only e o projector end-to-end.
+Validação automatizada:
+- GitHub Actions, run `42415572239`: **build concluído com sucesso; 240 testes aprovados**;
+- testes incluem projeção determinística, operação não resolvida, SourceObjectId duplicado e integração do leitor com o projector através de um workspace SQLite;
+- o teste de leitura read-only confirmou que a abertura e leitura não alteram o conteúdo da base de dados;
+- ainda não foi validado um workspace real produzido por uma captura PHC, nem está integrada nesta etapa a validação automática contra o JSON Schema oficial.
+
+Sem alterações ao schema SQLite ou aos collectors.
+
+**Próximo passo:** integrar a validação formal do JSON Schema IKP 0.1 e reforçar as invariantes semânticas; depois produzir um primeiro object-index a partir de uma captura controlada (base demo standard e, posteriormente, instalação personalizada). A ausência de captura real não impede continuar os testes de contrato e fixtures.
