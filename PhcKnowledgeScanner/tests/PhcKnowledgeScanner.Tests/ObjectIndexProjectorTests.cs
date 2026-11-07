@@ -120,7 +120,7 @@ public sealed class ObjectIndexProjectorTests
                 null,
                 "phc.customizations",
                 null,
-                $"""{"source":"{{source}}","stamp":"{{objectId}}","inactivo":"0","tabela":"FT","ecran":"FT","campo":"u_test","qevento":"1","codigo":"TEST","teclas":"F7","nome":"Synthetic","tag":"TAG","tvalobj":"VALUE","tipo":"JS","defeito":"0","classif":"U"}""",
+                $$"""{"source":"{{source}}","stamp":"{{objectId}}","inactivo":"0","tabela":"FT","ecran":"FT","campo":"u_test","qevento":"1","codigo":"TEST","teclas":"F7","nome":"Synthetic","tag":"TAG","tvalobj":"VALUE","tipo":"JS","defeito":"0","classif":"U"}""",
                 DateTimeOffset.UnixEpoch);
 
         var primaryKey = new TechnicalObjectRecord(
