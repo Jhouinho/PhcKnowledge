@@ -113,7 +113,7 @@ Concluído:
 5. Leitura dos bytes apenas para artefactos efetivamente referenciados por objetos, evitando carregar artefactos não utilizados na projeção.
 6. Cruzamento de operationIds com capabilities e coverage quando a metadata está disponível. Workspaces antigos sem essa metadata recebem diagnóstico explícito; metadata presente mas inconsistente bloqueia a projeção.
 
-A validação CI do primeiro projector integrado passou no GitHub Actions run `42415572239`: build concluído e 240 testes aprovados. A validação cruzada de capabilities/coverage e a otimização da leitura de artefactos foram acrescentadas depois e estão sujeitas ao run CI mais recente.
+A validação CI da integração atual passou no GitHub Actions run `42416070993`: build concluído e 241 testes aprovados, incluindo a validação cruzada de capabilities/coverage e a leitura seletiva de artefactos referenciados.
 
 Restante:
 1. Fechar a validação formal contra o JSON Schema IKP 0.1 e invariantes semânticas.
