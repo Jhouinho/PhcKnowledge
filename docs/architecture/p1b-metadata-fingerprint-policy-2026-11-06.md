@@ -129,7 +129,7 @@ Casos de regressão prioritários:
 - Política de campos semânticos por kind: documentada.
 - `MetadataProjectionResolver`: implementado e testado; produz metadata descritivo e a projeção semântica separada.
 - Normalização de atividade: reconhece apenas valores explícitos; valores desconhecidos preservam o bruto e impedem fingerprint.
-- Canonicalização RFC 8785 e SHA-256: ainda não implementados.
+- `CanonicalJsonSerializer` e `MetadataFingerprintCalculator`: implementados e testados no GitHub Actions. O canonicalizador segue a ordenação/serialização canónica necessária para os tipos efetivamente presentes nas projeções atuais (strings, booleanos, null, arrays, objetos e inteiros seguros); rejeita outros números em vez de produzir um fingerprint ambíguo.
 - Alterações ao SQLite, schema IKP ou collectors: nenhuma.
 - Validação com workspace real: pendente de acesso a uma captura (SQLite + artefactos).
 
