@@ -96,6 +96,50 @@ public sealed class ObjectIndexProjectorTests
         Assert.Contains(result.Diagnostics, x => x.Code == "object_index_source_object_id_not_unique");
     }
 
+    [Fact]
+    public async Task Workspace_Projector_Connects_Read_Only_Reader_To_Pure_Projector()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "PhcKnowledgeScanner-tests", Guid.NewGuid().ToString("N"));
+        var captureId = "b1b2c3d4-1111-4222-8333-123456789abc";
+        var bytes = Encoding.UTF8.GetBytes("FUNCTION BODY");
+        await using var workspace = await PhcKnowledgeScanner.Workspace.SqliteScanWorkspace.CreateAsync(
+            root, CancellationToken.None);
+
+        await workspace.InitializeAsync("scan-projector", "demo", CancellationToken.None);
+        await workspace.SaveCaptureCoverageAsync(
+            captureId,
+            Array.Empty<PhcKnowledgeScanner.Abstractions.Coverage.DeclaredCapability>(),
+            Array.Empty<PhcKnowledgeScanner.Abstractions.Coverage.OperationCoverage>(),
+            CancellationToken.None);
+        var artifactId = await workspace.SaveArtifactAsync(
+            "phc.customizations",
+            "brule/S1.prg",
+            bytes,
+            "text/plain",
+            null,
+            CancellationToken.None);
+        await workspace.UpsertObjectAsync(
+            new TechnicalObjectRecord(
+                "phc.brule:S1",
+                ObjectKind.PhcUserRule,
+                "Regra de teste",
+                "dbo",
+                null,
+                "phc.customizations",
+                artifactId,
+                """{"source":"brule","stamp":"S1","tabela":"FT","inactivo":"0"}""",
+                DateTimeOffset.UnixEpoch),
+            CancellationToken.None);
+
+        var result = await new ObjectIndexWorkspaceProjector().ProjectAsync(workspace);
+
+        Assert.True(result.IsSuccess);
+        using var document = JsonDocument.Parse(result.JsonBytes!);
+        var item = Assert.Single(document.RootElement.GetProperty("objects").EnumerateArray());
+        Assert.Equal(artifactId, item.GetProperty("definition").GetProperty("artifactIds")[0].GetString());
+        Assert.Equal("Available", item.GetProperty("definition").GetProperty("status").GetString());
+    }
+
     private static ObjectIndexProjectionInput CreateInput(IReadOnlyList<TechnicalObjectRecord> objects) =>
         ObjectIndexProjectionInput.Success(
             new WorkspaceCaptureMetadata(
