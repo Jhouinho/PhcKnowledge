@@ -225,6 +225,12 @@ public sealed class ObjectIndexProjector
 
         var document = new ObjectIndexDocument("1", input.CaptureId!, projectedObjects);
         var json = JsonSerializer.SerializeToUtf8Bytes(document, JsonOptions);
+        var contractDiagnostics = ObjectIndexContractValidator.Validate(json);
+        if (contractDiagnostics.Count > 0)
+        {
+            return ObjectIndexProjectionResult.Failure(diagnostics.Concat(contractDiagnostics).ToArray());
+        }
+
         return ObjectIndexProjectionResult.Success(json, diagnostics);
     }
 }
