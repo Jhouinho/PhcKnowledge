@@ -3,19 +3,13 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-06 |
-| Estado | Análise estática; sem implementação |
+| Estado | API read-only implementada; testes de aceitação principais aprovados; integração no projector pendente |
 | Âmbito | Superfície de leitura SQLite + artefactos necessária ao projector |
 | Restrição | Não alterar schema SQLite, dados existentes ou collectors |
 
 ## 1. Conclusão
 
-O Scanner já permite abrir um workspace existente em modo read-only. Porém, a API pública atual de `SqliteScanWorkspace` não expõe todos os dados necessários para construir e validar o object-index através de métodos tipados.
-
-Isto não impede a implementação do projector, mas obriga a decidir como será feita a leitura:
-- pequena API read-only no projeto Workspace; ou
-- leitor SQLite dedicado no projeto Export.
-
-A opção recomendada é uma API read-only mínima no Workspace, sem alterar o schema nem o comportamento de escrita. Se se preferir não tocar no projeto Workspace, o Export poderá usar uma implementação interna de leitura SQLite, mas isso duplica conhecimento do schema e acopla o exportador à estrutura física da base de dados.
+O Scanner já expõe agora a API read-only mínima no projeto Workspace. A implementação lê os dados tipados e os bytes originais dos artefactos sem alterar o schema SQLite nem os collectors. O Export pode trabalhar sobre DTOs e bytes, sem conhecer SQL interno do workspace.
 
 ## 2. O que já existe
 
@@ -23,10 +17,11 @@ A opção recomendada é uma API read-only mínima no Workspace, sem alterar o s
 |---|---|---|
 | Abrir workspace existente | `SqliteScanWorkspace.OpenExistingAsync(rootPath, readOnly: true)` | Disponível |
 | Impedir escrita SQLite | Abre `SqliteOpenMode.ReadOnly`, sem `EnsureSchema`, com `PRAGMA query_only=ON` | Disponível |
-| CaptureId | Propriedade `CaptureId`, carregada na abertura quando a coluna existe | Disponível, pode faltar em workspaces antigos |
+| CaptureId/capabilities/coverage | `GetCaptureMetadataAsync` | Disponível; deteta colunas ausentes e distingue JSON indisponível de arrays explicitamente vazios |
 | Objetos | `GetObjectsAsync`, `GetObjectAsync` | Disponível |
 | Issues | `GetIssuesAsync` | Disponível |
-| Texto de artefacto | `ReadArtifactTextAsync` | Disponível, mas não devolve bytes exatos nem metadata do artefacto |
+| Metadados de artefactos | `GetArtifactsAsync`, `GetArtifactMetadataAsync` | Disponível |
+| Bytes de artefacto | `ReadArtifactBytesAsync` | Disponível; lê bytes exatos sem conversão de encoding |
 | Relações derivadas | `GetRelationsAsync` | Disponível, fora do primeiro object-index |
 | Relações declaradas | `GetDeclaredRelationsAsync` | Disponível, fora do primeiro object-index |
 
@@ -34,14 +29,7 @@ A opção recomendada é uma API read-only mínima no Workspace, sem alterar o s
 
 ### 3.1 Capture metadata
 
-O workspace grava `capabilities_json` e `coverage_json` em `scan_meta`, através da operação de escrita de metadados da captura.
-
-Não foi encontrado método público correspondente para ler:
-- o catálogo de `DeclaredCapability`;
-- a lista de `OperationCoverage`;
-- o estado de captura e os metadados de origem necessários ao relatório de projeção.
-
-O CaptureId é carregado na abertura, mas capabilities/coverage não são expostos por getters.
+O workspace grava `capabilities_json` e `coverage_json` em `scan_meta`. `GetCaptureMetadataAsync` lê CaptureId, status, capabilities e coverage, detetando a presença de cada coluna antes da consulta. A resposta distingue coluna ausente, valor nulo/inválido e array vazio explícito através de flags e diagnostics. `HasCompleteCoverageMetadata` só é verdadeiro quando CaptureId e ambos os conjuntos de metadata estão disponíveis.
 
 ### 3.2 Artefactos
 
@@ -54,59 +42,41 @@ A tabela `artifacts` contém:
 - `byte_length`;
 - `metadata_json`.
 
-A API atual não expõe uma listagem tipada destes registos nem permite consultar um artefacto por ID com os seus metadados.
+A API expõe agora `GetArtifactsAsync` e `GetArtifactMetadataAsync`, incluindo ID, collector, caminho relativo, content type, SHA-256, byte length e metadata JSON. `ReadArtifactBytesAsync` devolve os bytes exatos, sem conversão de encoding. Se devolver `null`, `GetArtifactMetadataAsync` permite distinguir ausência da linha de artefacto de ficheiro ausente.
 
-`ReadArtifactTextAsync`:
-- consulta apenas `collector_id` e `relative_path`;
-- lê o ficheiro como UTF-8 para string;
-- devolve `null` tanto quando o registo de artefacto não existe como quando o ficheiro não existe.
-
-Isto não é suficiente para verificar rigorosamente o tamanho e SHA-256 dos bytes originais. A validação do DefinitionFingerprint não deve usar texto redecodificado e novamente codificado como substituto dos bytes originais.
+`ReadArtifactTextAsync` mantém-se para consumidores textuais e passou a reutilizar a mesma validação de caminho. A validação de tamanho e SHA-256 é feita pelo projector de definições sobre os bytes devolvidos.
 
 ### 3.3 Integridade e referências
 
-O projector precisa de distinguir:
-- ArtifactId inexistente na tabela `artifacts`;
-- registo existente, ficheiro ausente;
-- ficheiro presente, mas tamanho divergente;
-- ficheiro presente, mas SHA-256 divergente;
-- artefacto válido.
-
-A API atual de leitura de texto não permite distinguir todos estes casos. O projector também precisa de executar uma verificação read-only de integridade SQLite, ou de receber um resultado equivalente.
+O projector distingue ArtifactId inexistente de ficheiro ausente através dos métodos de metadata e bytes. Tamanho e SHA-256 são verificados pelo `DefinitionProjectionResolver`. `CheckIntegrityAsync` executa `PRAGMA integrity_check` e devolve as mensagens do SQLite.
 
 ### 3.4 Compatibilidade com workspaces antigos
 
-`OpenExistingAsync(readOnly: true)` não executa `EnsureSchema`, o que é correto para não modificar workspaces antigos.
+`OpenExistingAsync(readOnly: true)` não executa `EnsureSchema`. `GetCaptureMetadataAsync` deteta individualmente a presença de `capture_id`, `capabilities_json` e `coverage_json`.
 
-A abertura tem fallback específico para a ausência de `capture_id`. Não existe ainda uma abstração equivalente para a ausência de `capabilities_json` ou `coverage_json`.
-
-O projector deve:
-- detetar a presença das colunas antes de as consultar;
-- tratar coverage/capabilities ausentes como informação indisponível, nunca como coverage vazia/conclusiva;
-- emitir diagnóstico de compatibilidade;
-- não tentar atualizar o workspace para o tornar compatível.
+Workspaces antigos são lidos sem migração: colunas ausentes resultam em flags falsas e diagnostics; JSON nulo/inválido resulta em coleções indisponíveis; apenas `[]` explícito resulta numa coleção vazia válida. Nenhum método tenta atualizar o workspace para o tornar compatível.
 
 ## 4. Contrato mínimo de leitura recomendado
 
-Sem criar ou alterar tabelas, o Workspace poderá expor métodos equivalentes a:
+A API read-only foi implementada sem criar ou alterar tabelas:
 
-| Método conceptual | Resultado necessário |
+| Método | Resultado |
 |---|---|
-| `GetCaptureMetadataAsync` | CaptureId, status, capabilities e coverage, indicando explicitamente campos indisponíveis em workspaces antigos |
-| `GetArtifactsAsync` | Lista de artefactos com ID, collector, caminho relativo, content type, SHA-256, byte length e metadata |
-| `GetArtifactAsync(artifactId)` | Metadados de um artefacto específico |
-| `ReadArtifactBytesAsync(artifactId)` | Bytes exatos do ficheiro, sem conversão de encoding |
-| `CheckIntegrityAsync` | Resultado de `PRAGMA integrity_check` ou diagnóstico equivalente |
+| `GetCaptureMetadataAsync` | CaptureId, status, capabilities, coverage, flags de colunas e diagnostics |
+| `GetArtifactsAsync` | Lista de artefactos com metadata e JSON original |
+| `GetArtifactMetadataAsync(artifactId)` | Metadados de um artefacto específico |
+| `ReadArtifactBytesAsync(artifactId)` | Bytes exatos do ficheiro |
+| `CheckIntegrityAsync` | Resultado de `PRAGMA integrity_check` |
 
-Os nomes são indicativos, não uma decisão de API final.
-
-Regras obrigatórias:
-- Todos os métodos usados pelo projector funcionam em modo read-only.
-- Nenhum método executa `EnsureSchema`, INSERT, UPDATE, DELETE, CREATE ou migração.
-- `ReadArtifactBytesAsync` não normaliza encoding, BOM, quebras de linha ou conteúdo.
-- O caminho do artefacto é resolvido e validado relativamente à raiz do workspace; rejeitar path traversal.
-- A API não deve devolver credenciais nem connection strings.
-- A ausência de metadata histórica deve ser explícita, não convertida em listas vazias com semântica de sucesso.
+Salvaguardas implementadas:
+- Métodos de leitura sem operações de escrita/migração.
+- Compatibilidade com colunas ausentes em workspaces antigos.
+- Validação do ArtifactId contra collector e caminho relativo.
+- Rejeição de segmentos `.`/`..`, caminhos fora da raiz e reparse points/symlinks no caminho.
+- `ReadArtifactTextAsync` reutiliza a validação de caminho.
+- Metadata JSON original é preservado mesmo quando não pode ser desserializado.
+- Ausência de metadata histórica não é convertida em arrays vazios.
+- Nenhuma credencial ou connection string é exposta.
 
 ## 5. Decisão arquitetural recomendada
 
@@ -123,25 +93,22 @@ Se o requisito de não alterar sequer o código do projeto Workspace for absolut
 
 ## 6. Testes de aceitação do leitor
 
-1. Abrir workspace atual em read-only e confirmar `query_only=ON`.
-2. Confirmar que a abertura não cria tabelas nem colunas.
-3. Ler CaptureId, capabilities e coverage de workspace atual.
-4. Abrir workspace antigo sem `capture_id`/coverage e produzir estado de metadata indisponível sem escrever.
-5. Listar artefactos e confirmar todos os campos da tabela.
-6. Ler bytes de artefacto e confirmar igualdade byte-a-byte com o ficheiro.
-7. Distinguir ArtifactId inexistente de ficheiro ausente.
-8. Detetar byteLength divergente.
-9. Detetar SHA-256 divergente.
-10. Detetar caminho relativo malicioso ou fora da raiz.
-11. Executar integridade SQLite e propagar falha como diagnóstico.
-12. Verificar que nenhuma operação de leitura altera o hash do ficheiro SQLite ou dos artefactos.
+1. Abrir workspace atual em read-only e ler CaptureId, capabilities e coverage.
+2. Abrir workspace antigo sem `capture_id`/coverage e obter metadata indisponível sem escrever.
+3. Listar artefactos e confirmar metadata, content type, SHA-256 e byte length.
+4. Ler bytes e confirmar igualdade byte-a-byte, incluindo BOM e CRLF.
+5. Distinguir ArtifactId inexistente de ficheiro ausente.
+6. Rejeitar caminho relativo malicioso/path traversal.
+7. Executar integridade SQLite e validar o resultado `ok`.
+8. Confirmar que `PRAGMA data_version` não muda durante as operações de leitura.
+9. Verificar tamanho e SHA-256 divergentes no `DefinitionProjectionResolver`.
 
 ## 7. Sequência proposta
 
-1. Fechar a API read-only mínima e os DTOs de leitura.
-2. Implementar testes do Workspace sem alterar o schema.
-3. Construir o núcleo puro do projector sobre DTOs e bytes fornecidos.
-4. Integrar a leitura do workspace com o projector.
-5. Executar contra captura real quando o SQLite e a pasta completa de artefactos estiverem disponíveis.
+1. API read-only mínima e DTOs: implementados.
+2. Testes do Workspace: implementados e aprovados no GitHub Actions.
+3. Núcleo puro do projector (mapping, identidade, metadata/fingerprints e estado de definição): implementado e testado.
+4. Próximo passo: criar a integração que carrega objetos, issues, metadata da captura e bytes de artefactos para o projector.
+5. Validar end-to-end contra captura real quando o SQLite e a pasta completa de artefactos estiverem disponíveis.
 
 Até à validação com captura real, não alterar schema SQLite, collectors, queries, IDs atuais ou artefactos já produzidos.
