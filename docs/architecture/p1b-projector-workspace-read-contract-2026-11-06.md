@@ -113,10 +113,10 @@ Concluído:
 5. Leitura dos bytes apenas para artefactos efetivamente referenciados por objetos, evitando carregar artefactos não utilizados na projeção.
 6. Cruzamento de operationIds com capabilities e coverage quando a metadata está disponível. Workspaces antigos sem essa metadata recebem diagnóstico explícito; metadata presente mas inconsistente bloqueia a projeção.
 
-A integração do leitor read-only com o projector foi validada no GitHub Actions run `42417563340`: build concluído e 307 testes .NET aprovados. A suite inclui a leitura seletiva de artefactos referenciados, validação cruzada de capabilities/coverage, cenários sintéticos dos 21 kinds e determinismo com diferentes ordens de entrada.
+A integração do leitor read-only com o projector foi validada no GitHub Actions run `42418465891`: build concluído, 307 testes .NET aprovados e a saída C# de uma captura sintética mista validada pelo JSON Schema IKP 0.1 Draft 2020-12. A suite inclui leitura seletiva de artefactos referenciados, validação cruzada de capabilities/coverage, cenários sintéticos dos 21 kinds e determinismo com diferentes ordens de entrada.
 
 Restante:
-1. Ligar a saída C# do projector ao validador oficial Draft 2020-12, mantendo as invariantes semânticas.
+1. Fechar a geração e validação do pacote IKP completo a partir do workspace.
 2. Executar contra captura real quando o SQLite e a pasta completa de artefactos estiverem disponíveis.
 
 Até à validação com captura real, não alterar schema SQLite, collectors, queries, IDs atuais ou artefactos já produzidos.
