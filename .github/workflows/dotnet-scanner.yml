@@ -21,8 +21,6 @@ permissions:
 jobs:
   build-and-test:
     runs-on: windows-latest
-    env:
-      PHC_KNOWLEDGE_IKP_OUTPUT: ${{ runner.temp }}/object-index.synthetic.json
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -34,6 +32,8 @@ jobs:
         run: dotnet build PhcKnowledge.sln --no-restore --configuration Release
       - name: Test
         run: dotnet test PhcKnowledge.sln --no-build --configuration Release --logger "console;verbosity=normal"
+        env:
+          PHC_KNOWLEDGE_IKP_OUTPUT: ${{ runner.temp }}/object-index.synthetic.json
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -41,3 +41,5 @@ jobs:
         run: python -m pip install -r tools/ikp-validation/requirements.txt
       - name: Validate C#-generated object index against IKP 0.1 JSON Schema
         run: python tools/ikp-validation/validate_object_index.py "$env:PHC_KNOWLEDGE_IKP_OUTPUT"
+        env:
+          PHC_KNOWLEDGE_IKP_OUTPUT: ${{ runner.temp }}/object-index.synthetic.json
