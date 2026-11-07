@@ -53,11 +53,11 @@ public static class SourceIdentityResolver
             .ToArray();
 
         var databaseName = databaseObjects.Length == 1 ? databaseObjects[0].Name : null;
-        var databaseDiagnostic = databaseObjects.Length switch
+        (string Code, string Message)? databaseDiagnostic = databaseObjects.Length switch
         {
             0 => ("source_identity_database_missing", "The capture has no unique SQL database object to establish the identity scope."),
             > 1 => ("source_identity_database_ambiguous", "The capture contains more than one SQL database object; the identity scope is ambiguous."),
-            _ => ((string Code, string Message)?)null
+            _ => null
         };
 
         var results = new Dictionary<string, SourceIdentityResolution>(StringComparer.Ordinal);
