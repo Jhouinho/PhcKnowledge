@@ -222,6 +222,59 @@ public sealed class ObjectIndexProjectorTests
         Assert.Equal("Available", item.GetProperty("definition").GetProperty("status").GetString());
     }
 
+    [Fact]
+    public void Contract_Validator_Accepts_Minimal_Valid_Object_Index()
+    {
+        var json = Encoding.UTF8.GetBytes(
+            """{"schemaVersion":"1","captureId":"b1b2c3d4-1111-4222-8333-123456789abc","objects":[{"sourceObjectId":"x","objectKind":"table","metadata":{},"definition":{"status":"NotCollected","artifactIds":[]},"operationId":"sql.tables"}]}""");
+
+        var diagnostics = ObjectIndexContractValidator.Validate(json);
+
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public void Contract_Validator_Rejects_Invalid_Definition_Status_And_Duplicate_Artifacts()
+    {
+        var invalidStatus = Encoding.UTF8.GetBytes(
+            """{"schemaVersion":"1","captureId":"b1b2c3d4-1111-4222-8333-123456789abc","objects":[{"sourceObjectId":"x","objectKind":"table","metadata":{},"definition":{"status":"Unknown","artifactIds":[]},"operationId":"op"}]}""");
+        var duplicateArtifacts = Encoding.UTF8.GetBytes(
+            """{"schemaVersion":"1","captureId":"b1b2c3d4-1111-4222-8333-123456789abc","objects":[{"sourceObjectId":"x","objectKind":"table","metadata":{},"definition":{"status":"NotCollected","artifactIds":["a","a"]},"operationId":"op"}]}""");
+
+        Assert.Contains(ObjectIndexContractValidator.Validate(invalidStatus), x => x.Code == "object_index_definition_status_invalid");
+        Assert.Contains(ObjectIndexContractValidator.Validate(duplicateArtifacts), x => x.Code == "object_index_definition_artifacts_invalid");
+    }
+
+    [Fact]
+    public void Contract_Validator_Rejects_Fingerprint_With_Additional_Properties()
+    {
+        var json = Encoding.UTF8.GetBytes(
+            """{"schemaVersion":"1","captureId":"b1b2c3d4-1111-4222-8333-123456789abc","objects":[{"sourceObjectId":"x","objectKind":"table","metadata":{},"metadataFingerprint":{"algorithm":"sha256","value":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","extra":true},"definition":{"status":"NotCollected","artifactIds":[]},"operationId":"op"}]}""");
+
+        var diagnostics = ObjectIndexContractValidator.Validate(json);
+
+        Assert.Contains(diagnostics, x => x.Code == "object_index_fingerprint_invalid");
+    }
+
+    [Fact]
+    public void Contract_Validator_Rejects_Missing_Required_Properties()
+    {
+        var json = Encoding.UTF8.GetBytes(
+            """{"schemaVersion":"1","captureId":"b1b2c3d4-1111-4222-8333-123456789abc","objects":[{"sourceObjectId":"x","objectKind":"table","definition":{"status":"NotCollected","artifactIds":[]},"operationId":"op"}]}""");
+
+        var diagnostics = ObjectIndexContractValidator.Validate(json);
+
+        Assert.Contains(diagnostics, x => x.Code == "object_index_metadata_invalid");
+    }
+
+    [Fact]
+    public void Contract_Validator_Rejects_Invalid_Json()
+    {
+        var diagnostics = ObjectIndexContractValidator.Validate(Encoding.UTF8.GetBytes("{"));
+
+        Assert.Contains(diagnostics, x => x.Code == "object_index_json_invalid");
+    }
+
     private static ObjectIndexProjectionInput CreateInput(IReadOnlyList<TechnicalObjectRecord> objects) =>
         ObjectIndexProjectionInput.Success(
             new WorkspaceCaptureMetadata(
