@@ -97,6 +97,17 @@ public sealed class ObjectIndexProjectorTests
     }
 
     [Fact]
+    public void Contract_Validator_Rejects_Available_Definition_Without_Artifact_And_Fingerprint()
+    {
+        var json = Encoding.UTF8.GetBytes(
+            """{"schemaVersion":"1","captureId":"b1b2c3d4-1111-4222-8333-123456789abc","objects":[{"sourceObjectId":"x","objectKind":"table","metadata":{},"definition":{"status":"Available","artifactIds":[]},"operationId":"op"}]}""");
+
+        var diagnostics = ObjectIndexContractValidator.Validate(json);
+
+        Assert.Contains(diagnostics, x => x.Code == "object_index_definition_available_invalid");
+    }
+
+    [Fact]
     public void Project_Fails_When_Operation_Is_Not_Declared_In_Capture_Capabilities()
     {
         var record = new TechnicalObjectRecord(
