@@ -84,8 +84,15 @@ public static class SourceIdentityResolver
         string? databaseName,
         (string Code, string Message)? databaseDiagnostic)
     {
-        if (record.Kind == ObjectKind.Table && record.CollectorId == SqlCollectorId)
+        if (record.Kind == ObjectKind.Table)
         {
+            if (record.CollectorId != SqlCollectorId)
+            {
+                return SourceIdentityResolution.Failure(
+                    "source_identity_collector_mismatch",
+                    "SQL table identity was requested for an object emitted by a different collector.");
+            }
+
             if (databaseName is null)
             {
                 return SourceIdentityResolution.Failure(
@@ -107,8 +114,15 @@ public static class SourceIdentityResolver
                     $"database:{databaseName}"));
         }
 
-        if (record.Kind == ObjectKind.PhcUserField && record.CollectorId == PhcCollectorId)
+        if (record.Kind == ObjectKind.PhcUserField)
         {
+            if (record.CollectorId != PhcCollectorId)
+            {
+                return SourceIdentityResolution.Failure(
+                    "source_identity_collector_mismatch",
+                    "PHC user-field identity was requested for an object emitted by a different collector.");
+            }
+
             var operation = ObjectOperationResolver.Resolve(record);
             if (!operation.IsResolved)
             {
@@ -154,20 +168,27 @@ public static class SourceIdentityResolver
                     $"database:{databaseName}/object:{parentObjectId.ToString(CultureInfo.InvariantCulture)}"));
         }
 
-        if (PhcStampMappings.TryGetValue(record.Kind, out var stampMapping)
-            && record.CollectorId == PhcCollectorId)
+        if (PhcStampMappings.TryGetValue(record.Kind, out var stampMapping))
         {
+            if (record.CollectorId != PhcCollectorId)
+            {
+                return SourceIdentityResolution.Failure(
+                    "source_identity_collector_mismatch",
+                    "PHC stamp identity was requested for an object emitted by a different collector.");
+            }
+
             var operation = ObjectOperationResolver.Resolve(record);
             if (!operation.IsResolved)
             {
                 return SourceIdentityResolution.Failure(operation.DiagnosticCode!, operation.Message!);
             }
 
-            if (!TryReadString(record.SummaryJson, "stamp", out var stamp))
+            if (record.Kind == ObjectKind.PhcUserTsqlFunction
+                && string.Equals(ReadSource(record.SummaryJson), "sys.objects", StringComparison.Ordinal))
             {
-                return SourceIdentityResolution.Failure(
-                    "source_identity_stamp_missing",
-                    "PHC object SummaryJson does not contain a non-empty string stamp.");
+                // Installed functions have no native identity in the current SELECT:
+                // schema + name are descriptive, not a native object identifier.
+                return SourceIdentityResolution.None();
             }
 
             if (!string.Equals(ReadSource(record.SummaryJson), stampMapping.ExpectedSource, StringComparison.Ordinal))
@@ -175,6 +196,13 @@ public static class SourceIdentityResolver
                 return SourceIdentityResolution.Failure(
                     "source_identity_source_mismatch",
                     $"PHC object source does not match the expected stamp table '{stampMapping.ExpectedSource}'.");
+            }
+
+            if (!TryReadString(record.SummaryJson, "stamp", out var stamp))
+            {
+                return SourceIdentityResolution.Failure(
+                    "source_identity_stamp_missing",
+                    "PHC object SummaryJson does not contain a non-empty string stamp.");
             }
 
             return SourceIdentityResolution.Success(
