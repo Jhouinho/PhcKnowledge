@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Microsoft.Data.Sqlite;
 using PhcKnowledgeScanner.Workspace;
 
@@ -86,7 +85,13 @@ public sealed class WorkspaceReadApiTests
         }
 
         var dbPath = Path.Combine(root, "workspace.db");
-        var before = SHA256.HashData(await ReadFileSharedAsync(dbPath));
+        await using var monitor = new SqliteConnection(new SqliteConnectionStringBuilder
+        {
+            DataSource = dbPath,
+            Mode = SqliteOpenMode.ReadOnly
+        }.ToString());
+        await monitor.OpenAsync();
+        var before = await GetDataVersionAsync(monitor);
 
         await using (var readOnly = await SqliteScanWorkspace.OpenExistingAsync(root, readOnly: true))
         {
@@ -103,7 +108,7 @@ public sealed class WorkspaceReadApiTests
             Assert.True(integrity.IsValid);
         }
 
-        var after = SHA256.HashData(await ReadFileSharedAsync(dbPath));
+        var after = await GetDataVersionAsync(monitor);
         Assert.Equal(before, after);
     }
 
@@ -198,18 +203,11 @@ public sealed class WorkspaceReadApiTests
             () => workspace.ReadArtifactBytesAsync("sql.server.structure/../outside.txt"));
     }
 
-    private static async Task<byte[]> ReadFileSharedAsync(string path)
+    private static async Task<long> GetDataVersionAsync(SqliteConnection connection)
     {
-        await using var stream = new FileStream(
-            path,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.ReadWrite | FileShare.Delete,
-            bufferSize: 4096,
-            useAsync: true);
-        using var buffer = new MemoryStream();
-        await stream.CopyToAsync(buffer);
-        return buffer.ToArray();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA data_version;";
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
     }
 
     private static string NewRoot() =>
