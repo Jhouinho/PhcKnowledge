@@ -1,27 +1,29 @@
 # Matriz de compatibilidade — IKP 0.1 e Scanner atual
 
-Data: 2026-11-06  
-Estado: P0 (CaptureId, capabilities, coverage) implementado no Scanner; exportador IKP ainda não existe.
+Data: 2026-11-07  
+Estado: P0 concluído; P1.B Object Index e fingerprints implementados e validados sinteticamente; exportador IKP ZIP ainda não existe.
+
+Investigação de prontidão para exportação: [P1.B — IKP package export readiness](p1b-ikp-package-export-readiness-investigation-2026-11-07.md).
 
 ## Conclusão
 
-O Scanner gera `CaptureId` por captura, declara um catálogo de capabilities por `operationId` e regista `OperationCoverage` por operação lógica nos três collectors atuais. O manifesto interno e o workspace SQLite preservam estes dados. **Isto não significa que o Scanner emita pacotes IKP** — faltam object-index, fingerprints, linhagem e o exportador IKP.
+O Scanner gera `CaptureId` por captura, declara capabilities e regista coverage por operação. O Object Index é agora projetado a partir do workspace, com SourceIdentity, fingerprints e estados individuais de definição. O build, 275 testes e validação do JSON produzido pelo C# contra o schema IKP 0.1 passaram no run `42419610023`. **Isto ainda não significa que o Scanner emita pacotes IKP**: falta o exportador ZIP e a integração dos cinco documentos obrigatórios.
 
 ## Matriz
 
 | Componente | Estado atual confirmado | Lacuna IKP | Trabalho necessário |
 |---|---|---|---|
-| ScanManifest | `CaptureId`, catálogo, `OperationCoverages`, resultados | Sem envelope IKP exportável; `InstallationId` continua label de origem | PackageId no exportador; identidade de instalação na plataforma |
+| ScanManifest | `CaptureId`, catálogo, `OperationCoverages`, resultados, timestamps, modo e versão | Não é persistido integralmente no workspace | Exportador recebe manifesto concluído e valida-o contra o workspace; decidir persistência futura para export offline |
 | CollectorResult | Estado, artefactos, issues, duração e `OperationCoverages` | — (P0) | Manter alinhamento com schema coverage |
 | CollectionIssue | Severidade, código, mensagem, objeto, detalhe, `IssueId`, `OperationId` | — (P0) | Evitar credenciais nos diagnósticos (já) |
 | ScanEngine | Gera/propaga CaptureId; agrega capabilities e coverage; Selective/ProbeOnly semânticos | — (P0) | Coordenar com exportador futuro |
 | ScanMode | Full, Selective, ProbeOnly com coverage correta | — (P0) | — |
 | PhcCustomizationsCollector | Coverage por operação (brule, ebrule, teclas, udefs, …) | Sem export IKP de artefactos | P2 export |
-| SqlServerStructureCollector | Coverage (database, tables, PK/FK, views, procedures, triggers) | Sem SourceIdentity/fingerprints no índice | P1 |
+| SqlServerStructureCollector | Coverage e objetos SQL com SourceIdentity/fingerprints projetados | Captura real ainda não validada | Validar com captura demo e depois instalação personalizada |
 | PhcDeclaredRelationsCollector | Coverage REL/DTL com NotPresent vs falha de leitura | Sem payload IKP relations | P2 |
 | RelationalKnowledgeProjector | Projeções em memória | Não exportadas | P2 opcional |
-| TechnicalObjectRecord | ObjectId/Kind/… no workspace | SourceIdentity e fingerprints | P1 |
-| SqliteScanWorkspace | Uma captura; `capture_id`, capabilities/coverage JSON; issues com operation_id | Não é histórico de versões | Produzir índice IKP a partir dos factos |
+| TechnicalObjectRecord | ObjectId/Kind/… no workspace; projeção IKP separa SourceObjectId, SourceIdentity e fingerprints | Não persiste identidade lógica da plataforma (fora do âmbito Scanner) | Manter o modelo de observação sem inventar EntityIdentity |
+| SqliteScanWorkspace | Uma captura; `capture_id`, capabilities/coverage JSON, objetos, artefactos e issues; reader read-only | Não persiste timestamps reais, modo, ScannerVersion nem origin descriptor | Exportação inicial recebe ScanManifest em memória; não inferir estes valores a partir de `created_at_utc` ou label |
 | WorkspaceExportService / ZipScanExporter | Export legado | Não é IKP | Exportador IKP dedicado |
 | DatabaseSchemaSnapshotWriter | Snapshot estruturado | Sem envelope IKP | Reutilizar em payload/schema |
 
@@ -35,15 +37,18 @@ O Scanner gera `CaptureId` por captura, declara um catálogo de capabilities por
 5. Selective, ProbeOnly, empty, NotPresent, Failed, NotAttempted e preservação pós-exceção cobertos por testes.
 6. Limite IKP: não há estado separado de “persistência falhou”; se a execução da operação já ficou registada e a finalização/persistência agregada falha, o `result` da operação mantém-se e a falha fica na issue `collector.unhandled`.
 
-### P1 — Objetos e identidade
-1. Gerar object-index.json a partir do workspace e do snapshot.
-2. Separar SourceObjectId de SourceIdentity.
-3. Fingerprints de metadados e definição.
-4. Representar Available/Empty/Unavailable/NotCollected por definição.
+### P1 — Objetos e identidade — **implementado; validação sintética aprovada**
+1. Object Index read-only a partir do workspace.
+2. Separação SourceObjectId / SourceIdentity.
+3. Fingerprints de metadata e definição.
+4. Estados Available/Empty/Unavailable/NotCollected com evidência individual.
+5. Mapping e schema IKP testados para os 21 kinds emitidos.
 
-### P2 — Exportação
-1. Exportador IKP dedicado.
-2. Integrar schema snapshot, personalizações, REL/DTL e checksums.
+### P2 — Exportação — **por implementar**
+1. Exportador IKP dedicado com os cinco documentos obrigatórios.
+2. Checksums de todos os ficheiros e logicalContentDigest.
+3. Payload inicial dos artefactos já persistidos no workspace.
+4. Integrar schema snapshot, personalizações, REL/DTL e knowledge derivado apenas após mapear a sua proveniência.
 
 ### P3 — Cobertura funcional PHC
 Melhorar recolha PHC (campos, BRULE, UDEFS, eventos, teclas, etc.) sem dados operacionais de clientes.
@@ -56,11 +61,11 @@ O workspace continua a representar uma captura. O Scanner não mantém históric
 
 ## Sequência recomendada (restante)
 
-1. Índice estruturado e fingerprints.
-2. Exportador IKP e integridade.
-3. Exportação de relações e conhecimento derivado.
-4. Fixtures e testes round-trip.
-5. Melhorias dos collectors PHC.
+1. **Concluído:** Object Index e fingerprints, validados com fixtures sintéticas.
+2. **Próximo:** exportador IKP mínimo a partir de ScanManifest + workspace, sem alterar schema SQLite.
+3. Validar ZIP extraído com `tools/ikp-validation/validate_ikp_fixture.py` e testes round-trip.
+4. Integrar schema snapshot, personalizações, REL/DTL e conhecimento derivado.
+5. Validar integração com captura PHC demo standard e depois personalizada.
 
 ## Testes de aceitação P0
 
@@ -68,4 +73,4 @@ Cobertos em `PhcKnowledgeScanner.Engine.Tests` (fakes): CaptureId válido/distin
 
 ## Limites
 
-Não há emissão IKP ZIP nesta etapa. Workspaces de validação antigos abrem em read-only sem exigir colunas novas.
+Ainda não há emissão IKP ZIP. A projeção do Object Index não altera o schema SQLite. Workspaces antigos continuam a ser lidos em read-only; exportar um workspace sem ScanManifest completo exige uma decisão explícita de persistência, não inferências.
