@@ -39,7 +39,7 @@ public sealed class ObjectOperationResolverTests
     [InlineData(ObjectKind.PhcCustomScreen, "formb", KnownOperations.PhcFormb)]
     [InlineData(ObjectKind.PhcUserTsqlFunction, "ftu", KnownOperations.PhcFtu)]
     [InlineData(ObjectKind.PhcUserTsqlFunction, "sys.objects", KnownOperations.PhcFtu)]
-    public void Resolves_Phс_Object_Kind_And_Source_Variant(
+    public void Resolves_Phc_Object_Kind_And_Source_Variant(
         string kind,
         string source,
         string expectedOperation)
@@ -106,7 +106,7 @@ public sealed class ObjectOperationResolverTests
     }
 
     [Fact]
-    public void Does_Not_Resolve_Phс_Function_Without_Explicit_Variant()
+    public void Does_Not_Resolve_Phc_Function_Without_Explicit_Variant()
     {
         var result = ObjectOperationResolver.Resolve(Create(ObjectKind.PhcUserTsqlFunction, "phc.customizations", """{"stamp":"abc"}"""));
 
