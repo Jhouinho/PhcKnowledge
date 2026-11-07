@@ -126,7 +126,7 @@ Já estão implementados no projeto `PhcKnowledgeScanner.Export`:
 - `ObjectIndexProjector`: geração determinística de `object-index.json`, independente de SQLite;
 - `ObjectIndexWorkspaceProjector`: orquestração entre workspace read-only e projector puro.
 
-**Validação:** GitHub Actions run `42415572239` — build concluído e **240 testes aprovados**. Inclui teste de integração entre o workspace SQLite e o projector. A validação formal do documento produzido contra o JSON Schema IKP ainda não está integrada no pipeline do projector.
+**Validação:** GitHub Actions run `42416070993` — build concluído e **241 testes aprovados**. Inclui integração entre workspace SQLite e projector, validação de operationId contra capabilities/coverage, consistência de versão/collector, estado da operação e contagem mínima de objetos. A validação formal do documento produzido contra o JSON Schema IKP ainda não está integrada no pipeline do projector.
 
 Não foram alterados schema SQLite, collectors ou queries PHC/SQL.
 
