@@ -199,12 +199,20 @@ def validate_package(package_dir: Path, schema_dir: Path) -> dict:
         relations = load_json(relations_path)
         if relations.get("captureId") != capture_id:
             raise ValueError("relations: CaptureId divergente")
-        for relation in relations.get("declaredRelations", []):
-            if relation["sourceObjectId"] not in object_id_set:
-                raise ValueError(f"relations: sourceObjectId não resolvido: {relation['sourceObjectId']}")
+
+        # REL/DTL declarations are a separate knowledge projection, not
+        # TechnicalObjectRecord entries in object-index.json.
+        declared_relations = relations.get("declaredRelations", [])
+        relation_ids = [item["sourceObjectId"] for item in declared_relations]
+        if len(set(relation_ids)) != len(relation_ids):
+            raise ValueError("relations: sourceObjectId duplicado")
+        relation_id_set = set(relation_ids)
+
         for interpretation in relations.get("interpretations", []):
-            if interpretation["sourceObjectId"] not in object_id_set:
-                raise ValueError(f"relations: interpretação sem objeto: {interpretation['sourceObjectId']}")
+            if interpretation["sourceObjectId"] not in relation_id_set:
+                raise ValueError(
+                    f"relations: interpretação sem relação declarada: {interpretation['sourceObjectId']}"
+                )
             for issue_id in interpretation.get("issueIds", []):
                 if issue_id not in issue_id_set:
                     raise ValueError(f"relations: issueId não resolvido: {issue_id}")
