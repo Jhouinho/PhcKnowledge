@@ -64,6 +64,25 @@ public interface IScanWorkspace : IAsyncDisposable
 
     Task<IReadOnlyList<CollectionIssue>> GetIssuesAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Reads capture metadata without assuming that older workspaces contain the newer JSON columns.</summary>
+    Task<WorkspaceCaptureMetadata> GetCaptureMetadataAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Lists persisted artifact metadata without reading or modifying artifact files.</summary>
+    Task<IReadOnlyList<WorkspaceArtifactMetadata>> GetArtifactsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Reads metadata for one artifact; null means that no artifact row exists.</summary>
+    Task<WorkspaceArtifactMetadata?> GetArtifactMetadataAsync(
+        string artifactId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Reads exact artifact bytes; null means the row or file is missing. Use GetArtifactMetadataAsync to distinguish them.</summary>
+    Task<byte[]?> ReadArtifactBytesAsync(
+        string artifactId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Runs SQLite PRAGMA integrity_check in read-only mode.</summary>
+    Task<WorkspaceIntegrityResult> CheckIntegrityAsync(CancellationToken cancellationToken = default);
+
     Task SaveRelationAsync(DerivedRelationRecord relation, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<DerivedRelationRecord>> GetRelationsAsync(CancellationToken cancellationToken = default);
