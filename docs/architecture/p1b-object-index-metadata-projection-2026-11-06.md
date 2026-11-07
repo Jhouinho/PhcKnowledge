@@ -69,13 +69,15 @@ A matriz abaixo preserva apenas campos estruturados já presentes em SummaryJson
 | `phc.hidden_grid` | `formc` | `ecran`, `nome`, `tag`, `tvalobj` |
 | `phc.custom_screen` | `formb` | `ecran`, `nome`, `tabela`, `defeito`, `inactivoRaw` |
 | `phc.user_tsql_function` | `ftu` | `sourceVariant: "ftu"`, `classif`, `inactivoRaw` |
-| `phc.user_tsql_function` | `sys.objects` | `sourceVariant: "sys.objects"`, `schema`, `nome`, `inactivoRaw: false` |
+| `phc.user_tsql_function` | `sys.objects` | `sourceVariant: "sys.objects"`, `schema` |
 
 ### 4.1 Campos não repetidos
 
 - `stamp`: fica em SourceIdentity quando possível.
 - `source`: só é transportado como `sourceVariant` quando necessário para distinguir a origem/variante.
 - `estado`: não é copiado; é derivado de `inactivo` e pode esconder valores desconhecidos.
+- Exceção para `phc.user_tsql_function` com `sourceVariant: "sys.objects"`: o collector grava atualmente `inactivo: false` e `estado: "Activo"` como constantes, mas a consulta a `sys.objects` não observa um estado de atividade PHC. Não projetar esses valores, nem sequer como metadata descritivo. O nome da função já é transportado por `TechnicalObjectRecord.Name` e não deve ser repetido em metadata.
+
 - Código, expressões e definições: pertencem aos artefactos e ao DefinitionFingerprint, não ao metadata.
 - `columnId`: é candidato a SourceIdentity de `phc.user_field`, não metadata descritivo.
 - `objectId`: é candidato a SourceIdentity de `table`, não metadata descritivo.
