@@ -106,7 +106,9 @@ public sealed class ObjectIndexProjector
                 var operationCollectorMismatch = operationObjects
                     .Any(x => !string.Equals(x.CollectorId, capabilities[0].CollectorId, StringComparison.Ordinal));
                 var coverageContradictsObservedObjects = !coverages[0].Requested
-                    || coverages[0].Result is OperationExecutionResult.Skipped or OperationExecutionResult.NotAttempted
+                    || coverages[0].Result is OperationExecutionResult.Failed
+                        or OperationExecutionResult.Skipped
+                        or OperationExecutionResult.NotAttempted
                     || coverages[0].ObservedCount < operationObjects.Length;
                 if (!string.Equals(capabilities[0].CapabilityVersion, coverages[0].CapabilityVersion, StringComparison.Ordinal)
                     || operationCollectorMismatch
