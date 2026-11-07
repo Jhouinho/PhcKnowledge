@@ -160,6 +160,7 @@ public static class ObjectIndexContractValidator
         Action<string, string> add)
     {
         if (fingerprint.ValueKind != JsonValueKind.Object
+            || fingerprint.EnumerateObject().Count() != 2
             || !TryString(fingerprint, "algorithm", out var algorithm)
             || algorithm != "sha256"
             || !TryString(fingerprint, "value", out var value)
