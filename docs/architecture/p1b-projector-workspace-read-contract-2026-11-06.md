@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-06 |
-| Estado | API read-only implementada; testes de aceitação principais aprovados; integração no projector pendente |
+| Estado | API read-only, leitor tipado e integração no projector implementados; testes CI aprovados |
 | Âmbito | Superfície de leitura SQLite + artefactos necessária ao projector |
 | Restrição | Não alterar schema SQLite, dados existentes ou collectors |
 
@@ -103,12 +103,20 @@ Se o requisito de não alterar sequer o código do projeto Workspace for absolut
 8. Confirmar que `PRAGMA data_version` não muda durante as operações de leitura.
 9. Verificar tamanho e SHA-256 divergentes no `DefinitionProjectionResolver`.
 
-## 7. Sequência proposta
+## 7. Implementação e sequência restante
 
-1. API read-only mínima e DTOs: implementados.
-2. Testes do Workspace: implementados e aprovados no GitHub Actions.
-3. Núcleo puro do projector (mapping, identidade, metadata/fingerprints e estado de definição): implementado e testado.
-4. Próximo passo: criar a integração que carrega objetos, issues, metadata da captura e bytes de artefactos para o projector.
-5. Validar end-to-end contra captura real quando o SQLite e a pasta completa de artefactos estiverem disponíveis.
+Concluído:
+1. API read-only mínima e DTOs de leitura.
+2. Testes de compatibilidade com workspace antigo, leitura byte-a-byte, integridade SQLite e path traversal.
+3. Núcleo puro do projector sobre input tipado.
+4. Integração do leitor com o projector através de `ObjectIndexWorkspaceProjector`.
+5. Leitura dos bytes apenas para artefactos efetivamente referenciados por objetos, evitando carregar artefactos não utilizados na projeção.
+6. Cruzamento de operationIds com capabilities e coverage quando a metadata está disponível. Workspaces antigos sem essa metadata recebem diagnóstico explícito; metadata presente mas inconsistente bloqueia a projeção.
+
+A validação CI do primeiro projector integrado passou no GitHub Actions run `42415572239`: build concluído e 240 testes aprovados. A validação cruzada de capabilities/coverage e a otimização da leitura de artefactos foram acrescentadas depois e estão sujeitas ao run CI mais recente.
+
+Restante:
+1. Fechar a validação formal contra o JSON Schema IKP 0.1 e invariantes semânticas.
+2. Executar contra captura real quando o SQLite e a pasta completa de artefactos estiverem disponíveis.
 
 Até à validação com captura real, não alterar schema SQLite, collectors, queries, IDs atuais ou artefactos já produzidos.
