@@ -139,7 +139,7 @@ public sealed class ObjectIndexProjectorTests
         var projectedRule = objects.Single(x => x.GetProperty("sourceObjectId").GetString() == rule.ObjectId);
         Assert.Equal("phc.stamp", projectedRule.GetProperty("sourceIdentity").GetProperty("scheme").GetString());
         Assert.Equal("SYNTH-1", projectedRule.GetProperty("sourceIdentity").GetProperty("value").GetString());
-        Assert.Equal("NotCollected", projectedRule.GetProperty("definition").GetProperty("status").GetString());
+        Assert.Equal("Unavailable", projectedRule.GetProperty("definition").GetProperty("status").GetString());
     }
 
     [Fact]
