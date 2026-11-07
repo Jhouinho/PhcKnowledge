@@ -187,3 +187,16 @@ O mapping deixou de existir apenas em documentação: foi acrescentado `ObjectOp
 Foi também acrescentado `SourceIdentityResolver`, que opera sobre o inventário completo da captura para resolver o scope SQL da base de dados e da tabela-pai. Não emite identidade para funções `sys.objects`, PK/FK, módulos SQL ou database quando a evidência atual não chega.
 
 Os testes do mapping e da projeção de identidade passaram no GitHub Actions. O projector completo, a projeção de metadata/definition e a leitura tipada de artefactos continuam por implementar. Nenhuma alteração ao schema SQLite ou aos collectors foi feita.
+
+
+### Estado complementar — projeção de definições (2026-11-07)
+
+Foi implementado `DefinitionProjectionResolver` no projeto Export. A resolução é individual por objeto e segue estas regras:
+
+- database, table, PK, FK e `phc.user_field`: `NotCollected`; o artefacto descritivo de user_field não é confundido com definição;
+- objetos PHC com artefacto de definição e SQL view/procedure/trigger: `Available` apenas quando a referência, os bytes, o tamanho e o SHA-256 coincidem;
+- SQL view/procedure/trigger sem artefacto: `Unavailable`, podendo associar uma issue específica apenas quando coincidem código, operationId e objectName;
+- issues genéricas de operação não são propagadas como falhas de cada objeto;
+- `Empty` não é inferido a partir de ausência de artefacto ou coverage.
+
+O fingerprint de definição é SHA-256 dos bytes exatos do artefacto, sem normalizar cabeçalhos ou conteúdo. Testes desta lógica fazem parte dos 228 testes aprovados no GitHub Actions.
