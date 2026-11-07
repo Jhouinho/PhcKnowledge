@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-06 |
-| Estado | Proposta estática baseada nos SummaryJson atuais; não implementada |
+| Estado | Projeção pura implementada e testada; integração no projector end-to-end pendente |
 | Fase | P1.B — object-index |
 | Âmbito | Separar metadata descritivo de MetadataFingerprint |
 | Restrições | Sem alterações a SQLite, collectors, queries ou schemas |
@@ -160,8 +160,11 @@ Antes de integrar com SQLite, criar testes sem dependência de captura para:
 
 - Matriz baseada nos SummaryJson dos emissores atuais: proposta documentada.
 - Relação com MetadataFingerprint: explicitada.
-- Código do projector e hashing: não implementado.
-- Captura real: pendente.
+- `MetadataProjectionResolver`: implementado no projeto Export; separa metadata descritivo de `FingerprintProjection` e cobre os kinds SQL/PHC atualmente emitidos.
+- Normalização de atividade: preserva `inactivoRaw`; valores desconhecidos não são convertidos em ativo e impedem a projeção de fingerprint.
+- Testes unitários da projeção: aprovados no GitHub Actions.
+- Canonicalização RFC 8785 e cálculo SHA-256: ainda não implementados.
+- Integração no projector e captura real: pendentes.
 - SQLite, collectors, queries e schemas: inalterados.
 
-Próximo passo recomendado: converter as matrizes de mapping, SourceIdentity e metadata em especificações de testes unitários puros. A implementação poderá começar pelo núcleo determinístico do projector, sem depender ainda do acesso ao workspace real.
+Próximo passo recomendado: implementar e testar canonicalização/hash sobre a projeção semântica, antes de avançar para o estado das definições e integração read-only do workspace.
