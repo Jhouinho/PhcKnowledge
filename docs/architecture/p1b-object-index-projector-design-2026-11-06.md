@@ -187,26 +187,26 @@ Componentes:
 - `ObjectIndexProjector`: projeta `object-index.json` sem dependência de SQLite ou filesystem;
 - `ObjectIndexWorkspaceProjector`: liga o leitor read-only ao projector;
 - resolvers independentes para operação, identidade, metadata/fingerprint e estado da definição;
-- `ObjectIndexContractValidator`: validação estrutural e invariantes condicionais no processo C#; não substitui o JSON Schema Draft 2020-12 oficial.
+- `ObjectIndexContractValidator`: validação estrutural e invariantes condicionais no processo C#.
 
 ### Validação automatizada confirmada
 
-- GitHub Actions run `42417563340`: build concluído e **307 testes .NET aprovados** (32 + 275).
-- GitHub Actions run `42417775044`: pacote de referência IKP validado pelos schemas e verificações cruzadas; **19 testes Python aprovados**.
-- Os testes sintéticos cobrem os 21 kinds suportados, as duas variantes de `phc.user_tsql_function`, identidades PHC/SQL, parent resolvido/não resolvido, definições, cobertura inconsistente e determinismo byte-a-byte com diferentes ordens de entrada.
+- GitHub Actions run `42418465891`: build concluído, **307 testes .NET aprovados** (32 + 275) e saída do projector C# validada com sucesso pelo JSON Schema IKP 0.1 Draft 2020-12. A saída validada contém **4 objetos sintéticos**: database, table, campo PHC `u_*` ligado à tabela e regra BRULE com definição disponível.
+- GitHub Actions run `42418082661`: pacote de referência IKP validado pelos schemas e verificações cruzadas; **22 testes Python aprovados**.
+- Os testes sintéticos cobrem os 21 kinds suportados, as duas variantes de `phc.user_tsql_function`, identidades PHC/SQL, parent resolvido/não resolvido, estados de definição, inconsistências de cobertura e determinismo byte-a-byte com diferentes ordens de entrada.
 - A fixture IKP foi alinhada com o modelo: REL/DTL permanecem no payload separado de relações e não são promovidas a objetos do `object-index.json`.
-- A fixture é demonstrativa; não é uma captura real PHC.
+- A fixture e a captura sintética são demonstrativas; não representam uma captura real PHC.
 
 ### Limites ainda em aberto
 
-- A validação Draft 2020-12 do Python incide atualmente sobre o pacote de referência, não diretamente sobre os bytes produzidos pelo projector C#.
+- A validação direta do object-index C# contra o JSON Schema está automatizada; a geração e validação de um pacote IKP completo a partir de um workspace ainda não está fechada.
 - Ainda não foi executado o projector sobre um workspace completo gerado por uma captura PHC real.
 - Não foram alterados schema SQLite, collectors ou queries PHC/SQL.
 
 ### Próximo passo
 
-1. Criar uma ponte de teste para enviar o JSON produzido pelo projector C# ao validador oficial Draft 2020-12, sem duplicar o schema no código C#.
-2. Aumentar os cenários sintéticos de captura completa, incluindo definições disponíveis/indisponíveis e artefactos referenciados.
+1. Aumentar os cenários sintéticos para PK/FK, views, procedures, triggers, variantes de função e falhas/ausências de artefactos.
+2. Fechar a geração de todos os ficheiros do pacote IKP a partir do workspace e validar o pacote completo com o validador de referência.
 3. Depois, validar a integração com uma captura controlada: primeiro base demo standard e, posteriormente, instalação personalizada.
 
 A ausência de captura real não impede fechar o contrato nem validar o comportamento puro do projector.
