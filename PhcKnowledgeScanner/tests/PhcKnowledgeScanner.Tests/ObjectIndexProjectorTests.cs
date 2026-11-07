@@ -299,7 +299,7 @@ public sealed class ObjectIndexProjectorTests
         string? source,
         string expectedOperation)
     {
-        var summary = source is null ? null : $"""{"source":"{{source}}","stamp":"SYNTH-1"}""";
+        var summary = source is null ? null : $$"""{"source":"{{source}}","stamp":"SYNTH-1"}""";
         var record = new TechnicalObjectRecord(
             $"synthetic:{kind}:{source ?? "sql"}",
             kind,
