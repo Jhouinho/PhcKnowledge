@@ -21,7 +21,7 @@ Resultado: **PASS — schemas, integridade e referências cruzadas**
 | Interpretação aponta para relação declarada no payload de relações, sem exigir objeto no índice | PASS |
 | Digest lógico recalculado corresponde ao valor declarado | PASS |
 | Definição BRULE indisponível preserva o objeto inventariado | PASS |
-| Casos positivos, negativos e de fronteira executados sobre cópias temporárias | **19/19 PASS** |
+| Casos positivos, negativos e de fronteira executados sobre cópias temporárias | **22/22 PASS** |
 
 A validação dos schemas foi feita com o validador Python `jsonschema` (Draft 2020-12). O validador do pacote e as mutações de teste foram executados sobre uma representação local byte-a-byte coincidente com os ficheiros de referência: os oito tamanhos e SHA-256 declarados foram confirmados.
 
@@ -45,7 +45,7 @@ A cobertura da operação de definição é `SucceededWithWarnings / Partial`. A
 
 ## Casos negativos e de fronteira
 
-Os 19 cenários cobrem:
+Os 22 cenários cobrem:
 - pacote válido e cobertura parcial válida;
 - ficheiro obrigatório ausente;
 - payload e checksum adulterados;
@@ -53,7 +53,7 @@ Os 19 cenários cobrem:
 - operação desconhecida ou não suportada;
 - operação não solicitada com resultado incompatível;
 - referências de artefactos e issues inválidas;
-- IDs de objetos duplicados;\n- separação entre objetos técnicos e relações REL/DTL declaradas;
+- IDs de objetos duplicados;\n- separação entre objetos técnicos e relações REL/DTL declaradas;\n- validação isolada do object-index contra o schema oficial, incluindo UUID e estados inválidos;
 - CaptureId divergente;
 - ficheiros extra na raiz ou no payload;
 - artefacto omitido do manifesto;
