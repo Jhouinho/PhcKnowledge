@@ -186,8 +186,9 @@ O projector end-to-end ainda não está implementado. Já foram implementados co
 - `SourceIdentityResolver`: projeção dos identificadores nativos e scopes sustentados pelos registos da mesma captura;
 - `MetadataProjectionResolver`: metadata descritivo e projeção semântica separada, com normalização conservadora da atividade PHC;
 - `CanonicalJsonSerializer` + `MetadataFingerprintCalculator`: canonicalização e SHA-256 da projeção semântica;
-- testes unitários para mapeamentos válidos, variantes desconhecidas, ausência de dados, resolução de parent, scopes ambíguos, metadata, atividade desconhecida, canonicalização e estabilidade de fingerprints.
+- `DefinitionProjectionResolver`: estados individuais de definição, correspondência de issues específicas por operação/objeto e verificação de integridade dos bytes dos artefactos;
+- testes unitários para mapeamentos válidos, variantes desconhecidas, ausência de dados, resolução de parent, scopes ambíguos, metadata, atividade desconhecida, canonicalização, estabilidade de fingerprints, estados de definição e integridade dos artefactos.
 
-A compilação e os testes desses componentes passaram no GitHub Actions. O estado das definições, a integração read-only do workspace e a validação dos pressupostos com uma captura real continuam pendentes.
+A compilação e os testes passaram no GitHub Actions (**228 testes aprovados**). A leitura read-only tipada do workspace, a integração do projector end-to-end e a validação dos pressupostos com uma captura real continuam pendentes.
 
-Próximo passo sem captura: implementar e testar canonicalização/hash sobre a projeção semântica; depois fechar as regras de estado de definição com entradas tipadas, sem ligar ainda ao workspace SQLite. Quando houver acesso ao PC, recolher uma captura controlada (idealmente primeiro uma base demo sem personalizações e depois uma instalação personalizada), copiar SQLite + artefactos para ambiente de teste e integrar o leitor read-only e o projector end-to-end.
+Próximo passo sem captura: consolidar o contrato de leitura read-only do workspace para fornecer ao projector os objetos, issues e bytes dos artefactos, sem alterar o schema SQLite nem os collectors. Quando houver acesso ao PC, recolher uma captura controlada (idealmente primeiro uma base demo sem personalizações e depois uma instalação personalizada), copiar SQLite + artefactos para ambiente de teste e integrar o leitor read-only e o projector end-to-end.
