@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using PhcKnowledgeScanner.Abstractions.Coverage;
 using PhcKnowledgeScanner.Abstractions.Inventory;
 
 namespace PhcKnowledgeScanner.Export.ObjectIndex;
@@ -99,15 +100,21 @@ public sealed class ObjectIndexProjector
                     continue;
                 }
 
-                var operationCollectorMismatch = objects
+                var operationObjects = objects
                     .Where(x => string.Equals(operations[x.ObjectId].OperationId, operationGroup.Key, StringComparison.Ordinal))
+                    .ToArray();
+                var operationCollectorMismatch = operationObjects
                     .Any(x => !string.Equals(x.CollectorId, capabilities[0].CollectorId, StringComparison.Ordinal));
+                var coverageContradictsObservedObjects = !coverages[0].Requested
+                    || coverages[0].Result is OperationExecutionResult.Skipped or OperationExecutionResult.NotAttempted
+                    || coverages[0].ObservedCount < operationObjects.Length;
                 if (!string.Equals(capabilities[0].CapabilityVersion, coverages[0].CapabilityVersion, StringComparison.Ordinal)
-                    || operationCollectorMismatch)
+                    || operationCollectorMismatch
+                    || coverageContradictsObservedObjects)
                 {
                     diagnostics.Add(new ObjectIndexProjectionDiagnostic(
-                        "object_index_operation_coverage_version_mismatch",
-                        $"Operation '{operationGroup.Key}' has inconsistent capability version or collector provenance."));
+                        "object_index_operation_coverage_inconsistent",
+                        $"Operation '{operationGroup.Key}' has inconsistent capability version, collector provenance or coverage result/count."));
                 }
             }
 
