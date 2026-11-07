@@ -22,5 +22,6 @@ public sealed record WorkspaceCaptureMetadata(
     public bool HasCoverageData => HasCoverageColumn && Coverage is not null;
 
     public bool HasCompleteCoverageMetadata =>
-        HasCapabilitiesData && HasCoverageData;
+        HasCaptureIdColumn && !string.IsNullOrWhiteSpace(CaptureId)
+        && HasCapabilitiesData && HasCoverageData;
 }
