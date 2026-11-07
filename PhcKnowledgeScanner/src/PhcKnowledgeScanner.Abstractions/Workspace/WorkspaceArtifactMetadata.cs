@@ -8,4 +8,5 @@ public sealed record WorkspaceArtifactMetadata(
     string ContentType,
     string Sha256,
     long ByteLength,
-    IReadOnlyDictionary<string, string>? Metadata);
+    IReadOnlyDictionary<string, string>? Metadata,
+    string? MetadataJson = null);
