@@ -1,6 +1,6 @@
 # P1.B — Desenho do projetor object-index
 **Data:** 2026-11-06  
-**Estado:** desenho técnico; sem implementação  
+**Estado:** primeiro projector end-to-end implementado; validação sintética e de fixture em curso  
 **Âmbito:** transformar um workspace Scanner existente em `object-index.json` IKP 0.1
 
 ## 1. Objetivo e limites
@@ -178,31 +178,35 @@ Requisitos:
 - Não classificar artefactos descritivos como definições originais.
 - Não apresentar fixture de teste como captura real.
 
-## 12. Estado e próximo passo
+## 12. Estado atual e próximo passo
 
-**Estado atual:** o primeiro projector end-to-end já está implementado na branch `main), com separação entre acesso ao workspace, projeção pura e orquestração.
+O primeiro projector end-to-end está implementado na branch `main`, com separação entre leitura do workspace, projeção pura e orquestração.
 
 Componentes:
-- `ObjectIndexProjectionInputReader`: valida integridade SQLite e lê CaptureId, coverage/capabilities, objetos, issues, metadados e bytes exatos dos artefactos;
-- `ObjectIndexProjector`: projeta o documento IKP 0.1 sem dependência de SQLite ou filesystem;
-- `ObjectIndexWorkspaceProjector`: liga o leitor read-only ao projector puro;
-- os resolvers de operação, identidade, metadata/fingerprint e definição mantêm-se componentes independentes e reutilizados pelo projector.
+- `ObjectIndexProjectionInputReader`: lê CaptureId, capabilities/coverage, objetos, issues, metadados e bytes dos artefactos referenciados;
+- `ObjectIndexProjector`: projeta `object-index.json` sem dependência de SQLite ou filesystem;
+- `ObjectIndexWorkspaceProjector`: liga o leitor read-only ao projector;
+- resolvers independentes para operação, identidade, metadata/fingerprint e estado da definição;
+- `ObjectIndexContractValidator`: validação estrutural e invariantes condicionais no processo C#; não substitui o JSON Schema Draft 2020-12 oficial.
 
-Regras implementadas no projector:
-- falha se CaptureId não for UUID, se SourceObjectId não for único ou se operationId não puder ser resolvido;
-- não inventa SourceIdentity quando a evidência é insuficiente;
-- preserva metadata descritivo e só emite metadataFingerprint quando a projeção semântica está completa;
-- valida os bytes, tamanho e SHA-256 dos artefactos antes de declarar uma definição Available;
-- não infere Empty;
-- só emite parentSourceObjectId quando o parent existe na mesma captura;
-- ordena objetos e artefactos deterministicamente e serializa com nomes camelCase do contrato IKP.
+### Validação automatizada confirmada
 
-Validação automatizada:
-- GitHub Actions, run `42416070993`: **build concluído com sucesso; 241 testes aprovados**;
-- testes incluem projeção determinística, operação não resolvida, SourceObjectId duplicado e integração do leitor com o projector através de um workspace SQLite;
-- o teste de leitura read-only confirmou que a abertura e leitura não alteram o conteúdo da base de dados;
-- ainda não foi validado um workspace real produzido por uma captura PHC, nem está integrada nesta etapa a validação automática contra o JSON Schema oficial.
+- GitHub Actions run `42417563340`: build concluído e **307 testes .NET aprovados** (32 + 275).
+- GitHub Actions run `42417775044`: pacote de referência IKP validado pelos schemas e verificações cruzadas; **19 testes Python aprovados**.
+- Os testes sintéticos cobrem os 21 kinds suportados, as duas variantes de `phc.user_tsql_function`, identidades PHC/SQL, parent resolvido/não resolvido, definições, cobertura inconsistente e determinismo byte-a-byte com diferentes ordens de entrada.
+- A fixture IKP foi alinhada com o modelo: REL/DTL permanecem no payload separado de relações e não são promovidas a objetos do `object-index.json`.
+- A fixture é demonstrativa; não é uma captura real PHC.
 
-Sem alterações ao schema SQLite ou aos collectors.
+### Limites ainda em aberto
 
-**Próximo passo:** integrar a validação formal do JSON Schema IKP 0.1 e reforçar as invariantes semânticas; depois produzir um primeiro object-index a partir de uma captura controlada (base demo standard e, posteriormente, instalação personalizada). A ausência de captura real não impede continuar os testes de contrato e fixtures.
+- A validação Draft 2020-12 do Python incide atualmente sobre o pacote de referência, não diretamente sobre os bytes produzidos pelo projector C#.
+- Ainda não foi executado o projector sobre um workspace completo gerado por uma captura PHC real.
+- Não foram alterados schema SQLite, collectors ou queries PHC/SQL.
+
+### Próximo passo
+
+1. Criar uma ponte de teste para enviar o JSON produzido pelo projector C# ao validador oficial Draft 2020-12, sem duplicar o schema no código C#.
+2. Aumentar os cenários sintéticos de captura completa, incluindo definições disponíveis/indisponíveis e artefactos referenciados.
+3. Depois, validar a integração com uma captura controlada: primeiro base demo standard e, posteriormente, instalação personalizada.
+
+A ausência de captura real não impede fechar o contrato nem validar o comportamento puro do projector.
