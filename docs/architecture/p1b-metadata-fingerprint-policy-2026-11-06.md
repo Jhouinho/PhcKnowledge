@@ -1,6 +1,6 @@
 # P1.B — Política de MetadataFingerprint por ObjectKind
 **Data:** 2026-11-06  
-**Estado:** proposta técnica baseada nos emissores atuais; ainda não implementada  
+**Estado:** política documentada; projeção semântica implementada; canonicalização/hash ainda não implementados  
 **Âmbito:** primeiro `object-index.json` IKP 0.1
 
 ## 1. Objetivo
@@ -126,9 +126,11 @@ Casos de regressão prioritários:
 ## 7. Estado da investigação
 
 - Leitura dos emissores SQL, PHC e `SqlKeyInventory`: concluída para a matriz inicial.
-- Proposta de campos por kind: documentada.
-- Código de normalização, canonicalização e hashing: não implementado.
-- Alterações ao SQLite, schema IKP ou contratos: nenhuma.
+- Política de campos semânticos por kind: documentada.
+- `MetadataProjectionResolver`: implementado e testado; produz metadata descritivo e a projeção semântica separada.
+- Normalização de atividade: reconhece apenas valores explícitos; valores desconhecidos preservam o bruto e impedem fingerprint.
+- Canonicalização RFC 8785 e SHA-256: ainda não implementados.
+- Alterações ao SQLite, schema IKP ou collectors: nenhuma.
 - Validação com workspace real: pendente de acesso a uma captura (SQLite + artefactos).
 
-Próximo passo recomendado: fechar o modelo `SourceIdentity` e a matriz de scopes, cruzando cada identidade com esta projeção de metadata. Depois disso, desenhar o projetor do object-index e os testes de estabilidade antes de alterar código.
+Próximo passo recomendado: implementar canonicalização e cálculo SHA-256 sobre `FingerprintProjection`, com testes de estabilidade/invariância, antes de integrar os resultados no projector end-to-end.
