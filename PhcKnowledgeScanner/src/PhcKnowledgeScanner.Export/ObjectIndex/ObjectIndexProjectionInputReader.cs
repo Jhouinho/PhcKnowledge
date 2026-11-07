@@ -42,10 +42,20 @@ public sealed class ObjectIndexProjectionInputReader
         var issues = await workspace.GetIssuesAsync(cancellationToken).ConfigureAwait(false);
         var artifacts = await workspace.GetArtifactsAsync(cancellationToken).ConfigureAwait(false);
 
-        var snapshots = new List<DefinitionArtifactSnapshot>(artifacts.Count);
+        var referencedArtifactIds = objects
+            .Select(x => x.DefinitionArtifactId)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
+            .ToHashSet(StringComparer.Ordinal);
+        var referencedArtifacts = artifacts
+            .Where(x => referencedArtifactIds.Contains(x.ArtifactId))
+            .OrderBy(x => x.ArtifactId, StringComparer.Ordinal)
+            .ToArray();
+
+        var snapshots = new List<DefinitionArtifactSnapshot>(referencedArtifacts.Length);
         var diagnostics = new List<ObjectIndexProjectionDiagnostic>();
 
-        foreach (var artifact in artifacts.OrderBy(x => x.ArtifactId, StringComparer.Ordinal))
+        foreach (var artifact in referencedArtifacts)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var bytes = await workspace.ReadArtifactBytesAsync(artifact.ArtifactId, cancellationToken)
