@@ -15,6 +15,16 @@ A partir da raiz do repositório:
 python tools/ikp-validation/validate_ikp_fixture.py docs/architecture/fixtures/ikp-0.1/minimal-valid
 ```
 
+## Validar a saída real do projector C#
+
+O workflow .NET guarda os bytes de um `object-index.json` produzido pelo `ObjectIndexProjector` a partir de uma captura sintética. Em seguida, executa o validador Draft 2020-12 oficial:
+
+```bash
+python tools/ikp-validation/validate_object_index.py caminho/para/object-index.json
+```
+
+Isto valida os bytes emitidos pelo código C#, sem duplicar o JSON Schema no projector.
+
 ## Executar testes positivos e negativos
 
 ```bash
