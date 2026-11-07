@@ -151,3 +151,17 @@ O mapping de operationId continua válido, mas o índice deve ser entendido como
 - `TechnicalObjectRecord`, `SqliteScanWorkspace`, `SqlKeyInventory`
 - `SqlServerStructureCollector`, `PhcCustomizationsCollector`, `PhcActivityState`
 
+
+
+## 9. Verificação estática complementar — 2026-11-07
+
+A revisão direta do emissor `PhcCustomizationsCollector` confirmou duas variantes de `phc.user_tsql_function` dentro da mesma operação `phc.customizations.ftu`:
+
+- `source = "ftu"`: os valores `inactivo` e `classif` vêm da tabela PHC `dbo.ftu` e podem alimentar a projeção discriminada;
+- `source = "sys.objects"`: a consulta enumera funções T-SQL instaladas e lê nome, schema e definição, mas não recolhe estado de atividade PHC. O collector acrescenta atualmente `inactivo = false` e `estado = "Activo"` como constantes.
+
+Decisão para o projector: na variante `sys.objects`, não projetar `inactivo`/ `estado`; não duplicar `nome`, já representado por `TechnicalObjectRecord.Name`. A projeção de metadata fica limitada a `schema` (além do discriminador técnico de variante, se o contrato o transportar). O fingerprint deve usar apenas os campos aprovados para esta variante.
+
+**Limite desta investigação:** não alterar agora o collector nem os artefactos existentes. O cabeçalho textual gerado para esta variante também inclui os rótulos `estado: Activo` e `inactivo: False`; corrigir essa representação é uma alteração futura do collector e deve ser tratada separadamente, preservando a regra atual de não modificar collectors sem validação de captura real.
+
+A revisão confirmou ainda que `phc.user_field.ParentObjectId` usa `table:{schema}.{table}`, exatamente a convenção produzida por `TableInventoryClassification.BuildObjectId`; a ligação ao objeto tabela é coerente no código atual.
