@@ -400,13 +400,170 @@ public sealed class SqliteScanWorkspace : IScanWorkspace
 
         var collectorId = reader.GetString(0);
         var relative = reader.GetString(1);
-        var fullPath = Path.Combine(RootPath, "artifacts", collectorId, relative.Replace('/', Path.DirectorySeparatorChar));
+        var fullPath = ResolveArtifactPath(collectorId, relative);
         if (!File.Exists(fullPath))
         {
             return null;
         }
 
         return await File.ReadAllTextAsync(fullPath, Encoding.UTF8, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<WorkspaceCaptureMetadata> GetCaptureMetadataAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var hasCaptureId = await ColumnExistsAsync(_connection, "scan_meta", "capture_id", cancellationToken)
+            .ConfigureAwait(false);
+        var hasCapabilities = await ColumnExistsAsync(_connection, "scan_meta", "capabilities_json", cancellationToken)
+            .ConfigureAwait(false);
+        var hasCoverage = await ColumnExistsAsync(_connection, "scan_meta", "coverage_json", cancellationToken)
+            .ConfigureAwait(false);
+
+        var columns = new List<string> { "status" };
+        if (hasCaptureId) columns.Add("capture_id");
+        if (hasCapabilities) columns.Add("capabilities_json");
+        if (hasCoverage) columns.Add("coverage_json");
+
+        await using var cmd = _connection.CreateCommand();
+        cmd.CommandText = $"SELECT {string.Join(", ", columns)} FROM scan_meta LIMIT 1;";
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            return new WorkspaceCaptureMetadata(null, null, null, null, hasCaptureId, hasCapabilities, hasCoverage);
+        }
+
+        var index = 0;
+        var status = reader.IsDBNull(index) ? null : reader.GetString(index++);
+        string? captureId = null;
+        string? capabilitiesJson = null;
+        string? coverageJson = null;
+
+        if (hasCaptureId) captureId = reader.IsDBNull(index) ? null : reader.GetString(index);
+        if (hasCaptureId) index++;
+        if (hasCapabilities) capabilitiesJson = reader.IsDBNull(index) ? null : reader.GetString(index);
+        if (hasCapabilities) index++;
+        if (hasCoverage) coverageJson = reader.IsDBNull(index) ? null : reader.GetString(index);
+
+        var capabilities = string.IsNullOrWhiteSpace(capabilitiesJson)
+            ? null
+            : JsonSerializer.Deserialize<List<DeclaredCapability>>(capabilitiesJson);
+        var coverage = string.IsNullOrWhiteSpace(coverageJson)
+            ? null
+            : JsonSerializer.Deserialize<List<OperationCoverage>>(coverageJson);
+
+        return new WorkspaceCaptureMetadata(
+            captureId,
+            status,
+            capabilities,
+            coverage,
+            hasCaptureId,
+            hasCapabilities,
+            hasCoverage);
+    }
+
+    public async Task<IReadOnlyList<WorkspaceArtifactMetadata>> GetArtifactsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await using var cmd = _connection.CreateCommand();
+        cmd.CommandText =
+            """
+            SELECT artifact_id, collector_id, relative_path, content_type, sha256, byte_length, metadata_json
+            FROM artifacts
+            ORDER BY artifact_id;
+            """;
+        var artifacts = new List<WorkspaceArtifactMetadata>();
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            IReadOnlyDictionary<string, string>? metadata = null;
+            if (!reader.IsDBNull(6))
+            {
+                metadata = JsonSerializer.Deserialize<Dictionary<string, string>>(reader.GetString(6));
+            }
+
+            artifacts.Add(new WorkspaceArtifactMetadata(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetString(3),
+                reader.GetString(4),
+                reader.GetInt64(5),
+                metadata));
+        }
+
+        return artifacts;
+    }
+
+    public async Task<byte[]?> ReadArtifactBytesAsync(
+        string artifactId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(artifactId);
+        await using var cmd = _connection.CreateCommand();
+        cmd.CommandText =
+            """
+            SELECT collector_id, relative_path
+            FROM artifacts
+            WHERE artifact_id = $id
+            LIMIT 1;
+            """;
+        cmd.Parameters.AddWithValue("$id", artifactId);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        var collectorId = reader.GetString(0);
+        var relativePath = reader.GetString(1);
+        var fullPath = ResolveArtifactPath(collectorId, relativePath);
+        if (!File.Exists(fullPath))
+        {
+            return null;
+        }
+
+        return await File.ReadAllBytesAsync(fullPath, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<WorkspaceIntegrityResult> CheckIntegrityAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await using var cmd = _connection.CreateCommand();
+        cmd.CommandText = "PRAGMA integrity_check;";
+        var messages = new List<string>();
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            messages.Add(reader.GetString(0));
+        }
+
+        return new WorkspaceIntegrityResult(
+            messages.Count == 1 && string.Equals(messages[0], "ok", StringComparison.OrdinalIgnoreCase),
+            messages);
+    }
+
+    private string ResolveArtifactPath(string collectorId, string relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(collectorId) || Path.IsPathRooted(collectorId)
+            || string.IsNullOrWhiteSpace(relativePath) || Path.IsPathRooted(relativePath))
+        {
+            throw new InvalidDataException("Artifact path must be relative to the workspace artifact directory.");
+        }
+
+        var artifactsRoot = Path.GetFullPath(Path.Combine(RootPath, "artifacts"));
+        var fullPath = Path.GetFullPath(Path.Combine(
+            artifactsRoot,
+            collectorId,
+            relativePath.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar)));
+        var prefix = artifactsRoot.EndsWith(Path.DirectorySeparatorChar)
+            ? artifactsRoot
+            : artifactsRoot + Path.DirectorySeparatorChar;
+        if (!fullPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException("Artifact path resolves outside the workspace artifact directory.");
+        }
+
+        return fullPath;
     }
 
     public async Task<IReadOnlyDictionary<string, int>> GetObjectCountsByKindAsync(CancellationToken cancellationToken = default)
