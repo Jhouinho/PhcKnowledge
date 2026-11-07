@@ -12,16 +12,16 @@ Resultado: **PASS — schemas, integridade e referências cruzadas**
 | Os cinco schemas passam a validação do meta-schema Draft 2020-12 | PASS |
 | CaptureId consistente entre manifesto, coverage, índice e relações | PASS |
 | 4 operações de cobertura correspondem a 4 capabilities declaradas | PASS |
-| 4 objetos observados ligados a operações válidas | PASS |
+| 3 objetos técnicos observados ligados a operações válidas | PASS |
 | 4 artefactos declarados existem e correspondem aos ficheiros payload | PASS |
 | artifactIds do índice resolvem para o manifesto | PASS |
 | SHA-256 e byteLength dos 8 ficheiros cobertos por checksums | PASS |
 | SHA-256 e byteLength dos 4 artefactos conferem com o manifesto | PASS |
 | issueId referenciado pela cobertura existe nos diagnósticos | PASS |
-| Relação e interpretação apontam para objeto existente | PASS |
+| Interpretação aponta para relação declarada no payload de relações, sem exigir objeto no índice | PASS |
 | Digest lógico recalculado corresponde ao valor declarado | PASS |
 | Definição BRULE indisponível preserva o objeto inventariado | PASS |
-| Casos positivos, negativos e de fronteira executados sobre cópias temporárias | **18/18 PASS** |
+| Casos positivos, negativos e de fronteira executados sobre cópias temporárias | **19/19 PASS** |
 
 A validação dos schemas foi feita com o validador Python `jsonschema` (Draft 2020-12). O validador do pacote e as mutações de teste foram executados sobre uma representação local byte-a-byte coincidente com os ficheiros de referência: os oito tamanhos e SHA-256 declarados foram confirmados.
 
@@ -29,9 +29,9 @@ A validação dos schemas foi feita com o validador Python `jsonschema` (Draft 2
 
 - Ficheiros cobertos por `checksums.json`: 8
 - Artefactos payload: 4
-- Objetos no índice: 4
+- Objetos no índice: 3
 - Operações de cobertura: 4
-- Relações declaradas: 1
+- Relações declaradas no payload separado: 1
 - Issues: 1
 - Digest lógico SHA-256: `671f88cacc755ef2f4ad35447c4df9792e9e5c1878cff8c50f0631e930cb7629`
 
@@ -45,7 +45,7 @@ A cobertura da operação de definição é `SucceededWithWarnings / Partial`. A
 
 ## Casos negativos e de fronteira
 
-Os 18 cenários cobrem:
+Os 19 cenários cobrem:
 - pacote válido e cobertura parcial válida;
 - ficheiro obrigatório ausente;
 - payload e checksum adulterados;
@@ -53,7 +53,7 @@ Os 18 cenários cobrem:
 - operação desconhecida ou não suportada;
 - operação não solicitada com resultado incompatível;
 - referências de artefactos e issues inválidas;
-- IDs de objetos duplicados;
+- IDs de objetos duplicados;\n- separação entre objetos técnicos e relações REL/DTL declaradas;
 - CaptureId divergente;
 - ficheiros extra na raiz ou no payload;
 - artefacto omitido do manifesto;
