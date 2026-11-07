@@ -163,7 +163,9 @@ Antes de integrar com SQLite, criar testes sem dependência de captura para:
 - `MetadataProjectionResolver`: implementado no projeto Export; separa metadata descritivo de `FingerprintProjection` e cobre os kinds SQL/PHC atualmente emitidos.
 - Normalização de atividade: preserva `inactivoRaw`; valores desconhecidos não são convertidos em ativo e impedem a projeção de fingerprint.
 - Testes unitários da projeção: aprovados no GitHub Actions.
-- Canonicalização RFC 8785 e cálculo SHA-256: ainda não implementados.
+- `CanonicalJsonSerializer` e `MetadataFingerprintCalculator`: implementados; canonicalizam a projeção e calculam SHA-256 em hexadecimal minúsculo.
+- O canonicalizador aceita os tipos presentes nas projeções atuais e números inteiros seguros; rejeita números não inteiros ou fora do intervalo seguro em vez de gerar um hash potencialmente não canónico.
+- Testes unitários de canonicalização, estabilidade e alteração semântica: aprovados no GitHub Actions.
 - Integração no projector e captura real: pendentes.
 - SQLite, collectors, queries e schemas: inalterados.
 
