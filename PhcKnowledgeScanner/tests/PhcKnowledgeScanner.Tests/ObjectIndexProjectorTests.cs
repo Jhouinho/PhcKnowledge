@@ -222,6 +222,56 @@ public sealed class ObjectIndexProjectorTests
         Assert.Equal("Available", item.GetProperty("definition").GetProperty("status").GetString());
     }
 
+    [Theory]
+    [InlineData(ObjectKind.Database, "sql.server.structure", null, KnownOperations.SqlDatabase)]
+    [InlineData(ObjectKind.Table, "sql.server.structure", null, KnownOperations.SqlTablesInventory)]
+    [InlineData(ObjectKind.PrimaryKey, "sql.server.structure", null, KnownOperations.SqlPrimaryKeys)]
+    [InlineData(ObjectKind.ForeignKey, "sql.server.structure", null, KnownOperations.SqlForeignKeys)]
+    [InlineData(ObjectKind.View, "sql.server.structure", null, KnownOperations.SqlViews)]
+    [InlineData(ObjectKind.StoredProcedure, "sql.server.structure", null, KnownOperations.SqlProcedures)]
+    [InlineData(ObjectKind.Trigger, "sql.server.structure", null, KnownOperations.SqlTriggers)]
+    [InlineData(ObjectKind.PhcUserRule, "phc.customizations", "brule", KnownOperations.PhcBrule)]
+    [InlineData(ObjectKind.PhcWebUserRule, "phc.customizations", "ebrule", KnownOperations.PhcEbrule)]
+    [InlineData(ObjectKind.PhcHotkey, "phc.customizations", "ti", KnownOperations.PhcTeclas)]
+    [InlineData(ObjectKind.PhcDefaultValue, "phc.customizations", "udefs", KnownOperations.PhcUdefs)]
+    [InlineData(ObjectKind.PhcWebDefaultValue, "phc.customizations", "eudefs", KnownOperations.PhcEudefs)]
+    [InlineData(ObjectKind.PhcEvent, "phc.customizations", "eventos", KnownOperations.PhcEventos)]
+    [InlineData(ObjectKind.PhcWebEvent, "phc.customizations", "eeventos", KnownOperations.PhcEeventos)]
+    [InlineData(ObjectKind.PhcUserField, "phc.customizations", "sys.columns", KnownOperations.PhcUserFields)]
+    [InlineData(ObjectKind.PhcWebScript, "phc.customizations", "escr", KnownOperations.PhcEscr)]
+    [InlineData(ObjectKind.PhcUserJavascript, "phc.customizations", "jsu", KnownOperations.PhcJsu)]
+    [InlineData(ObjectKind.PhcWebCssJs, "phc.customizations", "cssjs", KnownOperations.PhcCssjs)]
+    [InlineData(ObjectKind.PhcHiddenGrid, "phc.customizations", "formc", KnownOperations.PhcFormc)]
+    [InlineData(ObjectKind.PhcCustomScreen, "phc.customizations", "formb", KnownOperations.PhcFormb)]
+    [InlineData(ObjectKind.PhcUserTsqlFunction, "phc.customizations", "ftu", KnownOperations.PhcFtu)]
+    [InlineData(ObjectKind.PhcUserTsqlFunction, "phc.customizations", "sys.objects", KnownOperations.PhcFtu)]
+    public void Project_Emits_Valid_IKP_For_Every_Emitted_Object_Kind(
+        string kind,
+        string collectorId,
+        string? source,
+        string expectedOperation)
+    {
+        var summary = source is null ? null : $"""{"source":"{{source}}","stamp":"SYNTH-1"}""";
+        var record = new TechnicalObjectRecord(
+            $"synthetic:{kind}:{source ?? "sql"}",
+            kind,
+            "Synthetic object",
+            "dbo",
+            null,
+            collectorId,
+            null,
+            summary,
+            DateTimeOffset.UnixEpoch);
+
+        var result = new ObjectIndexProjector().Project(CreateInput([record]));
+
+        Assert.True(result.IsSuccess, string.Join("; ", result.Diagnostics.Select(x => x.Code + ": " + x.Message)));
+        using var document = JsonDocument.Parse(result.JsonBytes!);
+        var item = Assert.Single(document.RootElement.GetProperty("objects").EnumerateArray());
+        Assert.Equal(kind, item.GetProperty("objectKind").GetString());
+        Assert.Equal(expectedOperation, item.GetProperty("operationId").GetString());
+    }
+
     [Fact]
     public void Contract_Validator_Accepts_Minimal_Valid_Object_Index()
     {
