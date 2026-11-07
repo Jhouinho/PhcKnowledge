@@ -113,44 +113,44 @@ Limites conhecidos:
 
 ### Fase 1 — Captura fiável e pacote normalizado
 
-**Estado: desenho consolidado em partes; implementação do novo contrato ainda incompleta**
+**Estado: contratos principais e primeiro projector do object-index implementados; IKP end-to-end ainda por fechar**
 
 **Atualização de implementação — 2026-11-07**
 
-Já foram acrescentados ao projeto `PhcKnowledgeScanner.Export` componentes puros e determinísticos, com testes aprovados no GitHub Actions:
-
+Já estão implementados no projeto `PhcKnowledgeScanner.Export`:
 - `ObjectOperationResolver`: mapping explícito dos 21 kinds emitidos para a operação observadora;
 - `SourceIdentityResolver`: projeção de stamps PHC e IDs nativos SQL com scopes resolvidos dentro da captura;
-- `MetadataProjectionResolver`: metadata descritivo separado da projeção semântica;
-- `CanonicalJsonSerializer` e `MetadataFingerprintCalculator`: canonicalização e SHA-256 da projeção semântica;
-- `DefinitionProjectionResolver`: estado individual de definição e integridade de artefactos com SHA-256 dos bytes exatos.
+- `MetadataProjectionResolver`, `CanonicalJsonSerializer` e `MetadataFingerprintCalculator`: metadata descritivo separado da projeção semântica e fingerprint determinístico;
+- `DefinitionProjectionResolver`: estados individuais de definição e validação de artefactos através dos bytes exatos;
+- `ObjectIndexProjectionInputReader`: leitura tipada de CaptureId, coverage, objetos, issues, metadados e bytes dos artefactos;
+- `ObjectIndexProjector`: geração determinística de `object-index.json`, independente de SQLite;
+- `ObjectIndexWorkspaceProjector`: orquestração entre workspace read-only e projector puro.
 
-Não foram alterados schema SQLite, collectors, queries ou schemas IKP.
+**Validação:** GitHub Actions run `42415572239` — build concluído e **240 testes aprovados**. Inclui teste de integração entre o workspace SQLite e o projector. A validação formal do documento produzido contra o JSON Schema IKP ainda não está integrada no pipeline do projector.
 
-Continuam pendentes a integração do projector end-to-end, a leitura read-only tipada do workspace, o alinhamento final da fixture IKP e a validação com captura real.
+Não foram alterados schema SQLite, collectors ou queries PHC/SQL.
 
 Já temos:
-- especificação IKP 0.1 documentada;
-- schemas e validador de fixture mínima;
+- especificação IKP 0.1, schemas e validador de fixture mínima;
 - matriz de compatibilidade Scanner ↔ IKP;
 - contrato P1 de identidade, proveniência e fingerprints;
-- investigação P1.B do emissor do object-index;
+- investigação P1.B dos emissores do object-index;
 - política de fingerprints e matriz de SourceIdentity;
-- desenho do projector e projeções de metadata;
+- projeções de metadata e definição;
 - auditoria estática dos 21 tipos de objetos emitidos;
-- contrato de leitura do workspace para o projector;
-- diagramas ER e de classes do estado atual.
+- contrato de leitura read-only do workspace;
+- primeiro projector end-to-end do object-index;
+- testes determinísticos e de integração.
 
 Em curso:
-- fechar o projector do object-index com base no comportamento real dos collectors;
-- alinhar a fixture IKP com os kinds e operationIds reais;
-- preparar APIs de leitura read-only necessárias ao projector;
-- consolidar a semântica de cobertura e de estado individual das definições.
+- validação formal do JSON produzido contra o schema IKP 0.1;
+- reforço de invariantes semânticas e cobertura de variantes/kinds;
+- alinhamento da fixture IKP com os kinds e operationIds reais.
 
-Dependência que falta:
-- uma captura real do Scanner, com SQLite e artefactos, para validar hashes, tamanhos, caminhos, identidade e projeções sem inventar dados.
+Dependência para fechar a validação com dados reais:
+- uma captura Scanner controlada, primeiro de uma base demo standard e depois de uma instalação personalizada, com SQLite e artefactos.
 
-**Este é o foco atual do projeto.** O próximo marco útil é conseguir transformar uma captura real numa representação IKP consistente e validada.
+**Este continua a ser o foco atual.** O próximo marco é validar o object-index contra o schema e contra uma captura real; só depois avançar para o pacote ZIP IKP completo.
 
 ### Fase 2 — Plataforma central
 
