@@ -166,6 +166,54 @@ public sealed class ObjectIndexProjectorTests
     }
 
     [Fact]
+    public void Project_Fails_When_Objects_Are_Attributed_To_A_Failed_Operation()
+    {
+        var record = new TechnicalObjectRecord(
+            "phc.brule:S1",
+            ObjectKind.PhcUserRule,
+            "Synthetic rule",
+            "dbo",
+            null,
+            "phc.customizations",
+            null,
+            """{"source":"brule","stamp":"S1"}""",
+            DateTimeOffset.UnixEpoch);
+        var capture = new WorkspaceCaptureMetadata(
+            "b1b2c3d4-1111-4222-8333-123456789abc",
+            "completed",
+            [new DeclaredCapability(
+                "phc.customizations",
+                KnownOperations.PhcBrule,
+                KnownOperations.Version,
+                "phc.customizations",
+                true)],
+            [new OperationCoverage(
+                KnownOperations.PhcBrule,
+                KnownOperations.Version,
+                true,
+                OperationExecutionResult.Failed,
+                SourceAvailability.Present,
+                ContentAvailability.Partial,
+                1,
+                Array.Empty<string>())],
+            true,
+            true,
+            true);
+        var input = ObjectIndexProjectionInput.Success(
+            capture,
+            [record],
+            Array.Empty<CollectionIssue>(),
+            Array.Empty<WorkspaceArtifactMetadata>(),
+            Array.Empty<DefinitionArtifactSnapshot>(),
+            Array.Empty<ObjectIndexProjectionDiagnostic>());
+
+        var result = new ObjectIndexProjector().Project(input);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Diagnostics, x => x.Code == "object_index_operation_coverage_inconsistent");
+    }
+
+    [Fact]
     public async Task Workspace_Projector_Connects_Read_Only_Reader_To_Pure_Projector()
     {
         var root = Path.Combine(Path.GetTempPath(), "PhcKnowledgeScanner-tests", Guid.NewGuid().ToString("N"));
