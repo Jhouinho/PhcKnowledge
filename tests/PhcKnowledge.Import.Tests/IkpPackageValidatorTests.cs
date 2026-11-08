@@ -229,7 +229,7 @@ public sealed class IkpPackageValidatorTests
         });
 
         if (tamperCoverageAfterChecksums)
-            documents["coverage.json"] = Encoding.UTF8.GetBytes($"""
+            documents["coverage.json"] = Encoding.UTF8.GetBytes($$"""
                 {
                   "schemaVersion": "1",
                   "captureId": "{{captureId}}",
