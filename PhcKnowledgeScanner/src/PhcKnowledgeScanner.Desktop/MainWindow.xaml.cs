@@ -13,6 +13,7 @@ using PhcKnowledgeScanner.Abstractions.Inventory.Knowledge;
 using PhcKnowledgeScanner.Abstractions.Progress;
 using PhcKnowledgeScanner.Abstractions.SchemaSnapshot;
 using PhcKnowledgeScanner.Application.Services;
+using PhcKnowledgeScanner.Export.Ikp;
 
 namespace PhcKnowledgeScanner.Desktop;
 
@@ -1311,6 +1312,54 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             TxtExportStatus.Text = ex.Message;
+        }
+    }
+
+    private async void BtnExportIkp_Click(object sender, RoutedEventArgs e)
+    {
+        var workspace = _scanService.CurrentWorkspace;
+        if (workspace is null)
+        {
+            MessageBox.Show("Execute primeiro uma recolha.", "Exportação IKP", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (_lastRequest is null || string.IsNullOrWhiteSpace(_lastRequest.Database))
+        {
+            MessageBox.Show("Não foi possível determinar a base de dados de origem desta captura.", "Exportação IKP", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var dialog = new SaveFileDialog
+        {
+            Filter = "IKP 0.1 (*.zip)|*.zip",
+            FileName = $"phc-capture-ikp-{DateTime.Now:yyyyMMdd-HHmmss}.zip"
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        try
+        {
+            TxtExportStatus.Text = "A validar captura e a gerar pacote IKP 0.1...";
+            var metadata = await workspace.GetCaptureMetadataAsync();
+            if (!metadata.HasCompleteCoverageMetadata || string.IsNullOrWhiteSpace(metadata.CaptureId))
+                throw new InvalidDataException("A captura não contém CaptureId, capabilities e coverage completos. Não é possível gerar IKP.");
+
+            var result = await new IkpPackageExporter().ExportAsync(
+                workspace,
+                new IkpCaptureDescriptor(metadata.CaptureId, null, null, null, null),
+                new IkpOriginDescriptor(DatabaseName: _lastRequest.Database),
+                dialog.FileName);
+
+            TxtExportStatus.Text =
+                $"IKP 0.1 exportado e validado.\nPackageId: {result.PackageId}\nCaptureId: {result.CaptureId}\n" +
+                $"SHA-256: {result.ZipSha256}\nFicheiros: {result.PackageFileCount} · Artefactos: {result.PayloadArtifactCount}\n{result.ZipPath}";
+        }
+        catch (Exception ex)
+        {
+            TxtExportStatus.Text = "Falha na exportação IKP: " + ex.Message;
+            MessageBox.Show(ex.Message, "Exportação IKP", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
