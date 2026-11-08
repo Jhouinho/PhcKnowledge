@@ -301,6 +301,25 @@ public sealed class IkpPackageExporter
         var segments = normalized.Split('/');
         if (segments.Any(x => string.IsNullOrWhiteSpace(x) || x is "." or ".."))
             throw new InvalidDataException($"Caminho inválido ou com traversal: '{value}'.");
+
+        foreach (var segment in segments)
+        {
+            if (segment.Any(c => char.IsControl(c) || "<>:\"|?*".Contains(c))
+                || segment.EndsWith(' ') || segment.EndsWith('.'))
+                throw new InvalidDataException($"O segmento de caminho não é portável entre sistemas: '{segment}'.");
+
+            var deviceName = segment.Split('.')[0];
+            if (deviceName.Equals("CON", StringComparison.OrdinalIgnoreCase)
+                || deviceName.Equals("PRN", StringComparison.OrdinalIgnoreCase)
+                || deviceName.Equals("AUX", StringComparison.OrdinalIgnoreCase)
+                || deviceName.Equals("NUL", StringComparison.OrdinalIgnoreCase)
+                || (deviceName.Length == 4
+                    && (deviceName.StartsWith("COM", StringComparison.OrdinalIgnoreCase)
+                        || deviceName.StartsWith("LPT", StringComparison.OrdinalIgnoreCase))
+                    && deviceName[3] is >= '1' and <= '9'))
+                throw new InvalidDataException($"Nome reservado pelo Windows no caminho do artefacto: '{segment}'.");
+        }
+
         return string.Join('/', segments);
     }
 
