@@ -6,6 +6,7 @@ using PhcKnowledgeScanner.Abstractions.SchemaSnapshot;
 using PhcKnowledgeScanner.Application;
 using PhcKnowledgeScanner.Application.Services;
 using PhcKnowledgeScanner.Engine;
+using PhcKnowledgeScanner.Export.Ikp;
 
 var services = new ServiceCollection();
 services.AddLogging(b =>
@@ -75,6 +76,37 @@ if (args[0] is "scan")
     var zip = Path.Combine(workspace, $"export-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.zip");
     await export.ExportCurrentAsync(zip);
     Console.WriteLine("ZIP: " + zip);
+    return 0;
+}
+
+if (args[0] is "scan-ikp")
+{
+    var (request, collectors) = ParseScanArgs(args.Skip(1).ToArray());
+    var workspace = Path.Combine(Path.GetTempPath(), "PhcKnowledgeScanner", "cli-ikp-workspace");
+    Directory.CreateDirectory(workspace);
+    var scan = provider.GetRequiredService<IScanAppService>();
+    var sink = new ConsoleProgressSink();
+    var manifest = await scan.RunStructureScanAsync(request, workspace, sink, default, collectors);
+    if (scan.CurrentWorkspace is null)
+    {
+        throw new InvalidOperationException("O scan terminou sem workspace ativo.");
+    }
+
+    var output = GetArgValue(args, "--output");
+    var zipPath = string.IsNullOrWhiteSpace(output)
+        ? Path.Combine(workspace, $"ikp-{manifest.CaptureId}.zip")
+        : output;
+    var package = await new IkpPackageExporter().ExportAsync(
+        scan.CurrentWorkspace,
+        manifest,
+        new IkpOriginDescriptor(DatabaseName: request.Database),
+        zipPath);
+    Console.WriteLine("IKP 0.1 exportado: " + package.ZipPath);
+    Console.WriteLine("PackageId: " + package.PackageId);
+    Console.WriteLine("CaptureId: " + package.CaptureId);
+    Console.WriteLine("SHA-256 ZIP: " + package.ZipSha256);
+    Console.WriteLine("Logical content digest: " + package.LogicalContentDigest);
+    Console.WriteLine($"Ficheiros: {package.PackageFileCount}; artefactos payload: {package.PayloadArtifactCount}");
     return 0;
 }
 
@@ -175,6 +207,7 @@ static void PrintHelp()
     Console.WriteLine("  --version");
     Console.WriteLine("  test-connection --server <s> --database <db> [--auth windows|sql] [--user u] [--password p]");
     Console.WriteLine("  scan            --server <s> --database <db> [--auth windows|sql] [--user u] [--password p]");
+    Console.WriteLine("  scan-ikp        --server <s> --database <db> [--auth windows|sql] [--user u] [--password p] [--output <file.zip>]");
     Console.WriteLine("                  [--collectors id1,id2]  (ex.: phc.customizations)");
     Console.WriteLine("  schema-snapshot --server <s> --database <db> [--auth windows|sql] [--user u] [--password p]");
     Console.WriteLine("                  [--output <dir>] [--zip <file.zip>] [--include-sql-definitions]");
