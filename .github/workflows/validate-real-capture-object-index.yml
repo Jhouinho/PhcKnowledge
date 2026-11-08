@@ -1,0 +1,179 @@
+name: Validate real capture Object Index
+
+on:
+  push:
+    branches:
+      - validation/real-capture-object-index-20261108
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  project-real-capture:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout validation branch
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.403
+
+      - name: Download original capture artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/capture-download"
+          curl --fail --location \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/Jhouinho/PhcKnowledge/actions/artifacts/13623603013/zip" \
+            --output "$RUNNER_TEMP/capture-download/workflow-artifact.zip"
+
+      - name: Extract nested workspace ZIP (normalize Windows separators)
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import shutil
+
+          base = Path("$RUNNER_TEMP")
+          outer = base / "capture-download" / "workflow-artifact.zip"
+          outer_dir = base / "capture-outer"
+          inner_dir = base / "capture-workspace"
+          outer_dir.mkdir(parents=True, exist_ok=True)
+          inner_dir.mkdir(parents=True, exist_ok=True)
+
+          with ZipFile(outer) as z:
+              z.extractall(outer_dir)
+
+          nested = list(outer_dir.rglob("workspace-completo.zip"))
+          if len(nested) != 1:
+              raise SystemExit(f"Esperava um workspace-completo.zip; encontrados: {len(nested)}")
+
+          def safe_extract_normalized(zip_path: Path, destination: Path):
+              with ZipFile(zip_path) as z:
+                  for item in z.infolist():
+                      name = item.filename.replace("\\\\", "/").lstrip("/")
+                      target = (destination / name).resolve()
+                      if destination.resolve() not in target.parents and target != destination.resolve():
+                          raise SystemExit(f"ZIP path traversal rejeitado: {item.filename}")
+                      if item.is_dir():
+                          target.mkdir(parents=True, exist_ok=True)
+                      else:
+                          target.parent.mkdir(parents=True, exist_ok=True)
+                          with z.open(item) as src, target.open("wb") as dst:
+                              shutil.copyfileobj(src, dst)
+
+          safe_extract_normalized(nested[0], inner_dir)
+          if not (inner_dir / "workspace.db").is_file():
+              raise SystemExit("workspace.db não encontrado na raiz extraída.")
+          print(f"Workspace preparado em {inner_dir}")
+          PY
+
+      - name: Create temporary C# projection harness
+        run: |
+          mkdir -p "$RUNNER_TEMP/object-index-harness"
+          dotnet new console --framework net10.0 --no-restore --output "$RUNNER_TEMP/object-index-harness"
+          dotnet add "$RUNNER_TEMP/object-index-harness/object-index-harness.csproj" reference \
+            "$GITHUB_WORKSPACE/PhcKnowledgeScanner/src/PhcKnowledgeScanner.Export/PhcKnowledgeScanner.Export.csproj" \
+            "$GITHUB_WORKSPACE/PhcKnowledgeScanner/src/PhcKnowledgeScanner.Workspace/PhcKnowledgeScanner.Workspace.csproj"
+          cat > "$RUNNER_TEMP/object-index-harness/Program.cs" <<'CS'
+          using PhcKnowledgeScanner.Workspace;
+          using PhcKnowledgeScanner.Export.ObjectIndex;
+
+          if (args.Length != 2)
+          {
+              Console.Error.WriteLine("Uso: harness <workspace-root> <output-json>");
+              return 2;
+          }
+
+          await using var workspace = await SqliteScanWorkspace.OpenExistingAsync(
+              args[0],
+              readOnly: true,
+              CancellationToken.None);
+
+          var result = await new ObjectIndexWorkspaceProjector().ProjectAsync(workspace);
+          foreach (var diagnostic in result.Diagnostics)
+          {
+              Console.WriteLine($"{diagnostic.Code}: {diagnostic.Message}");
+          }
+
+          if (!result.IsSuccess || result.JsonBytes is null)
+          {
+              Console.Error.WriteLine("PROJECTOR_FAILED");
+              return 1;
+          }
+
+          Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(args[1]))!);
+          await File.WriteAllBytesAsync(args[1], result.JsonBytes);
+          Console.WriteLine($"PROJECTOR_PASS bytes={result.JsonBytes.Length}");
+          return 0;
+          CS
+
+      - name: Run projector twice and verify determinism
+        run: |
+          dotnet run --project "$RUNNER_TEMP/object-index-harness/object-index-harness.csproj" --configuration Release -- \
+            "$RUNNER_TEMP/capture-workspace" "$RUNNER_TEMP/object-index-1.json" \
+            | tee "$RUNNER_TEMP/projector-diagnostics.log"
+          dotnet run --project "$RUNNER_TEMP/object-index-harness/object-index-harness.csproj" --configuration Release --no-restore -- \
+            "$RUNNER_TEMP/capture-workspace" "$RUNNER_TEMP/object-index-2.json" \
+            | tee "$RUNNER_TEMP/projector-diagnostics-second-run.log"
+          cmp "$RUNNER_TEMP/object-index-1.json" "$RUNNER_TEMP/object-index-2.json"
+          sha256sum "$RUNNER_TEMP/object-index-1.json" | tee "$RUNNER_TEMP/object-index-sha256.txt"
+          cp "$RUNNER_TEMP/object-index-1.json" "$RUNNER_TEMP/object-index.json"
+
+      - name: Validate emitted JSON against IKP 0.1 schema
+        run: |
+          python -m pip install -r tools/ikp-validation/requirements.txt
+          python tools/ikp-validation/validate_object_index.py "$RUNNER_TEMP/object-index.json"
+
+      - name: Build real-capture validation report
+        run: |
+          python - "$RUNNER_TEMP/object-index.json" "$RUNNER_TEMP/projector-diagnostics.log" "$RUNNER_TEMP/validation-report.json" <<'PY'
+          import collections, json, pathlib, sys, hashlib
+          index_path, diagnostics_path, report_path = map(pathlib.Path, sys.argv[1:])
+          doc = json.loads(index_path.read_text(encoding="utf-8"))
+          objects = doc["objects"]
+          counts = lambda key: dict(sorted(collections.Counter(o.get(key) for o in objects).items()))
+          diagnostics = diagnostics_path.read_text(encoding="utf-8").splitlines()
+          diagnostic_counts = dict(sorted(collections.Counter(
+              line.split(":", 1)[0] for line in diagnostics if ":" in line
+          ).items()))
+          report = {
+              "validation": "PASS",
+              "schemaVersion": doc["schemaVersion"],
+              "captureId": doc["captureId"],
+              "objectCount": len(objects),
+              "objectKinds": counts("objectKind"),
+              "operationIds": counts("operationId"),
+              "sourceIdentityCount": sum("sourceIdentity" in o for o in objects),
+              "metadataFingerprintCount": sum("metadataFingerprint" in o for o in objects),
+              "definitionStatuses": counts("definitionStatus") if any("definitionStatus" in o for o in objects) else dict(sorted(collections.Counter(o["definition"]["status"] for o in objects).items())),
+              "definitionArtifactReferenceCount": sum(len(o["definition"]["artifactIds"]) for o in objects),
+              "parentReferenceCount": sum("parentSourceObjectId" in o for o in objects),
+              "diagnosticCounts": diagnostic_counts,
+              "diagnosticLineCount": len(diagnostics),
+              "objectIndexSha256": hashlib.sha256(index_path.read_bytes()).hexdigest()
+          }
+          report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+          print(json.dumps(report, indent=2, ensure_ascii=False))
+          PY
+
+      - name: Upload projection and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-capture-object-index-validation
+          path: |
+            ${{ runner.temp }}/object-index.json
+            ${{ runner.temp }}/validation-report.json
+            ${{ runner.temp }}/projector-diagnostics.log
+            ${{ runner.temp }}/projector-diagnostics-second-run.log
+            ${{ runner.temp }}/object-index-sha256.txt
+          if-no-files-found: warn
+          retention-days: 7
