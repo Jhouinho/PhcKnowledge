@@ -1,7 +1,10 @@
+using System.Collections.Concurrent;
 using System.IO.Compression;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Json.Schema;
 using PhcKnowledge.Import.Contracts;
 
 namespace PhcKnowledge.Import.Validation;
@@ -20,6 +23,13 @@ public sealed class IkpPackageValidator
         "object-index.json",
         "checksums.json"
     ];
+
+    private static readonly ConcurrentDictionary<string, JsonSchema> SchemaCache = new(StringComparer.Ordinal);
+    private static readonly EvaluationOptions SchemaEvaluationOptions = new()
+    {
+        OutputFormat = OutputFormat.List,
+        RequireFormatValidation = true
+    };
 
     private const int MaxArchiveEntries = 100_000;
     private const long MaxEntryBytes = 256L * 1024 * 1024;
@@ -112,6 +122,12 @@ public sealed class IkpPackageValidator
             var objectIndex = objectIndexDoc.RootElement;
             var checksums = checksumsDoc.RootElement;
 
+            ValidateSchema("manifest.schema.json", manifest, errors);
+            ValidateSchema("capabilities.schema.json", capabilities, errors);
+            ValidateSchema("coverage.schema.json", coverage, errors);
+            ValidateSchema("object-index.schema.json", objectIndex, errors);
+            ValidateSchema("checksums.schema.json", checksums, errors);
+
             RequireString(manifest, "ikpContractVersion", "0.1");
             RequireString(manifest, "contentType", "phc.installation.knowledge.package");
             var packageId = RequiredString(manifest, "packageId");
@@ -160,6 +176,46 @@ public sealed class IkpPackageValidator
         {
             errors.Add($"Contrato IKP inválido: {ex.Message}");
             return new(false, null, null, files.Count, 0, 0, 0, errors);
+        }
+    }
+
+    private static void ValidateSchema(string schemaFileName, JsonElement instance, List<string> errors)
+    {
+        var schema = SchemaCache.GetOrAdd(schemaFileName, static fileName =>
+        {
+            var resourceName = $"PhcKnowledge.Import.Schemas.{fileName}";
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)
+                ?? throw new InvalidOperationException($"Schema IKP embebido não encontrado: {resourceName}");
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            return JsonSchema.FromText(reader.ReadToEnd());
+        });
+
+        var result = schema.Evaluate(instance, SchemaEvaluationOptions);
+        if (result.IsValid)
+            return;
+
+        foreach (var failure in FlattenSchemaErrors(result))
+            errors.Add($"{schemaFileName} {failure.InstanceLocation}: {failure.Message}");
+    }
+
+    private static IEnumerable<(string InstanceLocation, string Message)> FlattenSchemaErrors(EvaluationResults result)
+    {
+        if (result.Errors is { Count: > 0 })
+        {
+            foreach (var (keyword, message) in result.Errors)
+                yield return (result.InstanceLocation.ToString(), $"{keyword}: {message}");
+        }
+
+        if (result.Details is null)
+            yield break;
+
+        foreach (var detail in result.Details)
+        {
+            if (!detail.IsValid)
+            {
+                foreach (var failure in FlattenSchemaErrors(detail))
+                    yield return failure;
+            }
         }
     }
 
@@ -345,8 +401,6 @@ public sealed class IkpPackageValidator
             var id = RequiredString(operation, "operationId");
             if (!result.Add(id))
                 errors.Add($"capabilities: operationId duplicado: {id}");
-            if (!operation.TryGetProperty("supported", out var supported) || supported.ValueKind != JsonValueKind.True)
-                errors.Add($"capabilities: operação não suportada no pacote: {id}");
         }
         return result;
     }
