@@ -394,16 +394,19 @@ public sealed class IkpPackageValidator
         }
     }
 
-    private static HashSet<string> ReadCapabilities(JsonElement capabilities, List<string> errors)
+    private static Dictionary<string, string> ReadCapabilities(JsonElement capabilities, List<string> errors)
     {
-        var result = new HashSet<string>(StringComparer.Ordinal);
+        var allOperationIds = new HashSet<string>(StringComparer.Ordinal);
+        var supported = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var operation in RequiredArray(capabilities, "operations").EnumerateArray())
         {
             var id = RequiredString(operation, "operationId");
-            if (!result.Add(id))
+            if (!allOperationIds.Add(id))
                 errors.Add($"capabilities: operationId duplicado: {id}");
+            if (operation.GetProperty("supported").GetBoolean())
+                supported[id] = RequiredString(operation, "capabilityVersion");
         }
-        return result;
+        return supported;
     }
 
     private static HashSet<string> ReadIssueIds(
@@ -435,7 +438,7 @@ public sealed class IkpPackageValidator
 
     private static Dictionary<string, JsonElement> ReadCoverage(
         JsonElement coverage,
-        HashSet<string> supportedOperations,
+        Dictionary<string, string> supportedOperations,
         HashSet<string> issues,
         List<string> errors)
     {
@@ -445,15 +448,20 @@ public sealed class IkpPackageValidator
             var id = RequiredString(operation, "operationId");
             if (!result.TryAdd(id, operation))
                 errors.Add($"coverage: operationId duplicado: {id}");
-            if (!supportedOperations.Contains(id))
+            if (!supportedOperations.TryGetValue(id, out var capabilityVersion))
                 errors.Add($"coverage: operação não suportada ou não declarada: {id}");
+            else if (!string.Equals(RequiredString(operation, "capabilityVersion"), capabilityVersion, StringComparison.Ordinal))
+                errors.Add($"coverage: capabilityVersion divergente: {id}");
             var requested = operation.GetProperty("requested").GetBoolean();
             var operationResult = RequiredString(operation, "result");
             if (!requested && operationResult != "Skipped")
                 errors.Add($"coverage: operação não solicitada deve ter resultado Skipped: {id}");
+            var seenIssueIds = new HashSet<string>(StringComparer.Ordinal);
             foreach (var issueId in RequiredArray(operation, "issueIds").EnumerateArray())
             {
                 var value = issueId.GetString() ?? "";
+                if (!seenIssueIds.Add(value))
+                    errors.Add($"coverage: issueId duplicado na operação {id}: {value}");
                 if (!issues.Contains(value))
                     errors.Add($"coverage: issueId não resolvido: {value}");
             }
@@ -466,7 +474,7 @@ public sealed class IkpPackageValidator
 
     private static int ValidateObjects(
         JsonElement objectIndex,
-        HashSet<string> supportedOperations,
+        Dictionary<string, string> supportedOperations,
         Dictionary<string, JsonElement> coverage,
         Dictionary<string, Artifact> artifacts,
         List<string> errors)
@@ -480,7 +488,7 @@ public sealed class IkpPackageValidator
             if (!objectIds.Add(id))
                 errors.Add($"object-index: sourceObjectId duplicado: {id}");
             var operationId = RequiredString(obj, "operationId");
-            if (!supportedOperations.Contains(operationId))
+            if (!supportedOperations.ContainsKey(operationId))
                 errors.Add($"object-index: operationId não suportado: {operationId}");
             if (!coverage.TryGetValue(operationId, out var operation))
             {
@@ -495,9 +503,12 @@ public sealed class IkpPackageValidator
 
             var definition = RequiredObject(obj, "definition");
             var artifactIds = RequiredArray(definition, "artifactIds");
+            var seenArtifactIds = new HashSet<string>(StringComparer.Ordinal);
             foreach (var artifactIdElement in artifactIds.EnumerateArray())
             {
                 var artifactId = artifactIdElement.GetString() ?? "";
+                if (!seenArtifactIds.Add(artifactId))
+                    errors.Add($"object-index: artifactId duplicado em {id}: {artifactId}");
                 if (!artifacts.ContainsKey(artifactId))
                     errors.Add($"object-index: artifactId não resolvido: {artifactId}");
             }
