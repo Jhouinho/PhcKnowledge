@@ -552,7 +552,11 @@ public sealed class IkpPackageValidator
         const string relationsPath = "payload/relations/declared-relations.json";
         const string interpretationsPath = "payload/relations/declared-relation-interpretations.json";
         if (!files.TryGetValue(relationsPath, out var relationBytes))
+        {
+            if (files.ContainsKey(interpretationsPath))
+                errors.Add("relations: ficheiro de interpretações existe sem declared-relations.json.");
             return;
+        }
 
         using var relationDocument = Parse(relationBytes, relationsPath);
         var relationRoot = relationDocument.RootElement;
