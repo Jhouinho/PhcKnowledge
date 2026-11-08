@@ -52,6 +52,7 @@ public sealed class DatabaseSchemaSnapshotComparer
             {
                 var lc = leftCols[col];
                 var rc = rightCols[col];
+                CompareProp(comparison, key, col, "columnId", lc.ColumnId?.ToString(), rc.ColumnId?.ToString());
                 CompareProp(comparison, key, col, "sqlType", lc.SqlType, rc.SqlType);
                 CompareProp(comparison, key, col, "maxLength", lc.MaxLength?.ToString(), rc.MaxLength?.ToString());
                 CompareProp(comparison, key, col, "precision", lc.Precision?.ToString(), rc.Precision?.ToString());
@@ -73,10 +74,10 @@ public sealed class DatabaseSchemaSnapshotComparer
         comparison.IndexesAdded.AddRange(rightIdx.Except(leftIdx, StringComparer.OrdinalIgnoreCase).OrderBy(x => x));
         comparison.IndexesRemoved.AddRange(leftIdx.Except(rightIdx, StringComparer.OrdinalIgnoreCase).OrderBy(x => x));
 
-        CompareObjectSet(comparison, "view", left.Views.Select(v => $"{v.SchemaName}.{v.Name}"), right.Views.Select(v => $"{v.SchemaName}.{v.Name}"));
-        CompareObjectSet(comparison, "procedure", left.Procedures.Select(p => $"{p.SchemaName}.{p.Name}"), right.Procedures.Select(p => $"{p.SchemaName}.{p.Name}"));
-        CompareObjectSet(comparison, "function", left.Functions.Select(f => $"{f.SchemaName}.{f.Name}"), right.Functions.Select(f => $"{f.SchemaName}.{f.Name}"));
-        CompareObjectSet(comparison, "trigger", left.Triggers.Select(t => $"{t.SchemaName}.{t.Name}"), right.Triggers.Select(t => $"{t.SchemaName}.{t.Name}"));
+        CompareObjectSet(comparison, "view", left.Views.Select(v => $"{v.SchemaName}.{v.Name}:object_id={v.ObjectId}"), right.Views.Select(v => $"{v.SchemaName}.{v.Name}:object_id={v.ObjectId}"));
+        CompareObjectSet(comparison, "procedure", left.Procedures.Select(p => $"{p.SchemaName}.{p.Name}:object_id={p.ObjectId}"), right.Procedures.Select(p => $"{p.SchemaName}.{p.Name}:object_id={p.ObjectId}"));
+        CompareObjectSet(comparison, "function", left.Functions.Select(f => $"{f.SchemaName}.{f.Name}:object_id={f.ObjectId}"), right.Functions.Select(f => $"{f.SchemaName}.{f.Name}:object_id={f.ObjectId}"));
+        CompareObjectSet(comparison, "trigger", left.Triggers.Select(t => $"{t.SchemaName}.{t.Name}:object_id={t.ObjectId}"), right.Triggers.Select(t => $"{t.SchemaName}.{t.Name}:object_id={t.ObjectId}"));
 
         return comparison;
     }
