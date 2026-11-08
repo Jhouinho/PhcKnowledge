@@ -5,6 +5,7 @@ using System.Text.Json;
 using PhcKnowledgeScanner.Abstractions.Collectors;
 using PhcKnowledgeScanner.Abstractions.Coverage;
 using PhcKnowledgeScanner.Abstractions.Inventory;
+using PhcKnowledgeScanner.Abstractions.Inventory.Expression;
 using PhcKnowledgeScanner.Abstractions.Manifest;
 using PhcKnowledgeScanner.Export.Ikp;
 using PhcKnowledgeScanner.Workspace;
@@ -24,24 +25,75 @@ public sealed class IkpPackageExporterTests
             var captureId = Guid.NewGuid().ToString("D");
             await workspace.InitializeAsync(Guid.NewGuid().ToString("N"), "server/demo", CancellationToken.None);
 
-            var capability = new DeclaredCapability(
-                "phc.customizations.brule",
-                KnownOperations.PhcBrule,
-                KnownOperations.Version,
-                "phc.customizations",
-                true);
-            var coverage = new OperationCoverage(
-                KnownOperations.PhcBrule,
-                KnownOperations.Version,
-                true,
-                OperationExecutionResult.Succeeded,
-                SourceAvailability.Present,
-                ContentAvailability.Available,
-                1,
-                Array.Empty<string>());
+            var capabilities = new[]
+            {
+                new DeclaredCapability(
+                    "phc.customizations.brule",
+                    KnownOperations.PhcBrule,
+                    KnownOperations.Version,
+                    "phc.customizations",
+                    true),
+                new DeclaredCapability(
+                    "sql.server.structure.procedures",
+                    KnownOperations.SqlProcedures,
+                    KnownOperations.Version,
+                    "sql.server.structure",
+                    true),
+                new DeclaredCapability(
+                    "phc.declared-relations.rel",
+                    KnownOperations.PhcRel,
+                    KnownOperations.Version,
+                    "phc.declared-relations",
+                    true),
+                new DeclaredCapability(
+                    "phc.declared-relations.dtl",
+                    KnownOperations.PhcDtl,
+                    KnownOperations.Version,
+                    "phc.declared-relations",
+                    true)
+            };
+            var coverages = new[]
+            {
+                new OperationCoverage(
+                    KnownOperations.PhcBrule,
+                    KnownOperations.Version,
+                    true,
+                    OperationExecutionResult.Succeeded,
+                    SourceAvailability.Present,
+                    ContentAvailability.Available,
+                    1,
+                    Array.Empty<string>()),
+                new OperationCoverage(
+                    KnownOperations.SqlProcedures,
+                    KnownOperations.Version,
+                    true,
+                    OperationExecutionResult.Succeeded,
+                    SourceAvailability.Present,
+                    ContentAvailability.Available,
+                    1,
+                    Array.Empty<string>()),
+                new OperationCoverage(
+                    KnownOperations.PhcRel,
+                    KnownOperations.Version,
+                    true,
+                    OperationExecutionResult.Succeeded,
+                    SourceAvailability.Present,
+                    ContentAvailability.Available,
+                    1,
+                    Array.Empty<string>()),
+                new OperationCoverage(
+                    KnownOperations.PhcDtl,
+                    KnownOperations.Version,
+                    true,
+                    OperationExecutionResult.Succeeded,
+                    SourceAvailability.Present,
+                    ContentAvailability.Available,
+                    1,
+                    Array.Empty<string>())
+            };
 
             await workspace.SaveCaptureCoverageAsync(
-                captureId, [capability], [coverage], CancellationToken.None);
+                captureId, capabilities, coverages, CancellationToken.None);
 
             var sourceBytes = Encoding.UTF8.GetBytes("FUNCTION BODY\r\n");
             var referencedArtifactId = await workspace.SaveArtifactAsync(
@@ -59,7 +111,8 @@ public sealed class IkpPackageExporterTests
                 null,
                 CancellationToken.None);
 
-            await workspace.UpsertObjectAsync(
+            await workspace.UpsertObjectsAsync(
+            [
                 new TechnicalObjectRecord(
                     "phc.brule:S1",
                     ObjectKind.PhcUserRule,
@@ -70,7 +123,83 @@ public sealed class IkpPackageExporterTests
                     referencedArtifactId,
                     """{"source":"brule","stamp":"S1","tabela":"FT","inactivo":"0"}""",
                     DateTimeOffset.UtcNow),
-                CancellationToken.None);
+                new TechnicalObjectRecord(
+                    "sql.procedure:dbo.usp_missing_definition",
+                    ObjectKind.StoredProcedure,
+                    "usp_missing_definition",
+                    "dbo",
+                    null,
+                    "sql.server.structure",
+                    null,
+                    null,
+                    DateTimeOffset.UtcNow)
+            ],
+            CancellationToken.None);
+
+            var declaredRelations = new[]
+            {
+                new DeclaredRelationRecord(
+                    "rel:1",
+                    DeclaredRelationSourceTypes.PhcRel,
+                    "1",
+                    "FT",
+                    "Faturação",
+                    "CL",
+                    "Clientes",
+                    "FT.CL=CL.NO",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    DateTimeOffset.UtcNow,
+                    null,
+                    null,
+                    TableReferenceResolution.Unresolved,
+                    TableReferenceResolution.Unresolved,
+                    DeclaredRelationCorrespondenceKind.None,
+                    null),
+                new DeclaredRelationRecord(
+                    "dtl:1",
+                    DeclaredRelationSourceTypes.PhcDtl,
+                    "1",
+                    "FT",
+                    "Faturação",
+                    "FI",
+                    "Linhas de faturação",
+                    "FT.FI=FI.FT",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    DateTimeOffset.UtcNow,
+                    null,
+                    null,
+                    TableReferenceResolution.Unresolved,
+                    TableReferenceResolution.Unresolved,
+                    DeclaredRelationCorrespondenceKind.None,
+                    null)
+            };
+            await workspace.UpsertDeclaredRelationsAsync(declaredRelations, CancellationToken.None);
+            await workspace.UpsertDeclaredRelationInterpretationsAsync(
+            [
+                new DeclaredRelationInterpretationRecord(
+                    "rel:1",
+                    "test-parser-1",
+                    ExpressionParseStatus.Unsupported,
+                    InterpretationConfidence.None,
+                    null,
+                    null,
+                    0,
+                    0,
+                    0,
+                    0,
+                    DateTimeOffset.UtcNow)
+            ],
+            CancellationToken.None);
 
             var started = DateTimeOffset.UtcNow.AddMinutes(-1);
             var finished = DateTimeOffset.UtcNow;
@@ -81,8 +210,8 @@ public sealed class IkpPackageExporterTests
                 finished,
                 ScanMode.Full,
                 "test-version",
-                [capability],
-                [coverage],
+                capabilities,
+                coverages,
                 Array.Empty<CollectorResult>());
 
             var outputPath = Path.Combine(root, "package.ikp.zip");
@@ -107,6 +236,8 @@ public sealed class IkpPackageExporterTests
             Assert.Contains("checksums.json", names);
             Assert.Contains("payload/phc.customizations/brule/S1.prg", names);
             Assert.Contains("payload/diagnostics/collection-issues.json", names);
+            Assert.Contains("payload/relations/declared-relations.json", names);
+            Assert.Contains("payload/relations/declared-relation-interpretations.json", names);
             Assert.DoesNotContain("payload/phc.customizations/old/obsolete.prg", names);
 
             using var manifestStream = archive.GetEntry("manifest.json")!.Open();
@@ -126,6 +257,26 @@ public sealed class IkpPackageExporterTests
             Assert.Equal(result.LogicalContentDigest,
                 checksumRoot.GetProperty("logicalContentDigest").GetProperty("value").GetString());
 
+            using var coverageStream = archive.GetEntry("coverage.json")!.Open();
+            using var coverageJson = await JsonDocument.ParseAsync(coverageStream);
+            var procedureCoverage = coverageJson.RootElement.GetProperty("operations")
+                .EnumerateArray()
+                .Single(x => x.GetProperty("operationId").GetString() == KnownOperations.SqlProcedures);
+            Assert.Equal("Partial", procedureCoverage.GetProperty("contentAvailability").GetString());
+            Assert.Equal("SucceededWithWarnings", procedureCoverage.GetProperty("result").GetString());
+
+            using var declaredRelationsStream = archive.GetEntry("payload/relations/declared-relations.json")!.Open();
+            using var declaredRelationsJson = await JsonDocument.ParseAsync(declaredRelationsStream);
+            Assert.Equal(2, declaredRelationsJson.RootElement.GetProperty("records").GetArrayLength());
+            Assert.Contains(declaredRelationsJson.RootElement.GetProperty("records").EnumerateArray(),
+                x => x.GetProperty("sourceType").GetString() == DeclaredRelationSourceTypes.PhcRel);
+            Assert.Contains(declaredRelationsJson.RootElement.GetProperty("records").EnumerateArray(),
+                x => x.GetProperty("sourceType").GetString() == DeclaredRelationSourceTypes.PhcDtl);
+
+            using var interpretationsStream = archive.GetEntry("payload/relations/declared-relation-interpretations.json")!.Open();
+            using var interpretationsJson = await JsonDocument.ParseAsync(interpretationsStream);
+            Assert.Single(interpretationsJson.RootElement.GetProperty("records").EnumerateArray());
+
             var checksumFiles = checksumRoot.GetProperty("files").EnumerateArray().ToArray();
             Assert.DoesNotContain(checksumFiles, x => x.GetProperty("path").GetString() == "checksums.json");
             foreach (var checksum in checksumFiles)
@@ -143,7 +294,9 @@ public sealed class IkpPackageExporterTests
 
             using var objectIndexStream = archive.GetEntry("object-index.json")!.Open();
             using var objectIndexJson = await JsonDocument.ParseAsync(objectIndexStream);
-            var projected = Assert.Single(objectIndexJson.RootElement.GetProperty("objects").EnumerateArray().ToArray());
+            var projected = objectIndexJson.RootElement.GetProperty("objects")
+                .EnumerateArray()
+                .Single(x => x.GetProperty("definition").GetProperty("artifactIds").GetArrayLength() == 1);
             Assert.Equal("Available", projected.GetProperty("definition").GetProperty("status").GetString());
             Assert.Equal(referencedArtifactId,
                 Assert.Single(projected.GetProperty("definition").GetProperty("artifactIds").EnumerateArray()).GetString());
