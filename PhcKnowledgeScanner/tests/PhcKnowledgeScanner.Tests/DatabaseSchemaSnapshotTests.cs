@@ -179,6 +179,60 @@ public class DatabaseSchemaSnapshotTests
     }
 
     [Fact]
+    public void Comparer_Detects_DropAndRecreate_When_Table_Name_Is_Unchanged()
+    {
+        var left = BuildFixtureSnapshot();
+        var right = BuildFixtureSnapshot();
+        var leftTable = left.Tables.Single(t => t.Name == "FT");
+        var rightTable = right.Tables.Single(t => t.Name == "FT");
+        leftTable.ObjectId = 120045;
+        rightTable.ObjectId = 220078;
+        leftTable.Columns[0].ObjectId = 120045;
+        rightTable.Columns[0].ObjectId = 220078;
+        leftTable.Columns[0].ColumnId = 1;
+        rightTable.Columns[0].ColumnId = 1;
+
+        left.Manifest.SnapshotHash = SchemaSnapshotHasher.Compute(left);
+        right.Manifest.SnapshotHash = SchemaSnapshotHasher.Compute(right);
+
+        var comparison = new DatabaseSchemaSnapshotComparer().Compare(left, right);
+
+        Assert.Contains(comparison.ColumnPropertyChanges, c =>
+            c.TableKey == "dbo.FT" && c.Property == "objectId" &&
+            c.Before == "120045" && c.After == "220078");
+        Assert.NotEqual(left.Manifest.SnapshotHash, right.Manifest.SnapshotHash);
+    }
+
+    [Fact]
+    public void Legacy_Snapshot_Without_Native_Identifiers_Remains_Readable()
+    {
+        const string json = """
+        {
+          "schemaVersion": "1.0",
+          "tables": [
+            {
+              "schemaName": "dbo",
+              "name": "FT",
+              "columns": [
+                { "name": "ft", "sqlType": "int", "ordinal": 1 }
+              ]
+            }
+          ]
+        }
+        """;
+
+        var snapshot = JsonSerializer.Deserialize<DatabaseSchemaSnapshot>(json,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        Assert.NotNull(snapshot);
+        var table = Assert.Single(snapshot!.Tables);
+        Assert.Null(table.ObjectId);
+        var column = Assert.Single(table.Columns);
+        Assert.Null(column.ObjectId);
+        Assert.Null(column.ColumnId);
+    }
+
+    [Fact]
     public void Fixture_Snapshot_Has_Pk_Fk_Index_Trigger_Procedure_Function_Metadata()
     {
         var snapshot = BuildFixtureSnapshot();
