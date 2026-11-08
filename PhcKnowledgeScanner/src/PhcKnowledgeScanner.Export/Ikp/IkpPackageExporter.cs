@@ -33,7 +33,7 @@ public sealed class IkpPackageExporter
         ArgumentNullException.ThrowIfNull(scanManifest);
         return ExportAsync(workspace, new IkpCaptureDescriptor(
             scanManifest.CaptureId,
-            captureDescriptor.ScannerVersion ?? "unknown",
+            scanManifest.ScannerVersion,
             scanManifest.StartedAtUtc,
             scanManifest.FinishedAtUtc,
             scanManifest.Mode.ToString()),
@@ -78,8 +78,8 @@ public sealed class IkpPackageExporter
         var capabilities = capture.Capabilities;
         var coverage = capture.Coverage;
         ValidateCapabilityCoverage(capabilities, coverage);
-        if (!string.Equals(capture.CaptureId, scanManifest.CaptureId, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidDataException("CaptureId do metadata SQLite não corresponde ao manifesto.");
+        if (!string.Equals(capture.CaptureId, captureDescriptor.CaptureId, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("CaptureId do metadata SQLite não corresponde ao descriptor da captura.");
 
         var input = await new ObjectIndexProjectionInputReader()
             .ReadAsync(workspace, cancellationToken).ConfigureAwait(false);
