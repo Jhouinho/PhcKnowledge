@@ -14,8 +14,8 @@
     },
     {
       "path": "manifest.json",
-      "byteLength": 2378,
-      "sha256": "e8b7bdac953e69f2eed44f7d8d7dc3cf3e990acd7f26c8ce521eb5eec43298b1"
+      "byteLength": 2406,
+      "sha256": "f40e0baa2d1e342a33eb4b4878bb4b9f5c0f8d15848a43b561d5c66920d5ea24"
     },
     {
       "path": "object-index.json",
@@ -45,6 +45,6 @@
   ],
   "logicalContentDigest": {
     "algorithm": "SHA-256",
-    "value": "5d067e52f25245d65bd91c436e35a3e62ed834065d79c95e1fe981eceb8d0123"
+    "value": "9b4f608be8d1f9042adf1c73ee0e2a83891c38509c5f45a8da251c6bbbe5e2e1"
   }
 }
