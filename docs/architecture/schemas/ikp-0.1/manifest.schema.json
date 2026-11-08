@@ -64,7 +64,7 @@
           "format": "uuid"
         },
         "startedAtUtc": {
-          "type": "string",
+          "type": ["string", "null"],
           "format": "date-time"
         },
         "completedAtUtc": {
@@ -78,8 +78,13 @@
           "enum": [
             "Full",
             "Selective",
-            "ProbeOnly"
+            "ProbeOnly",
+            "Unknown"
           ]
+        },
+        "scannerVersion": {
+          "type": ["string", "null"],
+          "minLength": 1
         }
       },
       "additionalProperties": true
