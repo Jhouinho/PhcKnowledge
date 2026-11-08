@@ -234,6 +234,31 @@ public class DatabaseSchemaSnapshotTests
     }
 
     [Fact]
+    public void Comparer_Does_Not_Infer_Recreation_From_Missing_Legacy_Identifiers()
+    {
+        var left = BuildFixtureSnapshot();
+        var right = BuildFixtureSnapshot();
+        right.Tables.Single(t => t.Name == "FT").ObjectId = 120045;
+        right.Tables.Single(t => t.Name == "FT").Columns[0].ObjectId = 120045;
+        right.Tables.Single(t => t.Name == "FT").Columns[0].ColumnId = 1;
+        right.Relationships[0].ObjectId = 130045;
+        right.Indexes[0].ObjectId = 120045;
+        right.Indexes[0].IndexId = 1;
+        right.Views[0].ObjectId = 140045;
+        right.Triggers[0].ObjectId = 150045;
+        right.Procedures[0].ObjectId = 160045;
+        right.Functions[0].ObjectId = 170045;
+
+        var comparison = new DatabaseSchemaSnapshotComparer().Compare(left, right);
+
+        Assert.Empty(comparison.OtherObjectChanges);
+        Assert.Empty(comparison.RelationshipsAdded);
+        Assert.Empty(comparison.RelationshipsRemoved);
+        Assert.Empty(comparison.IndexesAdded);
+        Assert.Empty(comparison.IndexesRemoved);
+    }
+
+    [Fact]
     public void Fixture_Snapshot_Has_Pk_Fk_Index_Trigger_Procedure_Function_Metadata()
     {
         var snapshot = BuildFixtureSnapshot();
