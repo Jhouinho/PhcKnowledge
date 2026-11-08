@@ -88,6 +88,19 @@ class IkpFixtureValidationTests(unittest.TestCase):
         (self.package / "capabilities.json").unlink()
         self.assert_invalid("capabilities.json")
 
+    def test_capture_scanner_metadata_fields_are_required(self):
+        for field in ("scannerVersion", "metadataStatus"):
+            with self.subTest(field=field):
+                doc = self.read_json("manifest.json")
+                del doc["capture"][field]
+                self.write_json("manifest.json", doc)
+                self.assert_invalid("manifest.json")
+                # Restore a clean fixture for the next subtest.
+                shutil.rmtree(self.package)
+                shutil.copytree(FIXTURE, self.package)
+                for helper in ("README.md", "VALIDATION.md"):
+                    (self.package / helper).unlink(missing_ok=True)
+
     def test_partial_definition_coverage_is_valid_and_preserved(self):
         doc = self.read_json("coverage.json")
         definition = next(x for x in doc["operations"] if x["operationId"].endswith(".definition"))
