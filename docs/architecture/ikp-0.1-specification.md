@@ -421,13 +421,16 @@ Não recolher dados operacionais dos clientes (faturação, clientes, documentos
 
 ### 9.3 Relações
 
-payload/relations/ preserva separadamente:
-- relações declaradas PHC REL/DTL;
-- foreign keys físicas SQL;
-- interpretações versionadas das expressões;
-- evidências e diagnósticos de resolução.
+O perfil de relações preserva factos e interpretações em ficheiros distintos:
 
-Não fundir uma relação PHC com uma FK SQL apenas porque têm os mesmos extremos. Correspondências prováveis não devem ser apresentadas como factos confirmados.
+- `payload/relations/declared-relations.json`: registos declarados PHC provenientes de REL e DTL, mantendo `sourceType`, `sourceRecordId`, tabelas de origem/destino, expressão original, metadados de auditoria, estado de resolução e correspondência;
+- `payload/relations/declared-relation-interpretations.json`: interpretações associadas por `relationId`, incluindo versão do parser, estado, confiança, AST, diagnósticos e métricas de referências.
+
+Cada ficheiro usa um envelope com `schemaVersion`, `captureId` e `records`. O primeiro é incluído quando existem factos REL/DTL ou quando a cobertura declara que a operação foi recolhida, mesmo que o resultado seja uma lista vazia. O segundo só é incluído quando existem interpretações persistidas. Os artefactos são declarados no manifesto e cobertos por checksums como qualquer outro payload.
+
+A cobertura REL/DTL deve corresponder ao número de factos persistidos por `sourceType`; divergências entre `observedCount` e os registos do workspace bloqueiam a exportação, em vez de produzirem um pacote aparentemente completo.
+
+As foreign keys físicas SQL continuam a ser evidência estrutural distinta. Não fundir uma relação PHC com uma FK SQL apenas porque têm os mesmos extremos. Correspondências prováveis não devem ser apresentadas como factos confirmados. As interpretações são derivadas, versionadas e regeneráveis; não substituem nem alteram a expressão original.
 
 ### 9.4 Conhecimento derivado
 
@@ -553,7 +556,7 @@ Lacunas principais confirmadas:
 - falta índice estruturado unificado de objetos observados;
 - falta separar de forma consistente inventário e disponibilidade individual da definição;
 - falta formalizar fingerprints de metadados e definição no contrato;
-- falta exportar REL/DTL, interpretações e projeções de forma coerente;
+- REL/DTL e interpretações são agora transportados em payloads separados e com proveniência; as projeções de conhecimento derivado continuam fora do primeiro slice;
 - os artefactos de personalizações persistidos no workspace não são todos incluídos no ZIP geral pelo caminho atual do ZipScanExporter;
 - comparador do schema snapshot não pode ser reutilizado como comparador histórico da plataforma sem cobertura;
 - alguns identificadores nativos SQL já são recolhidos, mas parte está apenas em SummaryJson e não existe contrato uniforme;
