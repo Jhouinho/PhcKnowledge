@@ -54,8 +54,6 @@
       "type": "object",
       "required": [
         "captureId",
-        "startedAtUtc",
-        "completedAtUtc",
         "mode"
       ],
       "properties": {
@@ -83,8 +81,16 @@
           ]
         },
         "scannerVersion": {
-          "type": ["string", "null"],
+          "type": "string",
           "minLength": 1
+        },
+        "metadataStatus": {
+          "enum": ["Complete", "Partial"]
+        },
+        "unknownFields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
         }
       },
       "additionalProperties": true
