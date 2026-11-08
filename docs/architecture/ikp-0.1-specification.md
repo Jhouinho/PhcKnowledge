@@ -104,12 +104,15 @@ O pacote pode transportar apenas um perfil ou vários. A ausência de knowledge 
 | packageId | Sim | UUID único deste pacote físico |
 | producedAtUtc | Sim | Data/hora de criação do ZIP |
 | producer.productId | Sim | Identificador do produto emissor, ex. PhcKnowledgeScanner |
-| producer.productVersion | Sim | Versão do Scanner |
+| producer.productVersion | Sim | Versão do produto/exportador que produziu este pacote; não representa necessariamente a versão do Scanner que realizou a captura |
 | producer.exportTool | Não | CLI, Desktop ou outro host |
 | capture.captureId | Sim | UUID gerado pelo Scanner no início da recolha |
-| capture.startedAtUtc | Sim | Início da recolha |
-| capture.completedAtUtc | Sim | Fim da recolha; nulo se a captura foi interrompida, quando permitido |
-| capture.mode | Sim | Modo/escopo geral da captura |
+| capture.startedAtUtc | Condicional | Início da recolha; pode ser omitido/nulo quando o manifesto original não foi preservado |
+| capture.completedAtUtc | Condicional | Fim da recolha; pode ser omitido/nulo quando desconhecido ou se a captura foi interrompida |
+| capture.mode | Sim | Modo/escopo geral; usar Unknown quando não puder ser recuperado |
+| capture.scannerVersion | Sim | Versão que realizou a captura; usar Unknown quando não puder ser recuperada |
+| capture.metadataStatus | Sim | Complete ou Partial, conforme a disponibilidade dos metadados históricos |
+| capture.unknownFields | Condicional | Lista dos campos históricos não disponíveis; não preencher com valores inferidos
 | origin.engine | Sim | Motor de origem, nesta fase sqlserver |
 | origin.databaseName | Recomendado | Nome técnico da base de dados, sujeito a política de privacidade |
 | origin.serverLabel | Opcional | Etiqueta não sensível, não necessariamente FQDN |
