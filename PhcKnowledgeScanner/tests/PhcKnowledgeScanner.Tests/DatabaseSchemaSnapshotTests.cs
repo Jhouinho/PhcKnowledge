@@ -197,9 +197,10 @@ public class DatabaseSchemaSnapshotTests
 
         var comparison = new DatabaseSchemaSnapshotComparer().Compare(left, right);
 
-        Assert.Contains(comparison.ColumnPropertyChanges, c =>
-            c.TableKey == "dbo.FT" && c.Property == "objectId" &&
-            c.Before == "120045" && c.After == "220078");
+        Assert.Contains(comparison.OtherObjectChanges, c =>
+            c.Contains("table:dbo.FT:native_id 120045 -> 220078", StringComparison.Ordinal));
+        Assert.Contains(comparison.OtherObjectChanges, c =>
+            c.Contains("column:dbo.FT.ft:native_id 120045 -> 220078", StringComparison.Ordinal));
         Assert.NotEqual(left.Manifest.SnapshotHash, right.Manifest.SnapshotHash);
     }
 
