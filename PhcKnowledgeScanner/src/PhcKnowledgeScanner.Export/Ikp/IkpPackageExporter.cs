@@ -45,6 +45,8 @@ public sealed class IkpPackageExporter
             throw new InvalidDataException("O nome da base de dados de origem é obrigatório para exportar IKP.");
         if (string.IsNullOrWhiteSpace(scanManifest.ScannerVersion))
             throw new InvalidDataException("ScannerVersion não está disponível no ScanManifest.");
+        if (scanManifest.FinishedAtUtc < scanManifest.StartedAtUtc)
+            throw new InvalidDataException("O fim da captura é anterior ao seu início.");
 
         var integrity = await workspace.CheckIntegrityAsync(cancellationToken).ConfigureAwait(false);
         if (!integrity.IsValid)
@@ -58,6 +60,7 @@ public sealed class IkpPackageExporter
 
         var capabilities = capture.Capabilities;
         var coverage = capture.Coverage;
+        ValidateCapabilityCoverage(capabilities, coverage);
         if (!string.Equals(capture.CaptureId, scanManifest.CaptureId, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("CaptureId do metadata SQLite não corresponde ao manifesto.");
 
@@ -96,6 +99,9 @@ public sealed class IkpPackageExporter
             if (string.IsNullOrWhiteSpace(snapshot.ExpectedSha256)
                 || !string.Equals(digest, snapshot.ExpectedSha256, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException($"SHA-256 divergente no artefacto '{artifactId}'.");
+
+            if (string.IsNullOrWhiteSpace(metadata.ContentType))
+                throw new InvalidDataException($"ContentType em falta no artefacto '{artifactId}'.");
 
             var path = BuildArtifactPath(metadata);
             files.Add(new PackageFile(
@@ -215,16 +221,54 @@ public sealed class IkpPackageExporter
         await WriteZipAtomicallyAsync(packageEntries, zipPath, cancellationToken).ConfigureAwait(false);
 
         var zipInfo = new FileInfo(zipPath);
+        string zipSha256;
+        await using (var zipStream = new FileStream(zipPath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan))
+        {
+            zipSha256 = Convert.ToHexString(await SHA256.HashDataAsync(zipStream, cancellationToken).ConfigureAwait(false)).ToLowerInvariant();
+        }
+
         return new IkpPackageExportResult(
             packageId,
             captureGuid.ToString("D"),
             zipInfo.FullName,
             zipInfo.Length,
-            Sha256(await File.ReadAllBytesAsync(zipPath, cancellationToken).ConfigureAwait(false)),
+            zipSha256,
             files.Count,
             packageEntries.Count,
             logicalDigest,
             projection.Diagnostics);
+    }
+
+    private static void ValidateCapabilityCoverage(
+        IReadOnlyList<PhcKnowledgeScanner.Abstractions.Coverage.DeclaredCapability> capabilities,
+        IReadOnlyList<PhcKnowledgeScanner.Abstractions.Coverage.OperationCoverage> coverage)
+    {
+        var capabilityGroups = capabilities
+            .GroupBy(x => x.OperationId, StringComparer.Ordinal)
+            .ToDictionary(x => x.Key, x => x.ToArray(), StringComparer.Ordinal);
+        if (capabilityGroups.Any(x => x.Value.Length != 1))
+            throw new InvalidDataException("O catálogo de capabilities contém operationId duplicado.");
+
+        var coverageGroups = coverage
+            .GroupBy(x => x.OperationId, StringComparer.Ordinal)
+            .ToDictionary(x => x.Key, x => x.ToArray(), StringComparer.Ordinal);
+        if (coverageGroups.Any(x => x.Value.Length != 1))
+            throw new InvalidDataException("A coverage contém operationId duplicado.");
+
+        foreach (var item in coverage)
+        {
+            if (!capabilityGroups.TryGetValue(item.OperationId, out var declared)
+                || declared.Length != 1
+                || !declared[0].Supported
+                || !string.Equals(declared[0].CapabilityVersion, item.CapabilityVersion, StringComparison.Ordinal))
+                throw new InvalidDataException($"Coverage sem capability suportada compatível: '{item.OperationId}'.");
+        }
+
+        foreach (var capability in capabilities.Where(x => x.Supported))
+        {
+            if (!coverageGroups.ContainsKey(capability.OperationId))
+                throw new InvalidDataException($"Não existe coverage para a capability suportada '{capability.OperationId}'.");
+        }
     }
 
     private static string BuildArtifactPath(WorkspaceArtifactMetadata artifact)
