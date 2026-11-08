@@ -160,7 +160,7 @@ public sealed class IkpPackageExporter
         var capabilitiesBytes = JsonSerializer.SerializeToUtf8Bytes(new
         {
             schemaVersion = "1",
-            scannerVersion = captureDescriptor.ScannerVersion,
+            scannerVersion = captureDescriptor.ScannerVersion ?? "Unknown",
             operations = capabilities
         }, JsonOptions);
         var coverageBytes = JsonSerializer.SerializeToUtf8Bytes(new
@@ -187,7 +187,19 @@ public sealed class IkpPackageExporter
                 captureId = captureGuid.ToString("D"),
                 startedAtUtc = captureDescriptor.StartedAtUtc,
                 completedAtUtc = captureDescriptor.CompletedAtUtc,
-                mode = captureDescriptor.Mode ?? "Unknown"
+                mode = captureDescriptor.Mode ?? "Unknown",
+                scannerVersion = captureDescriptor.ScannerVersion ?? "Unknown",
+                metadataStatus = captureDescriptor.ScannerVersion is null
+                    || captureDescriptor.StartedAtUtc is null
+                    || captureDescriptor.CompletedAtUtc is null
+                    || captureDescriptor.Mode is null ? "Partial" : "Complete",
+                unknownFields = new[]
+                {
+                    captureDescriptor.ScannerVersion is null ? "scannerVersion" : null,
+                    captureDescriptor.StartedAtUtc is null ? "startedAtUtc" : null,
+                    captureDescriptor.CompletedAtUtc is null ? "completedAtUtc" : null,
+                    captureDescriptor.Mode is null ? "mode" : null
+                }.Where(x => x is not null).ToArray()
             },
             origin = new
             {
