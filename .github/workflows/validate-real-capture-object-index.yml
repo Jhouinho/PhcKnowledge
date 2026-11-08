@@ -62,7 +62,7 @@ jobs:
                       target = (destination / name).resolve()
                       if destination.resolve() not in target.parents and target != destination.resolve():
                           raise SystemExit(f"ZIP path traversal rejeitado: {item.filename}")
-                      if item.is_dir():
+                      if item.is_dir() or item.filename.endswith(("/", "\\\\")):
                           target.mkdir(parents=True, exist_ok=True)
                       else:
                           target.parent.mkdir(parents=True, exist_ok=True)
