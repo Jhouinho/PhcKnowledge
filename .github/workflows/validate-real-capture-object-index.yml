@@ -58,7 +58,7 @@ jobs:
           def safe_extract_normalized(zip_path: Path, destination: Path):
               with ZipFile(zip_path) as z:
                   for item in z.infolist():
-                      name = item.filename.replace("\\\\", "/").lstrip("/")
+                      name = item.filename.replace("\\", "/").lstrip("/")
                       target = (destination / name).resolve()
                       if destination.resolve() not in target.parents and target != destination.resolve():
                           raise SystemExit(f"ZIP path traversal rejeitado: {item.filename}")
