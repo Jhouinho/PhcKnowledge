@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -215,7 +216,9 @@ public sealed class IkpPackageValidatorTests
             .ToArray();
         var canonical = new StringBuilder();
         foreach (var item in checksumEntries)
-            canonical.Append(item.path).Append('\n').Append(item.byteLength).Append('\n').Append(item.sha256).Append('\n');
+            canonical.Append(item.path).Append('\n')
+                .Append(item.byteLength.ToString(CultureInfo.InvariantCulture)).Append('\n')
+                .Append(item.sha256).Append('\n');
         var digest = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical.ToString())));
         documents["checksums.json"] = JsonSerializer.SerializeToUtf8Bytes(new
         {
