@@ -246,10 +246,9 @@ static void PrintHelp()
     Console.WriteLine("  --help");
     Console.WriteLine("  --version");
     Console.WriteLine("  test-connection --server <s> --database <db> [--auth windows|sql] [--user u] [--password p]");
-    Console.WriteLine("  scan            --server <s> --database <db> [--auth windows|sql] [--user u] [--password p]");
-    Console.WriteLine("  scan-ikp        --server <s> --database <db> [--auth windows|sql] [--user u] [--password p] [--output <file.zip>]");
+    Console.WriteLine("  scan            --server <s> --database <db> [--auth windows|sql] [--user u] [--password p] [--collectors id1,id2]");
+    Console.WriteLine("  scan-ikp        --server <s> --database <db> [--auth windows|sql] [--user u] [--password p] [--collectors id1,id2] [--output <file.zip>]");
     Console.WriteLine("  export-ikp      --workspace <folder|workspace.db> --database <db> [--output <file.zip>]");
-    Console.WriteLine("                  [--collectors id1,id2]  (ex.: phc.customizations)");
     Console.WriteLine("  schema-snapshot --server <s> --database <db> [--auth windows|sql] [--user u] [--password p]");
     Console.WriteLine("                  [--output <dir>] [--zip <file.zip>] [--include-sql-definitions]");
     Console.WriteLine("  compare-schema-snapshot --left <dir> --right <dir>");
