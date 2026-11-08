@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.Data.SqlClient;
 using PhcKnowledgeScanner.Abstractions.Collectors;
