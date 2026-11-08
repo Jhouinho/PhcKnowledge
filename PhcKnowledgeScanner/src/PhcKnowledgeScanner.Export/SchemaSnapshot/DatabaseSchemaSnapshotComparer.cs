@@ -127,8 +127,8 @@ public sealed class DatabaseSchemaSnapshotComparer
     private static string TableKey(SchemaTableSnapshot t) => $"{t.SchemaName}.{t.Name}";
 
     private static string FkKey(SchemaForeignKeySnapshot fk) =>
-        $"{fk.ParentSchema}.{fk.ParentTable}.{fk.ConstraintName}";
+        $"{fk.ParentSchema}.{fk.ParentTable}.{fk.ConstraintName}:object_id={fk.ObjectId}";
 
     private static string IndexKey(SchemaIndexSnapshot i) =>
-        $"{i.SchemaName}.{i.TableName}.{i.IndexName}";
+        $"{i.SchemaName}.{i.TableName}.{i.IndexName}:object_id={i.ObjectId}:index_id={i.IndexId}";
 }
