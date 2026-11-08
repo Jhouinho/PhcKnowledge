@@ -149,6 +149,7 @@ public sealed class IkpPackageExporter
         var declaredRelationInterpretations = await workspace.GetDeclaredRelationInterpretationsAsync(
             cancellationToken: cancellationToken).ConfigureAwait(false);
         ValidateDeclaredRelationCounts(coverage, declaredRelations);
+        ValidateDeclaredRelationInterpretations(declaredRelations, declaredRelationInterpretations);
 
         var hasDeclaredRelationCapture = declaredRelations.Count > 0 || coverage.Any(x =>
             x.Requested
@@ -392,6 +393,29 @@ public sealed class IkpPackageExporter
                     $"Declared relation payload count mismatch for '{item.OperationId}': " +
                     $"coverage observed {operation.ObservedCount}, workspace contains {actualCount}.");
             }
+        }
+    }
+
+    private static void ValidateDeclaredRelationInterpretations(
+        IReadOnlyList<DeclaredRelationRecord> declaredRelations,
+        IReadOnlyList<DeclaredRelationInterpretationRecord> interpretations)
+    {
+        var declaredIds = declaredRelations
+            .Select(x => x.RelationId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var orphaned = interpretations
+            .Where(x => !declaredIds.Contains(x.RelationId))
+            .Select(x => x.RelationId)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToArray();
+
+        if (orphaned.Length > 0)
+        {
+            throw new InvalidDataException(
+                "Existem interpretações REL/DTL sem relação declarada correspondente: " +
+                string.Join(", ", orphaned));
         }
     }
 
