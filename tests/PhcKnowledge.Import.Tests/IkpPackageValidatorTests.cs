@@ -45,6 +45,16 @@ public sealed class IkpPackageValidatorTests
     }
 
     [Fact]
+    public async Task Rejects_duplicate_source_object_ids_after_schema_uniqueness_optimization()
+    {
+        await using var package = CreatePackage(duplicateSourceObjectId: true);
+        var result = await _validator.ValidateAsync(package);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Contains("sourceObjectId duplicado", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Rejects_a_document_that_violates_the_published_json_schema()
     {
         await using var package = CreatePackage(invalidManifestSchema: true);
@@ -79,11 +89,21 @@ public sealed class IkpPackageValidatorTests
         bool includeTraversalEntry = false,
         bool invalidManifestSchema = false,
         bool includeCurrentRelationPayload = false,
-        bool orphanRelationInterpretation = false)
+        bool orphanRelationInterpretation = false,
+        bool duplicateSourceObjectId = false)
     {
         const string captureId = "a1f2fc33-7b0a-4c8f-b049-073a33ef7978";
         const string operationId = "sample.operation";
         const string relationId = "phc.rel:REL001";
+
+        var objectRecord = new
+        {
+            sourceObjectId = "sample:1",
+            objectKind = "sample",
+            metadata = new { },
+            definition = new { status = "NotCollected", artifactIds = Array.Empty<string>() },
+            operationId
+        };
 
         var payloadFiles = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         if (includeCurrentRelationPayload)
@@ -176,17 +196,9 @@ public sealed class IkpPackageValidatorTests
             {
                 schemaVersion = "1",
                 captureId,
-                objects = new[]
-                {
-                    new
-                    {
-                        sourceObjectId = "sample:1",
-                        objectKind = "sample",
-                        metadata = new { },
-                        definition = new { status = "NotCollected", artifactIds = Array.Empty<string>() },
-                        operationId
-                    }
-                }
+                objects = duplicateSourceObjectId
+                    ? new[] { objectRecord, objectRecord }
+                    : new[] { objectRecord }
             })
         };
 
