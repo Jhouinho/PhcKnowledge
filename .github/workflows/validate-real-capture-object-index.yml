@@ -39,9 +39,9 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           from zipfile import ZipFile
-          import shutil
+          import os, shutil
 
-          base = Path("$RUNNER_TEMP")
+          base = Path(os.environ["RUNNER_TEMP"])
           outer = base / "capture-download" / "workflow-artifact.zip"
           outer_dir = base / "capture-outer"
           inner_dir = base / "capture-workspace"
@@ -160,7 +160,7 @@ jobs:
               "diagnosticLineCount": len(diagnostics),
               "objectIndexSha256": hashlib.sha256(index_path.read_bytes()).hexdigest()
           }
-          report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+          report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
           print(json.dumps(report, indent=2, ensure_ascii=False))
           PY
 
