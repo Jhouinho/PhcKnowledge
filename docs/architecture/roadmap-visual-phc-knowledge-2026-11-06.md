@@ -270,3 +270,58 @@ Esta capacidade pertence ao Scanner, não à plataforma central. Os collectors m
 É uma visão futura e não altera o foco atual em P1.B, Object Index, IKP e validação com captura real. Não existe implementação nem decisão sobre os primeiros tipos de objetos a publicar.
 
 Detalhe e salvaguardas: [scanner-controlled-change-management-vision-2026-11-07.md](scanner-controlled-change-management-vision-2026-11-07.md).
+
+
+---
+
+## Estado atualizado — 2026-11-08 (prevalece sobre os estados históricos acima)
+
+### Fase 1 — Captura e transporte IKP
+
+**Concluído** **Exportador IKP 0.1 e pacote V4 real**
+
+O exportador foi implementado em `PhcKnowledgeScanner.Export`. A exportação é read-only: utiliza um workspace existente, não volta a ligar à base de dados PHC e não altera a captura.
+
+Pacote real produzido a partir de `CSDefault202603`:
+- PackageId: `5fc15128-b7ab-4a23-ad61-93757aedb0f7`
+- CaptureId: `a1f2fc33-7b0a-4c8f-b049-073a33ef7978`
+- 58 entradas ZIP; 53 artefactos de payload
+- 16.618 objetos no Object Index
+- 295 REL + 626 DTL = 921 relações declaradas; 921 interpretações analisadas
+- 36 procedures indexadas; 6 definições indisponíveis
+- SHA-256 do ZIP: `0b1545e010c9fa180380c150da91cb6e57cbdbba74df9f02cf2e2db7531805ac`
+- Logical digest: `74ef34d92d0cc7a5fbc976c1e160d96b6a234b3653f01fd5b1ed6eb3a556e7b7`
+- 53/53 checksums e comprimentos de artefactos corretos; zero falhas de integridade.
+
+A captura não contém campos físicos `u_*`; a identidade desses campos continua dependente de validação numa instalação que os tenha.
+
+### Fase 2 — Fundação de importação
+
+**CI aprovada** **PR #2 — Draft, aberto e não integrado**
+
+PR: https://github.com/Jhouinho/PhcKnowledge/pull/2
+
+Foi criado `src/PhcKnowledge.Import`, independente do Scanner. O validador:
+- lê o ZIP em memória, sem extração;
+- verifica segurança dos paths, duplicados, estrutura e limites;
+- valida os cinco JSON Schemas IKP 0.1 (Draft 2020-12);
+- verifica SHA-256, logical digest, ficheiros, artefactos, capabilities/coverage, Object Index e relações REL/DTL;
+- reconhece as formas reais dos payloads emitidos pelo exportador;
+- devolve um resultado estruturado e tem testes positivos e negativos.
+
+Foi também criada a ferramenta local `tools/PhcKnowledge.IkpDiagnostic`, que executa o validador sobre o ZIP real e produz um relatório JSON, sem extrair nem alterar o pacote.
+
+A CI GitHub Actions run `42524895821` terminou com sucesso: build, testes da solução e validação do Object Index contra o schema IKP 0.1.
+
+**Pendente:** executar o diagnóstico local sobre `C:\Temp\phc-capture-ikp-v4.zip` e rever o relatório. O ZIP não foi disponibilizado nesta conversa. Até essa validação, não considerar concluída a compatibilidade end-to-end do importador.
+
+### Próximos passos — ordem obrigatória
+
+1. Validar localmente o ZIP V4 com `PhcKnowledge.IkpDiagnostic`.
+2. Corrigir eventuais incompatibilidades e adicionar testes de regressão.
+3. Validar uma captura PHC standard e, depois, uma instalação personalizada (incluindo campos físicos `u_*`).
+4. Só depois desenhar e implementar staging persistente.
+5. Implementar ingestão PostgreSQL transacional e idempotente, preservando o pacote e a captura originais.
+6. Prosseguir para identidade multi-captura, histórico, diff e conhecimento contextual.
+
+**Regra de controlo:** PR #2 permanece Draft e não deve ser integrado na `main` sem autorização explícita. A fundação de validação não é ainda staging nem ingestão persistente.

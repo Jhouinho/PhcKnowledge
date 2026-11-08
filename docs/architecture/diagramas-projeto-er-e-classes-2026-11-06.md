@@ -468,3 +468,160 @@ flowchart TD
 - `PhcKnowledgeScanner/src/PhcKnowledgeScanner.Analysis/Knowledge/RelationalKnowledgeProjector.cs` e respetivo contrato.
 
 **Validação:** diagramas elaborados por inspeção estática do código atual. Não foram alterados código, schema SQLite, collectors ou dados de captura. Não foi executado build/teste nesta tarefa.
+
+
+---
+
+## 5. Extensão arquitetural — pipeline IKP e importação (2026-11-08)
+
+A secção original descreve o modelo persistido do **workspace SQLite do Scanner** e as classes do Scanner. Não deve ser interpretada como modelo de dados da plataforma central. Esta extensão acrescenta a fronteira de transporte/importação já implementada e distingue-a explicitamente do staging ainda não construído.
+
+### 5.1 Modelo lógico do pacote e validação
+
+O pacote IKP é um ZIP imutável de transporte. Os cinco documentos de raiz e os artefactos de payload são conteúdo do pacote, não tabelas SQLite nem entidades já persistidas na plataforma.
+
+```mermaid
+flowchart LR
+    subgraph SC["Scanner / workspace local"]
+      W[("workspace.db + artifacts/")]
+      X["IkpPackageExporter"]
+      W --> X
+    end
+    X --> Z["ZIP IKP 0.1<br/>manifest + capabilities + coverage<br/>object-index + checksums + payload"]
+    subgraph PL["Plataforma — projeto Import"]
+      V["IkpPackageValidator"]
+      R["ValidationResult"]
+      D["PhcKnowledge.IkpDiagnostic<br/>CLI local"]
+      V --> R
+      D --> V
+    end
+    Z --> V
+    R -. "futura etapa; ainda não implementada" .-> S["Staging persistente"]
+    S -. "futura etapa" .-> DB[("PostgreSQL")]
+```
+
+### 5.2 ER conceptual da futura plataforma — não implementado
+
+Este diagrama é uma vista de domínio para orientar a próxima fase. **Não representa tabelas existentes nem migrações implementadas.** O PR #2 apenas valida o pacote em memória; não cria registos persistentes.
+
+```mermaid
+erDiagram
+    ORGANIZATION ||--o{ INSTALLATION : owns
+    INSTALLATION ||--o{ CAPTURE : records
+    CAPTURE ||--o{ PACKAGE : transported_as
+    PACKAGE ||--|| VALIDATION_RUN : checked_by
+    PACKAGE ||--o{ PACKAGE_ARTIFACT : contains
+    CAPTURE ||--o{ OBJECT_OBSERVATION : observes
+    OBJECT_IDENTITY ||--o{ OBJECT_OBSERVATION : groups
+    OBJECT_OBSERVATION ||--o{ OBSERVATION_EVIDENCE : supported_by
+    ORGANIZATION {
+      uuid organization_id PK
+    }
+    INSTALLATION {
+      uuid installation_id PK
+      uuid organization_id FK
+      string display_name
+    }
+    CAPTURE {
+      uuid capture_id PK
+      uuid installation_id FK
+      datetime captured_at
+    }
+    PACKAGE {
+      uuid package_id PK
+      uuid capture_id FK
+      string zip_sha256
+      string logical_digest
+    }
+    VALIDATION_RUN {
+      uuid validation_id PK
+      uuid package_id FK
+      string status
+      json diagnostics
+    }
+    PACKAGE_ARTIFACT {
+      uuid artifact_id PK
+      uuid package_id FK
+      string relative_path
+      string sha256
+      bigint byte_length
+    }
+    OBJECT_IDENTITY {
+      uuid entity_identity_id PK
+      uuid installation_id FK
+      string identity_scope
+    }
+    OBJECT_OBSERVATION {
+      uuid observation_id PK
+      uuid capture_id FK
+      uuid entity_identity_id FK
+      string source_object_id
+      string definition_fingerprint
+      string metadata_fingerprint
+    }
+    OBSERVATION_EVIDENCE {
+      uuid evidence_id PK
+      uuid observation_id FK
+      string evidence_type
+      string source_reference
+    }
+```
+
+As entidades acima são **proposta conceptual**, não decisão de schema aprovada. A sequência real de implementação continua: validar pacote real → definir staging → persistir captura/pacote → associação a instalação e identidade → observações e histórico. A associação a uma instalação não deve ser inferida apenas do nome da base de dados ou de um fingerprint de origem.
+
+### 5.3 Diagrama de classes — importação atualmente implementada
+
+```mermaid
+classDiagram
+    direction LR
+    class IkpPackageValidator {
+      +ValidateAsync(stream) ValidationResult
+    }
+    class ValidationResult {
+      +IsValid bool
+      +PackageId string
+      +CaptureId string
+      +Errors IReadOnlyList
+      +Diagnostics IReadOnlyList
+    }
+    class IkpDiagnosticProgram {
+      +Main(args) Task~int~
+      +WriteJsonReport(path) Task
+    }
+    class ZipPackageReader {
+      +ReadEntries(stream)
+      +ValidateEntryPaths()
+    }
+    class JsonSchemaValidator {
+      +Validate(document, schema)
+    }
+    class IntegrityValidator {
+      +ValidateChecksums()
+      +ValidateLogicalDigest()
+    }
+    class CrossReferenceValidator {
+      +ValidateManifestAndFiles()
+      +ValidateCapabilitiesAndCoverage()
+      +ValidateObjectIndex()
+      +ValidateRelations()
+    }
+    IkpDiagnosticProgram --> IkpPackageValidator : invokes
+    IkpPackageValidator --> ZipPackageReader : reads in memory
+    IkpPackageValidator --> JsonSchemaValidator : validates schemas
+    IkpPackageValidator --> IntegrityValidator : verifies integrity
+    IkpPackageValidator --> CrossReferenceValidator : verifies references
+    IkpPackageValidator --> ValidationResult : returns
+```
+
+O diagrama representa responsabilidades lógicas do validador; não pretende enumerar todos os tipos internos nem afirmar que cada responsabilidade corresponde necessariamente a uma classe pública autónoma. A ferramenta de diagnóstico é um consumidor local do mesmo validador, não uma via de importação alternativa.
+
+### 5.4 Limites atuais e invariantes
+
+- O projeto `PhcKnowledge.Import` não referencia assemblies do Scanner.
+- A validação ocorre em memória; não extrai o ZIP para o filesystem.
+- Não existe ainda staging persistente, associação de instalação, ingestão PostgreSQL, identidade lógica multi-captura nem publicação de conhecimento.
+- `PackageId` identifica o pacote físico; `CaptureId` identifica a captura. Não substituem `InstallationId`, que pertence à plataforma.
+- `SourceObjectId` é uma referência ao objeto dentro da captura; não é identidade permanente.
+- Factos REL/DTL e interpretações permanecem separados.
+- A validação bem-sucedida prova conformidade estrutural e integridade do pacote; não prova que todos os collectors recolheram todos os dados possíveis da instalação.
+

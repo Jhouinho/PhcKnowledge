@@ -7,12 +7,18 @@ on:
       - "PhcKnowledge.sln"
       - "global.json"
       - "PhcKnowledgeScanner/**"
+      - "src/**"
+      - "tests/**"
+      - "tools/**"
       - ".github/workflows/dotnet-scanner.yml"
   pull_request:
     paths:
       - "PhcKnowledge.sln"
       - "global.json"
       - "PhcKnowledgeScanner/**"
+      - "src/**"
+      - "tests/**"
+      - "tools/**"
       - ".github/workflows/dotnet-scanner.yml"
 
 permissions:
