@@ -338,6 +338,31 @@ public sealed class IkpPackageExporterTests
             await workspace.SaveCaptureCoverageAsync(
                 captureId, capabilities, coverages, CancellationToken.None);
 
+            // Parser output must always point to a declared REL/DTL fact.
+            await workspace.UpsertDeclaredRelationInterpretationsAsync(
+            [
+                new DeclaredRelationInterpretationRecord(
+                    "rel:orphan",
+                    "test-parser-1",
+                    ExpressionParseStatus.Unsupported,
+                    InterpretationConfidence.None,
+                    null,
+                    null,
+                    0,
+                    0,
+                    0,
+                    0,
+                    DateTimeOffset.UtcNow)
+            ],
+            CancellationToken.None);
+            await Assert.ThrowsAsync<InvalidDataException>(() =>
+                new IkpPackageExporter().ExportAsync(
+                    workspace,
+                    scanManifest,
+                    new IkpOriginDescriptor("DEMO"),
+                    Path.Combine(root, "orphan-interpretation.zip"),
+                    CancellationToken.None));
+
             // Unsafe relative paths are rejected before they can enter the package.
             var traversalArtifactId = await workspace.SaveArtifactAsync(
                 "phc.customizations",
@@ -366,30 +391,6 @@ public sealed class IkpPackageExporterTests
                     Path.Combine(root, "path-traversal.zip"),
                     CancellationToken.None));
 
-            // Parser output must always point to a declared REL/DTL fact.
-            await workspace.UpsertDeclaredRelationInterpretationsAsync(
-            [
-                new DeclaredRelationInterpretationRecord(
-                    "rel:orphan",
-                    "test-parser-1",
-                    ExpressionParseStatus.Unsupported,
-                    InterpretationConfidence.None,
-                    null,
-                    null,
-                    0,
-                    0,
-                    0,
-                    0,
-                    DateTimeOffset.UtcNow)
-            ],
-            CancellationToken.None);
-            await Assert.ThrowsAsync<InvalidDataException>(() =>
-                new IkpPackageExporter().ExportAsync(
-                    workspace,
-                    scanManifest,
-                    new IkpOriginDescriptor("DEMO"),
-                    Path.Combine(root, "orphan-interpretation.zip"),
-                    CancellationToken.None));
         }
         finally
         {
