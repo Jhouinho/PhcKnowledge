@@ -7,6 +7,8 @@ on:
       - "PhcKnowledge.sln"
       - "global.json"
       - "PhcKnowledgeScanner/**"
+      - "src/**"
+      - "tests/**"
       - ".github/workflows/dotnet-scanner.yml"
   pull_request:
     paths:
