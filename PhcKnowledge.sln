@@ -33,6 +33,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhcKnowledge.Import", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhcKnowledge.Import.Tests", "tests\PhcKnowledge.Import.Tests\PhcKnowledge.Import.Tests.csproj", "{A65D1F42-5B91-4F21-8A2C-7D2E4C6B5202}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{B8D5D7C1-9C62-4D70-9F5A-11B6D0C37E81}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhcKnowledge.IkpDiagnostic", "tools\PhcKnowledge.IkpDiagnostic\PhcKnowledge.IkpDiagnostic.csproj", "{C91B73B6-0A91-4E5C-9B3F-4E8D0B1A2F60}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +47,10 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C91B73B6-0A91-4E5C-9B3F-4E8D0B1A2F60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C91B73B6-0A91-4E5C-9B3F-4E8D0B1A2F60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C91B73B6-0A91-4E5C-9B3F-4E8D0B1A2F60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C91B73B6-0A91-4E5C-9B3F-4E8D0B1A2F60}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D45E8B11-2D6A-4F7B-9A31-BC2D2D5F4101}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D45E8B11-2D6A-4F7B-9A31-BC2D2D5F4101}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D45E8B11-2D6A-4F7B-9A31-BC2D2D5F4101}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -188,6 +196,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{C91B73B6-0A91-4E5C-9B3F-4E8D0B1A2F60} = {B8D5D7C1-9C62-4D70-9F5A-11B6D0C37E81}
 		{D45E8B11-2D6A-4F7B-9A31-BC2D2D5F4101} = {888198E0-1C7E-47A0-953D-7F75255BD281}
 		{A65D1F42-5B91-4F21-8A2C-7D2E4C6B5202} = {A7C04ECC-442D-4834-860F-C61665815EA0}
 		{01F46F58-450E-4F55-9349-AC257FDCAA39} = {888198E0-1C7E-47A0-953D-7F75255BD281}
