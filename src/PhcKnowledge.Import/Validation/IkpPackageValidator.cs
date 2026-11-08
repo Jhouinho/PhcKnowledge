@@ -505,6 +505,7 @@ public sealed class IkpPackageValidator
         List<string> errors)
     {
         var objectIds = new HashSet<string>(StringComparer.Ordinal);
+        var parentReferences = new List<(string ObjectId, string ParentObjectId)>();
         var count = 0;
         foreach (var obj in RequiredArray(objectIndex, "objects").EnumerateArray())
         {
@@ -512,6 +513,15 @@ public sealed class IkpPackageValidator
             var id = RequiredString(obj, "sourceObjectId");
             if (!objectIds.Add(id))
                 errors.Add($"object-index: sourceObjectId duplicado: {id}");
+            if (obj.TryGetProperty("parentSourceObjectId", out var parentElement))
+            {
+                if (parentElement.ValueKind != JsonValueKind.String ||
+                    string.IsNullOrWhiteSpace(parentElement.GetString()))
+                    errors.Add($"object-index: parentSourceObjectId inválido em {id}");
+                else
+                    parentReferences.Add((id, parentElement.GetString()!));
+            }
+
             var operationId = RequiredString(obj, "operationId");
             if (!supportedOperations.ContainsKey(operationId))
                 errors.Add($"object-index: operationId não suportado: {operationId}");
@@ -540,6 +550,13 @@ public sealed class IkpPackageValidator
             if (RequiredString(definition, "status") == "Available" && artifactIds.GetArrayLength() == 0)
                 errors.Add($"object-index: definição Available sem artefacto: {id}");
         }
+
+        foreach (var (objectId, parentObjectId) in parentReferences)
+        {
+            if (!objectIds.Contains(parentObjectId))
+                errors.Add($"object-index: parentSourceObjectId não resolvido em {objectId}: {parentObjectId}");
+        }
+
         return count;
     }
 
