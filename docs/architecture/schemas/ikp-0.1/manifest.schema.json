@@ -54,7 +54,9 @@
       "type": "object",
       "required": [
         "captureId",
-        "mode"
+        "mode",
+        "scannerVersion",
+        "metadataStatus"
       ],
       "properties": {
         "captureId": {
