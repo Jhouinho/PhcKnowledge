@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -365,7 +366,7 @@ public sealed class IkpPackageValidator
         {
             var entry = checksums[path];
             canonical.Append(path).Append('\n')
-                .Append(entry.GetProperty("byteLength").GetInt64()).Append('\n')
+                .Append(entry.GetProperty("byteLength").GetInt64().ToString(CultureInfo.InvariantCulture)).Append('\n')
                 .Append(RequiredString(entry, "sha256")).Append('\n');
         }
         var actualDigest = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical.ToString())));
