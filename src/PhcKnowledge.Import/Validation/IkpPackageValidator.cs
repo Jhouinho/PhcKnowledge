@@ -492,8 +492,8 @@ public sealed class IkpPackageValidator
             }
         }
 
-        if (!result.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(supportedOperations))
-            errors.Add("coverage: cada capability deve ter exatamente uma entrada de cobertura.");
+        if (!result.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(supportedOperations.Keys))
+            errors.Add("coverage: cada capability suportada deve ter exatamente uma entrada de cobertura.");
         return result;
     }
 
