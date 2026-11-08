@@ -147,6 +147,24 @@ public sealed class IkpPackageExporterTests
             Assert.Equal("Available", projected.GetProperty("definition").GetProperty("status").GetString());
             Assert.Equal(referencedArtifactId,
                 Assert.Single(projected.GetProperty("definition").GetProperty("artifactIds").EnumerateArray()).GetString());
+
+            var historicalOutput = Path.Combine(root, "historical-package.ikp.zip");
+            await new IkpPackageExporter().ExportAsync(
+                workspace,
+                new IkpCaptureDescriptor(captureId, null, null, null, null),
+                new IkpOriginDescriptor("DEMO"),
+                historicalOutput,
+                CancellationToken.None);
+
+            using var historicalArchive = ZipFile.OpenRead(historicalOutput);
+            using var historicalManifestStream = historicalArchive.GetEntry("manifest.json")!.Open();
+            using var historicalManifest = await JsonDocument.ParseAsync(historicalManifestStream);
+            var historicalCapture = historicalManifest.RootElement.GetProperty("capture");
+            Assert.Equal("Unknown", historicalCapture.GetProperty("scannerVersion").GetString());
+            Assert.Equal("Unknown", historicalCapture.GetProperty("mode").GetString());
+            Assert.Equal("Partial", historicalCapture.GetProperty("metadataStatus").GetString());
+            Assert.Equal(4, historicalCapture.GetProperty("unknownFields").GetArrayLength());
+            Assert.False(historicalCapture.TryGetProperty("startedAtUtc", out _));
         }
         finally
         {
