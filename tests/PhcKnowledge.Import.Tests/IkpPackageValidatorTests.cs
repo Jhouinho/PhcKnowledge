@@ -23,6 +23,16 @@ public sealed class IkpPackageValidatorTests
     }
 
     [Fact]
+    public async Task Rejects_a_document_that_violates_the_published_json_schema()
+    {
+        await using var package = CreatePackage(invalidManifestSchema: true);
+        var result = await _validator.ValidateAsync(package);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Contains("manifest.schema.json", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Rejects_a_package_with_a_tampered_document()
     {
         await using var package = CreatePackage(tamperCoverageAfterChecksums: true);
@@ -44,7 +54,8 @@ public sealed class IkpPackageValidatorTests
 
     private static MemoryStream CreatePackage(
         bool tamperCoverageAfterChecksums = false,
-        bool includeTraversalEntry = false)
+        bool includeTraversalEntry = false,
+        bool invalidManifestSchema = false)
     {
         var captureId = "a1f2fc33-7b0a-4c8f-b049-073a33ef7978";
         var documents = new Dictionary<string, byte[]>(StringComparer.Ordinal)
@@ -58,7 +69,7 @@ public sealed class IkpPackageValidatorTests
                   "producer": { "productId": "PhcKnowledgeScanner", "productVersion": "2.0.0" },
                   "capture": {
                     "captureId": "{{captureId}}",
-                    "mode": "Full",
+                    "mode": "{{(invalidManifestSchema ? "Unsupported" : "Full")}}",
                     "scannerVersion": "2.0.0",
                     "metadataStatus": "Complete"
                   },
