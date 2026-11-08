@@ -158,9 +158,10 @@ public sealed class IkpPackageValidator
             ValidateArtifacts(files, checksumEntries, artifacts, errors);
 
             var supportedOperations = ReadCapabilities(capabilities, errors);
-            var coverageByOperation = ReadCoverage(coverage, supportedOperations, files, errors);
+            var issueIds = ReadIssueIds(files, errors);
+            var coverageByOperation = ReadCoverage(coverage, supportedOperations, issueIds, errors);
             var objectCount = ValidateObjects(objectIndex, supportedOperations, coverageByOperation, artifacts, errors);
-            ValidateDeclaredRelations(files, captureId, errors);
+            ValidateDeclaredRelations(files, captureId, issueIds, errors);
 
             return new(
                 errors.Count == 0,
@@ -405,25 +406,39 @@ public sealed class IkpPackageValidator
         return result;
     }
 
-    private static Dictionary<string, JsonElement> ReadCoverage(
-        JsonElement coverage,
-        HashSet<string> supportedOperations,
+    private static HashSet<string> ReadIssueIds(
         Dictionary<string, byte[]> files,
         List<string> errors)
     {
         var issues = new HashSet<string>(StringComparer.Ordinal);
-        const string issuesPath = "payload/diagnostics/issues.json";
-        if (files.TryGetValue(issuesPath, out var issueBytes))
-        {
-            using var issueDocument = Parse(issueBytes, issuesPath);
-            foreach (var issue in RequiredArray(issueDocument.RootElement, "issues").EnumerateArray())
-            {
-                var id = RequiredString(issue, "issueId");
-                if (!issues.Add(id))
-                    errors.Add($"diagnostics: issueId duplicado: {id}");
-            }
-        }
+        const string currentPath = "payload/diagnostics/collection-issues.json";
+        const string legacyPath = "payload/diagnostics/issues.json";
+        var path = files.ContainsKey(currentPath) ? currentPath : legacyPath;
+        if (!files.TryGetValue(path, out var bytes))
+            return issues;
 
+        using var document = Parse(bytes, path);
+        var issueArray = document.RootElement.ValueKind == JsonValueKind.Array
+            ? document.RootElement
+            : RequiredArray(document.RootElement, "issues");
+        foreach (var issue in issueArray.EnumerateArray())
+        {
+            if (!issue.TryGetProperty("issueId", out var idElement) ||
+                idElement.ValueKind != JsonValueKind.String)
+                continue;
+            var id = idElement.GetString();
+            if (!string.IsNullOrWhiteSpace(id) && !issues.Add(id))
+                errors.Add($"diagnostics: issueId duplicado: {id}");
+        }
+        return issues;
+    }
+
+    private static Dictionary<string, JsonElement> ReadCoverage(
+        JsonElement coverage,
+        HashSet<string> supportedOperations,
+        HashSet<string> issues,
+        List<string> errors)
+    {
         var result = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
         foreach (var operation in RequiredArray(coverage, "operations").EnumerateArray())
         {
@@ -495,32 +510,84 @@ public sealed class IkpPackageValidator
     private static void ValidateDeclaredRelations(
         Dictionary<string, byte[]> files,
         string captureId,
+        HashSet<string> issueIds,
         List<string> errors)
     {
-        const string path = "payload/relations/declared-relations.json";
-        if (!files.TryGetValue(path, out var bytes))
+        const string relationsPath = "payload/relations/declared-relations.json";
+        const string interpretationsPath = "payload/relations/declared-relation-interpretations.json";
+        if (!files.TryGetValue(relationsPath, out var relationBytes))
             return;
 
-        using var document = Parse(bytes, path);
-        var root = document.RootElement;
-        if (RequiredString(root, "captureId") != captureId)
+        using var relationDocument = Parse(relationBytes, relationsPath);
+        var relationRoot = relationDocument.RootElement;
+        if (RequiredString(relationRoot, "captureId") != captureId)
             errors.Add("relations: CaptureId divergente.");
 
+        // Current Scanner exporter uses "records"; accept the original fixture's
+        // "declaredRelations" shape as a compatible 0.1 representation.
+        var relations = relationRoot.TryGetProperty("records", out var currentRecords)
+            ? currentRecords
+            : RequiredArray(relationRoot, "declaredRelations");
+
         var relationIds = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var relation in RequiredArray(root, "declaredRelations").EnumerateArray())
+        foreach (var relation in relations.EnumerateArray())
         {
-            var id = RequiredString(relation, "sourceObjectId");
+            var id = relation.TryGetProperty("relationId", out var relationId)
+                ? relationId.GetString() ?? ""
+                : RequiredString(relation, "sourceObjectId");
+            if (string.IsNullOrWhiteSpace(id))
+                throw new InvalidDataException("relations: RelationId vazio.");
             if (!relationIds.Add(id))
-                errors.Add($"relations: sourceObjectId duplicado: {id}");
+                errors.Add($"relations: RelationId duplicado: {id}");
         }
 
-        if (!root.TryGetProperty("interpretations", out var interpretations) || interpretations.ValueKind != JsonValueKind.Array)
-            return;
-        foreach (var interpretation in interpretations.EnumerateArray())
+        JsonDocument? interpretationDocument = null;
+        try
         {
-            var id = RequiredString(interpretation, "sourceObjectId");
-            if (!relationIds.Contains(id))
-                errors.Add($"relations: interpretação sem relação declarada: {id}");
+            JsonElement interpretations;
+            if (files.TryGetValue(interpretationsPath, out var interpretationBytes))
+            {
+                interpretationDocument = Parse(interpretationBytes, interpretationsPath);
+                var interpretationRoot = interpretationDocument.RootElement;
+                if (RequiredString(interpretationRoot, "captureId") != captureId)
+                    errors.Add("relation interpretations: CaptureId divergente.");
+                interpretations = RequiredArray(interpretationRoot, "records");
+            }
+            else if (relationRoot.TryGetProperty("interpretations", out var legacyInterpretations)
+                     && legacyInterpretations.ValueKind == JsonValueKind.Array)
+            {
+                interpretations = legacyInterpretations;
+            }
+            else
+            {
+                return;
+            }
+
+            foreach (var interpretation in interpretations.EnumerateArray())
+            {
+                var id = interpretation.TryGetProperty("relationId", out var relationId)
+                    ? relationId.GetString() ?? ""
+                    : RequiredString(interpretation, "sourceObjectId");
+                if (string.IsNullOrWhiteSpace(id))
+                    throw new InvalidDataException("relation interpretations: RelationId vazio.");
+                if (!relationIds.Contains(id))
+                    errors.Add($"relations: interpretação sem relação declarada: {id}");
+
+                if (interpretation.TryGetProperty("issueIds", out var referencedIssues)
+                    && referencedIssues.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var issueIdElement in referencedIssues.EnumerateArray())
+                    {
+                        var issueId = issueIdElement.GetString() ?? "";
+                        if (!issueIds.Contains(issueId))
+                            errors.Add($"relations: issueId não resolvido: {issueId}");
+                    }
+                }
+            }
+        }
+        finally
+        {
+            interpretationDocument?.Dispose();
         }
     }
 
