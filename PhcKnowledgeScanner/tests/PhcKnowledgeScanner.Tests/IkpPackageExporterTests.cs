@@ -400,7 +400,7 @@ public sealed class IkpPackageExporterTests
                     """{"source":"brule","stamp":"TRAVERSAL","tabela":"FT","inactivo":"0"}""",
                     DateTimeOffset.UtcNow),
                 CancellationToken.None);
-            await Assert.ThrowsAsync<InvalidDataException>(() =>
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
                 new IkpPackageExporter().ExportAsync(
                     workspace,
                     scanManifest,
