@@ -31,7 +31,7 @@ if (args[0] is "--version" or "-v" or "version")
 
 if (args[0] is "smoke")
 {
-    Console.WriteLine("Smoke legado removido. Use: test-connection | scan | schema-snapshot");
+    Console.WriteLine("Smoke legado removido. Use: test-connection | scan | scan-ikp | schema-snapshot");
     return 0;
 }
 
