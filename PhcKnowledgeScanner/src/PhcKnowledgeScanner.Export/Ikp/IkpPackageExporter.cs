@@ -3,6 +3,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using PhcKnowledgeScanner.Abstractions.Coverage;
+using PhcKnowledgeScanner.Abstractions.Inventory;
 using PhcKnowledgeScanner.Abstractions.Manifest;
 using PhcKnowledgeScanner.Abstractions.Workspace;
 using PhcKnowledgeScanner.Export.ObjectIndex;
@@ -141,6 +143,54 @@ public sealed class IkpPackageExporter
             JsonSerializer.SerializeToUtf8Bytes(issues, JsonOptions),
             "collection-issues");
 
+        // PHC REL/DTL are declared facts, not derived relations or SQL foreign keys.
+        var declaredRelations = await workspace.GetDeclaredRelationsAsync(cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+        var declaredRelationInterpretations = await workspace.GetDeclaredRelationInterpretationsAsync(
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+        ValidateDeclaredRelationCounts(coverage, declaredRelations);
+
+        var hasDeclaredRelationCapture = declaredRelations.Count > 0 || coverage.Any(x =>
+            x.Requested
+            && (x.OperationId == KnownOperations.PhcRel || x.OperationId == KnownOperations.PhcDtl)
+            && x.ContentAvailability is ContentAvailability.Available
+                or ContentAvailability.Partial
+                or ContentAvailability.Empty);
+
+        if (hasDeclaredRelationCapture)
+        {
+            AddGeneratedFile(
+                files,
+                "ikp:relations:declared",
+                "payload/relations/declared-relations.json",
+                "relations",
+                "application/json",
+                JsonSerializer.SerializeToUtf8Bytes(new
+                {
+                    schemaVersion = "1",
+                    captureId = captureGuid.ToString("D"),
+                    records = declaredRelations
+                }, JsonOptions),
+                "declared-relations");
+
+            if (declaredRelationInterpretations.Count > 0)
+            {
+                AddGeneratedFile(
+                    files,
+                    "ikp:relations:declared-interpretations",
+                    "payload/relations/declared-relation-interpretations.json",
+                    "relations",
+                    "application/json",
+                    JsonSerializer.SerializeToUtf8Bytes(new
+                    {
+                        schemaVersion = "1",
+                        captureId = captureGuid.ToString("D"),
+                        records = declaredRelationInterpretations
+                    }, JsonOptions),
+                    "declared-relation-interpretations");
+            }
+        }
+
         if (projection.Diagnostics.Count > 0)
         {
             AddGeneratedFile(
@@ -155,6 +205,8 @@ public sealed class IkpPackageExporter
 
         EnsureUniqueArtifacts(files);
 
+        var effectiveCoverage = ReconcileDefinitionCoverage(coverage, input);
+
         var packageId = Guid.NewGuid().ToString("D");
         var producedAt = DateTimeOffset.UtcNow;
         var capabilitiesBytes = JsonSerializer.SerializeToUtf8Bytes(new
@@ -167,7 +219,7 @@ public sealed class IkpPackageExporter
         {
             schemaVersion = "1",
             captureId = captureGuid.ToString("D"),
-            operations = coverage
+            operations = effectiveCoverage
         }, JsonOptions);
 
         var manifestBytes = JsonSerializer.SerializeToUtf8Bytes(new
@@ -266,6 +318,81 @@ public sealed class IkpPackageExporter
             packageEntries.Count,
             logicalDigest,
             projection.Diagnostics);
+    }
+
+    private static IReadOnlyList<OperationCoverage> ReconcileDefinitionCoverage(
+        IReadOnlyList<OperationCoverage> coverage,
+        ObjectIndexProjectionInput input)
+    {
+        var definitions = DefinitionProjectionResolver.ResolveAll(
+            input.Objects,
+            input.DefinitionArtifacts,
+            input.Issues);
+
+        var unavailableByOperation = input.Objects
+            .Select(record => new
+            {
+                Record = record,
+                Operation = ObjectOperationResolver.Resolve(record)
+            })
+            .Where(x => x.Operation.IsResolved)
+            .Where(x => definitions.TryGetValue(x.Record.ObjectId, out var definition)
+                && definition.Status == DefinitionStatus.Unavailable)
+            .GroupBy(x => x.Operation.OperationId!, StringComparer.Ordinal)
+            .ToDictionary(x => x.Key, x => x.Count(), StringComparer.Ordinal);
+
+        return coverage.Select(item =>
+        {
+            if (item.ContentAvailability != ContentAvailability.Available
+                || !unavailableByOperation.TryGetValue(item.OperationId, out var unavailableCount)
+                || unavailableCount == 0)
+            {
+                return item;
+            }
+
+            return item with
+            {
+                ContentAvailability = ContentAvailability.Partial,
+                Result = item.Result == OperationExecutionResult.Succeeded
+                    ? OperationExecutionResult.SucceededWithWarnings
+                    : item.Result
+            };
+        }).ToArray();
+    }
+
+    private static void ValidateDeclaredRelationCounts(
+        IReadOnlyList<OperationCoverage> coverage,
+        IReadOnlyList<DeclaredRelationRecord> declaredRelations)
+    {
+        var expected = new[]
+        {
+            (OperationId: KnownOperations.PhcRel, SourceType: DeclaredRelationSourceTypes.PhcRel),
+            (OperationId: KnownOperations.PhcDtl, SourceType: DeclaredRelationSourceTypes.PhcDtl)
+        };
+
+        foreach (var item in expected)
+        {
+            var operation = coverage.SingleOrDefault(x => x.OperationId == item.OperationId);
+            if (operation is null
+                || !operation.Requested
+                || operation.Result is OperationExecutionResult.Failed
+                    or OperationExecutionResult.Skipped
+                    or OperationExecutionResult.NotAttempted
+                || operation.ContentAvailability is not (ContentAvailability.Available
+                    or ContentAvailability.Partial
+                    or ContentAvailability.Empty))
+            {
+                continue;
+            }
+
+            var actualCount = declaredRelations.Count(x => x.SourceType == item.SourceType);
+            if (actualCount != operation.ObservedCount)
+            {
+                throw new InvalidDataException(
+                    $"Declared relation payload count mismatch for '{item.OperationId}': " +
+                    $"coverage observed {operation.ObservedCount}, workspace contains {actualCount}.");
+            }
+        }
     }
 
     private static void ValidateCapabilityCoverage(
