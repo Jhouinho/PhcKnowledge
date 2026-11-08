@@ -1,0 +1,69 @@
+name: Publish PHC Knowledge Scanner Desktop
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/scanner-desktop-ikp-exe-20261108
+    paths:
+      - 'PhcKnowledgeScanner/**'
+      - '.github/workflows/publish-scanner-desktop.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  publish-windows-x64:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore PhcKnowledgeScanner/src/PhcKnowledgeScanner.Desktop/PhcKnowledgeScanner.Desktop.csproj
+
+      - name: Publish self-contained Windows x64
+        run: >
+          dotnet publish PhcKnowledgeScanner/src/PhcKnowledgeScanner.Desktop/PhcKnowledgeScanner.Desktop.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          --output artifacts/scanner-desktop-win-x64
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+
+      - name: Include quick-start instructions
+        shell: pwsh
+        run: |
+          @'
+          PHC Knowledge Scanner Desktop — Windows x64
+
+          1. Extraia todos os ficheiros deste ZIP para uma pasta local.
+          2. Execute PhcKnowledgeScanner.Desktop.exe.
+          3. Introduza o servidor e a base de dados PHC.
+          4. Teste a ligação antes de iniciar a recolha.
+          5. No fim, use Exportar pacote IKP 0.1 para gerar o ZIP de importação.
+
+          Requisitos:
+          - Windows 10/11 x64.
+          - Acesso de rede ao SQL Server PHC.
+          - Permissões de leitura necessárias à recolha.
+          - Não é necessária instalação prévia do .NET.
+
+          Nota: o pacote IKP contém informação técnica da instalação. Reveja o conteúdo
+          e trate o ZIP como informação confidencial antes de o partilhar.
+          '@ | Set-Content artifacts/scanner-desktop-win-x64/LEIA-ME.txt -Encoding UTF8
+
+      - name: Upload Windows x64 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: PhcKnowledgeScanner-Desktop-win-x64
+          path: artifacts/scanner-desktop-win-x64/
+          if-no-files-found: error
+          retention-days: 14
