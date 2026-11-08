@@ -214,7 +214,22 @@ public sealed class IkpPackageValidatorTests
         });
 
         if (tamperCoverageAfterChecksums)
-            documents["coverage.json"] = Encoding.UTF8.GetBytes("""{"tampered":true}""");
+            documents["coverage.json"] = Encoding.UTF8.GetBytes($"""
+                {
+                  "schemaVersion": "1",
+                  "captureId": "{{captureId}}",
+                  "operations": [{
+                    "operationId": "{{operationId}}",
+                    "capabilityVersion": "1.0",
+                    "requested": true,
+                    "result": "Succeeded",
+                    "sourceAvailability": "Present",
+                    "contentAvailability": "NotCollected",
+                    "observedCount": 2,
+                    "issueIds": []
+                  }]
+                }
+                """);
 
         var output = new MemoryStream();
         using (var archive = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
