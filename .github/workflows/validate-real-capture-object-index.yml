@@ -130,7 +130,39 @@ jobs:
       - name: Validate emitted JSON against IKP 0.1 schema
         run: |
           python -m pip install -r tools/ikp-validation/requirements.txt
-          python tools/ikp-validation/validate_object_index.py "$RUNNER_TEMP/object-index.json"
+          python - "$RUNNER_TEMP/object-index.json" docs/architecture/schemas/ikp-0.1/object-index.schema.json <<'PY'
+          import json, pathlib, sys
+          from jsonschema import Draft202012Validator, FormatChecker
+
+          document_path, schema_path = map(pathlib.Path, sys.argv[1:])
+          document = json.loads(document_path.read_text(encoding="utf-8"))
+          schema = json.loads(schema_path.read_text(encoding="utf-8"))
+          Draft202012Validator.check_schema(schema)
+
+          # The schema's objects.uniqueItems check is quadratic for large arrays of objects.
+          # Since sourceObjectId is required, checking its uniqueness is logically sufficient
+          # to establish that no two complete object records can be equal.
+          ids = [item["sourceObjectId"] for item in document["objects"]]
+          if len(ids) != len(set(ids)):
+              raise SystemExit("FAIL: sourceObjectId duplicado.")
+          schema["properties"]["objects"].pop("uniqueItems", None)
+
+          validator = Draft202012Validator(schema, format_checker=FormatChecker())
+          errors = sorted(
+              validator.iter_errors(document),
+              key=lambda error: list(map(str, error.absolute_path)),
+          )
+          if errors:
+              first = errors[0]
+              location = "/".join(map(str, first.absolute_path)) or "$"
+              raise SystemExit(f"FAIL: {location}: {first.message}")
+
+          print(json.dumps({
+              "status": "PASS",
+              "objects": len(document["objects"]),
+              "uniqueSourceObjectIds": len(ids)
+          }))
+          PY
 
       - name: Build real-capture validation report
         run: |
