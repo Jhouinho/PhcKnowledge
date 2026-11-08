@@ -227,6 +227,24 @@ public partial class MainWindow : Window
                 _scanCts.Token);
 
             AppendLog($"Concluído. Collectors: {manifest.Results.Count}. Versão scanner: {manifest.ScannerVersion}");
+
+            // A recolha terminou: abrir automaticamente a sessão read-only do workspace
+            // para que Inventário e Explorador fiquem disponíveis sem o utilizador
+            // ter de localizar manualmente o ficheiro workspace.db.
+            var sessionResult = await _workspaceSessionHost.OpenAsync(workspaceRoot);
+            if (sessionResult.Success && sessionResult.Session is not null)
+            {
+                ClearInventoryDetail();
+                UpdateInventorySessionChrome();
+                RefreshInventoryTableList();
+                AppendLog("Workspace aberto automaticamente para exploração.");
+            }
+            else
+            {
+                AppendLog("Aviso: a recolha terminou, mas não foi possível abrir a sessão de exploração: "
+                    + (sessionResult.ErrorMessage ?? "erro desconhecido"));
+            }
+
             await RefreshViewsAsync();
             ShowPage("dashboard");
             TxtConnectionStatus.Text = "Recolha concluída.";
