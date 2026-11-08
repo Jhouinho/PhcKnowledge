@@ -67,13 +67,6 @@ public sealed class IkpPackageValidator
                     continue;
                 }
 
-                expandedBytes = checked(expandedBytes + entry.Length);
-                if (expandedBytes > MaxExpandedBytes)
-                {
-                    errors.Add("O conteúdo expandido do pacote excede o limite permitido.");
-                    break;
-                }
-
                 await using var input = entry.Open();
                 await using var output = new MemoryStream(entry.Length > int.MaxValue ? 0 : (int)entry.Length);
                 var buffer = new byte[81920];
@@ -82,9 +75,12 @@ public sealed class IkpPackageValidator
                 {
                     if (output.Length + read > MaxEntryBytes)
                         throw new InvalidDataException($"Ficheiro excede o limite permitido: {path}");
+                    if (expandedBytes + output.Length + read > MaxExpandedBytes)
+                        throw new InvalidDataException("O conteúdo expandido do pacote excede o limite permitido.");
                     await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
                 }
 
+                expandedBytes = checked(expandedBytes + output.Length);
                 files[path] = output.ToArray();
             }
         }
