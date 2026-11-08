@@ -116,9 +116,8 @@ public sealed class IkpPackageExporterTests
             Assert.Equal(result.PackageId, manifestRoot.GetProperty("packageId").GetString());
             Assert.Equal(captureId, manifestRoot.GetProperty("capture").GetProperty("captureId").GetString());
             Assert.Equal("DEMO", manifestRoot.GetProperty("origin").GetProperty("databaseName").GetString());
-            Assert.Contains(
-                manifestRoot.GetProperty("artifacts").EnumerateArray(),
-                x => x.GetProperty("artifactId").GetString() == referencedArtifactId);
+            Assert.True(manifestRoot.GetProperty("artifacts").EnumerateArray()
+                .Any(x => x.GetProperty("artifactId").GetString() == referencedArtifactId));
 
             using var checksumsStream = archive.GetEntry("checksums.json")!.Open();
             using var checksumsJson = await JsonDocument.ParseAsync(checksumsStream);
@@ -127,9 +126,24 @@ public sealed class IkpPackageExporterTests
             Assert.Equal(result.LogicalContentDigest,
                 checksumRoot.GetProperty("logicalContentDigest").GetProperty("value").GetString());
 
+            var checksumFiles = checksumRoot.GetProperty("files").EnumerateArray().ToArray();
+            Assert.DoesNotContain(checksumFiles, x => x.GetProperty("path").GetString() == "checksums.json");
+            foreach (var checksum in checksumFiles)
+            {
+                var entryPath = checksum.GetProperty("path").GetString()!;
+                var entry = archive.GetEntry(entryPath);
+                Assert.NotNull(entry);
+                await using var entryStream = entry!.Open();
+                using var buffer = new MemoryStream();
+                await entryStream.CopyToAsync(buffer);
+                var bytes = buffer.ToArray();
+                Assert.Equal(checksum.GetProperty("byteLength").GetInt64(), bytes.LongLength);
+                Assert.Equal(checksum.GetProperty("sha256").GetString(), Sha256(bytes));
+            }
+
             using var objectIndexStream = archive.GetEntry("object-index.json")!.Open();
             using var objectIndexJson = await JsonDocument.ParseAsync(objectIndexStream);
-            var projected = Assert.Single(objectIndexJson.RootElement.GetProperty("objects").EnumerateArray());
+            var projected = Assert.Single(objectIndexJson.RootElement.GetProperty("objects").EnumerateArray().ToArray());
             Assert.Equal("Available", projected.GetProperty("definition").GetProperty("status").GetString());
             Assert.Equal(referencedArtifactId,
                 Assert.Single(projected.GetProperty("definition").GetProperty("artifactIds").EnumerateArray()).GetString());
