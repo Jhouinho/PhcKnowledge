@@ -363,6 +363,23 @@ public sealed class IkpPackageExporterTests
                     Path.Combine(root, "orphan-interpretation.zip"),
                     CancellationToken.None));
 
+            // Restore a matching declaration so the following path test is independent.
+            var matchingDeclaration = declaredRelations[0] with
+            {
+                RelationId = "rel:orphan",
+                SourceRecordId = "orphan"
+            };
+            await workspace.UpsertDeclaredRelationsAsync(
+                [matchingDeclaration],
+                CancellationToken.None);
+            var restoredCoverage = coverages
+                .Select(x => x.OperationId == KnownOperations.PhcRel
+                    ? x with { ObservedCount = x.ObservedCount + 1 }
+                    : x)
+                .ToArray();
+            await workspace.SaveCaptureCoverageAsync(
+                captureId, capabilities, restoredCoverage, CancellationToken.None);
+
             // Unsafe relative paths are rejected before they can enter the package.
             var traversalArtifactId = await workspace.SaveArtifactAsync(
                 "phc.customizations",
