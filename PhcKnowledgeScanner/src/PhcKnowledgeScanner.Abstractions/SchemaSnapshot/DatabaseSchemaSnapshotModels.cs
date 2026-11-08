@@ -82,6 +82,8 @@ public sealed class SchemaTableSnapshot
     public string SchemaName { get; set; } = "";
     public string Name { get; set; } = "";
     public string ObjectType { get; set; } = "BASE TABLE";
+    /// <summary>SQL Server object_id; único apenas no âmbito da base de dados e durante a vida do objeto.</summary>
+    public int? ObjectId { get; set; }
     public string? Description { get; set; }
     public bool IsMsShipped { get; set; }
     public ObjectClassificationInfo Classification { get; set; } =
@@ -94,6 +96,9 @@ public sealed class SchemaTableSnapshot
 
 public sealed class SchemaColumnSnapshot
 {
+    /// <summary>object_id da tabela proprietária e column_id nativo de sys.columns.</summary>
+    public int? ObjectId { get; set; }
+    public int? ColumnId { get; set; }
     public string Name { get; set; } = "";
     public string SqlType { get; set; } = "";
     public int? MaxLength { get; set; }
@@ -126,6 +131,8 @@ public sealed class SchemaKeyColumnSnapshot
 
 public sealed class SchemaForeignKeySnapshot
 {
+    /// <summary>object_id da constraint em sys.foreign_keys.</summary>
+    public int? ObjectId { get; set; }
     public string ConstraintName { get; set; } = "";
     public string ParentSchema { get; set; } = "";
     public string ParentTable { get; set; } = "";
@@ -148,6 +155,9 @@ public sealed class SchemaForeignKeyColumnSnapshot
 
 public sealed class SchemaIndexSnapshot
 {
+    /// <summary>Identidade nativa do índice dentro da tabela: object_id + index_id.</summary>
+    public int? ObjectId { get; set; }
+    public int? IndexId { get; set; }
     public string SchemaName { get; set; } = "";
     public string TableName { get; set; } = "";
     public string IndexName { get; set; } = "";
@@ -170,6 +180,7 @@ public sealed class SchemaIndexColumnSnapshot
 
 public sealed class SchemaViewSnapshot
 {
+    public int? ObjectId { get; set; }
     public string SchemaName { get; set; } = "";
     public string Name { get; set; } = "";
     public bool IsMsShipped { get; set; }
@@ -183,6 +194,7 @@ public sealed class SchemaViewSnapshot
 
 public sealed class SchemaTriggerSnapshot
 {
+    public int? ObjectId { get; set; }
     public string SchemaName { get; set; } = "";
     public string Name { get; set; } = "";
     public string ParentSchema { get; set; } = "";
@@ -199,6 +211,7 @@ public sealed class SchemaTriggerSnapshot
 
 public sealed class SchemaRoutineSnapshot
 {
+    public int? ObjectId { get; set; }
     public string SchemaName { get; set; } = "";
     public string Name { get; set; } = "";
     public string RoutineKind { get; set; } = "";
