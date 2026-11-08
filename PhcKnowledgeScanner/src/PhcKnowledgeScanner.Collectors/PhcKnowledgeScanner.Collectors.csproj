@@ -15,4 +15,8 @@
     <ProjectReference Include="..\PhcKnowledgeScanner.Abstractions\PhcKnowledgeScanner.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="PhcKnowledgeScanner.Tests" />
+  </ItemGroup>
+
 </Project>

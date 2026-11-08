@@ -280,6 +280,7 @@ public sealed class DatabaseSchemaSnapshotExtractor
             {
                 SchemaName = schema,
                 Name = name,
+                ObjectId = reader.IsDBNull(7) ? null : Convert.ToInt32(reader.GetValue(7), CultureInfo.InvariantCulture),
                 ObjectType = reader.IsDBNull(2) ? "BASE TABLE" : reader.GetString(2),
                 IsMsShipped = isMsShipped,
                 Classification = SchemaObjectClassification.Classify(isMsShipped, name),
@@ -315,6 +316,8 @@ public sealed class DatabaseSchemaSnapshotExtractor
             table.Columns.Add(new SchemaColumnSnapshot
             {
                 Name = reader.GetString(2),
+                ObjectId = reader.IsDBNull(16) ? null : Convert.ToInt32(reader.GetValue(16), CultureInfo.InvariantCulture),
+                ColumnId = Convert.ToInt32(reader.GetValue(3), CultureInfo.InvariantCulture),
                 Ordinal = Convert.ToInt32(reader.GetValue(3), CultureInfo.InvariantCulture),
                 SqlType = reader.GetString(4),
                 MaxLength = reader.IsDBNull(5) ? null : Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture),
@@ -361,7 +364,13 @@ public sealed class DatabaseSchemaSnapshotExtractor
                 pk = new SchemaPrimaryKeySnapshot
                 {
                     ConstraintName = pkName,
-                    IsDisabled = !reader.IsDBNull(5) && reader.GetBoolean(5)
+                    IsDisabled = !reader.IsDBNull(5) && reader.GetBoolean(5),
+                    ObjectId = reader.IsDBNull(6)
+                        ? null
+                        : Convert.ToInt32(reader.GetValue(6), CultureInfo.InvariantCulture),
+                    IndexId = reader.IsDBNull(7)
+                        ? null
+                        : Convert.ToInt32(reader.GetValue(7), CultureInfo.InvariantCulture)
                 };
                 map[mapKey] = pk;
                 if (tables.TryGetValue(TableKey(schema, tableName), out var table))
@@ -408,6 +417,7 @@ public sealed class DatabaseSchemaSnapshotExtractor
                     ParentSchema = schema,
                     ParentTable = table,
                     ConstraintName = fkName,
+                    ObjectId = reader.IsDBNull(12) ? null : Convert.ToInt32(reader.GetValue(12), CultureInfo.InvariantCulture),
                     ReferencedSchema = reader.GetString(3),
                     ReferencedTable = reader.GetString(4),
                     OnDeleteAction = reader.IsDBNull(8) ? null : reader.GetString(8),
@@ -452,6 +462,8 @@ public sealed class DatabaseSchemaSnapshotExtractor
                     SchemaName = schema,
                     TableName = table,
                     IndexName = indexName,
+                    ObjectId = reader.IsDBNull(13) ? null : Convert.ToInt32(reader.GetValue(13), CultureInfo.InvariantCulture),
+                    IndexId = reader.IsDBNull(14) ? null : Convert.ToInt32(reader.GetValue(14), CultureInfo.InvariantCulture),
                     IndexType = reader.IsDBNull(3) ? "" : reader.GetString(3),
                     IsUnique = !reader.IsDBNull(4) && reader.GetBoolean(4),
                     IsPrimaryKey = !reader.IsDBNull(5) && reader.GetBoolean(5),
@@ -503,6 +515,7 @@ public sealed class DatabaseSchemaSnapshotExtractor
             {
                 SchemaName = reader.GetString(0),
                 Name = name,
+                ObjectId = reader.IsDBNull(7) ? null : Convert.ToInt32(reader.GetValue(7), CultureInfo.InvariantCulture),
                 IsMsShipped = isMsShipped,
                 Classification = SchemaObjectClassification.Classify(isMsShipped, name),
                 CreateDateUtc = reader.IsDBNull(3) ? null : ToUtc(reader.GetDateTime(3)),
@@ -537,6 +550,7 @@ public sealed class DatabaseSchemaSnapshotExtractor
                 {
                     SchemaName = triggerSchema,
                     Name = triggerName,
+                    ObjectId = reader.IsDBNull(9) ? null : Convert.ToInt32(reader.GetValue(9), CultureInfo.InvariantCulture),
                     ParentSchema = parentSchema,
                     ParentObject = parentName,
                     ParentObjectType = reader.IsDBNull(4) ? "" : reader.GetString(4),
@@ -594,6 +608,7 @@ public sealed class DatabaseSchemaSnapshotExtractor
                 SchemaName = reader.GetString(0),
                 Name = name,
                 RoutineKind = "PROCEDURE",
+                ObjectId = reader.IsDBNull(7) ? null : Convert.ToInt32(reader.GetValue(7), CultureInfo.InvariantCulture),
                 IsMsShipped = isMsShipped,
                 Classification = SchemaObjectClassification.Classify(isMsShipped, name),
                 CreateDateUtc = reader.IsDBNull(3) ? null : ToUtc(reader.GetDateTime(3)),
@@ -624,6 +639,7 @@ public sealed class DatabaseSchemaSnapshotExtractor
                 SchemaName = reader.GetString(0),
                 Name = name,
                 RoutineKind = reader.IsDBNull(2) ? "FUNCTION" : reader.GetString(2),
+                ObjectId = reader.IsDBNull(8) ? null : Convert.ToInt32(reader.GetValue(8), CultureInfo.InvariantCulture),
                 IsMsShipped = isMsShipped,
                 Classification = SchemaObjectClassification.Classify(isMsShipped, name),
                 CreateDateUtc = reader.IsDBNull(4) ? null : ToUtc(reader.GetDateTime(4)),

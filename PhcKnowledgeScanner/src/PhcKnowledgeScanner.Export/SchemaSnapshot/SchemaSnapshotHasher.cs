@@ -23,6 +23,7 @@ public static class SchemaSnapshotHasher
                 snapshot.Manifest.OriginFingerprint,
                 snapshot.Manifest.ObjectCounts,
                 snapshot.Manifest.Classification,
+                // Inclui PrimaryKey.ObjectId/IndexId e restantes identidades nativas das tabelas.
                 Tables = snapshot.Tables,
                 Relationships = snapshot.Relationships,
                 Indexes = snapshot.Indexes,
@@ -30,6 +31,7 @@ public static class SchemaSnapshotHasher
                 {
                     v.SchemaName,
                     v.Name,
+                    v.ObjectId,
                     v.IsMsShipped,
                     v.Classification,
                     v.HasDefinitionAvailable,
@@ -39,6 +41,7 @@ public static class SchemaSnapshotHasher
                 {
                     t.SchemaName,
                     t.Name,
+                    t.ObjectId,
                     t.ParentSchema,
                     t.ParentObject,
                     t.ParentObjectType,
@@ -68,6 +71,7 @@ public static class SchemaSnapshotHasher
         {
             r.SchemaName,
             r.Name,
+            r.ObjectId,
             r.RoutineKind,
             r.ReturnType,
             r.IsMsShipped,

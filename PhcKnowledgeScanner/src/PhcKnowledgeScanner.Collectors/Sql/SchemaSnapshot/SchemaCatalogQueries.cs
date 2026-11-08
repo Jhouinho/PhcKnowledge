@@ -28,7 +28,8 @@ internal static class SchemaCatalogQueries
             t.is_ms_shipped,
             t.create_date,
             t.modify_date,
-            CONVERT(nvarchar(4000), ep.value)
+            CONVERT(nvarchar(4000), ep.value),
+            t.object_id
         FROM sys.tables t
         INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
         LEFT JOIN sys.extended_properties ep
@@ -57,7 +58,8 @@ internal static class SchemaCatalogQueries
             dc.definition AS default_definition,
             c.collation_name,
             c.is_computed,
-            cc.definition AS computed_definition
+            cc.definition AS computed_definition,
+            c.object_id
         FROM sys.tables t
         INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
         INNER JOIN sys.columns c ON c.object_id = t.object_id
@@ -76,13 +78,18 @@ internal static class SchemaCatalogQueries
             kc.name AS pk_name,
             c.name AS column_name,
             ic.key_ordinal,
-            kc.is_disabled
+            i.is_disabled,
+            kc.object_id,
+            i.index_id
         FROM sys.key_constraints kc
         INNER JOIN sys.tables t ON t.object_id = kc.parent_object_id
         INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
+        INNER JOIN sys.indexes i
+            ON i.object_id = kc.parent_object_id
+           AND i.index_id = kc.unique_index_id
         INNER JOIN sys.index_columns ic
-            ON ic.object_id = kc.parent_object_id
-           AND ic.index_id = kc.unique_index_id
+            ON ic.object_id = i.object_id
+           AND ic.index_id = i.index_id
         INNER JOIN sys.columns c
             ON c.object_id = ic.object_id
            AND c.column_id = ic.column_id
@@ -104,7 +111,8 @@ internal static class SchemaCatalogQueries
             fk.delete_referential_action_desc,
             fk.update_referential_action_desc,
             fk.is_disabled,
-            fk.is_not_trusted
+            fk.is_not_trusted,
+            fk.object_id
         FROM sys.foreign_keys fk
         INNER JOIN sys.tables tab ON tab.object_id = fk.parent_object_id
         INNER JOIN sys.schemas sch ON sch.schema_id = tab.schema_id
@@ -131,7 +139,9 @@ internal static class SchemaCatalogQueries
             c.name AS column_name,
             ic.key_ordinal,
             ic.is_descending_key,
-            ic.is_included_column
+            ic.is_included_column,
+            i.object_id,
+            i.index_id
         FROM sys.indexes i
         INNER JOIN sys.tables t ON t.object_id = i.object_id
         INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
@@ -151,7 +161,8 @@ internal static class SchemaCatalogQueries
             v.create_date,
             v.modify_date,
             CASE WHEN m.definition IS NULL THEN 0 ELSE 1 END AS has_definition,
-            CASE WHEN @includeDefinitions = 1 THEN m.definition ELSE NULL END AS definition
+            CASE WHEN @includeDefinitions = 1 THEN m.definition ELSE NULL END AS definition,
+            v.object_id
         FROM sys.views v
         INNER JOIN sys.schemas s ON s.schema_id = v.schema_id
         LEFT JOIN sys.sql_modules m ON m.object_id = v.object_id
@@ -169,7 +180,8 @@ internal static class SchemaCatalogQueries
             tr.is_disabled,
             tr.is_instead_of_trigger,
             CASE WHEN m.definition IS NULL THEN 0 ELSE 1 END AS has_definition,
-            CASE WHEN @includeDefinitions = 1 THEN m.definition ELSE NULL END AS definition
+            CASE WHEN @includeDefinitions = 1 THEN m.definition ELSE NULL END AS definition,
+            tr.object_id
         FROM sys.triggers tr
         INNER JOIN sys.objects o ON o.object_id = tr.parent_id
         LEFT JOIN sys.sql_modules m ON m.object_id = tr.object_id
@@ -198,7 +210,8 @@ internal static class SchemaCatalogQueries
             p.create_date,
             p.modify_date,
             CASE WHEN m.definition IS NULL THEN 0 ELSE 1 END AS has_definition,
-            CASE WHEN @includeDefinitions = 1 THEN m.definition ELSE NULL END AS definition
+            CASE WHEN @includeDefinitions = 1 THEN m.definition ELSE NULL END AS definition,
+            p.object_id
         FROM sys.procedures p
         INNER JOIN sys.schemas s ON s.schema_id = p.schema_id
         LEFT JOIN sys.sql_modules m ON m.object_id = p.object_id
@@ -215,7 +228,8 @@ internal static class SchemaCatalogQueries
             o.create_date,
             o.modify_date,
             CASE WHEN m.definition IS NULL THEN 0 ELSE 1 END AS has_definition,
-            CASE WHEN @includeDefinitions = 1 THEN m.definition ELSE NULL END AS definition
+            CASE WHEN @includeDefinitions = 1 THEN m.definition ELSE NULL END AS definition,
+            o.object_id
         FROM sys.objects o
         INNER JOIN sys.schemas s ON s.schema_id = o.schema_id
         LEFT JOIN sys.sql_modules m ON m.object_id = o.object_id
