@@ -67,20 +67,20 @@ public sealed class DatabaseSchemaSnapshotComparer
         }
 
         CompareIdentitySet(comparison, "foreign_key", left.Relationships, right.Relationships,
-            fk => $"{fk.ParentSchema}.{fk.ParentTable}.{fk.ConstraintName}", fk => fk.ObjectId,
+            fk => $"{fk.ParentSchema}.{fk.ParentTable}.{fk.ConstraintName}", fk => fk.ObjectId is null ? null : (long)fk.ObjectId.Value,
             comparison.RelationshipsAdded, comparison.RelationshipsRemoved);
         CompareIdentitySet(comparison, "index", left.Indexes, right.Indexes,
             i => $"{i.SchemaName}.{i.TableName}.{i.IndexName}", i => i.ObjectId is null || i.IndexId is null
-                ? null : i.ObjectId.Value ^ i.IndexId.Value,
+                ? null : ((long)i.ObjectId.Value << 32) | (uint)i.IndexId.Value,
             comparison.IndexesAdded, comparison.IndexesRemoved);
         CompareIdentitySet(comparison, "view", left.Views, right.Views,
-            v => $"{v.SchemaName}.{v.Name}", v => v.ObjectId, null, null);
+            v => $"{v.SchemaName}.{v.Name}", v => v.ObjectId is null ? null : (long)v.ObjectId.Value, null, null);
         CompareIdentitySet(comparison, "procedure", left.Procedures, right.Procedures,
-            p => $"{p.SchemaName}.{p.Name}", p => p.ObjectId, null, null);
+            p => $"{p.SchemaName}.{p.Name}", p => p.ObjectId is null ? null : (long)p.ObjectId.Value, null, null);
         CompareIdentitySet(comparison, "function", left.Functions, right.Functions,
-            f => $"{f.SchemaName}.{f.Name}", f => f.ObjectId, null, null);
+            f => $"{f.SchemaName}.{f.Name}", f => f.ObjectId is null ? null : (long)f.ObjectId.Value, null, null);
         CompareIdentitySet(comparison, "trigger", left.Triggers, right.Triggers,
-            t => $"{t.SchemaName}.{t.Name}", t => t.ObjectId, null, null);
+            t => $"{t.SchemaName}.{t.Name}", t => t.ObjectId is null ? null : (long)t.ObjectId.Value, null, null);
 
         return comparison;
     }
@@ -91,7 +91,7 @@ public sealed class DatabaseSchemaSnapshotComparer
         IEnumerable<T> left,
         IEnumerable<T> right,
         Func<T, string> key,
-        Func<T, int?> identity,
+        Func<T, long?> identity,
         List<string>? added,
         List<string>? removed)
     {
