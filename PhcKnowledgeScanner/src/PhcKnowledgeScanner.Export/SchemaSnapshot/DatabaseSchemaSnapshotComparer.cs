@@ -36,6 +36,7 @@ public sealed class DatabaseSchemaSnapshotComparer
             var l = leftTables[key];
             var r = rightTables[key];
             CompareNativeIdentity(comparison, "table", key, l.ObjectId, r.ObjectId);
+            ComparePrimaryKeyNativeIdentity(comparison, key, l.PrimaryKey, r.PrimaryKey);
             var leftCols = l.Columns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
             var rightCols = r.Columns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
 
@@ -121,6 +122,22 @@ public sealed class DatabaseSchemaSnapshotComparer
             if (added is not null) added.Add(newValue);
             else comparison.OtherObjectChanges.Add(newValue);
         }
+    }
+
+    private static void ComparePrimaryKeyNativeIdentity(
+        SchemaSnapshotComparison comparison,
+        string tableKey,
+        SchemaPrimaryKeySnapshot? left,
+        SchemaPrimaryKeySnapshot? right)
+    {
+        if (left is null || right is null)
+        {
+            return;
+        }
+
+        var name = $"{tableKey}.{left.ConstraintName}";
+        CompareNativeIdentity(comparison, "primary_key", name, left.ObjectId, right.ObjectId);
+        CompareNativeIdentity(comparison, "primary_key_index", name, left.IndexId, right.IndexId);
     }
 
     private static void CompareNativeIdentity(

@@ -241,6 +241,8 @@ public class DatabaseSchemaSnapshotTests
         right.Tables.Single(t => t.Name == "FT").ObjectId = 120045;
         right.Tables.Single(t => t.Name == "FT").Columns[0].ObjectId = 120045;
         right.Tables.Single(t => t.Name == "FT").Columns[0].ColumnId = 1;
+        right.Tables.Single(t => t.Name == "FT").PrimaryKey!.ObjectId = 180045;
+        right.Tables.Single(t => t.Name == "FT").PrimaryKey!.IndexId = 1;
         right.Relationships[0].ObjectId = 130045;
         right.Indexes[0].ObjectId = 120045;
         right.Indexes[0].IndexId = 1;
@@ -256,6 +258,90 @@ public class DatabaseSchemaSnapshotTests
         Assert.Empty(comparison.RelationshipsRemoved);
         Assert.Empty(comparison.IndexesAdded);
         Assert.Empty(comparison.IndexesRemoved);
+    }
+
+    [Fact]
+    public void PrimaryKeys_Query_Uses_Index_IsDisabled_And_Native_Ids()
+    {
+        var sql = PhcKnowledgeScanner.Collectors.Sql.SchemaSnapshot.SchemaCatalogQueries.PrimaryKeys;
+
+        Assert.DoesNotContain("kc.is_disabled", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("i.is_disabled", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("INNER JOIN sys.indexes i", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("i.object_id = kc.parent_object_id", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("i.index_id = kc.unique_index_id", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("kc.object_id", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("i.index_id", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("WHERE kc.type = N'PK'", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ORDER BY s.name, t.name, kc.name, ic.key_ordinal", sql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void PrimaryKey_Native_Ids_RoundTrip_And_Participate_In_Hash()
+    {
+        var left = BuildFixtureSnapshot();
+        var right = BuildFixtureSnapshot();
+        var leftPk = left.Tables.Single(t => t.Name == "FT").PrimaryKey!;
+        var rightPk = right.Tables.Single(t => t.Name == "FT").PrimaryKey!;
+        leftPk.ObjectId = 901001;
+        leftPk.IndexId = 1;
+        rightPk.ObjectId = 901002;
+        rightPk.IndexId = 1;
+
+        Assert.Equal(901001, leftPk.ObjectId);
+        Assert.Equal(1, leftPk.IndexId);
+
+        var leftHash = SchemaSnapshotHasher.Compute(left);
+        var rightHash = SchemaSnapshotHasher.Compute(right);
+        Assert.NotEqual(leftHash, rightHash);
+
+        var json = JsonSerializer.Serialize(leftPk, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var reloaded = JsonSerializer.Deserialize<SchemaPrimaryKeySnapshot>(json,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        Assert.NotNull(reloaded);
+        Assert.Equal(901001, reloaded!.ObjectId);
+        Assert.Equal(1, reloaded.IndexId);
+    }
+
+    [Fact]
+    public void Comparer_Detects_PrimaryKey_Native_Id_Change_When_Both_Sides_Have_Ids()
+    {
+        var left = BuildFixtureSnapshot();
+        var right = BuildFixtureSnapshot();
+        var leftPk = left.Tables.Single(t => t.Name == "FT").PrimaryKey!;
+        var rightPk = right.Tables.Single(t => t.Name == "FT").PrimaryKey!;
+        leftPk.ObjectId = 901001;
+        leftPk.IndexId = 1;
+        rightPk.ObjectId = 901099;
+        rightPk.IndexId = 2;
+
+        var comparison = new DatabaseSchemaSnapshotComparer().Compare(left, right);
+
+        Assert.Contains(comparison.OtherObjectChanges, c =>
+            c.Contains("primary_key:dbo.FT.PK_FT:native_id 901001 -> 901099", StringComparison.Ordinal));
+        Assert.Contains(comparison.OtherObjectChanges, c =>
+            c.Contains("primary_key_index:dbo.FT.PK_FT:native_id 1 -> 2", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Legacy_PrimaryKey_Without_Native_Ids_Remains_Readable()
+    {
+        const string json = """
+        {
+          "constraintName": "PK_FT",
+          "columns": [ { "columnName": "ft", "ordinal": 1 } ],
+          "isDisabled": false
+        }
+        """;
+
+        var pk = JsonSerializer.Deserialize<SchemaPrimaryKeySnapshot>(json,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        Assert.NotNull(pk);
+        Assert.Equal("PK_FT", pk!.ConstraintName);
+        Assert.Null(pk.ObjectId);
+        Assert.Null(pk.IndexId);
+        Assert.False(pk.IsDisabled);
     }
 
     [Fact]

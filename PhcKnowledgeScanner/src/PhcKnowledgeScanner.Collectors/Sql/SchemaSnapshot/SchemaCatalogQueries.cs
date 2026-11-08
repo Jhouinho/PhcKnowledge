@@ -78,13 +78,18 @@ internal static class SchemaCatalogQueries
             kc.name AS pk_name,
             c.name AS column_name,
             ic.key_ordinal,
-            kc.is_disabled
+            i.is_disabled,
+            kc.object_id,
+            i.index_id
         FROM sys.key_constraints kc
         INNER JOIN sys.tables t ON t.object_id = kc.parent_object_id
         INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
+        INNER JOIN sys.indexes i
+            ON i.object_id = kc.parent_object_id
+           AND i.index_id = kc.unique_index_id
         INNER JOIN sys.index_columns ic
-            ON ic.object_id = kc.parent_object_id
-           AND ic.index_id = kc.unique_index_id
+            ON ic.object_id = i.object_id
+           AND ic.index_id = i.index_id
         INNER JOIN sys.columns c
             ON c.object_id = ic.object_id
            AND c.column_id = ic.column_id

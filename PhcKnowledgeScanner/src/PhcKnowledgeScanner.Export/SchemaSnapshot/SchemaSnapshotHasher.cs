@@ -23,6 +23,7 @@ public static class SchemaSnapshotHasher
                 snapshot.Manifest.OriginFingerprint,
                 snapshot.Manifest.ObjectCounts,
                 snapshot.Manifest.Classification,
+                // Inclui PrimaryKey.ObjectId/IndexId e restantes identidades nativas das tabelas.
                 Tables = snapshot.Tables,
                 Relationships = snapshot.Relationships,
                 Indexes = snapshot.Indexes,

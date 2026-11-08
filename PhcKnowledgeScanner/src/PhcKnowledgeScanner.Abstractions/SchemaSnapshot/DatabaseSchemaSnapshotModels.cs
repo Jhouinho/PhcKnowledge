@@ -118,6 +118,12 @@ public sealed class SchemaColumnSnapshot
 
 public sealed class SchemaPrimaryKeySnapshot
 {
+    /// <summary>object_id da constraint em sys.key_constraints.</summary>
+    public int? ObjectId { get; set; }
+
+    /// <summary>index_id do índice único associado em sys.indexes.</summary>
+    public int? IndexId { get; set; }
+
     public string ConstraintName { get; set; } = "";
     public List<SchemaKeyColumnSnapshot> Columns { get; set; } = [];
     public bool IsDisabled { get; set; }

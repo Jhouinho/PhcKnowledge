@@ -7,6 +7,7 @@ using PhcKnowledgeScanner.Application;
 using PhcKnowledgeScanner.Application.Services;
 using PhcKnowledgeScanner.Engine;
 using PhcKnowledgeScanner.Export.Ikp;
+using PhcKnowledgeScanner.Export.SchemaSnapshot;
 using PhcKnowledgeScanner.Workspace;
 
 var services = new ServiceCollection();
@@ -213,27 +214,7 @@ if (args[0] is "compare-schema-snapshot")
 
     var schema = provider.GetRequiredService<IDatabaseSchemaSnapshotService>();
     var comparison = await schema.CompareDirectoriesAsync(left, right);
-    Console.WriteLine($"LeftHash={comparison.LeftHash}");
-    Console.WriteLine($"RightHash={comparison.RightHash}");
-    Console.WriteLine($"Tables +{comparison.TablesAdded.Count} -{comparison.TablesRemoved.Count}");
-    Console.WriteLine($"Columns +{comparison.ColumnsAdded.Count} -{comparison.ColumnsRemoved.Count} ~{comparison.ColumnPropertyChanges.Count}");
-    Console.WriteLine($"Relationships +{comparison.RelationshipsAdded.Count} -{comparison.RelationshipsRemoved.Count}");
-    Console.WriteLine($"Indexes +{comparison.IndexesAdded.Count} -{comparison.IndexesRemoved.Count}");
-    foreach (var change in comparison.TablesAdded.Take(20))
-    {
-        Console.WriteLine("  +table " + change);
-    }
-
-    foreach (var change in comparison.TablesRemoved.Take(20))
-    {
-        Console.WriteLine("  -table " + change);
-    }
-
-    foreach (var change in comparison.ColumnPropertyChanges.Take(40))
-    {
-        Console.WriteLine($"  ~{change.TableKey}.{change.ColumnName}.{change.Property}: {change.Before} → {change.After}");
-    }
-
+    SchemaSnapshotComparisonReporter.Write(comparison, Console.Out);
     return 0;
 }
 

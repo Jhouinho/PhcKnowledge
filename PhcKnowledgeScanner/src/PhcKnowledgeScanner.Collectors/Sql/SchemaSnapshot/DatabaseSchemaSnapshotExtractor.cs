@@ -364,7 +364,13 @@ public sealed class DatabaseSchemaSnapshotExtractor
                 pk = new SchemaPrimaryKeySnapshot
                 {
                     ConstraintName = pkName,
-                    IsDisabled = !reader.IsDBNull(5) && reader.GetBoolean(5)
+                    IsDisabled = !reader.IsDBNull(5) && reader.GetBoolean(5),
+                    ObjectId = reader.IsDBNull(6)
+                        ? null
+                        : Convert.ToInt32(reader.GetValue(6), CultureInfo.InvariantCulture),
+                    IndexId = reader.IsDBNull(7)
+                        ? null
+                        : Convert.ToInt32(reader.GetValue(7), CultureInfo.InvariantCulture)
                 };
                 map[mapKey] = pk;
                 if (tables.TryGetValue(TableKey(schema, tableName), out var table))
