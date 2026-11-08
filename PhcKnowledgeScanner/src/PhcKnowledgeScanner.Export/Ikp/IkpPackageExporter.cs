@@ -23,29 +23,46 @@ public sealed class IkpPackageExporter
         Converters = { new JsonStringEnumConverter() }
     };
 
-    public async Task<IkpPackageExportResult> ExportAsync(
+    public Task<IkpPackageExportResult> ExportAsync(
         IScanWorkspace workspace,
         ScanManifest scanManifest,
         IkpOriginDescriptor origin,
         string zipPath,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(workspace);
         ArgumentNullException.ThrowIfNull(scanManifest);
+        return ExportAsync(workspace, new IkpCaptureDescriptor(
+            scanManifest.CaptureId,
+            captureDescriptor.ScannerVersion ?? "unknown",
+            scanManifest.StartedAtUtc,
+            scanManifest.FinishedAtUtc,
+            scanManifest.Mode.ToString()),
+            origin, zipPath, cancellationToken);
+    }
+
+    /// <summary>Exports a prior workspace when its original execution manifest was not retained.</summary>
+    public async Task<IkpPackageExportResult> ExportAsync(
+        IScanWorkspace workspace,
+        IkpCaptureDescriptor captureDescriptor,
+        IkpOriginDescriptor origin,
+        string zipPath,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(workspace);
+        ArgumentNullException.ThrowIfNull(captureDescriptor);
         ArgumentNullException.ThrowIfNull(origin);
         ArgumentException.ThrowIfNullOrWhiteSpace(zipPath);
 
-        if (!Guid.TryParse(scanManifest.CaptureId, out var captureGuid))
+        if (!Guid.TryParse(captureDescriptor.CaptureId, out var captureGuid))
             throw new InvalidDataException("CaptureId inválido: IKP 0.1 exige UUID.");
         if (!Guid.TryParse(workspace.CaptureId, out var workspaceCaptureGuid)
             || workspaceCaptureGuid != captureGuid)
-            throw new InvalidDataException("CaptureId do workspace não corresponde ao ScanManifest.");
+            throw new InvalidDataException("CaptureId do workspace não corresponde ao descriptor da captura.");
 
         if (string.IsNullOrWhiteSpace(origin.DatabaseName))
             throw new InvalidDataException("O nome da base de dados de origem é obrigatório para exportar IKP.");
-        if (string.IsNullOrWhiteSpace(scanManifest.ScannerVersion))
-            throw new InvalidDataException("ScannerVersion não está disponível no ScanManifest.");
-        if (scanManifest.FinishedAtUtc < scanManifest.StartedAtUtc)
+        if (captureDescriptor.StartedAtUtc.HasValue && captureDescriptor.CompletedAtUtc.HasValue
+            && captureDescriptor.CompletedAtUtc < captureDescriptor.StartedAtUtc)
             throw new InvalidDataException("O fim da captura é anterior ao seu início.");
 
         var integrity = await workspace.CheckIntegrityAsync(cancellationToken).ConfigureAwait(false);
@@ -143,7 +160,7 @@ public sealed class IkpPackageExporter
         var capabilitiesBytes = JsonSerializer.SerializeToUtf8Bytes(new
         {
             schemaVersion = "1",
-            scannerVersion = scanManifest.ScannerVersion,
+            scannerVersion = captureDescriptor.ScannerVersion,
             operations = capabilities
         }, JsonOptions);
         var coverageBytes = JsonSerializer.SerializeToUtf8Bytes(new
@@ -162,15 +179,15 @@ public sealed class IkpPackageExporter
             producer = new
             {
                 productId = "PhcKnowledgeScanner",
-                productVersion = scanManifest.ScannerVersion,
+                productVersion = typeof(IkpPackageExporter).Assembly.GetName().Version?.ToString(3) ?? "0.1.0",
                 exportTool = "PhcKnowledgeScanner.Export"
             },
             capture = new
             {
                 captureId = captureGuid.ToString("D"),
-                startedAtUtc = scanManifest.StartedAtUtc,
-                completedAtUtc = (DateTimeOffset?)scanManifest.FinishedAtUtc,
-                mode = scanManifest.Mode.ToString()
+                startedAtUtc = captureDescriptor.StartedAtUtc,
+                completedAtUtc = captureDescriptor.CompletedAtUtc,
+                mode = captureDescriptor.Mode ?? "Unknown"
             },
             origin = new
             {
@@ -409,6 +426,13 @@ public sealed class IkpPackageExporter
 
     private sealed record ChecksumFile(string Path, long ByteLength, string Sha256);
 }
+
+public sealed record IkpCaptureDescriptor(
+    string CaptureId,
+    string? ScannerVersion,
+    DateTimeOffset? StartedAtUtc,
+    DateTimeOffset? CompletedAtUtc,
+    string? Mode);
 
 public sealed record IkpOriginDescriptor(
     string DatabaseName,
