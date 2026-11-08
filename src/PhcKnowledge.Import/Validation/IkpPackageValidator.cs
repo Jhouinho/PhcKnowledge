@@ -27,12 +27,6 @@ public sealed class IkpPackageValidator
     ];
 
     private static readonly ConcurrentDictionary<string, JsonSchema> SchemaCache = new(StringComparer.Ordinal);
-    private static readonly EvaluationOptions SchemaEvaluationOptions = new()
-    {
-        OutputFormat = OutputFormat.List,
-        RequireFormatValidation = true
-    };
-
     private const int MaxArchiveEntries = 100_000;
     private const long MaxEntryBytes = 256L * 1024 * 1024;
     private const long MaxExpandedBytes = 1024L * 1024 * 1024;
@@ -202,7 +196,11 @@ public sealed class IkpPackageValidator
             return JsonSchema.FromText(schemaNode.ToJsonString());
         });
 
-        var result = schema.Evaluate(instance, SchemaEvaluationOptions);
+        var result = schema.Evaluate(instance, new EvaluationOptions
+        {
+            OutputFormat = OutputFormat.List,
+            RequireFormatValidation = true
+        });
         if (result.IsValid)
             return;
 
