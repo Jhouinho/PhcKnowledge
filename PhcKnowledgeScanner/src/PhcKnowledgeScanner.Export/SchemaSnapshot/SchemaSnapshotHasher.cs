@@ -30,6 +30,7 @@ public static class SchemaSnapshotHasher
                 {
                     v.SchemaName,
                     v.Name,
+                    v.ObjectId,
                     v.IsMsShipped,
                     v.Classification,
                     v.HasDefinitionAvailable,
@@ -39,6 +40,7 @@ public static class SchemaSnapshotHasher
                 {
                     t.SchemaName,
                     t.Name,
+                    t.ObjectId,
                     t.ParentSchema,
                     t.ParentObject,
                     t.ParentObjectType,
@@ -68,6 +70,7 @@ public static class SchemaSnapshotHasher
         {
             r.SchemaName,
             r.Name,
+            r.ObjectId,
             r.RoutineKind,
             r.ReturnType,
             r.IsMsShipped,
