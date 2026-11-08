@@ -318,6 +318,78 @@ public sealed class IkpPackageExporterTests
             Assert.Equal("Partial", historicalCapture.GetProperty("metadataStatus").GetString());
             Assert.Equal(4, historicalCapture.GetProperty("unknownFields").GetArrayLength());
             Assert.False(historicalCapture.TryGetProperty("startedAtUtc", out _));
+
+            // Coverage totals must match the persisted REL/DTL facts.
+            var mismatchedCoverage = coverages
+                .Select(x => x.OperationId == KnownOperations.PhcRel
+                    ? x with { ObservedCount = x.ObservedCount + 1 }
+                    : x)
+                .ToArray();
+            await workspace.SaveCaptureCoverageAsync(
+                captureId, capabilities, mismatchedCoverage, CancellationToken.None);
+            await Assert.ThrowsAsync<InvalidDataException>(() =>
+                new IkpPackageExporter().ExportAsync(
+                    workspace,
+                    scanManifest,
+                    new IkpOriginDescriptor("DEMO"),
+                    Path.Combine(root, "mismatched-coverage.zip"),
+                    CancellationToken.None));
+
+            await workspace.SaveCaptureCoverageAsync(
+                captureId, capabilities, coverages, CancellationToken.None);
+
+            // Unsafe relative paths are rejected before they can enter the package.
+            var traversalArtifactId = await workspace.SaveArtifactAsync(
+                "phc.customizations",
+                "../escape.prg",
+                Encoding.UTF8.GetBytes("UNSAFE PATH"),
+                "text/plain",
+                null,
+                CancellationToken.None);
+            await workspace.UpsertObjectAsync(
+                new TechnicalObjectRecord(
+                    "phc.brule:TRAVERSAL",
+                    ObjectKind.PhcUserRule,
+                    "Regra com caminho inválido",
+                    "dbo",
+                    null,
+                    "phc.customizations",
+                    traversalArtifactId,
+                    """{"source":"brule","stamp":"TRAVERSAL","tabela":"FT","inactivo":"0"}""",
+                    DateTimeOffset.UtcNow),
+                CancellationToken.None);
+            await Assert.ThrowsAsync<InvalidDataException>(() =>
+                new IkpPackageExporter().ExportAsync(
+                    workspace,
+                    scanManifest,
+                    new IkpOriginDescriptor("DEMO"),
+                    Path.Combine(root, "path-traversal.zip"),
+                    CancellationToken.None));
+
+            // Parser output must always point to a declared REL/DTL fact.
+            await workspace.UpsertDeclaredRelationInterpretationsAsync(
+            [
+                new DeclaredRelationInterpretationRecord(
+                    "rel:orphan",
+                    "test-parser-1",
+                    ExpressionParseStatus.Unsupported,
+                    InterpretationConfidence.None,
+                    null,
+                    null,
+                    0,
+                    0,
+                    0,
+                    0,
+                    DateTimeOffset.UtcNow)
+            ],
+            CancellationToken.None);
+            await Assert.ThrowsAsync<InvalidDataException>(() =>
+                new IkpPackageExporter().ExportAsync(
+                    workspace,
+                    scanManifest,
+                    new IkpOriginDescriptor("DEMO"),
+                    Path.Combine(root, "orphan-interpretation.zip"),
+                    CancellationToken.None));
         }
         finally
         {
