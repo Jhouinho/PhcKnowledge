@@ -1,0 +1,26 @@
+name: IKP package exporter validation
+
+on:
+  push:
+    branches:
+      - feature/ikp-0.1-package-exporter-20261108
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "PhcKnowledgeScanner/**"
+      - ".github/workflows/ikp-package-exporter-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Test Scanner solution
+        run: dotnet test PhcKnowledgeScanner/PhcKnowledgeScanner.sln --configuration Release
