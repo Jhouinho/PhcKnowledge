@@ -278,7 +278,7 @@ Detalhe e salvaguardas: [scanner-controlled-change-management-vision-2026-11-07.
 
 ### Fase 1 — Captura e transporte IKP
 
-<badge>Concluído</badge> **Exportador IKP 0.1 e pacote V4 real**
+**Concluído** **Exportador IKP 0.1 e pacote V4 real**
 
 O exportador foi implementado em `PhcKnowledgeScanner.Export`. A exportação é read-only: utiliza um workspace existente, não volta a ligar à base de dados PHC e não altera a captura.
 
@@ -297,7 +297,7 @@ A captura não contém campos físicos `u_*`; a identidade desses campos continu
 
 ### Fase 2 — Fundação de importação
 
-<badge color="success">CI aprovada</badge> **PR #2 — Draft, aberto e não integrado**
+**CI aprovada** **PR #2 — Draft, aberto e não integrado**
 
 PR: https://github.com/Jhouinho/PhcKnowledge/pull/2
 
