@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Json.Schema;
 using PhcKnowledge.Import.Contracts;
 
@@ -191,7 +192,13 @@ public sealed class IkpPackageValidator
             using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)
                 ?? throw new InvalidOperationException($"Schema IKP embebido não encontrado: {resourceName}");
             using var reader = new StreamReader(stream, Encoding.UTF8);
-            return JsonSchema.FromText(reader.ReadToEnd());
+            var schemaNode = JsonNode.Parse(reader.ReadToEnd())
+                ?? throw new InvalidOperationException($"Schema IKP vazio: {resourceName}");
+
+            // Large object-index arrays make generic uniqueItems comparisons expensive.
+            // The contract's unique arrays are checked below by their stable identifiers/paths.
+            RemoveUniqueItems(schemaNode);
+            return JsonSchema.FromText(schemaNode.ToJsonString());
         });
 
         var result = schema.Evaluate(instance, SchemaEvaluationOptions);
@@ -200,6 +207,21 @@ public sealed class IkpPackageValidator
 
         foreach (var failure in FlattenSchemaErrors(result))
             errors.Add($"{schemaFileName} {failure.InstanceLocation}: {failure.Message}");
+    }
+
+    private static void RemoveUniqueItems(JsonNode? node)
+    {
+        if (node is JsonObject obj)
+        {
+            obj.Remove("uniqueItems");
+            foreach (var key in obj.Select(property => property.Key).ToArray())
+                RemoveUniqueItems(obj[key]);
+        }
+        else if (node is JsonArray array)
+        {
+            foreach (var item in array)
+                RemoveUniqueItems(item);
+        }
     }
 
     private static IEnumerable<(string InstanceLocation, string Message)> FlattenSchemaErrors(EvaluationResults result)
