@@ -116,8 +116,8 @@ public sealed class IkpPackageExporterTests
             Assert.Equal(result.PackageId, manifestRoot.GetProperty("packageId").GetString());
             Assert.Equal(captureId, manifestRoot.GetProperty("capture").GetProperty("captureId").GetString());
             Assert.Equal("DEMO", manifestRoot.GetProperty("origin").GetProperty("databaseName").GetString());
-            Assert.True(manifestRoot.GetProperty("artifacts").EnumerateArray()
-                .Any(x => x.GetProperty("artifactId").GetString() == referencedArtifactId));
+            Assert.Contains(manifestRoot.GetProperty("artifacts").EnumerateArray(),
+                x => x.GetProperty("artifactId").GetString() == referencedArtifactId);
 
             using var checksumsStream = archive.GetEntry("checksums.json")!.Open();
             using var checksumsJson = await JsonDocument.ParseAsync(checksumsStream);
