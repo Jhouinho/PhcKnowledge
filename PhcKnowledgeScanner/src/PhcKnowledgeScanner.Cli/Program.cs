@@ -7,6 +7,7 @@ using PhcKnowledgeScanner.Application;
 using PhcKnowledgeScanner.Application.Services;
 using PhcKnowledgeScanner.Engine;
 using PhcKnowledgeScanner.Export.Ikp;
+using PhcKnowledgeScanner.Workspace;
 
 var services = new ServiceCollection();
 services.AddLogging(b =>
@@ -76,6 +77,45 @@ if (args[0] is "scan")
     var zip = Path.Combine(workspace, $"export-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.zip");
     await export.ExportCurrentAsync(zip);
     Console.WriteLine("ZIP: " + zip);
+    return 0;
+}
+
+if (args[0] is "export-ikp")
+{
+    var workspacePath = GetArgValue(args, "--workspace");
+    var database = GetArgValue(args, "--database");
+    var output = GetArgValue(args, "--output");
+    if (string.IsNullOrWhiteSpace(workspacePath) || string.IsNullOrWhiteSpace(database))
+    {
+        Console.WriteLine("Indicação --workspace e --database é obrigatória.");
+        return 1;
+    }
+
+    var fullWorkspacePath = Path.GetFullPath(workspacePath);
+    if (File.Exists(fullWorkspacePath) && Path.GetFileName(fullWorkspacePath).Equals("workspace.db", StringComparison.OrdinalIgnoreCase))
+        fullWorkspacePath = Path.GetDirectoryName(fullWorkspacePath)!;
+
+    await using var workspace = await SqliteScanWorkspace.OpenExistingAsync(
+        fullWorkspacePath, readOnly: true, CancellationToken.None);
+    var capture = await workspace.GetCaptureMetadataAsync();
+    if (!capture.HasCompleteCoverageMetadata || capture.CaptureId is null)
+        throw new InvalidDataException("Workspace sem CaptureId/capabilities/coverage completos; não é possível exportar IKP.");
+
+    var zipPath = string.IsNullOrWhiteSpace(output)
+        ? Path.Combine(fullWorkspacePath, $"ikp-{capture.CaptureId}.zip")
+        : output;
+    var package = await new IkpPackageExporter().ExportAsync(
+        workspace,
+        new IkpCaptureDescriptor(capture.CaptureId, null, null, null, null),
+        new IkpOriginDescriptor(DatabaseName: database),
+        zipPath);
+    Console.WriteLine("IKP 0.1 exportado a partir da captura existente: " + package.ZipPath);
+    Console.WriteLine("PackageId: " + package.PackageId);
+    Console.WriteLine("CaptureId: " + package.CaptureId);
+    Console.WriteLine("SHA-256 ZIP: " + package.ZipSha256);
+    Console.WriteLine("Logical content digest: " + package.LogicalContentDigest);
+    Console.WriteLine($"Ficheiros: {package.PackageFileCount}; artefactos payload: {package.PayloadArtifactCount}");
+    Console.WriteLine("Metadados históricos indisponíveis foram preservados como desconhecidos; workspace aberto apenas em leitura.");
     return 0;
 }
 
@@ -208,6 +248,7 @@ static void PrintHelp()
     Console.WriteLine("  test-connection --server <s> --database <db> [--auth windows|sql] [--user u] [--password p]");
     Console.WriteLine("  scan            --server <s> --database <db> [--auth windows|sql] [--user u] [--password p]");
     Console.WriteLine("  scan-ikp        --server <s> --database <db> [--auth windows|sql] [--user u] [--password p] [--output <file.zip>]");
+    Console.WriteLine("  export-ikp      --workspace <folder|workspace.db> --database <db> [--output <file.zip>]");
     Console.WriteLine("                  [--collectors id1,id2]  (ex.: phc.customizations)");
     Console.WriteLine("  schema-snapshot --server <s> --database <db> [--auth windows|sql] [--user u] [--password p]");
     Console.WriteLine("                  [--output <dir>] [--zip <file.zip>] [--include-sql-definitions]");
