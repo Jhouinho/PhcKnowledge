@@ -1,0 +1,27 @@
+```yaml
+name: Copy Release Asset
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  copy-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download workspace release
+        run: |
+          curl -fL \
+            "https://github.com/Jhouinho/PhcKnowledge/releases/download/workspace-completo-2026-11-08/workspace-completo.zip" \
+            -o workspace-completo.zip
+
+      - name: Publish as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-completo
+          path: workspace-completo.zip
+          retention-days: 7
+```
