@@ -35,6 +35,7 @@ public sealed class DatabaseSchemaSnapshotComparer
         {
             var l = leftTables[key];
             var r = rightTables[key];
+            CompareProp(comparison, key, "", "objectId", l.ObjectId?.ToString(), r.ObjectId?.ToString());
             var leftCols = l.Columns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
             var rightCols = r.Columns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
 
@@ -52,6 +53,7 @@ public sealed class DatabaseSchemaSnapshotComparer
             {
                 var lc = leftCols[col];
                 var rc = rightCols[col];
+                CompareProp(comparison, key, col, "objectId", lc.ObjectId?.ToString(), rc.ObjectId?.ToString());
                 CompareProp(comparison, key, col, "columnId", lc.ColumnId?.ToString(), rc.ColumnId?.ToString());
                 CompareProp(comparison, key, col, "sqlType", lc.SqlType, rc.SqlType);
                 CompareProp(comparison, key, col, "maxLength", lc.MaxLength?.ToString(), rc.MaxLength?.ToString());
