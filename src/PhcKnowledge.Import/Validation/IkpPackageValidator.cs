@@ -57,7 +57,10 @@ public sealed class IkpPackageValidator
 
                 if (entry.FullName.EndsWith("/", StringComparison.Ordinal))
                 {
-                    ValidateArchivePath(entry.FullName[..^1]);
+                    var directoryPath = ValidateArchivePath(entry.FullName[..^1]);
+                    if (directoryPath != "payload" &&
+                        !directoryPath.StartsWith("payload/", StringComparison.Ordinal))
+                        errors.Add($"Diretório fora da estrutura IKP permitida: {directoryPath}");
                     continue;
                 }
 
