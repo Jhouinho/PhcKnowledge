@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - feature/scanner-desktop-ikp-exe-20261108
+      - feature/scanner-desktop-auto-open-workspace-20261108
     paths:
       - 'PhcKnowledgeScanner/**'
       - '.github/workflows/publish-scanner-desktop.yml'
