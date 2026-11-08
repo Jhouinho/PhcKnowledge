@@ -104,12 +104,15 @@ O pacote pode transportar apenas um perfil ou vários. A ausência de knowledge 
 | packageId | Sim | UUID único deste pacote físico |
 | producedAtUtc | Sim | Data/hora de criação do ZIP |
 | producer.productId | Sim | Identificador do produto emissor, ex. PhcKnowledgeScanner |
-| producer.productVersion | Sim | Versão do Scanner |
+| producer.productVersion | Sim | Versão do produto/exportador que produziu este pacote; não representa necessariamente a versão do Scanner que realizou a captura |
 | producer.exportTool | Não | CLI, Desktop ou outro host |
 | capture.captureId | Sim | UUID gerado pelo Scanner no início da recolha |
-| capture.startedAtUtc | Sim | Início da recolha |
-| capture.completedAtUtc | Sim | Fim da recolha; nulo se a captura foi interrompida, quando permitido |
-| capture.mode | Sim | Modo/escopo geral da captura |
+| capture.startedAtUtc | Condicional | Início da recolha; pode ser omitido/nulo quando o manifesto original não foi preservado |
+| capture.completedAtUtc | Condicional | Fim da recolha; pode ser omitido/nulo quando desconhecido ou se a captura foi interrompida |
+| capture.mode | Sim | Modo/escopo geral; usar Unknown quando não puder ser recuperado |
+| capture.scannerVersion | Sim | Versão que realizou a captura; usar Unknown quando não puder ser recuperada |
+| capture.metadataStatus | Sim | Complete ou Partial, conforme a disponibilidade dos metadados históricos |
+| capture.unknownFields | Condicional | Lista dos campos históricos não disponíveis; não preencher com valores inferidos
 | origin.engine | Sim | Motor de origem, nesta fase sqlserver |
 | origin.databaseName | Recomendado | Nome técnico da base de dados, sujeito a política de privacidade |
 | origin.serverLabel | Opcional | Etiqueta não sensível, não necessariamente FQDN |
@@ -418,13 +421,16 @@ Não recolher dados operacionais dos clientes (faturação, clientes, documentos
 
 ### 9.3 Relações
 
-payload/relations/ preserva separadamente:
-- relações declaradas PHC REL/DTL;
-- foreign keys físicas SQL;
-- interpretações versionadas das expressões;
-- evidências e diagnósticos de resolução.
+O perfil de relações preserva factos e interpretações em ficheiros distintos:
 
-Não fundir uma relação PHC com uma FK SQL apenas porque têm os mesmos extremos. Correspondências prováveis não devem ser apresentadas como factos confirmados.
+- `payload/relations/declared-relations.json`: registos declarados PHC provenientes de REL e DTL, mantendo `sourceType`, `sourceRecordId`, tabelas de origem/destino, expressão original, metadados de auditoria, estado de resolução e correspondência;
+- `payload/relations/declared-relation-interpretations.json`: interpretações associadas por `relationId`, incluindo versão do parser, estado, confiança, AST, diagnósticos e métricas de referências.
+
+Cada ficheiro usa um envelope com `schemaVersion`, `captureId` e `records`. O primeiro é incluído quando existem factos REL/DTL ou quando a cobertura declara que a operação foi recolhida, mesmo que o resultado seja uma lista vazia. O segundo só é incluído quando existem interpretações persistidas. Os artefactos são declarados no manifesto e cobertos por checksums como qualquer outro payload.
+
+A cobertura REL/DTL deve corresponder ao número de factos persistidos por `sourceType`; divergências entre `observedCount` e os registos do workspace bloqueiam a exportação, em vez de produzirem um pacote aparentemente completo.
+
+As foreign keys físicas SQL continuam a ser evidência estrutural distinta. Não fundir uma relação PHC com uma FK SQL apenas porque têm os mesmos extremos. Correspondências prováveis não devem ser apresentadas como factos confirmados. As interpretações são derivadas, versionadas e regeneráveis; não substituem nem alteram a expressão original.
 
 ### 9.4 Conhecimento derivado
 
@@ -550,7 +556,7 @@ Lacunas principais confirmadas:
 - falta índice estruturado unificado de objetos observados;
 - falta separar de forma consistente inventário e disponibilidade individual da definição;
 - falta formalizar fingerprints de metadados e definição no contrato;
-- falta exportar REL/DTL, interpretações e projeções de forma coerente;
+- REL/DTL e interpretações são agora transportados em payloads separados e com proveniência; as projeções de conhecimento derivado continuam fora do primeiro slice;
 - os artefactos de personalizações persistidos no workspace não são todos incluídos no ZIP geral pelo caminho atual do ZipScanExporter;
 - comparador do schema snapshot não pode ser reutilizado como comparador histórico da plataforma sem cobertura;
 - alguns identificadores nativos SQL já são recolhidos, mas parte está apenas em SummaryJson e não existe contrato uniforme;

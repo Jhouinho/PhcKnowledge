@@ -54,9 +54,9 @@
       "type": "object",
       "required": [
         "captureId",
-        "startedAtUtc",
-        "completedAtUtc",
-        "mode"
+        "mode",
+        "scannerVersion",
+        "metadataStatus"
       ],
       "properties": {
         "captureId": {
@@ -64,7 +64,7 @@
           "format": "uuid"
         },
         "startedAtUtc": {
-          "type": "string",
+          "type": ["string", "null"],
           "format": "date-time"
         },
         "completedAtUtc": {
@@ -78,8 +78,21 @@
           "enum": [
             "Full",
             "Selective",
-            "ProbeOnly"
+            "ProbeOnly",
+            "Unknown"
           ]
+        },
+        "scannerVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metadataStatus": {
+          "enum": ["Complete", "Partial"]
+        },
+        "unknownFields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
         }
       },
       "additionalProperties": true
