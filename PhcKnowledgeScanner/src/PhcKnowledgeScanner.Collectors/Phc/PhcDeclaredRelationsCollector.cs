@@ -225,13 +225,17 @@ public sealed class PhcDeclaredRelationsCollector : ICollector
                     continue;
                 }
 
-                var sourceId = string.IsNullOrWhiteSpace(stamp) ? null : stamp.Trim();
-                var relationId = sourceId is not null
-                    ? $"{DeclaredRelationSourceTypes.PhcRel}:{sourceId}"
-                    : $"{DeclaredRelationSourceTypes.PhcRel}:hash:{StableHash(tori, tdes, tliga)}";
+                var relIdValue = GetObject(reader, map, "relid");
+                var sourceId = relIdValue is null || relIdValue == DBNull.Value
+                    ? null
+                    : Convert.ToString(relIdValue, CultureInfo.InvariantCulture)?.Trim();
+                var relationId = !string.IsNullOrWhiteSpace(sourceId)
+                    ? $"{DeclaredRelationSourceTypes.PhcRel}:relid:{sourceId}"
+                    : $"{DeclaredRelationSourceTypes.PhcRel}:provisional-hash:{StableHash(tori, tdes, tliga)}";
 
                 var raw = new Dictionary<string, object?>();
-                PutIfPresent(raw, "relid", GetObject(reader, map, "relid"));
+                PutIfPresent(raw, "relid", relIdValue);
+                PutIfPresent(raw, "relstamp", stamp);
                 PutIfPresent(raw, "ousrhora", GetString(reader, map, "ousrhora"));
                 PutIfPresent(raw, "usrhora", GetString(reader, map, "usrhora"));
                 PutIfPresent(raw, "camposlog", GetString(reader, map, "camposlog"));
