@@ -613,6 +613,37 @@ public sealed class ObjectIndexProjectorTests
         Assert.Contains(diagnostics, x => x.Code == "object_index_json_invalid");
     }
 
+    [Theory]
+    [InlineData(ObjectKind.View, "sql.view:dbo.vw_Demo", "vw_Demo", KnownOperations.SqlViews)]
+    [InlineData(ObjectKind.StoredProcedure, "sql.procedure:dbo.usp_Demo", "usp_Demo", KnownOperations.SqlProcedures)]
+    public void Project_Does_Not_Create_Unmaterialized_Schema_Parent_For_Sql_Modules(
+        string kind,
+        string objectId,
+        string name,
+        string operationId)
+    {
+        var record = new TechnicalObjectRecord(
+            objectId,
+            kind,
+            name,
+            "dbo",
+            null,
+            "sql.server.structure",
+            null,
+            null,
+            DateTimeOffset.UnixEpoch);
+
+        var result = new ObjectIndexProjector().Project(CreateInput([record]));
+
+        Assert.True(result.IsSuccess, string.Join("; ", result.Diagnostics.Select(x => x.Code)));
+        using var document = JsonDocument.Parse(result.JsonBytes!);
+        var item = Assert.Single(document.RootElement.GetProperty("objects").EnumerateArray());
+        Assert.Equal("dbo", item.GetProperty("schemaName").GetString());
+        Assert.False(item.TryGetProperty("parentSourceObjectId", out _));
+        Assert.DoesNotContain(result.Diagnostics, x => x.Code == "object_index_parent_unresolved");
+        Assert.Equal(operationId, item.GetProperty("operationId").GetString());
+    }
+
     private static ObjectIndexProjectionInput CreateInput(IReadOnlyList<TechnicalObjectRecord> objects) =>
         ObjectIndexProjectionInput.Success(
             new WorkspaceCaptureMetadata(
