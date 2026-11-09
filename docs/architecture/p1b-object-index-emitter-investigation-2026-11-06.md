@@ -200,3 +200,53 @@ Foi implementado `DefinitionProjectionResolver` no projeto Export. A resolução
 - `Empty` não é inferido a partir de ausência de artefacto ou coverage.
 
 O fingerprint de definição é SHA-256 dos bytes exatos do artefacto, sem normalizar cabeçalhos ou conteúdo. Testes desta lógica fazem parte dos 228 testes aprovados no GitHub Actions.
+
+---
+
+## 10. Verificação complementar — relações parent de objetos SQL (2026-11-09)
+
+### Âmbito
+
+Foi feita uma inspeção do código atual na branch `main`, incluindo os emissores SQL, a materialização de PK/FK, a classificação/identificação de tabelas, o projector e os testes existentes. Esta verificação não executou uma nova captura SQL nem alterou o workspace SQLite.
+
+### Evidência no código
+
+- `CollectViewsAsync` cria cada `TechnicalObjectRecord` com `SchemaName = schema` e `ParentObjectId = $"schema:{schema}"`.
+- `CollectProceduresAsync` faz exatamente o mesmo para `StoredProcedure`.
+- Não existe atualmente um emissor de objetos `ObjectKind.Schema` nem uma operação/capability de inventário de schemas. Embora `ObjectKind.Schema` esteja declarado, não é materializado no inventário atual.
+- `SqlKeyInventory.CreatePrimaryKey` e `CreateForeignKey` atribuem como parent `TableInventoryClassification.BuildObjectId(schema, table)`, cujo formato é `table:{schema}.{table}`. Esse formato coincide com o ID emitido por `CollectAllTablesAsync`.
+- `CollectTriggersAsync` atribui como parent a tabela no mesmo formato `table:{schema}.{table}`; a tabela é emitida pelo inventário de tabelas.
+- Os campos físicos PHC `u_*` também usam o ID da tabela recolhida como parent.
+- O projector só serializa `ParentSourceObjectId` quando encontra o ID indicado no conjunto de objetos da captura. Caso contrário, emite `object_index_parent_unresolved` e omite a referência do JSON. Este comportamento é intencional e já tem teste próprio.
+
+### Evidência na captura real analisada
+
+Na captura identificada por `CaptureId = a1f2fc33-7b0a-4c8f-b049-073a33ef7978`, o relatório de validação registou 36 diagnósticos `object_index_parent_unresolved`, associados a stored procedures cujo parent indicado é um schema não materializado. A captura analisada não continha Views; por isso, o caso das Views é uma conclusão do código, não uma ocorrência observada nessa captura.
+
+Os logs de duas execuções do projector foram iguais byte a byte e o hash do `object-index.json` coincidiu com o valor do relatório. Isto sustenta a determinística e integridade dos bytes projetados nessa validação, mas não significa que os diagnósticos semânticos estejam resolvidos.
+
+### Decisão
+
+Não introduzir objetos Schema nesta fase. A presença de `SchemaName` preserva a informação do schema sem criar uma entidade artificial. Um parent só deve ser preenchido quando o objeto-pai correspondente também é materializado no inventário.
+
+Assim:
+- Views: manter `SchemaName`; definir `ParentObjectId = null`.
+- Stored procedures: manter `SchemaName`; definir `ParentObjectId = null`.
+- Não alterar relações de triggers, PK, FK ou campos `u_*`, porque apontam para tabelas materializadas.
+- Não alterar o projector nem o contrato IKP 0.1.
+- Não criar operação/capability de schemas nem modificar SQLite.
+
+### Alteração e testes a realizar
+
+A implementação fica limitada a remover a referência `schema:{schema}` dos dois emissores. Acrescentar testes de regressão ao projector que construam uma View e uma StoredProcedure com `SchemaName` preenchido e `ParentObjectId = null`, confirmando que:
+1. o índice é projetado com sucesso;
+2. `schemaName` continua preservado;
+3. `parentSourceObjectId` não é emitido;
+4. não é produzido o diagnóstico `object_index_parent_unresolved`.
+
+Os testes existentes de parent resolvido (campo PHC → tabela) e parent não resolvido devem continuar a cobrir o comportamento geral do projector.
+
+### Estado
+
+Investigação complementar concluída. A alteração proposta não muda identidade, metadata, fingerprints, cobertura, recolha SQL, artefactos ou persistência SQLite. A implementação deve ser validada com a suite .NET e, quando disponível, com nova projeção da captura real.
+
