@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-06 |
-| Estado | Auditoria estática concluída; sem alterações funcionais |
+| Estado | Auditoria histórica concluída em 2026-11-06; decisões aplicadas posteriormente |
 | Branch analisada | `main` |
 | Âmbito | Contratos P1.B, IKP 0.1, fixture mínima, catálogo de capabilities, collectors e workspace SQLite |
 | Restrições | Sem captura real; sem alterações ao SQLite, collectors ou queries |
@@ -12,7 +12,7 @@
 
 É possível avançar com a preparação do projector e dos seus testes sem uma captura real. A inspeção estática confirmou a arquitetura de leitura proposta e o mapeamento dos 21 tipos emitidos. Contudo, encontrou divergências entre a fixture IKP 0.1 e o Scanner atual, além de limitações de coverage e de representação de definições que devem ser tratadas antes de usar a fixture como referência semântica.
 
-**Não foi alterado código, schema SQLite, collectors, queries nem fixtures.** Este documento regista os resultados para orientar a próxima etapa.
+**Não foi alterado código, schema SQLite, collectors, queries nem fixtures nesta auditoria.** Este documento regista os resultados estáticos de 2026-11-06; não representa o estado atual do projector/exportador.
 
 ## 2. Resultados confirmados
 
@@ -165,3 +165,8 @@ Decisão para o projector: na variante `sys.objects`, não projetar `inactivo`/ 
 **Limite desta investigação:** não alterar agora o collector nem os artefactos existentes. O cabeçalho textual gerado para esta variante também inclui os rótulos `estado: Activo` e `inactivo: False`; corrigir essa representação é uma alteração futura do collector e deve ser tratada separadamente, preservando a regra atual de não modificar collectors sem validação de captura real.
 
 A revisão confirmou ainda que `phc.user_field.ParentObjectId` usa `table:{schema}.{table}`, exatamente a convenção produzida por `TableInventoryClassification.BuildObjectId`; a ligação ao objeto tabela é coerente no código atual.
+
+
+## Atualização de estado — 2026-11-10
+
+As divergências e limitações aqui identificadas foram tratadas parcialmente no projector/exportador IKP e nos contratos P1. O Object Index foi validado sinteticamente para 21 kinds e com captura real para 8/21 kinds. O exportador IKP já existe. As limitações específicas de variantes e os pontos que exigem validação real mantêm-se como histórico técnico a consultar, não como lista integral de trabalho por fazer. Ver `ikp-0.1-scanner-compatibility-matrix.md`.
