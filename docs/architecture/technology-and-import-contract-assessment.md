@@ -435,11 +435,11 @@ Sem DDL nesta fase.
 
 | Risco | Impacto | Mitigação |
 | --- | --- | --- |
-| Continuar com 3 formatos de export divergentes | Importação frágil | IKP evolutivo a partir do schema snapshot (após especificação) |
+| Manter formatos de exportação legados como vias de integração permanentes | Importação frágil | IKP 0.1 como contrato canónico; ZIPs antigos apenas por conversores de legado explícitos |
 | Ausência classificada como Removed | Falsos “removidos” | Coverage + `NotObserved` no contrato |
 | ReplaceExisting na BD partilhada | Perda de histórico/anotações | Staging + publicação atómica |
 | Reintroduzir SQL direto na plataforma | Viola fronteira Scanner | Gate de arquitetura |
-| Antecipar OpenSearch / IKP detalhado / API | Complexidade precoce | Seguir sequência §10 |
+| Antecipar OpenSearch / pesquisa vetorial / API além da fatia aprovada | Complexidade precoce | Implementar Receive / Validate / Archive primeiro; evoluir por fatias |
 | Assumir knowledge DB no desktop | Divergência e “sync” indevido | Modelo centralizado §5; desktop = cliente fino |
 
 ### Decisões acordadas
@@ -459,7 +459,7 @@ Sem DDL nesta fase.
 2. **Fornecedor concreto de object storage** (quando não bastar filesystem no servidor).  
 3. Detalhe de autenticação on-prem (contas locais vs AD/OIDC) — não bloqueia a primeira fatia.  
 4. Versão concreta do SQL Server Express e validação de capacidade/limites.  
-5. Fornecedor de object storage, apenas quando filesystem local deixar de ser suficiente.
+
 
 ### Princípios técnicos assumidos (não são ADRs de implementação)
 
