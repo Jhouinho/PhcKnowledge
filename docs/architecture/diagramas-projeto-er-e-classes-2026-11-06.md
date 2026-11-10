@@ -451,7 +451,7 @@ flowchart TD
 
 ## 3. O que estes diagramas não representam
 
-- O **object-index IKP 0.1** ainda em desenho/validação. Não se deve interpretar `TechnicalObjectRecord` como se já contivesse `SourceIdentity`, `MetadataFingerprint`, `DefinitionStatus` ou `operationId` ao nível do objeto.
+- **Atualização 2026-11-10:** o Object Index IKP 0.1 está implementado no projector/exporter; `SourceIdentity`, `MetadataFingerprint`, estados individuais de definição e `operationId` são projetados no pacote, não devem ser confundidos com colunas já persistidas no `TechnicalObjectRecord` do workspace SQLite. A validação real cobriu 8/21 kinds presentes na captura `CSDefault202603`.
 - A identidade lógica multi-captura e a linhagem da plataforma. O workspace atual representa uma captura e não mantém histórico de entidades entre instalações/capturas.
 - As tabelas internas da base de dados PHC de origem. O ER é do workspace SQLite do Scanner, não do ERP PHC.
 - Todas as classes concretas, componentes visuais, configurações de DI, DTOs ou detalhes internos dos collectors.
@@ -468,3 +468,8 @@ flowchart TD
 - `PhcKnowledgeScanner/src/PhcKnowledgeScanner.Analysis/Knowledge/RelationalKnowledgeProjector.cs` e respetivo contrato.
 
 **Validação:** diagramas elaborados por inspeção estática do código atual. Não foram alterados código, schema SQLite, collectors ou dados de captura. Não foi executado build/teste nesta tarefa.
+
+
+## Atualização de estado — 2026-11-10
+
+Este diagrama descreve principalmente o workspace e os contratos do Scanner, não o modelo físico da futura plataforma central. O Object Index e o exportador IKP 0.1 já estão implementados no Scanner; o PHC Knowledge ainda não tem modelo relacional/API próprios em `src/`. Não interpretar as entidades conceptuais deste documento como tabelas já criadas na base central. A próxima implementação da plataforma é Receive / Validate / Archive.
