@@ -3,12 +3,12 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-06 |
-| Estado | **Proposta técnica consolidada para validação** |
-| Fase | P1.A — contratos; sem implementação |
+| Estado | **Contrato técnico aprovado e aplicado ao Object Index / IKP 0.1** |
+| Fase | P1.A/P1.B — contrato aplicado no Scanner; validação de cobertura completa por kind ainda parcial |
 | Âmbito | Scanner PHC, IKP 0.1 e PHC Knowledge |
 | Base | investigação P1, especificação IKP 0.1, schemas e contrato de observação/linhagem |
 
-Este documento fecha a semântica necessária para a fase P1.A. É a referência normativa para identidade, proveniência e fingerprints ao preparar o object-index. Não autoriza alterações ao workspace SQLite, recolha adicional indiscriminada, exportador IKP completo ou implementação do comparador.
+Este documento é a referência normativa para identidade, proveniência e fingerprints no Object Index / IKP 0.1. As decisões foram aplicadas no Scanner. A validação com captura real confirmou a projeção para os kinds efetivamente presentes, mas não cobre todos os 21 kinds nem a estabilidade de identidade entre capturas. Não autoriza recolha indiscriminada nem inferências de identidade fora do âmbito definido.
 
 ## 1. Decisões fundamentais
 
@@ -195,29 +195,29 @@ A plataforma é responsável por:
 
 O Scanner não recebe InstallationId como autoridade e não mantém histórico multi-captura no SQLite.
 
-## 10. Gaps e plano de fecho
+## 10. Gaps e plano de fecho — estado atualizado em 2026-11-10
 
 | Gap | Decisão | Fase |
 |---|---|---|
-| Qualidade dos IDs por família | Documentada neste contrato; validar contra os emissores reais | P1.B |
-| Schemes e scopes concretos de SourceIdentity | Inventariar apenas evidências existentes e mapear por família | P1.B |
-| Estado individual da definição | Semântica fechada neste documento | P1.B |
-| MetadataFingerprint por kind | Definir projeções canónicas apenas para kinds incluídos no primeiro índice | P1.B |
-| operationId por objeto | Construir matriz a partir do catálogo P0 e dos emissores reais | P1.B |
+| Qualidade dos IDs por família | Validada para os kinds presentes na captura real; cobertura não exaustiva dos 21 kinds | Parcial |
+| Schemes e scopes concretos de SourceIdentity | Aplicados no projector; validar famílias/kinds não presentes na captura real | Parcial |
+| Estado individual da definição | Implementado no Object Index; validação real limitada aos kinds observados | Parcial |
+| MetadataFingerprint por kind | Projeções canónicas implementadas para os kinds suportados pelo projector; validar cobertura completa | Parcial |
+| operationId por objeto | Mapping explícito implementado; confirmar famílias ainda não observadas em captura real | Parcial |
 | Operação de recolha de definição separada | Confirmar caso real; só então adicionar campo opcional ao schema | P1.B |
 | REL/DTL sem stamp | Preservar ID atual como referência sintética; não o tratar como identidade | P1.D |
 | StructuralFingerprint | Não necessário; manter separado e futuro | Posterior |
 
-## 11. Restrições desta fase
+## 11. Restrições originais da fase P1.A — histórico
 
 - Não alterar código funcional ou schemas SQLite.
 - Não alterar hashes existentes nem `SchemaSnapshotHasher`.
 - Não criar EntityIdentity ou ObservationId no Scanner.
-- Não implementar exportador IKP completo nem importador da plataforma.
+- O exportador IKP foi implementado posteriormente; o importador da plataforma continua por implementar.
 - Não recolher tabelas/campos/relações standard PHC por rotina.
 - Não inferir remoções, renomeações ou linhagem no Scanner.
-- Não declarar P1.A encerrada até a matriz de mapeamento e as políticas por kind necessárias a P1.B poderem ser construídas sem ambiguidades.
+- P1.A/P1.B estão aplicadas no código para os kinds suportados; não declarar validação exaustiva enquanto os 21 kinds e a identidade entre capturas não estiverem comprovados.
 
-## 12. Próximo passo
+## 12. Próximo passo — atualizado em 2026-11-10
 
-P1.B começa por uma inspeção dos emissores atuais e do catálogo P0 para produzir a matriz real `objectKind → observedByOperationId`, identificar quais os metadados já disponíveis por kind e definir as projeções canónicas apenas para os objetos que entram no primeiro object-index. Só depois se materializa o índice a partir do workspace e do snapshot. Não se altera o SQLite salvo se essa materialização provar uma lacuna irrecuperável.
+A etapa P1.B de inspeção e projeção foi implementada. O trabalho pendente é alargar a validação aos kinds não presentes na captura real, testar identidade entre capturas e confirmar o pacote ZIP completo emitido pelo exportador. Não alterar SQLite/collectors sem evidência concreta de lacuna.
