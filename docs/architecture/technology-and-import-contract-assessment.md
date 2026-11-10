@@ -138,7 +138,7 @@ A investigação analisa sobretudo o **ConsoleApp / Scanner V1 histórico**. As 
 | Desktop plataforma | Windows-first, SPA em WebView2 | Uma UI/lógica; evita WPF/Avalonia duplicados | Não impede evolução multiplataforma futura; Scanner mantém WPF próprio |
 | BD central | SQL Server Express | Integração natural com .NET e ecossistema PHC; base relacional central sem custo de licença da edição Express | Limites de capacidade/recursos e funcionalidades da edição devem ser validados face ao volume esperado |
 | SQLite | Workspace Scanner / cache auxiliar no cliente ou servidor | Já usado no Scanner `[código]`; auxiliar apenas | **Não** substitui SQL Server Express; desktop **não** mantém knowledge DB autónoma |
-| Pesquisa | Mecanismo nativo de SQL Server a definir após validação da edição Express | Evita introduzir um motor externo sem necessidade demonstrada | Confirmar disponibilidade/suporte de Full-Text Search na versão/instalação Express escolhida e validar idioma, ranking e indexação; OpenSearch **não** nesta fase |
+| Pesquisa | Mecanismo nativo de SQL Server a definir após validação da edição Express | Evita introduzir um motor externo sem necessidade demonstrada | SQL Server 2025 Express inclui Full-Text Search; em versões anteriores confirmar o pacote/edição de instalação. Validar idioma, ranking e indexação. SQL Server 2025 Express limita cada BD relacional a 50 GB, o motor a 4 cores e o buffer pool a 1.410 MB; dimensionar o Knowledge e manter artefactos originais fora da BD. OpenSearch **não** nesta fase |
 | Tempo real | SignalR | Nativo no stack ASP.NET | Grupos por organização/instalação `[proposta]` de detalhe |
 
 ### 4.3 Scanner e PHC Knowledge `[acordado]`
@@ -503,6 +503,16 @@ A implementação começa por uma fatia pequena e verificável. Receber/arquivar
 
 Implementar Receive / Validate / Archive na plataforma central, com testes de segurança, integridade e idempotência.
 
+
+### Nota técnica sobre SQL Server Express (validação documental — 2026-11-10)
+
+A documentação oficial do SQL Server 2025 confirma que a edição Express inclui Full-Text Search. A edição Express 2025 tem limite de 50 GB por base de dados relacional, máximo de 4 cores por instância e 1.410 MB de buffer pool. Estes limites devem ser considerados no desenho: o SQL Server guarda metadados, identidades, relações, proveniência e índices; os ZIP IKP e definições originais permanecem em arquivo de ficheiros imutável, fora da BD.
+
+Para versões anteriores a 2025, a disponibilidade de Full-Text Search depende do pacote/variante de instalação (historicamente Express with Advanced Services). A versão concreta do SQL Server Express ainda não foi fixada.
+
+Referências oficiais:
+- [SQL Server 2025 — edições e funcionalidades suportadas](https://learn.microsoft.com/en-us/sql/sql-server/editions-and-components-of-sql-server-2025?view=sql-server-ver17)
+- [SQL Server 2025 — novidades e limites da edição Express](https://learn.microsoft.com/sql/sql-server/what-s-new-in-sql-server-2025?view=sql-server-ver17)
 
 ## 11. Revisão da decisão de base de dados — 2026-11-10
 
