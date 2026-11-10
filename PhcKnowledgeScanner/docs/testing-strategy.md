@@ -1,25 +1,25 @@
-# EstratÈgia inicial de testes
+# Estrat√©gia de testes ‚Äî funda√ß√£o hist√≥rica e cobertura atual
 
 ## Objetivos nesta fase
 
-Validar a **orquestraÁ„o** e os **contratos**, n„o a recolha PHC.
+Validar a **orquestra√ß√£o** e os **contratos**, n√£o a recolha PHC.
 
-## Pir‚mide (fase 1)
+## Pir√¢mide (fase 1)
 
-| Camada | ¬mbito | Estado |
+| Camada | √Çmbito | Estado |
 | --- | --- | --- |
-| Unit·rios | `ScanEngine` (seleÁ„o, skip, probe-only, duplicados) | Implementado |
-| Unit·rios | Export ZIP (estrutura mÌnima, paths inv·lidos) | A adicionar com refinamentos |
-| Smoke | CLI `smoke` com collector fictÌcio | Implementado |
-| IntegraÁ„o SQL / PHC | LigaÁ„o real a instalaÁıes | **Adiado** ó requer collectors e ambiente |
-| Contrato de manifesto | Schema JSON est·vel | Adiado atÈ `schemaVersion` definido |
+| Unit√°rios | `ScanEngine` (sele√ß√£o, skip, probe-only, duplicados) | Implementado |
+| Unit√°rios | Export ZIP legado | Implementado; ver testes do projeto Export |\n| Unit√°rios | Export IKP 0.1 (manifesto, capabilities, coverage, Object Index, checksums e payload) | Implementado; ver `IkpPackageExporterTests` |
+| Smoke | CLI `smoke` com collector fict√≠cio | Implementado |
+| Integra√ß√£o SQL / PHC | Liga√ß√£o real a instala√ß√µes | **Adiado** ‚Äî requer collectors e ambiente |
+| Contrato IKP 0.1 | Schemas Draft 2020-12, fixtures, validador Python e testes positivos/negativos | Implementados; ver `tools/ikp-validation` e `docs/architecture/schemas/ikp-0.1` |
 
-## PrincÌpios
+## Princ√≠pios
 
 1. **Sem BD PHC** nos testes de CI desta fase.
-2. Collectors reais ser„o testados com **fixtures** em `samples/` (dados fictÌcios / dumps sanitizados).
-3. Testes de integraÁ„o com SQL sÛ com opt-in explÌcito (env var / trait), nunca por omiss„o no CI.
-4. Qualquer teste que toque ficheiros usa diretÛrios tempor·rios e limpa apÛs execuÁ„o.
+2. Collectors reais ser√£o testados com **fixtures** em `samples/` (dados fict√≠cios / dumps sanitizados).
+3. Testes de integra√ß√£o com SQL s√≥ com opt-in expl√≠cito (env var / trait), nunca por omiss√£o no CI.
+4. Qualquer teste que toque ficheiros usa diret√≥rios tempor√°rios e limpa ap√≥s execu√ß√£o.
 
 ## Comandos
 
@@ -28,8 +28,11 @@ dotnet test PhcKnowledgeScanner.sln
 dotnet run --project src/PhcKnowledgeScanner.Cli -- smoke
 ```
 
-## PrÛximos testes (apÛs validaÁ„o da arquitetura)
+## Pr√≥ximos testes ‚Äî estado em 2026-11-10
 
-- Export: manifesto presente; artefactos nos paths esperados; rejeiÁ„o de `..` em paths
-- Engine: agregaÁ„o de `Partial` / `SucceededWithWarnings`
-- Fakes de collector que simulam omiss„o de objetos e issues
+- Validar um ZIP IKP produzido pelo exportador a partir da captura PHC default real com o validador independente.
+- Alargar a valida√ß√£o real do Object Index aos kinds ainda n√£o presentes na captura (13/21), sem substituir testes sint√©ticos.
+- Testar compatibilidade/idempot√™ncia no futuro importador do PHC Knowledge; estes testes pertencem √† solu√ß√£o da plataforma, n√£o ao Scanner.
+
+
+A exist√™ncia dos testes unit√°rios e sint√©ticos do exportador n√£o equivale √† valida√ß√£o end-to-end de um ZIP IKP gerado a partir de uma captura real. Essa valida√ß√£o permanece pendente.
