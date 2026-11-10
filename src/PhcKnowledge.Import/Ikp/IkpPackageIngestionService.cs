@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using PhcKnowledge.Import.Storage;
+using PhcKnowledge.Import.Receipts;
 
 namespace PhcKnowledge.Import.Ikp;
 
@@ -14,25 +15,31 @@ public sealed class IkpPackageIngestionService
     private readonly IImmutablePackageStore _store;
     private readonly string _stagingDirectory;
     private readonly long _maxUploadBytes;
+    private readonly IPackageReceiptRepository? _receiptRepository;
 
     public IkpPackageIngestionService(
         IkpPackageValidator validator,
         IImmutablePackageStore store,
         string stagingDirectory,
-        long maxUploadBytes = 250L * 1024 * 1024)
+        long maxUploadBytes = 250L * 1024 * 1024,
+        IPackageReceiptRepository? receiptRepository = null)
     {
         _validator = validator ?? throw new ArgumentNullException(nameof(validator));
         _store = store ?? throw new ArgumentNullException(nameof(store));
         ArgumentException.ThrowIfNullOrWhiteSpace(stagingDirectory);
         _stagingDirectory = Path.GetFullPath(stagingDirectory);
         _maxUploadBytes = maxUploadBytes;
+        _receiptRepository = receiptRepository;
     }
 
     public async Task<IkpIngestionResult> ReceiveValidateArchiveAsync(
         Stream upload,
+        Guid? organizationId = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(upload);
+        if (_receiptRepository is not null && (!organizationId.HasValue || organizationId.Value == Guid.Empty))
+            throw new ArgumentException("OrganizationId é obrigatório para registar a recepção.", nameof(organizationId));
         Directory.CreateDirectory(_stagingDirectory);
         var stagedPath = Path.Combine(_stagingDirectory, $"receive-{Guid.NewGuid():N}.tmp");
         try
@@ -45,7 +52,14 @@ public sealed class IkpPackageIngestionService
                 throw new IkpPackageValidationException("O conteúdo recebido mudou entre a recepção e a validação.");
 
             var archive = await _store.ArchiveValidatedPackageAsync(stagedPath, validation, cancellationToken);
-            return new IkpIngestionResult(validation, archive);
+            PackageReceipt? receipt = null;
+            if (_receiptRepository is not null)
+            {
+                var registration = await _receiptRepository.RegisterArchivedPackageAsync(
+                    organizationId!.Value, validation, archive, cancellationToken);
+                receipt = registration.Receipt;
+            }
+            return new IkpIngestionResult(validation, archive, receipt);
         }
         finally
         {
@@ -86,4 +100,5 @@ public sealed class IkpPackageIngestionService
 
 public sealed record IkpIngestionResult(
     IkpPackageValidationResult Validation,
-    ArchivedPackage Archive);
+    ArchivedPackage Archive,
+    PackageReceipt? Receipt);
