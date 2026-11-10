@@ -7,7 +7,7 @@
 | **Âmbito** | Estudo e definição; sem alteração de código nesta etapa |
 | **Relação com** | Complementa `docs/architecture.md` (fundação de recolha já esboçada) |
 
- > Documento de conceção inicial, anterior à implementação atual. Não usar como descrição normativa do produto nem como lista de trabalho pendente sem confronto com `PROJECT-STATUS.md`, ADRs e código atual.
+> Documento de conceção inicial, anterior à implementação atual. Não usar como descrição normativa do produto nem como lista de trabalho pendente sem confronto com `PROJECT-STATUS.md`, ADRs e código atual.
 
 ---
 
