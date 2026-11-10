@@ -1,4 +1,4 @@
-name: .NET — PhcKnowledgeScanner
+name: .NET — PHC Knowledge
 
 on:
   push:
@@ -7,6 +7,8 @@ on:
       - "PhcKnowledge.sln"
       - "global.json"
       - "PhcKnowledgeScanner/**"
+      - "src/**"
+      - "tests/**"
       - "tools/ikp-validation/**"
       - ".github/workflows/dotnet-scanner.yml"
   pull_request:
@@ -14,6 +16,8 @@ on:
       - "PhcKnowledge.sln"
       - "global.json"
       - "PhcKnowledgeScanner/**"
+      - "src/**"
+      - "tests/**"
       - "tools/ikp-validation/**"
       - ".github/workflows/dotnet-scanner.yml"
 
