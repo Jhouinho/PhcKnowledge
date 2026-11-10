@@ -24,7 +24,7 @@ Legenda:
 
 ## 1. Resumo executivo
 
-**Stack acordada** `[acordado]`: .NET 10 + ASP.NET Core; React + TypeScript; SQL Server Express central; SQLite só auxiliar (workspace/cache/local); tecnologia de pesquisa textual a validar para a edição Express; tempo real com SignalR; desktop Windows-first via WebView2 da mesma SPA. OpenSearch **fora** desta fase (evolução futura permitida, sem antecipar complexidade).
+**Stack acordada** `[acordado]`: .NET 10 + ASP.NET Core; React + TypeScript; SQL Server Express central; SQLite só auxiliar (workspace/cache/local); SQL Server 2025 Express com Full-Text Search (confirmar variante se versão anterior); tempo real com SignalR; desktop Windows-first via WebView2 da mesma SPA. OpenSearch **fora** desta fase (evolução futura permitida, sem antecipar complexidade).
 
 **Fronteiras** `[acordado]`: Scanner independente produz pacotes; PHC Knowledge importa e transforma; sem runtime do Scanner na plataforma; sem recuperar Discovery/Fusion do ConsoleApp.
 
@@ -113,7 +113,7 @@ A investigação analisa sobretudo o **ConsoleApp / Scanner V1 histórico**. As 
 ### 4.1 Vista lógica `[acordado]`
 
 ```text
-┌─────────────────────┐     pacote IKP (futuro)    ┌──────────────────────────────┐
+┌─────────────────────┐     pacote IKP 0.1    ┌──────────────────────────────┐
 │ PhcKnowledgeScanner │ ─────────────────────────► │  PHC Knowledge Platform      │
 │ (independente)      │   (sem runtime partilhado)  │                              │
 │ Desktop WPF / CLI   │                            │  ASP.NET Core API (.NET 10)  │
@@ -186,7 +186,7 @@ Princípios já assumidos na avaliação (não são ainda o IKP 0.1 normativo): 
 | Backend | Node / Java | Menos alinhamento com Scanner |
 | Web | Blazor | Menos partilha natural com WebView; acoplamento UI-.NET |
 | Desktop | WPF ou Avalonia full UI | Duplicaria interface e lógica |
-| BD central | PostgreSQL ou SQLite como base central | Não selecionados para esta arquitetura; SQL Server é a decisão atual |
+| BD central | PostgreSQL ou SQLite como base central | Não selecionados para esta arquitetura; SQL Server Express é a decisão atual |
 | Pesquisa | OpenSearch já na 1.ª fatia | Complexidade sem prova de insuficiência do FTS |
 | Import | ZIP V1 histórico / união ingénua dos 3 exports | Contrato errado / envelope frágil |
 
