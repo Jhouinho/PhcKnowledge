@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Data da revisão | 2026-11-06 |
+| Data da revisão | 2026-11-10 |
 | Contrato | ikpContractVersion = 0.1 |
 | Content-Type | phc.installation.knowledge.package |
 | Transporte canónico | ZIP |
