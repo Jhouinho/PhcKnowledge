@@ -2,12 +2,12 @@
 
 | Campo | Valor |
 | --- | --- |
-| **Estado** | Proposta para validação — **não implementada** |
+| **Estado** | Proposta histórica de 2026-10-30; várias ideias foram implementadas, outras foram substituídas por decisões posteriores |
 | **Data** | 2026-10-30 |
 | **Âmbito** | Estudo e definição; sem alteração de código nesta etapa |
 | **Relação com** | Complementa `docs/architecture.md` (fundação de recolha já esboçada) |
 
-> Este documento **não** altera a solução atual. Qualquer implementação fica sujeita a validação explícita das secções 3, 9 e 11.
+ > Documento de conceção inicial, anterior à implementação atual. Não usar como descrição normativa do produto nem como lista de trabalho pendente sem confronto com `PROJECT-STATUS.md`, ADRs e código atual.
 
 ---
 
@@ -460,7 +460,7 @@ Itens já listados em `docs/open-decisions.md` (auth SQL, fail-fast, encoding, e
 | `Engine` | Núcleo de orquestração; eventos de progresso a evoluir |
 | `Export` | Continua; passa a empacotar workspace completo |
 | `Cli` | Host headless permanente (não substituído pelo Desktop) |
-| Collectors PHC | Ainda não existem — próximos após validação desta proposta **e** da ordem de entrega |
+| Collectors PHC | Implementados para as famílias atualmente suportadas; ver código e `PROJECT-STATUS.md` |
 
 Nada disto implica alterar código nesta etapa.
 
@@ -474,4 +474,4 @@ A UI comunica apenas via **Application API** (preferência: HTTP loopback + even
 
 **Alternativa** se rejeitarem dual-stack: Blazor Hybrid. **WPF/WinUI/Avalonia** como UI principal não são recomendados para o nível de visualização deste produto.
 
-**Próximo passo:** validar as decisões da secção 11. Só depois avançar para implementação (sem misturar esta etapa com código).
+**Estado atual (2026-11-10):** a aplicação foi implementada e evoluiu para WPF + CLI, com collectors reais, workspace SQLite, análise relacional e exportador IKP 0.1. Esta proposta mantém-se como registo de decisões exploratórias de 2026-10-30; a arquitetura atual é descrita por `architecture.md`, ADRs, `PROJECT-STATUS.md` e código.
