@@ -5,7 +5,7 @@
 | Data | 2026-11-06 |
 | Estado | **Documento de contexto arquitetural; semântica detalhada consolidada em P1** |
 | Âmbito | Scanner independente, IKP e PHC Knowledge |
-| Implementação | Nenhuma alteração de código nesta etapa |
+| Implementação | Documento conceptual de 2026-11-06; Scanner e exportador IKP evoluíram posteriormente |
 | Relação | Complementa `ikp-0.1-specification.md` e `collector-coverage-investigation-2026-11-06.md` |
 
 Este documento conserva o contexto arquitetural e as decisões de alto nível sobre cobertura, identidade, observações, compatibilidade entre capacidades e linhagem. A semântica normativa detalhada de identidade da origem, estados de definição e fingerprints está agora em [P1 — Contrato de identidade, proveniência e fingerprints](p1-identity-provenance-contract.md). A especificação IKP 0.1 define a serialização do pacote e referencia esse contrato.
@@ -52,7 +52,7 @@ Regras:
 - Detalhes de falhas e limitações ficam em issues associadas à operação.
 - `Removed` nunca é produzido pelo Scanner nem declarado no IKP.
 
-O Scanner atual ainda não implementa este contrato granular. `CollectorResult` é agregado por collector, `CollectionIssue` não identifica formalmente uma operação e `ProbeOnly` pode produzir `Succeeded` sem executar recolha. Estas lacunas devem ser resolvidas na evolução do Scanner.
+**Nota histórica (2026-11-06):** a frase anterior descrevia a situação observada nessa data. Desde então foram implementados no Scanner o catálogo de capabilities, coverage por operação e exportação IKP 0.1. A compatibilidade concreta e os limites remanescentes estão na [matriz atualizada](ikp-0.1-scanner-compatibility-matrix.md); não usar a descrição histórica como estado atual.
 
 ## 3. Capacidades e compatibilidade entre versões do Scanner
 
@@ -191,9 +191,9 @@ O IKP não transporta:
 - decisões históricas de correspondência/renomeação próprias da plataforma;
 - linhagem global mantida pela plataforma, salvo hints de origem expressamente definidos e não autoritativos.
 
-## 10. Sequência de trabalho após esta consolidação
+## 10. Sequência de trabalho original — histórico
 
-A investigação exploratória desta parte fica suficientemente fechada para avançar para trabalho de consolidação e desenho técnico.
+A sequência abaixo regista o plano original de 2026-11-06 e está concluída/substituída pela especificação IKP 0.1, contratos P1 e matriz de compatibilidade atual.
 
 1. Rever a especificação IKP 0.1 e incorporar os contratos deste documento, removendo contradições e identificando explicitamente o que é obrigatório/opcional.
 2. Criar exemplos JSON/fixtures de referência para manifesto, capabilities, coverage, índice de objetos, identidade de origem e linhagem/hints.
@@ -201,7 +201,7 @@ A investigação exploratória desta parte fica suficientemente fechada para ava
 4. Só depois, definir tarefas de implementação separadas:
    - Scanner: capacidades, cobertura granular, identidade de origem, índice estruturado e emissor IKP;
    - PHC Knowledge: ingestão, observações, fingerprints, histórico, comparador coverage-aware e gestão de linhagem.
-5. Não iniciar alterações de código nem implementar o importador sem instrução explícita posterior.
+5. **Concluído/substituído:** o Scanner já tem emissor IKP 0.1; a próxima implementação no Knowledge é Receive / Validate / Archive, conforme a matriz de compatibilidade.
 
 ## 11. Limites e assuntos ainda por especificar
 
@@ -216,3 +216,8 @@ Este documento fecha princípios, não todos os detalhes de serialização. Perm
 - regras de privacidade/sanitização do conteúdo exportado.
 
 Estes pontos devem ser resolvidos agrupados na revisão do contrato e nos exemplos de referência, evitando novas rondas de decisões isoladas sem artefactos concretos.
+
+
+## Estado atual — 2026-11-10
+
+A especificação IKP 0.1 e os contratos P1 são as referências atuais. O Scanner já implementa capabilities, coverage, Object Index e exportador IKP. A projeção do Object Index foi validada com uma captura PHC real; a validação end-to-end do ZIP do exportador com essa captura continua pendente. O PHC Knowledge ainda não tem API nem armazenamento central implementados. A primeira fatia é receção, validação e arquivo imutável do pacote, sem associação ou publicação.
