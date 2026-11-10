@@ -1,32 +1,37 @@
-# Âmbito funcional previsto
+# Ã‚mbito funcional previsto
 
-Lista **orientadora**, não especificação fechada. Para cada categoria: intenção, fontes candidatas e limitações conhecidas *a priori*. Fontes concretas serão confirmadas com o pack offline / dicionário PHC e com instalações reais — **sem inventar tabelas ou FKs**.
+Lista **orientadora**, nÃ£o especificaÃ§Ã£o fechada. Para cada categoria: intenÃ§Ã£o, fontes candidatas e limitaÃ§Ãµes conhecidas *a priori*. Fontes concretas serÃ£o confirmadas com o pack offline / dicionÃ¡rio PHC e com instalaÃ§Ãµes reais â€” **sem inventar tabelas ou FKs**.
 
-| # | Categoria | Fontes candidatas (a validar) | Limitações técnicas previstas |
+| # | Categoria | Fontes candidatas (a validar) | LimitaÃ§Ãµes tÃ©cnicas previstas |
 | --- | --- | --- | --- |
-| 1 | Estrutura SQL Server | Catálogos sistema (`sys.*` / `INFORMATION_SCHEMA`), metadados de objetos | Permissões; objetos encriptados; cross-DB; naming por instalação |
-| 2 | Dicionário de dados PHC | Tabelas de dicionário (ex. export `dbo.dic` no pack de conhecimento) | Diferenças por versão; custom fields; inconsistências históricas |
-| 3 | Personalizações | Tabelas/objetos de customização; código utilizador | Volume; mistura standard vs custom; identificação fiável |
-| 4 | Consultas e parâmetros | Definições de consultas / análises no ERP | Formatos proprietários; parâmetros opcionais ausentes |
-| 5 | Código XBase e SQL | Campos de código, scripts, triggers de aplicação | Encoding; tamanho; código gerado vs manual |
-| 6 | Ecrãs, componentes, eventos, regras | Metadados de UI / regras | Dependência forte da versão CS; UI Web vs Desktop |
-| 7 | Views, funções, SPs, triggers SQL | Definições SQL Server | Definicões `NULL` / encriptadas; ordem de dependências |
-| 8 | Configurações e parâmetros | Tabelas de parâmetros / ficheiros de config | Segredos; valores ambiente-específicos |
-| 9 | Dependências entre objetos | Factos `dbo.rel`/`dbo.dtl` (collector `phc.declared-relations`) + FK SQL (`sys.foreign_keys`); inferência por código fica fora desta fase | Dependências dinâmicas / string-built SQL; parser de expressões ainda não implementado |
-| 10 | Ficheiros externos, relatórios, integrações | File system, Crystal/Reporting, configs de integração | Paths locais; acessos de rede; binários grandes |
+| 1 | Estrutura SQL Server | CatÃ¡logos sistema (`sys.*` / `INFORMATION_SCHEMA`), metadados de objetos | PermissÃµes; objetos encriptados; cross-DB; naming por instalaÃ§Ã£o |
+| 2 | DicionÃ¡rio de dados PHC | Tabelas de dicionÃ¡rio (ex. export `dbo.dic` no pack de conhecimento) | DiferenÃ§as por versÃ£o; custom fields; inconsistÃªncias histÃ³ricas |
+| 3 | PersonalizaÃ§Ãµes | Tabelas/objetos de customizaÃ§Ã£o; cÃ³digo utilizador | Volume; mistura standard vs custom; identificaÃ§Ã£o fiÃ¡vel |
+| 4 | Consultas e parÃ¢metros | DefiniÃ§Ãµes de consultas / anÃ¡lises no ERP | Formatos proprietÃ¡rios; parÃ¢metros opcionais ausentes |
+| 5 | CÃ³digo XBase e SQL | Campos de cÃ³digo, scripts, triggers de aplicaÃ§Ã£o | Encoding; tamanho; cÃ³digo gerado vs manual |
+| 6 | EcrÃ£s, componentes, eventos, regras | Metadados de UI / regras | DependÃªncia forte da versÃ£o CS; UI Web vs Desktop |
+| 7 | Views, funÃ§Ãµes, SPs, triggers SQL | DefiniÃ§Ãµes SQL Server | DefinicÃµes `NULL` / encriptadas; ordem de dependÃªncias |
+| 8 | ConfiguraÃ§Ãµes e parÃ¢metros | Tabelas de parÃ¢metros / ficheiros de config | Segredos; valores ambiente-especÃ­ficos |
+| 9 | DependÃªncias entre objetos | Factos `dbo.rel`/`dbo.dtl` (collector `phc.declared-relations`) + FK SQL (`sys.foreign_keys`); inferÃªncia por cÃ³digo fica fora desta fase | DependÃªncias dinÃ¢micas / string-built SQL; parser REL/DTL determinÃ­stico V1.1 implementado, mas nÃ£o cobre todas as expressÃµes e referÃªncias |
+| 10 | Ficheiros externos, relatÃ³rios, integraÃ§Ãµes | File system, Crystal/Reporting, configs de integraÃ§Ã£o | Paths locais; acessos de rede; binÃ¡rios grandes |
 
-## Fora de âmbito (fase atual e próximas imediatamente)
+## Fora de Ã¢mbito (fase atual e prÃ³ximas imediatamente)
 
-- Construção do **modelo de conhecimento** / canonicalização
-- Alteração de bases PHC (DDL/DML de escrita)
-- Alteração do `ConsoleApp` / Scanner V1
-- UI gráfica
+- ConstruÃ§Ã£o e publicaÃ§Ã£o do **modelo de conhecimento central** (responsabilidade do PHC Knowledge)
+- AlteraÃ§Ã£o de bases PHC (DDL/DML de escrita) pelos collectors de aquisiÃ§Ã£o
+- AlteraÃ§Ã£o do `ConsoleApp` / Scanner V1
+- EdiÃ§Ã£o/publicaÃ§Ã£o controlada de objetos PHC: visÃ£o futura separada, nÃ£o faz parte dos collectors read-only
 
-## Critérios de sucesso da recolha (futuro)
+## CritÃ©rios de sucesso da recolha (futuro)
 
-Uma execução bem-sucedida deve permitir responder:
+Uma execuÃ§Ã£o bem-sucedida deve permitir responder:
 
 1. Que collectors correram e com que status?
-2. Que objectos foram omitidos e porquê?
-3. Os conteúdos exportados são byte-a-byte os originais (quando aplicável)?
-4. O ZIP é reproduzível em estrutura (não necessariamente em timestamps)?
+2. Que objectos foram omitidos e porquÃª?
+3. Os conteÃºdos exportados sÃ£o byte-a-byte os originais (quando aplicÃ¡vel)?
+4. O ZIP Ã© reproduzÃ­vel em estrutura (nÃ£o necessariamente em timestamps)?
+
+
+## Estado atual â€” 2026-11-10
+
+A lista acima Ã© orientadora e histÃ³rica, nÃ£o um backlog de capacidades todas por iniciar. O Scanner jÃ¡ implementa recolha SQL/PHC, parser REL/DTL V1.1, projeÃ§Ãµes relacionais e exportaÃ§Ã£o IKP 0.1. O estado por famÃ­lia e as limitaÃ§Ãµes atuais devem ser confirmados no cÃ³digo/ADRs e na matriz `../../docs/architecture/ikp-0.1-scanner-compatibility-matrix.md`. A plataforma central de conhecimento permanece fora do Scanner.
