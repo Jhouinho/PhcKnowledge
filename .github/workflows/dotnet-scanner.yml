@@ -7,12 +7,14 @@ on:
       - "PhcKnowledge.sln"
       - "global.json"
       - "PhcKnowledgeScanner/**"
+      - "tools/ikp-validation/**"
       - ".github/workflows/dotnet-scanner.yml"
   pull_request:
     paths:
       - "PhcKnowledge.sln"
       - "global.json"
       - "PhcKnowledgeScanner/**"
+      - "tools/ikp-validation/**"
       - ".github/workflows/dotnet-scanner.yml"
 
 permissions:
