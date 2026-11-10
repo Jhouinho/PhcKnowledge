@@ -58,7 +58,7 @@ A existência de um publisher não transforma o Scanner num executor SQL genéri
 Esta é uma visão futura para evolução do Scanner, posterior à estabilização das capacidades atuais de captura e identidade.
 
 Não altera:
-- o foco imediato em P1.B, Object Index e IKP;
+- o foco imediato em validar o pacote IKP real e implementar Receive / Validate / Archive na plataforma central; a visão de edição/publicação continua futura e separada;
 - o requisito de validar o contrato com uma captura real;
 - o princípio de que os scans e collectors atuais são read-only;
 - a fronteira da plataforma central, que continua a consumir capturas e conhecimento, não a publicar alterações nas instalações.
@@ -78,3 +78,8 @@ Antes de implementar, especificar para esse tipo:
 - como confirmar o resultado através de nova leitura.
 
 **Regra:** o Scanner poderá futuramente ajudar a corrigir e publicar personalizações PHC, mas apenas através de operações explícitas, validadas, auditáveis e suportadas por tipo de objeto.
+
+
+## Atualização de estado — 2026-11-10
+
+Esta visão continua futura e não altera a primeira fatia do PHC Knowledge. O Scanner mantém os collectors de aquisição em read-only; qualquer futura edição/publicação terá de ser um fluxo separado, com evidência original imutável, validação, aprovação e auditoria. Não faz parte do exportador IKP nem do importador Receive / Validate / Archive.
