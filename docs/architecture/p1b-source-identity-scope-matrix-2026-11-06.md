@@ -124,5 +124,6 @@ A extração de `operationId` continua a ser uma preocupação separada: o regis
 - Funções `sys.objects`, PK/FK, módulos SQL e database continuam sem SourceIdentity, por falta de identidade nativa com scope suficiente.
 - Testes unitários do resolver: aprovados no GitHub Actions.
 - Alterações ao schema SQLite e aos collectors: nenhuma; novas consultas à base PHC: nenhuma.
-- Validação de unicidade dos stamps e dos scopes em dados reais: pendente.
-- Próximo passo: integrar a projeção no projector e avançar para metadata/definition, mantendo a validação final dependente de captura real.
+- Captura real `CSDefault202603`: projeção confirmada para os kinds presentes; 8/21 kinds mapeados foram observados.
+- Unicidade e estabilidade de identidade entre capturas não ficam demonstradas por uma única captura.
+- Próximo passo: testar estabilidade entre capturas e validar kinds não observados, sem recolha adicional até existir necessidade demonstrada.
