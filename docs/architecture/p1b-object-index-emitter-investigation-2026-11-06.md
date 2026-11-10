@@ -236,17 +236,18 @@ Assim:
 - Não alterar o projector nem o contrato IKP 0.1.
 - Não criar operação/capability de schemas nem modificar SQLite.
 
-### Alteração e testes a realizar
+### Implementação e validação — 2026-11-09
 
-A implementação fica limitada a remover a referência `schema:{schema}` dos dois emissores. Acrescentar testes de regressão ao projector que construam uma View e uma StoredProcedure com `SchemaName` preenchido e `ParentObjectId = null`, confirmando que:
-1. o índice é projetado com sucesso;
-2. `schemaName` continua preservado;
-3. `parentSourceObjectId` não é emitido;
-4. não é produzido o diagnóstico `object_index_parent_unresolved`.
+A correção foi implementada em `SqlServerStructureCollector.cs`:
 
-Os testes existentes de parent resolvido (campo PHC → tabela) e parent não resolvido devem continuar a cobrir o comportamento geral do projector.
+- `CollectViewsAsync`: mantém `SchemaName` e emite `ParentObjectId = null`.
+- `CollectProceduresAsync`: mantém `SchemaName` e emite `ParentObjectId = null`.
+- Não foram alterados triggers, PK, FK, campos PHC, projector, contrato IKP ou SQLite.
 
-### Estado
+Foi acrescentado o teste parametrizado `Project_Does_Not_Create_Unmaterialized_Schema_Parent_For_Sql_Modules`, cobrindo View e StoredProcedure. Confirma projeção bem-sucedida, preservação de `schemaName`, ausência de `parentSourceObjectId` e ausência do diagnóstico `object_index_parent_unresolved`. Mantêm-se os testes gerais de parent resolvido e não resolvido.
 
-Investigação complementar concluída. A alteração proposta não muda identidade, metadata, fingerprints, cobertura, recolha SQL, artefactos ou persistência SQLite. A implementação deve ser validada com a suite .NET e, quando disponível, com nova projeção da captura real.
+### Estado da validação
 
+O workflow GitHub Actions **141** (run `42679586394`) terminou com sucesso. O job `build-and-test` concluiu com sucesso as etapas Restore, Build, Test e validação do índice gerado contra o JSON Schema IKP 0.1.
+
+A correção está, portanto, validada por build, testes automatizados e contrato. Continua pendente a validação de regressão com uma nova projeção do workspace SQLite e dos artefactos da captura real. Essa validação não deve ser simulada nem substituída por dados inventados.
