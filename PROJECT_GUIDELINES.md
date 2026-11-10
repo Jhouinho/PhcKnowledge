@@ -140,4 +140,6 @@ Não avançar automaticamente para a fase seguinte sem validação conjunta.
 
 ## Próxima etapa prevista
 
-O contrato IKP 0.1 já dispõe de schemas, fixture verificável, validador e testes positivos/negativos. A próxima etapa é implementar gradualmente no PhcKnowledgeScanner (neste monorepo) a identificação da captura, capabilities, cobertura por operação e índice de objetos. Depois, evoluir a exportação para IKP e preparar a importação na plataforma, preservando a separação funcional entre Scanner e Knowledge.
+O Scanner já implementa a exportação IKP 0.1 (comandos CLI scan-ikp e export-ikp), incluindo manifesto, capabilities, coverage, Object Index, checksums e payloads suportados. O contrato dispõe de schemas, fixtures, validador e testes.
+
+A próxima etapa é implementar no núcleo PHC Knowledge a primeira fatia de ingestão: receber o ZIP, validar estrutura/segurança/integridade e arquivar o pacote original de forma imutável, registando o resultado no SQL Server Express. Não associar automaticamente a instalação nem publicar conhecimento nesta primeira fatia. Validar depois o fluxo com um IKP produzido a partir da captura PHC default já existente.
