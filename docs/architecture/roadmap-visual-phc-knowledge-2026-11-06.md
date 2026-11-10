@@ -42,8 +42,8 @@ flowchart TB
       B2["Object-index<br/>MetadataFingerprint / DefinitionFingerprint"]
       B3["Cobertura e estados individuais<br/>Ausente ≠ vazio ≠ não recolhido"]
       B4["Validação sintética do Object Index<br/>21 kinds + JSON Schema oficial"]
-      B5["Exportador IKP completo<br/>5 documentos + payload + checksums"]
-      B6["Validação round-trip<br/>ZIP → extração → validador oficial"]
+      B5["Exportador IKP 0.1<br/>Implementado no Scanner"]
+      B6["Validação do ZIP real<br/>Exportador → validador independente"]
       B7["Validação com captura real<br/>Demo standard → instalação personalizada"]
       B1 --> B2
       B2 --> B3
@@ -52,7 +52,7 @@ flowchart TB
 
     subgraph P2["FASE 2 — Plataforma central"]
       C1["Registo de instalações"]
-      C2["Importação IKP<br/>Validação, integridade e ingestão"]
+      C2["Receive / Validate / Archive<br/>Receção, segurança, integridade e arquivo"]
       C3["Armazenamento de capturas<br/>Histórico imutável"]
       C1 --> C2 --> C3
     end
@@ -85,7 +85,8 @@ flowchart TB
 
     class A1,A2,A3 done
     class B1,B2,B3,B4 done
-    class B5,B6,B7 validation
+    class B5 done
+    class B6,B7 validation
     class C1,C2,C3,D1,D2,D3,D4,D5,E1,E2,E3,E4 pending
 ```
 
