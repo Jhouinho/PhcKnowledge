@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-06 |
-| Estado | **Investigação concluída — aguarda revisão; sem implementação** |
+| Estado | **Investigação histórica concluída (2026-11-06); decisões aplicadas posteriormente no contrato P1 e no Scanner** |
 | Âmbito | `PhcKnowledgeScanner/` no monorepo PhcKnowledge |
 | Relação | Complementa `observation-identity-and-lineage-contract.md`, `ikp-0.1-specification.md`, schemas `object-index` / `fingerprint`, matriz IKP |
 
@@ -289,8 +289,8 @@ Captura:    CaptureId = UUID no ScanManifest / scan_meta
 
 ## Conclusão
 
-O Scanner já tem **chaves de observação por captura**, **artefactos com SHA-256**, **stamps PHC**, **object_id SQL pontual em JSON**, **coverage P0** e um **comparer de snapshot por nome**. Falta a camada explícita SourceIdentity / fingerprints por objeto / object-index / operationId por objeto, e o workspace **não** é repositório histórico.
+O Scanner já tem **chaves de observação por captura**, **artefactos com SHA-256**, **stamps PHC**, **object_id SQL pontual em JSON**, **coverage P0** e um **comparer de snapshot por nome**. Na data da investigação faltava a camada explícita SourceIdentity / fingerprints por objeto / object-index / operationId por objeto. Estas capacidades foram implementadas posteriormente no projector/exportador IKP. O workspace continua a não ser repositório histórico.
 
 A evolução mínima é **mapear e enriquecer na serialização IKP** o que já está no workspace e no snapshot, calculando MetadataFingerprint e DefinitionFingerprint sem redesign do SQLite — e deixar EntityIdentity, ObservationId persistente, Removed e rename candidates para a plataforma.
 
-**Sem implementação nesta tarefa.** Aguarda revisão antes de P1.A–E.
+**Atualização 2026-11-10:** a evolução descrita foi aplicada no contrato P1 e no exportador IKP. A validação real cobriu 8/21 kinds da captura default; não demonstra cobertura universal nem identidade estável entre capturas. Consultar `p1-identity-provenance-contract.md` e `ikp-0.1-scanner-compatibility-matrix.md` para o estado atual.
