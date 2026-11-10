@@ -6,6 +6,7 @@ on:
     paths:
       - "PhcKnowledge.sln"
       - "global.json"
+      - ".gitattributes"
       - "PhcKnowledgeScanner/**"
       - "src/**"
       - "tests/**"
@@ -15,6 +16,7 @@ on:
     paths:
       - "PhcKnowledge.sln"
       - "global.json"
+      - ".gitattributes"
       - "PhcKnowledgeScanner/**"
       - "src/**"
       - "tests/**"
