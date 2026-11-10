@@ -121,8 +121,18 @@ public sealed class IkpPackageValidator
         foreach (var entry in archive.Entries)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var name = NormalizeSafePath(entry.FullName);
-            if (entry.FullName.EndsWith("/", StringComparison.Ordinal)) continue;
+            var isDirectory = entry.FullName.EndsWith("/", StringComparison.Ordinal);
+            var rawName = isDirectory ? entry.FullName[..^1] : entry.FullName;
+            var name = NormalizeSafePath(rawName);
+            if (isDirectory)
+            {
+                var directoryPath = Path.GetFullPath(Path.Combine(root, name.Replace('/', Path.DirectorySeparatorChar)));
+                var directoryPrefix = Path.GetFullPath(root) + Path.DirectorySeparatorChar;
+                if (!directoryPath.StartsWith(directoryPrefix, StringComparison.OrdinalIgnoreCase))
+                    throw new IkpPackageValidationException($"Directório ZIP fora da pasta temporária: {name}");
+                Directory.CreateDirectory(directoryPath);
+                continue;
+            }
             if (!names.Add(name) || !folded.Add(name))
                 throw new IkpPackageValidationException($"Entrada ZIP duplicada ou com colisão de maiúsculas/minúsculas: {name}");
             if ((entry.ExternalAttributes >> 16 & 0xF000) == 0xA000)
@@ -301,6 +311,8 @@ public sealed class IkpPackageValidator
         foreach (var operation in capabilities.GetProperty("operations").EnumerateArray())
             if (!ids.Add(operation.GetProperty("operationId").GetString()!))
                 throw new IkpPackageValidationException("operationId duplicado em capabilities.");
+            if (!operation.TryGetProperty("supported", out var supported) || supported.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                throw new IkpPackageValidationException("Capability sem indicador supported válido.");
         return ids;
     }
 
