@@ -470,14 +470,14 @@ Sem DDL nesta fase.
 
 ## 10. Sequência de trabalho acordada `[acordado]`
 
-1. ~~Consolidar stack/fronteiras.~~ **Concluído.**  
-2. ~~Fechar modelo de utilização.~~ **Concluído** — centralizado (§5).  
-3. ~~Especificar IKP 0.1 (documento).~~ **Contrato consolidado** — [`ikp-0.1-specification.md`](ikp-0.1-specification.md).  
-4. **Comparar** em profundidade com exports reais e concluir tarefas de implementação.  
-5. **Consolidar lacunas** após validação.  
-6. **Só depois** fixtures e esboço de API de importação.
+1. ~~Consolidar stack/fronteiras e modelo de utilização.~~ **Concluído.**
+2. ~~Consolidar contrato IKP 0.1, schemas, fixtures e validador.~~ **Concluído.**
+3. ~~Implementar no Scanner a captura, capabilities, coverage, Object Index e exportador IKP.~~ **Implementado no código; falta validação end-to-end com captura PHC real.**
+4. **Implementar a primeira fatia da plataforma:** receção HTTP, validação estrutural e de segurança, integridade e arquivo imutável do ZIP IKP, com registo no SQL Server Express.
+5. Validar a primeira fatia com pacotes válidos e negativos e, depois, com o pacote produzido pela captura PHC default existente.
+6. Só numa etapa posterior: associação guiada à instalação, materialização de observações, comparação multi-captura e publicação.
 
-Não implementar código nesta fase. A existência da especificação **não** implica aprovação.
+A implementação começa por uma fatia pequena e verificável. Receber/arquivar um pacote não equivale a publicar conhecimento.
 
 ---
 
@@ -485,21 +485,23 @@ Não implementar código nesta fase. A existência da especificação **não** i
 
 ### Coerência
 
-- Stack, fronteiras e utilização centralizada **acordados**.  
-- IKP 0.1 consolidado documentalmente; a emissão nativa e importação continuam por implementar.  
-- Sem alterações de código / Scanner.
+- Stack, fronteiras e utilização centralizada **acordados**.
+- SQL Server Express escolhido para a base central; versão concreta e dimensionamento ainda por fechar.
+- Scanner já contém exportador IKP 0.1 e integração na CLI.
+- Plataforma central ainda não tem projetos em src/ nem testes próprios.
 
-### Lacunas / contradições (mantidas)
+### Lacunas / validações
 
 | Item | Nota |
 | --- | --- |
-| Scanner não emite IKP | Três exports legados; ver IKP §12 |
-| `InstallationId` = `server/database` no ZIP scan | Contradiz IDs de plataforma |
-| Comparador schema → Removed sem coverage | Incompatível com regra NotObserved |
+| IKP real | Falta validar pacote produzido a partir de captura PHC real com o validador independente |
+| Ingestão Knowledge | Ainda não existe endpoint, validação de ZIP, arquivo imutável ou registo SQL |
+| Associação/publicação | Pertencem a etapas posteriores; não entram na primeira fatia |
+| Comparação | Não implementar remoções sem cobertura compatível e completa |
 
 ### Próximo passo recomendado
 
-Concluir fixtures e matriz de compatibilidade; depois preparar tarefas de implementação por componente.
+Implementar Receive / Validate / Archive na plataforma central, com testes de segurança, integridade e idempotência.
 
 
 ## 11. Revisão da decisão de base de dados — 2026-11-10
