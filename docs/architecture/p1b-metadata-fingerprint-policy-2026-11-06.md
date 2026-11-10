@@ -1,6 +1,6 @@
 # P1.B — Política de MetadataFingerprint por ObjectKind
 **Data:** 2026-11-06  
-**Estado:** política documentada; projeção semântica implementada; canonicalização/hash ainda não implementados  
+**Estado em 2026-11-10:** política aplicada no projector; canonicalização e SHA-256 implementados e testados; validação real parcial  
 **Âmbito:** primeiro `object-index.json` IKP 0.1
 
 ## 1. Objetivo
@@ -131,6 +131,6 @@ Casos de regressão prioritários:
 - Normalização de atividade: reconhece apenas valores explícitos; valores desconhecidos preservam o bruto e impedem fingerprint.
 - `CanonicalJsonSerializer` e `MetadataFingerprintCalculator`: implementados e testados no GitHub Actions. O canonicalizador segue a ordenação/serialização canónica necessária para os tipos efetivamente presentes nas projeções atuais (strings, booleanos, null, arrays, objetos e inteiros seguros); rejeita outros números em vez de produzir um fingerprint ambíguo.
 - Alterações ao SQLite, schema IKP ou collectors: nenhuma.
-- Validação com workspace real: pendente de acesso a uma captura (SQLite + artefactos).
+- Validação com captura real `CSDefault202603`: efetuada para os kinds presentes (8/21); não valida os restantes kinds nem estabilidade entre capturas.
 
-Próximo passo recomendado: implementar canonicalização e cálculo SHA-256 sobre `FingerprintProjection`, com testes de estabilidade/invariância, antes de integrar os resultados no projector end-to-end.
+A canonicalização, cálculo SHA-256 e integração no projector foram implementados posteriormente. Próximo passo: alargar a validação a kinds não presentes na captura real e testar estabilidade entre capturas. Não alterar SQLite/collectors sem evidência concreta.
