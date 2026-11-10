@@ -1,28 +1,27 @@
-# Arquitetura ó PhcKnowledgeScanner
+# Arquitetura ‚Äî PhcKnowledgeScanner
 
-**Estado:** proposta de fundaÁ„o (fase 1), parcialmente materializada em cÛdigo.  
-**Fora de ‚mbito nesta fase:** collectors PHC reais, modelo de conhecimento, escrita em BD PHC.
+**Estado em 2026-11-10:** documento de arquitetura inicial/hist√≥rico; a aplica√ß√£o descrita evoluiu substancialmente. A arquitetura execut√°vel atual deve ser lida em conjunto com `PROJECT-STATUS.md`, ADRs e c√≥digo. O Scanner tem collectors SQL/PHC, desktop WPF, CLI, workspace SQLite, an√°lise relacional e exportador IKP 0.1.
 
-## Vis„o
+## Vis√£o
 
 ```text
                     +--------------------------+
-                    ¶  PhcKnowledgeScanner.Cli ¶  EXE / args / config local
+                    ¬¶  PhcKnowledgeScanner.Cli ¬¶  EXE / args / config local
                     +--------------------------+
-                                 ¶
+                                 ¬¶
                     +------------?-------------+
-                    ¶  PhcKnowledgeScanner.Engine ¶  seleÁ„o + probe + execuÁ„o
+                    ¬¶  PhcKnowledgeScanner.Engine ¬¶  sele√ß√£o + probe + execu√ß√£o
                     +--------------------------+
-                                 ¶  ICollector
+                                 ¬¶  ICollector
               +------------------+------------------+
               ?                  ?                  ?
      [Collector A]        [Collector B]      [Collector N]
      (futuro)             (futuro)           (futuro)
-              ¶                  ¶                  ¶
+              ¬¶                  ¬¶                  ¬¶
               +------------------+------------------+
                                  ?
                     +----------------------------+
-                    ¶ PhcKnowledgeScanner.Export ¶  ZIP + manifest.json
+                    ¬¶ PhcKnowledgeScanner.Export ¬¶  ZIP + manifest.json
                     +----------------------------+
 ```
 
@@ -30,42 +29,42 @@ Os contratos partilhados vivem em `PhcKnowledgeScanner.Abstractions`.
 
 ## Projetos e responsabilidades
 
-| Projeto | Responsabilidade | N„o faz |
+| Projeto | Responsabilidade | N√£o faz |
 | --- | --- | --- |
-| **Abstractions** | `ICollector`, `ScanContext`, artefactos, issues, manifesto | SQL, IO de instalaÁ„o, packing |
-| **Engine** | Registo/seleÁ„o de collectors, probe, execuÁ„o, captura de falhas | Conhecer schema PHC |
-| **Export** | Empacotar manifesto + artefactos em ZIP estruturado | Interpretar conte˙do PHC |
-| **Cli** | Host EXE, argumentos, wiring de collectors | LÛgica de domÌnio de recolha |
-| **Collectors.\*** *(futuro)* | Um mÛdulo por famÌlia de fontes (SQL, dic, cÛdigo, UI, Ö) | OrquestraÁ„o global |
+| **Abstractions** | `ICollector`, `ScanContext`, artefactos, issues, manifesto | SQL, IO de instala√ß√£o, packing |
+| **Engine** | Registo/sele√ß√£o de collectors, probe, execu√ß√£o, captura de falhas | Conhecer schema PHC |
+| **Export** | Empacotar manifesto + artefactos em ZIP estruturado | Interpretar conte√∫do PHC |
+| **Cli** | Host EXE, argumentos, wiring de collectors | L√≥gica de dom√≠nio de recolha |
+| **Collectors.\*** *(futuro)* | Um m√≥dulo por fam√≠lia de fontes (SQL, dic, c√≥digo, UI, ‚Ä¶) | Orquestra√ß√£o global |
 
-### Porque n„o copiar a granularidade do Scanner V1
+### Porque n√£o copiar a granularidade do Scanner V1
 
 O Scanner V1 (`ConsoleApp`) evoluiu para muitos projetos `Sources.*` / testes espelhados. Para o V2 preferimos:
 
-1. ComeÁar com **poucos projetos com responsabilidade clara**.
-2. Extrair `PhcKnowledgeScanner.Collectors.<¡rea>` **sÛ quando** uma ·rea tiver API, dependÍncias ou ciclo de vida prÛprios.
-3. Evitar project references cruzadas e ìcamadasî sem entreg·vel.
+1. Come√ßar com **poucos projetos com responsabilidade clara**.
+2. Extrair `PhcKnowledgeScanner.Collectors.<√Årea>` **s√≥ quando** uma √°rea tiver API, depend√™ncias ou ciclo de vida pr√≥prios.
+3. Evitar project references cruzadas e ‚Äúcamadas‚Äù sem entreg√°vel.
 
-Isto È uma **decis„o de arranque** (ver ADR 0002). Pode ser revista apÛs o primeiro collector real.
+Isto √© uma **decis√£o de arranque** (ver ADR 0002). Pode ser revista ap√≥s o primeiro collector real.
 
 ## Extensibilidade de collectors
 
 Cada collector:
 
-1. Expıe `Id` est·vel e `DisplayName`.
+1. Exp√µe `Id` est√°vel e `DisplayName`.
 2. Implementa `ProbeAsync` (disponibilidade sem efeitos laterais).
 3. Implementa `CollectAsync` (leitura; produz `CollectedArtifact` + `CollectionIssue`).
-4. Nunca assume que um objeto existe em todas as instalaÁıes ó reporta omiss„o.
+4. Nunca assume que um objeto existe em todas as instala√ß√µes ‚Äî reporta omiss√£o.
 
 O Engine:
 
 - Corre **full**, **selective** ou **probe-only**.
-- Trata exceÁıes n„o capturadas pelo collector como `Failed` no manifesto (sem abortar silenciosamente o resto, nesta vers„o inicial).
-- N„o trunca conte˙dos; o artefacto transporta bytes completos.
+- Trata exce√ß√µes n√£o capturadas pelo collector como `Failed` no manifesto (sem abortar silenciosamente o resto, nesta vers√£o inicial).
+- N√£o trunca conte√∫dos; o artefacto transporta bytes completos.
 
-> **Sugest„o ainda n„o validada:** polÌtica de ìcontinuar apÛs falhaî vs ìfail-fastî configur·vel. Ver `open-decisions.md`.
+> **Sugest√£o ainda n√£o validada:** pol√≠tica de ‚Äúcontinuar ap√≥s falha‚Äù vs ‚Äúfail-fast‚Äù configur√°vel. Ver `open-decisions.md`.
 
-## Formato de exportaÁ„o (rascunho)
+## Formato de exporta√ß√£o inicial ‚Äî hist√≥rico
 
 ```text
 scan.zip
@@ -76,34 +75,39 @@ scan.zip
       ... artefactos com RelativePath ...
 ```
 
-O `manifest.json` lista status, duraÁ„o, issues e metadados dos artefactos (incluindo tamanho em bytes). Refinamento do schema JSON fica para quando existirem collectors reais.
+Este formato descreve o primeiro ZIP legado e n√£o √© o contrato de interc√¢mbio atual. O Scanner mant√©m esse exportador por compatibilidade, mas para integra√ß√£o com PHC Knowledge emite IKP 0.1, definido em `../../docs/architecture/ikp-0.1-specification.md` e implementado em `PhcKnowledgeScanner.Export`.
 
-## PrincÌpios tÈcnicos obrigatÛrios
+## Princ√≠pios t√©cnicos obrigat√≥rios
 
-1. **Read-only** face ‡ instalaÁ„o PHC (salvo decis„o explÌcita futura e documentada).
-2. **PreservaÁ„o do original** ó sem normalizaÁ„o destrutiva nesta ferramenta.
-3. **Sem truncagem silenciosa** ó se houver limites, devem ser erros/avisos explÌcitos.
-4. **Invent·rio de cobertura** ó manifesto distingue sucesso, parcial, skip e falha.
-5. **IndependÍncia** ó zero dependÍncia de projetos `ConsoleApp` / Scanner V1.
+1. **Read-only** face √† instala√ß√£o PHC (salvo decis√£o expl√≠cita futura e documentada).
+2. **Preserva√ß√£o do original** ‚Äî sem normaliza√ß√£o destrutiva nesta ferramenta.
+3. **Sem truncagem silenciosa** ‚Äî se houver limites, devem ser erros/avisos expl√≠citos.
+4. **Invent√°rio de cobertura** ‚Äî manifesto distingue sucesso, parcial, skip e falha.
+5. **Independ√™ncia** ‚Äî zero depend√™ncia de projetos `ConsoleApp` / Scanner V1.
 
 ## Riscos conhecidos
 
-| Risco | Impacto | MitigaÁ„o inicial |
+| Risco | Impacto | Mitiga√ß√£o inicial |
 | --- | --- | --- |
-| Heterogeneidade de versıes PHC | Collectors partem em instalaÁıes reais | Probe + issues; sem schema universal hardcoded |
-| Objetos homÛnimos com implementaÁıes diferentes | Confus„o no consumo futuro | Guardar conte˙do + metadados de origem (vers„o, object id, timestamps quando existirem) |
-| Volume de cÛdigo/BLOB | ZIP/memÛria | Decis„o pendente sobre streaming para disco antes do ZIP |
-| Credenciais SQL | SeguranÁa | Config local ignorada no Git; sem secrets no repositÛrio |
-| TentaÁ„o de reutilizar Scanner V1 | Acoplamento | ProibiÁ„o explÌcita de project reference; sÛ consulta documental |
+| Heterogeneidade de vers√µes PHC | Collectors partem em instala√ß√µes reais | Probe + issues; sem schema universal hardcoded |
+| Objetos hom√≥nimos com implementa√ß√µes diferentes | Confus√£o no consumo futuro | Guardar conte√∫do + metadados de origem (vers√£o, object id, timestamps quando existirem) |
+| Volume de c√≥digo/BLOB | ZIP/mem√≥ria | Decis√£o pendente sobre streaming para disco antes do ZIP |
+| Credenciais SQL | Seguran√ßa | Config local ignorada no Git; sem secrets no reposit√≥rio |
+| Tenta√ß√£o de reutilizar Scanner V1 | Acoplamento | Proibi√ß√£o expl√≠cita de project reference; s√≥ consulta documental |
 
-## O que est· implementado vs proposto
+## O que est√° implementado vs proposto
 
 | Elemento | Estado |
 | --- | --- |
 | Contratos `ICollector` / manifesto / artefactos | **Implementado (esqueleto)** |
-| `ScanEngine` (seleÁ„o / probe / execuÁ„o) | **Implementado (sem PHC)** |
-| `ZipScanExporter` | **Implementado (mÌnimo)** |
+| `ScanEngine` (sele√ß√£o / probe / execu√ß√£o) | **Implementado (sem PHC)** |
+| `ZipScanExporter` | **Implementado (m√≠nimo)** |
 | CLI help / version / smoke | **Implementado** |
-| Collectors PHC | **N„o iniciado** ó aguarda validaÁ„o da arquitetura |
-| Schema final do ZIP / manifest | **Proposto** |
+| Collectors PHC | **Implementados** para as fam√≠lias atualmente suportadas |
+| Schema IKP 0.1 | **Definido e implementado**; ZIP legado mant√©m formato pr√≥prio |
 | DI / System.CommandLine / Spectre | **Em aberto** |
+
+
+## Atualiza√ß√£o ‚Äî 2026-11-10
+
+Esta arquitetura de arranque n√£o √© a descri√ß√£o completa do sistema atual. O Scanner atual inclui WPF, CLI, collectors reais, SQLite, rela√ß√µes REL/DTL, an√°lise derivada, Object Index e exportador IKP 0.1. O PHC Knowledge √© uma plataforma separada no mesmo monorepo; n√£o √© host do Scanner nem depend√™ncia runtime. Ver `../PROJECT-STATUS.md` (estado do Scanner) e `../../docs/architecture/ikp-0.1-specification.md` (contrato de transfer√™ncia).
