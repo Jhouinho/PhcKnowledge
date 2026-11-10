@@ -1,7 +1,7 @@
 # Matriz de compatibilidade — IKP 0.1 e Scanner atual
 
 Data: 2026-11-10  
-Estado: P0 e P1 implementados; exportador IKP 0.1 implementado e integrado na CLI; validação com captura real e importação na plataforma ainda pendentes.
+Estado: P0 e P1 implementados; exportador IKP 0.1 integrado na CLI; projeção validada com captura real (8/21 kinds); validação do ZIP completo e importação na plataforma ainda pendentes.
 
 ## Conclusão
 
@@ -9,17 +9,19 @@ O Scanner atual já gera CaptureId, declara capabilities, regista coverage por o
 
 O exportador constrói os cinco ficheiros de contrato obrigatórios, inclui artefactos referenciados, diagnósticos e factos REL/DTL/interpretations quando existem, calcula SHA-256 por ficheiro e digest lógico e escreve o ZIP atomicamente. Existem testes unitários dedicados ao exportador.
 
-**Limite da confirmação atual:** o código e os testes existem, mas não foi ainda confirmado nesta etapa um ciclo end-to-end com pacote produzido a partir de captura PHC real, validação independente e importação no Knowledge.
+A projeção foi também validada com a captura real `CSDefault202603`: 16.618 objetos projetados, 8.307 SourceIdentity, 16.581 MetadataFingerprint e 49 artefactos com tamanho/hash confirmados. A captura contém apenas 8 dos 21 kinds mapeados; os restantes não ficam validados por esta evidência.
+
+**Limite da confirmação atual:** a validação real incidiu na projeção do Object Index e nos artefactos da captura, não confirma ainda o ZIP completo produzido pelo exportador com o validador independente. A importação no Knowledge também não existe.
 
 ## Matriz
 
 | Componente | Estado atual confirmado | Lacuna / validação restante |
 |---|---|---|
 | ScanManifest / CaptureId | CaptureId, capabilities, coverage, timestamps, modo e versão disponíveis durante o scan | Workspaces antigos podem não preservar todo o manifesto; manter metadados desconhecidos explícitos |
-| CollectorResult / OperationCoverage | Cobertura por operação, resultado, disponibilidade, contagem e issues | Validar coerência com resultados de captura real |
+| CollectorResult / OperationCoverage | Cobertura por operação, resultado, disponibilidade, contagem e issues | Validar coerência para operações/kinds ainda não exercitados em captura real |
 | ScanEngine / ScanMode | Full, Selective e ProbeOnly com semântica de cobertura | Executar suite atual e verificar CI |
-| Object Index | Projeção read-only a partir do workspace, SourceObjectId, SourceIdentity, fingerprints e estados individuais | Validar referências e classificações com captura real |
-| Artefactos | Exporta apenas definições referenciadas pelos objetos; valida byte length e SHA-256 antes de incluir | Confirmar completude de categorias na captura real |
+| Object Index | Projeção read-only; validada com captura real para 8/21 kinds (16.618 objetos) | Validar 13 kinds não presentes e estabilidade entre capturas |
+| Artefactos | 49 artefactos da captura real com byte length e SHA-256 confirmados na projeção/export preparation | Validar pacote ZIP completo e categorias adicionais |
 | REL/DTL | Factos declarados e interpretações em payloads separados; valida contagens e referências | Confirmar payloads com a captura default e uma captura personalizada |
 | IKP ZIP | IkpPackageExporter implementado; manifesto, capabilities, coverage, object-index, checksums e payload | Validar ZIP real com schemas e validador independente |
 | CLI | scan-ikp e export-ikp integrados | Testar os dois caminhos com captura real |
