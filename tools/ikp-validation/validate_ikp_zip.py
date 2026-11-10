@@ -15,7 +15,7 @@ from validate_ikp_fixture import validate_package
 
 
 def safe_entry_name(name: str) -> str:
-    if not name or "\\\\" in name or "\\x00" in name:
+    if not name or "\\" in name or "\x00" in name:
         raise ValueError(f"ZIP entry path invalid: {name!r}")
     normalized = unicodedata.normalize("NFC", name)
     path = PurePosixPath(normalized)
