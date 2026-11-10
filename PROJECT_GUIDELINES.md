@@ -50,9 +50,9 @@ Decisões consolidadas em [`docs/architecture/technology-and-import-contract-ass
 | Pesquisa inicial | SQL Server 2025 Express inclui Full-Text Search; versão concreta ainda por fixar e validar se for anterior a 2025 |
 | Tempo real | SignalR (mantido na arquitetura; implementação conforme os casos de uso) |
 | Scanner | Componente funcionalmente autónomo, versionado neste monorepo; Knowledge não o executa em runtime |
-| Importação | IKP a partir do Database Schema Snapshot — especificação 0.1 em proposta ([`ikp-0.1-specification.md`](docs/architecture/ikp-0.1-specification.md); não aprovada automaticamente) |
+| Importação | IKP 0.1 definido por schemas/fixtures/validador e emitido pelo Scanner; ingestão no Knowledge ainda por implementar |
 
-A implementação do Scanner e da plataforma deve manter limites claros. Alterações ao contrato IKP devem ser acompanhadas por schemas, fixtures e testes. Não ligar o Scanner ao backend em runtime.
+O Scanner já implementa o exportador IKP 0.1 e os comandos CLI `scan-ikp` e `export-ikp`. O contrato deve evoluir sempre com schemas, fixtures e testes. Não ligar o Scanner ao backend em runtime.
 
 ## Projetos anteriores
 
@@ -98,9 +98,9 @@ Documentos de arquitetura relevantes:
 - `docs/architecture/extract-2026-11-conversation.md`
 - `docs/architecture/technology-and-import-contract-assessment.md` (stack + utilização centralizada)
 - `docs/architecture/ikp-0.1-specification.md` (contrato IKP 0.1 consolidado para revisão técnica)
-- `docs/architecture/observation-identity-and-lineage-contract.md` (princípios validados de observação, identidade e linhagem)
+- `docs/architecture/observation-identity-and-lineage-contract.md` (contexto arquitetural; semântica normativa em P1 e IKP 0.1)
 - `docs/architecture/ikp-0.1-scanner-compatibility-matrix.md` (lacunas e trabalho necessário no Scanner atual)
-- `docs/architecture/observation-identity-and-lineage-contract.md` (princípios validados de cobertura, identidade, observações, histórico e linhagem)
+
 
 ## Regras de trabalho
 
@@ -140,6 +140,6 @@ Não avançar automaticamente para a fase seguinte sem validação conjunta.
 
 ## Próxima etapa prevista
 
-O Scanner já implementa a exportação IKP 0.1 (comandos CLI scan-ikp e export-ikp), incluindo manifesto, capabilities, coverage, Object Index, checksums e payloads suportados. O contrato dispõe de schemas, fixtures, validador e testes.
+O Scanner já implementa a exportação IKP 0.1 (comandos CLI `scan-ikp` e `export-ikp`), incluindo manifesto, capabilities, coverage, Object Index, checksums e payloads suportados. O contrato dispõe de schemas, fixtures, validador e testes. A projeção do Object Index foi validada também com uma captura real; a validação end-to-end do ZIP IKP produzido pelo exportador com essa captura continua por confirmar.
 
 A próxima etapa é implementar no núcleo PHC Knowledge a primeira fatia de ingestão: receber o ZIP, validar estrutura/segurança/integridade e arquivar o pacote original de forma imutável, registando o resultado no SQL Server Express. Não associar automaticamente a instalação nem publicar conhecimento nesta primeira fatia. Validar depois o fluxo com um IKP produzido a partir da captura PHC default já existente.
