@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-06 |
-| Estado | Projeção pura implementada e testada; integração no projector end-to-end pendente |
+| Estado | Projeção, canonicalização e fingerprint integrados no projector; validação real parcial |
 | Fase | P1.B — object-index |
 | Âmbito | Separar metadata descritivo de MetadataFingerprint |
 | Restrições | Sem alterações a SQLite, collectors, queries ou schemas |
@@ -166,7 +166,7 @@ Antes de integrar com SQLite, criar testes sem dependência de captura para:
 - `CanonicalJsonSerializer` e `MetadataFingerprintCalculator`: implementados; canonicalizam a projeção e calculam SHA-256 em hexadecimal minúsculo.
 - O canonicalizador aceita os tipos presentes nas projeções atuais e números inteiros seguros; rejeita números não inteiros ou fora do intervalo seguro em vez de gerar um hash potencialmente não canónico.
 - Testes unitários de canonicalização, estabilidade e alteração semântica: aprovados no GitHub Actions.
-- Integração no projector e captura real: pendentes.
+- Integração no projector: concluída. Captura real `CSDefault202603`: validada para os kinds presentes (8/21); restantes kinds e estabilidade entre capturas pendentes.
 - SQLite, collectors, queries e schemas: inalterados.
 
-Próximo passo recomendado: implementar e testar canonicalização/hash sobre a projeção semântica, antes de avançar para o estado das definições e integração read-only do workspace.
+Canonicalização/hash e integração read-only foram implementadas posteriormente. Próximo passo: ampliar validação real para os kinds não presentes e testar estabilidade entre capturas.
