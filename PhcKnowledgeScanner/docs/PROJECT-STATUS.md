@@ -44,7 +44,8 @@ A aplicação Scanner evoluiu para desktop WPF + CLI, com recolha SQL/PHC, works
 | Recolha estrutural SQL | Implementada |
 | Recolha de personalizações PHC | Implementada para as famílias já identificadas no collector |
 | Workspace SQLite | Implementado |
-| Exportação ZIP legado | Implementada; mantém compatibilidade com fluxos existentes |\n| Exportação IKP 0.1 | Implementada em `PhcKnowledgeScanner.Export`; CLI `scan-ikp` e `export-ikp`; testes dedicados |
+| Exportação ZIP legado | Implementada; mantém compatibilidade com fluxos existentes |
+| Exportação IKP 0.1 | Implementada em `PhcKnowledgeScanner.Export`; CLI `scan-ikp` e `export-ikp`; testes dedicados |
 | Inventário de tabelas e chaves | Implementado |
 | Recolha e interpretação de relações declaradas REL/DTL | Implementada, com parser determinístico V1.1 |
 | Extração de FieldMappings | Implementada |
