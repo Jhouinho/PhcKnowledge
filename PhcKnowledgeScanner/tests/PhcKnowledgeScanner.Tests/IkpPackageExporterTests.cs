@@ -234,6 +234,14 @@ public sealed class IkpPackageExporterTests
                 outputPath,
                 CancellationToken.None);
 
+            var packageOutput = Environment.GetEnvironmentVariable("PHC_KNOWLEDGE_IKP_PACKAGE_OUTPUT");
+            if (!string.IsNullOrWhiteSpace(packageOutput))
+            {
+                var packageOutputPath = Path.GetFullPath(packageOutput);
+                Directory.CreateDirectory(Path.GetDirectoryName(packageOutputPath)!);
+                File.Copy(outputPath, packageOutputPath, overwrite: true);
+            }
+
             Assert.True(File.Exists(outputPath));
             Assert.Equal(captureId, result.CaptureId);
             Assert.NotEqual(Guid.Empty, Guid.Parse(result.PackageId));
