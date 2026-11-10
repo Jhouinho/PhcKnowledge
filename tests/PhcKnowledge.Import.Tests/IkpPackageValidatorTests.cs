@@ -26,6 +26,44 @@ public sealed class IkpPackageValidatorTests
     }
 
     [Fact]
+    public async Task Valid_package_is_archived_immutably_and_duplicate_is_idempotent()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"phc-knowledge-import-{Guid.NewGuid():N}");
+        var archiveRoot = Path.Combine(root, "archive");
+        var stagingRoot = Path.Combine(root, "staging");
+        Directory.CreateDirectory(root);
+        try
+        {
+            var validator = new IkpPackageValidator(SchemaDirectory);
+            var store = new PhcKnowledge.Import.Storage.FileSystemImmutablePackageStore(archiveRoot);
+            var ingestion = new IkpPackageIngestionService(validator, store, stagingRoot);
+
+            await using var firstPackage = CreateFixtureZip();
+            var first = await ingestion.ReceiveValidateArchiveAsync(firstPackage);
+            Assert.False(first.Archive.AlreadyExisted);
+
+            var archivedPath = Path.Combine(archiveRoot, first.Archive.StorageKey.Replace('/', Path.DirectorySeparatorChar));
+            Assert.True(File.Exists(archivedPath));
+            Assert.True((File.GetAttributes(archivedPath) & FileAttributes.ReadOnly) != 0);
+
+            await using var secondPackage = CreateFixtureZip();
+            var second = await ingestion.ReceiveValidateArchiveAsync(secondPackage);
+            Assert.True(second.Archive.AlreadyExisted);
+            Assert.Equal(first.Archive.StorageKey, second.Archive.StorageKey);
+            Assert.Empty(Directory.EnumerateFiles(stagingRoot));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+                    File.SetAttributes(file, FileAttributes.Normal);
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task Zip_path_traversal_is_rejected()
     {
         await using var package = CreateFixtureZip(includeTraversalEntry: true);
