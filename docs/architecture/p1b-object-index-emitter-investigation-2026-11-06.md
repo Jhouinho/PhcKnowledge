@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-06 |
-| Estado | Investigação do código concluída; materialização dependente de workspace real |
+| Estado | Investigação histórica concluída; matriz e projector implementados posteriormente |
 | Fase | P1.B — emissores, identidade e metadata |
 | Branch analisada | `main` |
 | Âmbito | `PhcKnowledgeScanner`, catálogo P0, workspace SQLite e schema IKP 0.1 |
@@ -251,3 +251,8 @@ Foi acrescentado o teste parametrizado `Project_Does_Not_Create_Unmaterialized_S
 O workflow GitHub Actions **141** (run `42679586394`) terminou com sucesso. O job `build-and-test` concluiu com sucesso as etapas Restore, Build, Test e validação do índice gerado contra o JSON Schema IKP 0.1.
 
 A correção está, portanto, validada por build, testes automatizados e contrato. Continua pendente a validação de regressão com uma nova projeção do workspace SQLite e dos artefactos da captura real. Essa validação não deve ser simulada nem substituída por dados inventados.
+
+
+## Atualização de estado — 2026-11-10
+
+O mapeamento de operação, SourceIdentity, metadata/fingerprints e estados individuais foi implementado no Object Index/IKP. A projeção foi validada com a captura real `CSDefault202603` para 8/21 kinds presentes. Esta investigação mantém valor como registo da análise dos emissores em 2026-11-06; para o estado atual consultar a matriz IKP e o contrato P1.
