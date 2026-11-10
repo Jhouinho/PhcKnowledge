@@ -135,13 +135,27 @@ public sealed class IkpPackageExporter
         }
 
         var issues = await workspace.GetIssuesAsync(cancellationToken).ConfigureAwait(false);
+        var issuePayload = new
+        {
+            schemaVersion = "1",
+            issues = issues.Select(issue => new
+            {
+                issueId = string.IsNullOrWhiteSpace(issue.IssueId) ? BuildIssueId(issue) : issue.IssueId,
+                operationId = issue.OperationId,
+                severity = issue.Severity.ToString(),
+                code = issue.Code,
+                message = issue.Message,
+                objectName = issue.ObjectName,
+                details = string.IsNullOrWhiteSpace(issue.Detail) ? null : new { text = issue.Detail }
+            }).ToArray()
+        };
         AddGeneratedFile(
             files,
-            "ikp:diagnostics:collection-issues",
-            "payload/diagnostics/collection-issues.json",
+            "ikp:diagnostics:issues",
+            "payload/diagnostics/issues.json",
             "diagnostics",
             "application/json",
-            JsonSerializer.SerializeToUtf8Bytes(issues, JsonOptions),
+            JsonSerializer.SerializeToUtf8Bytes(issuePayload, JsonOptions),
             "collection-issues");
 
         // PHC REL/DTL are declared facts, not derived relations or SQL foreign keys.
@@ -161,36 +175,63 @@ public sealed class IkpPackageExporter
 
         if (hasDeclaredRelationCapture)
         {
+            var interpretationIdsByRelation = declaredRelationInterpretations
+                .GroupBy(x => x.RelationId, StringComparer.Ordinal)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.Select(x => BuildInterpretationId(x.RelationId, x.ParserVersion))
+                        .OrderBy(x => x, StringComparer.Ordinal).ToArray(),
+                    StringComparer.Ordinal);
+
+            var relationPayload = new
+            {
+                schemaVersion = "1",
+                captureId = captureGuid.ToString("D"),
+                declaredRelations = declaredRelations.Select(relation => new
+                {
+                    sourceObjectId = relation.RelationId,
+                    sourceType = relation.SourceType,
+                    sourceStamp = relation.SourceRecordId,
+                    sourceTable = relation.FromTable,
+                    sourceTableName = relation.FromTableName,
+                    targetTable = relation.ToTable,
+                    targetTableName = relation.ToTableName,
+                    rawExpression = relation.OriginalExpression,
+                    fromObjectId = relation.FromObjectId,
+                    toObjectId = relation.ToObjectId,
+                    fromTableResolution = relation.FromTableResolution.ToString(),
+                    toTableResolution = relation.ToTableResolution.ToString(),
+                    correspondenceKind = relation.CorrespondenceKind.ToString(),
+                    interpretationIds = interpretationIdsByRelation.TryGetValue(relation.RelationId, out var ids)
+                        ? ids : Array.Empty<string>()
+                }).ToArray(),
+                interpretations = declaredRelationInterpretations.Select(interpretation => new
+                {
+                    interpretationId = BuildInterpretationId(interpretation.RelationId, interpretation.ParserVersion),
+                    sourceObjectId = interpretation.RelationId,
+                    parserId = "phc.declared-relation-expression-parser",
+                    parserVersion = interpretation.ParserVersion,
+                    status = interpretation.ParseStatus.ToString(),
+                    confidence = interpretation.Confidence.ToString(),
+                    fieldMappings = ExtractDirectFieldMappings(interpretation.Ast),
+                    fieldRefCount = interpretation.FieldRefCount,
+                    tableRefsResolved = interpretation.TableRefsResolved,
+                    tableRefsAmbiguous = interpretation.TableRefsAmbiguous,
+                    tableRefsUnresolved = interpretation.TableRefsUnresolved,
+                    ast = interpretation.Ast,
+                    diagnosticsJson = interpretation.DiagnosticsJson,
+                    issueIds = Array.Empty<string>()
+                }).ToArray()
+            };
+
             AddGeneratedFile(
                 files,
                 "ikp:relations:declared",
                 "payload/relations/declared-relations.json",
                 "relations",
                 "application/json",
-                JsonSerializer.SerializeToUtf8Bytes(new
-                {
-                    schemaVersion = "1",
-                    captureId = captureGuid.ToString("D"),
-                    records = declaredRelations
-                }, JsonOptions),
+                JsonSerializer.SerializeToUtf8Bytes(relationPayload, JsonOptions),
                 "declared-relations");
-
-            if (declaredRelationInterpretations.Count > 0)
-            {
-                AddGeneratedFile(
-                    files,
-                    "ikp:relations:declared-interpretations",
-                    "payload/relations/declared-relation-interpretations.json",
-                    "relations",
-                    "application/json",
-                    JsonSerializer.SerializeToUtf8Bytes(new
-                    {
-                        schemaVersion = "1",
-                        captureId = captureGuid.ToString("D"),
-                        records = declaredRelationInterpretations
-                    }, JsonOptions),
-                    "declared-relation-interpretations");
-            }
         }
 
         if (projection.Diagnostics.Count > 0)
@@ -360,6 +401,73 @@ public sealed class IkpPackageExporter
                     : item.Result
             };
         }).ToArray();
+    }
+
+    private static string BuildIssueId(PhcKnowledgeScanner.Abstractions.Collectors.CollectionIssue issue)
+    {
+        var source = string.Join("\n",
+            issue.OperationId ?? string.Empty,
+            issue.Severity.ToString(),
+            issue.Code,
+            issue.Message,
+            issue.ObjectName ?? string.Empty,
+            issue.Detail ?? string.Empty);
+        return "issue-" + Sha256(Encoding.UTF8.GetBytes(source))[..24];
+    }
+
+    private static string BuildInterpretationId(string relationId, string parserVersion)
+    {
+        var source = relationId + "\n" + parserVersion;
+        return "interpretation-" + Sha256(Encoding.UTF8.GetBytes(source))[..24];
+    }
+
+    private static IReadOnlyList<object> ExtractDirectFieldMappings(ExprAstNode? ast)
+    {
+        var mappings = new List<object>();
+        Visit(ast);
+        return mappings;
+
+        void Visit(ExprAstNode? node)
+        {
+            switch (node)
+            {
+                case null:
+                    return;
+                case GroupExprNode group:
+                    Visit(group.Inner);
+                    break;
+                case LogicalExprNode logical:
+                    foreach (var child in logical.Children)
+                        Visit(child);
+                    break;
+                case ComparisonExprNode comparison:
+                    if (comparison.Operator == "="
+                        && comparison.Left is FieldRefExprNode left
+                        && comparison.Right is FieldRefExprNode right)
+                    {
+                        mappings.Add(new
+                        {
+                            sourceTable = left.Qualifier,
+                            sourceField = left.FieldName,
+                            targetTable = right.Qualifier,
+                            targetField = right.FieldName,
+                            sourceTableResolution = left.TableResolution.ToString(),
+                            targetTableResolution = right.TableResolution.ToString()
+                        });
+                    }
+                    Visit(comparison.Left);
+                    Visit(comparison.Right);
+                    break;
+                case BinaryExprNode binary:
+                    Visit(binary.Left);
+                    Visit(binary.Right);
+                    break;
+                case FunctionCallExprNode function:
+                    foreach (var argument in function.Arguments)
+                        Visit(argument);
+                    break;
+            }
+        }
     }
 
     private static void ValidateDeclaredRelationCounts(
