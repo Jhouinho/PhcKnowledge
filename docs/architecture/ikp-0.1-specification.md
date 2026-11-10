@@ -542,27 +542,21 @@ A confirmação de remoção em capturas completas sucessivas pode ser introduzi
 
 ## 14. Estado real e lacunas Scanner ↔ IKP
 
-O Scanner atual não emite IKP. Os exports atuais são:
-- Database Schema Snapshot;
-- ZIP de personalizações via WorkspaceExportService;
-- ZIP de scan via ZipScanExporter.
+**Estado confirmado no código atual:** o Scanner já contém um exportador IKP 0.1 dedicado (IkpPackageExporter), integrado na CLI através dos comandos scan-ikp e export-ikp. O exportador produz os cinco ficheiros de contrato obrigatórios, calcula checksums por ficheiro e digest lógico, inclui os artefactos referenciados, diagnósticos e factos REL/DTL com interpretações separadas. Existem testes automatizados específicos do exportador.
 
-Nenhum constitui, isoladamente, um IKP completo.
+Isto confirma a existência da implementação do emissor, mas **não confirma ainda uma validação end-to-end com uma captura real completa** nem a integração funcional com a plataforma central.
 
-Lacunas principais confirmadas:
-- falta emissor IKP e os cinco ficheiros de contrato;
-- falta declaração de capabilities por operação e capabilityVersion;
-- cobertura atual agregada por collector, não por operação lógica;
-- falta índice estruturado unificado de objetos observados;
-- falta separar de forma consistente inventário e disponibilidade individual da definição;
-- falta formalizar fingerprints de metadados e definição no contrato;
-- REL/DTL e interpretações são agora transportados em payloads separados e com proveniência; as projeções de conhecimento derivado continuam fora do primeiro slice;
-- os artefactos de personalizações persistidos no workspace não são todos incluídos no ZIP geral pelo caminho atual do ZipScanExporter;
-- comparador do schema snapshot não pode ser reutilizado como comparador histórico da plataforma sem cobertura;
-- alguns identificadores nativos SQL já são recolhidos, mas parte está apenas em SummaryJson e não existe contrato uniforme;
-- os exports atuais não transportam o modelo de linhagem, que pertence sobretudo à plataforma.
+Lacunas e validações restantes:
+- executar build e testes atuais do monorepo e confirmar o resultado CI mais recente;
+- validar um pacote produzido a partir de uma captura real do Scanner, começando pela base PHC default já disponível como referência;
+- confirmar o ZIP real com o validador independente e schemas IKP 0.1;
+- confirmar que os perfis de schema e customizations estão efetivamente incluídos, para além do índice, artefactos referenciados, diagnósticos e REL/DTL;
+- rever a política de exportação de workspaces antigos sem ScanManifest completo; os valores desconhecidos devem continuar explícitos e nunca inferidos;
+- validar os limites de segurança do ZIP e a coerência entre manifesto, checksums, capabilities, coverage, object-index e payload;
+- implementar no PHC Knowledge a receção, validação, arquivo imutável e registo da importação;
+- a associação de instalação, materialização de observações, comparação e publicação permanecem responsabilidades futuras da plataforma.
 
-A matriz detalhada por ficheiro/componente será criada na etapa seguinte; esta lista não substitui essa análise.
+A matriz de compatibilidade deve descrever o código atual e as lacunas remanescentes, não repetir o estado histórico anterior à implementação do exportador.
 
 ## 15. Decisões já fechadas
 
@@ -589,7 +583,7 @@ A matriz detalhada por ficheiro/componente será criada na etapa seguinte; esta 
 3. ~~Criar schemas JSON executáveis para os cinco ficheiros de contrato.~~ **Concluído:** JSON Schema Draft 2020-12 em [schemas/ikp-0.1](schemas/ikp-0.1/README.md).
 4. ~~Criar catálogo de casos negativos e de fronteira e validador executável.~~ **Concluído:** [casos negativos](fixtures/ikp-0.1/negative-cases/cases.json) e [validador/testes Python](../../tools/ikp-validation/README.md). Os 18 cenários positivos/negativos foram executados localmente (18/18 PASS); o workflow CI está preparado para repetição automática, sem resultado CI confirmado nesta revisão.
 5. Executar e estabilizar a validação CI; depois definir exemplos de compatibilidade de capabilities entre versões e fechar os casos de linhagem.
-6. Preparar tarefas de implementação separadas para Scanner e PHC Knowledge, por componente e com testes de aceitação.
+6. **PHC Knowledge:** implementar receção, validação de segurança/integridade e arquivo imutável de pacotes IKP, com testes de aceitação. A associação à instalação e a publicação ficam fora desta primeira fatia.
 
 A implementação de código e o importador funcional continuam fora desta etapa. O próximo resultado deve ser artefactos de referência verificáveis e uma matriz de trabalho baseada no código real, não mais uma ronda de opções abstratas.
 
