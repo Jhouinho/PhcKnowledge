@@ -45,9 +45,9 @@ Decisões consolidadas em [`docs/architecture/technology-and-import-contract-ass
 | Backend | .NET 10 + ASP.NET Core |
 | Web | React + TypeScript |
 | Desktop plataforma | Windows-first, mesma SPA via WebView2 (cliente do backend central) |
-| BD central | SQL Server (central, incluindo instalação on-premises) |
-| SQLite | Apenas workspace Scanner / cache auxiliar (não substitui SQL Server) |
-| Pesquisa inicial | SQL Server Full-Text Search, sujeito a validação dos requisitos concretos |
+| BD central | SQL Server Express (central, incluindo instalação on-premises) |
+| SQLite | Apenas workspace Scanner / cache auxiliar (não substitui SQL Server Express) |
+| Pesquisa inicial | Mecanismo de pesquisa textual a validar na edição/versão Express escolhida; não assumir Full-Text Search sem confirmação |
 | Tempo real | SignalR (mantido na arquitetura; implementação conforme os casos de uso) |
 | Scanner | Componente funcionalmente autónomo, versionado neste monorepo; Knowledge não o executa em runtime |
 | Importação | IKP a partir do Database Schema Snapshot — especificação 0.1 em proposta ([`ikp-0.1-specification.md`](docs/architecture/ikp-0.1-specification.md); não aprovada automaticamente) |
