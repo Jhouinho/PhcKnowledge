@@ -62,7 +62,7 @@ public sealed class IkpPackageExporterTests
                     SourceAvailability.Present,
                     ContentAvailability.Available,
                     1,
-                    Array.Empty<string>()),
+                    new[] { "issue-brule-warning" }),
                 new OperationCoverage(
                     KnownOperations.SqlProcedures,
                     KnownOperations.Version,
@@ -94,6 +94,18 @@ public sealed class IkpPackageExporterTests
 
             await workspace.SaveCaptureCoverageAsync(
                 captureId, capabilities, coverages, CancellationToken.None);
+
+            await workspace.AddIssueAsync(
+                "test-collector",
+                new PhcKnowledgeScanner.Abstractions.Collectors.CollectionIssue(
+                    PhcKnowledgeScanner.Abstractions.Collectors.CollectionIssueSeverity.Warning,
+                    "test.warning",
+                    "Aviso de teste",
+                    "Regra de teste",
+                    "Detalhe de teste",
+                    "issue-brule-warning",
+                    KnownOperations.PhcBrule),
+                CancellationToken.None);
 
             var sourceBytes = Encoding.UTF8.GetBytes("FUNCTION BODY\r\n");
             var referencedArtifactId = await workspace.SaveArtifactAsync(
@@ -235,10 +247,17 @@ public sealed class IkpPackageExporterTests
             Assert.Contains("object-index.json", names);
             Assert.Contains("checksums.json", names);
             Assert.Contains("payload/phc.customizations/brule/S1.prg", names);
-            Assert.Contains("payload/diagnostics/collection-issues.json", names);
+            Assert.Contains("payload/diagnostics/issues.json", names);
             Assert.Contains("payload/relations/declared-relations.json", names);
-            Assert.Contains("payload/relations/declared-relation-interpretations.json", names);
+            Assert.DoesNotContain("payload/diagnostics/collection-issues.json", names);
+            Assert.DoesNotContain("payload/relations/declared-relation-interpretations.json", names);
             Assert.DoesNotContain("payload/phc.customizations/old/obsolete.prg", names);
+
+            using var issuesStream = archive.GetEntry("payload/diagnostics/issues.json")!.Open();
+            using var issuesJson = await JsonDocument.ParseAsync(issuesStream);
+            var issue = Assert.Single(issuesJson.RootElement.GetProperty("issues").EnumerateArray());
+            Assert.Equal("issue-brule-warning", issue.GetProperty("issueId").GetString());
+            Assert.Equal("test.warning", issue.GetProperty("code").GetString());
 
             using var manifestStream = archive.GetEntry("manifest.json")!.Open();
             using var manifestJson = await JsonDocument.ParseAsync(manifestStream);
@@ -267,15 +286,13 @@ public sealed class IkpPackageExporterTests
 
             using var declaredRelationsStream = archive.GetEntry("payload/relations/declared-relations.json")!.Open();
             using var declaredRelationsJson = await JsonDocument.ParseAsync(declaredRelationsStream);
-            Assert.Equal(2, declaredRelationsJson.RootElement.GetProperty("records").GetArrayLength());
-            Assert.Contains(declaredRelationsJson.RootElement.GetProperty("records").EnumerateArray(),
+            var declaredRelationItems = declaredRelationsJson.RootElement.GetProperty("declaredRelations");
+            Assert.Equal(2, declaredRelationItems.GetArrayLength());
+            Assert.Contains(declaredRelationItems.EnumerateArray(),
                 x => x.GetProperty("sourceType").GetString() == DeclaredRelationSourceTypes.PhcRel);
-            Assert.Contains(declaredRelationsJson.RootElement.GetProperty("records").EnumerateArray(),
+            Assert.Contains(declaredRelationItems.EnumerateArray(),
                 x => x.GetProperty("sourceType").GetString() == DeclaredRelationSourceTypes.PhcDtl);
-
-            using var interpretationsStream = archive.GetEntry("payload/relations/declared-relation-interpretations.json")!.Open();
-            using var interpretationsJson = await JsonDocument.ParseAsync(interpretationsStream);
-            Assert.Single(interpretationsJson.RootElement.GetProperty("records").EnumerateArray());
+            Assert.Single(declaredRelationsJson.RootElement.GetProperty("interpretations").EnumerateArray());
 
             var checksumFiles = checksumRoot.GetProperty("files").EnumerateArray().ToArray();
             Assert.DoesNotContain(checksumFiles, x => x.GetProperty("path").GetString() == "checksums.json");
