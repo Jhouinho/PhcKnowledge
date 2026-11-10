@@ -1,7 +1,7 @@
 # Roadmap visual do PHC Knowledge — visão, fases e estado atual
 
-**Data de referência:** 2026-11-07  
-**Estado:** roadmap estratégico atualizado após validação do Object Index e investigação de prontidão para exportação IKP.  
+**Data de referência:** 2026-11-10  
+**Estado:** roadmap atualizado em 2026-11-10 após implementação do exportador IKP no Scanner e validação da projeção do Object Index com captura real.  
 **Nota:** as percentagens não são estimadas; os estados indicam maturidade qualitativa.
 
 ## 1. Objetivo do produto
@@ -111,15 +111,15 @@ Limites conhecidos:
 - a cobertura atual tem diferenças semânticas entre operações e tipos de recolha;
 - alguns collectors filtram registos sem conteúdo antes de os emitir;
 - a cobertura atual não permite concluir remoções com segurança em todos os casos;
-- a exportação ZIP existente não é ainda o pacote IKP.
+- o exportador IKP 0.1 já existe e está integrado na CLI; a validação end-to-end do ZIP produzido a partir de captura real continua por confirmar.
 
 ### Fase 1 — Captura fiável e pacote normalizado
 
-**Estado: Object Index implementado e validado sinteticamente contra o schema oficial; exportador IKP completo por implementar; captura real ainda pendente**
+**Estado: Object Index implementado; projeção validada com captura real; exportador IKP 0.1 implementado; validação end-to-end do ZIP real pendente**
 
 **Atualização de implementação — 2026-11-07**
 
-#### P1.B — Object Index: concluído na vertente sintética
+#### P1.B — Object Index: implementado; validação real parcial
 
 Implementado em `PhcKnowledgeScanner.Export`:
 - `ObjectOperationResolver`: mapping explícito dos 21 kinds emitidos para operações observadoras;
@@ -136,11 +136,11 @@ Implementado em `PhcKnowledgeScanner.Export`:
 - cenário sintético do projector cobre os **21 kinds**;
 - JSON produzido pelo C# validado contra o JSON Schema oficial IKP 0.1 Draft 2020-12.
 
-Isto prova o contrato e a projeção com dados sintéticos. **Não prova ainda a fidelidade dos collectors a uma instalação PHC real.**
+A validação sintética cobre os 21 kinds. Em 2026-11-08, a projeção foi também exercitada com a captura real `CSDefault202603`: 16.618 objetos projetados, 8.307 SourceIdentity e 16.581 MetadataFingerprint; foram confirmadas correspondências de tamanho/hash dos 49 artefactos. Esta validação real cobriu apenas os kinds presentes nessa captura (8/21), pelo que não demonstra cobertura real exaustiva nem estabilidade de identidade entre capturas.
 
 Não foram alterados schema SQLite, collectors ou queries PHC/SQL nesta etapa.
 
-#### P1.C / IKP — prontidão para exportação investigada
+#### P1.C / IKP — exportador implementado; validação real do pacote pendente
 
 Investigação registada em [`p1b-ikp-package-export-readiness-investigation-2026-11-07.md`](p1b-ikp-package-export-readiness-investigation-2026-11-07.md).
 
@@ -153,33 +153,34 @@ O pacote IKP 0.1 exige cinco documentos de raiz:
 
 O validador de referência também verifica referências cruzadas, paths seguros, artefactos, tamanhos, SHA-256 e `logicalContentDigest`.
 
-**Decisão de implementação:** criar um `IkpPackageExporter` dedicado, recebendo o `ScanManifest` completo e o workspace como entradas separadas e validando a correspondência entre ambos. O exportador inicial não exige alterações ao schema SQLite.
+**Implementação concluída:** `IkpPackageExporter` dedicado em `PhcKnowledgeScanner.Export`, integrado na CLI através de `scan-ikp` e `export-ikp`. O exportador recebe o manifesto e o workspace como entradas separadas, valida a correspondência, gera os cinco documentos obrigatórios, checksums e digest lógico, e preserva os bytes dos artefactos.
 
 Limitação identificada: o workspace atual não persiste timestamps reais de início/fim, ScanMode, ScannerVersion nem um origin descriptor estruturado. O exportador não pode inventar esses valores nem inferi-los de `created_at_utc` ou do label da instalação. Para a primeira versão, o manifesto completo terá de estar disponível em memória no momento da exportação.
 
 #### Próximos passos da Fase 1
 
-1. Implementar o pacote IKP mínimo com os cinco documentos obrigatórios.
-2. Incluir os artefactos reais já persistidos no workspace, preservando bytes exatos e paths seguros.
-3. Gerar checksums e `logicalContentDigest` segundo o validador de referência.
-4. Criar teste end-to-end: workspace sintético → ZIP → extração → validador oficial.
-5. Testar falhas de integridade: CaptureId divergente, coverage desatualizada, artefacto em falta, hash/tamanho incorreto, path inseguro e referências inválidas.
-6. Só depois validar com captura real: primeiro base PHC demo standard, depois instalação personalizada.
+1. Executar build e testes atuais e confirmar CI.
+2. Produzir um ZIP IKP com `scan-ikp` a partir da captura PHC default já existente.
+3. Validar o ZIP real com schemas e validador independente; inspecionar os cinco documentos, payloads, checksums e digest lógico.
+4. Confirmar categorias/artefactos efetivamente exportados e compatibilidade entre manifesto, capabilities, coverage e Object Index.
+5. Manter por validar os kinds não presentes na captura real (13/21) e a estabilidade de identidade entre capturas.
+6. Não alterar SQLite/collectors sem evidência concreta de lacuna.
 
 #### Fase 1 — estado resumido
 
 - **Concluído:** P0 CaptureId/capabilities/coverage.
-- **Concluído:** P1.B Object Index, identidade, fingerprints e estados individuais, validados sinteticamente.
-- **Em curso seguinte:** exportador IKP completo e validação round-trip.
-- **Dependente de validação real:** fidelidade dos collectors e artefactos numa captura PHC demo e numa instalação personalizada.
+- **Implementado:** P1.B Object Index, identidade, fingerprints e estados individuais; 21 kinds cobertos sinteticamente.
+- **Validado com captura real:** projeção para 8/21 kinds presentes na `CSDefault202603`, com hashes/tamanhos de artefactos verificados.
+- **Implementado:** exportador IKP 0.1 e comandos CLI `scan-ikp` / `export-ikp`.
+- **Pendente:** validação end-to-end do ZIP real com validador independente; kinds não observados na captura real; identidade entre capturas.
 
 ### Fase 2 — Plataforma central
 
-**Estado: por construir**
+**Estado: por construir; próxima fase de implementação aprovada**
 
-A pasta `src/` da plataforma central ainda não contém implementação funcional. O contrato define a direção, mas falta construir:
+A pasta `src/` da plataforma central ainda não contém implementação funcional e `tests/` não tem testes próprios da plataforma. A primeira fatia a implementar é Receive / Validate / Archive. Depois, e em etapas separadas, construir:
 - registo e gestão de instalações;
-- receção e validação de pacotes IKP;
+- receção HTTP, validação estrutural/de segurança/integridade e arquivo imutável de pacotes IKP;
 - ingestão transacional e idempotente;
 - armazenamento de capturas imutáveis e respetivos artefactos;
 - consulta do inventário importado.
@@ -219,11 +220,11 @@ A IA não deverá inventar factos nem substituir a proveniência. Deve investiga
 | Ordem | Marco | Estado / critério de conclusão |
 |---:|---|---|
 | 1 | P0 — CaptureId, capabilities e coverage | **Concluído.** Contratos e testes de captura/cobertura existentes. |
-| 2 | P1.B — Object Index | **Concluído na vertente sintética.** 21 kinds, identidade, fingerprints, estados de definição, determinismo e validação do JSON Schema oficial; run `42419610023`, 275 testes .NET. |
-| 3 | Exportador IKP mínimo | **Próximo.** Cinco documentos obrigatórios, payload de artefactos do workspace, paths seguros e checksums. |
-| 4 | Validação round-trip IKP | ZIP extraído e validado por `validate_ikp_fixture.py`; testes positivos e negativos de integridade. |
-| 5 | Captura PHC real controlada | Primeiro demo standard, depois instalação personalizada; confirmar collectors, cobertura, artefactos e fidelidade dos dados. |
-| 6 | Importador da plataforma central | Pacote validado e importado de forma idempotente, sem duplicação e com captura preservada. |
+| 2 | P1.B — Object Index | **Implementado.** 21 kinds cobertos sinteticamente; captura real validou 8/21 kinds e 49 artefactos (tamanho/hash). |
+| 3 | Exportador IKP 0.1 | **Implementado no Scanner.** `IkpPackageExporter`, `scan-ikp` e `export-ikp`. |
+| 4 | Validação end-to-end de IKP real | **Pendente.** Gerar pacote da captura default existente e validar com schemas/validador independente. |
+| 5 | Receive / Validate / Archive | **Próxima implementação no Knowledge.** Endpoint, segurança, integridade, arquivo imutável e registo SQL idempotente. |
+| 6 | Associação, materialização e comparação | Posterior; não faz parte da primeira fatia. |
 | 7 | Histórico, identidade e diff | Comparar capturas sem confundir instalação, objeto observado e entidade lógica; só inferir remoções com cobertura suficiente. |
 | 8 | Dependências, conhecimento e pesquisa | Consultas devolvem objetos, evidências, contexto e anotações rastreáveis. |
 | 9 | Investigação assistida por IA | Respostas fundamentadas em evidências, proveniência e incerteza explícita. |
@@ -270,3 +271,10 @@ Esta capacidade pertence ao Scanner, não à plataforma central. Os collectors m
 É uma visão futura e não altera o foco atual em P1.B, Object Index, IKP e validação com captura real. Não existe implementação nem decisão sobre os primeiros tipos de objetos a publicar.
 
 Detalhe e salvaguardas: [scanner-controlled-change-management-vision-2026-11-07.md](scanner-controlled-change-management-vision-2026-11-07.md).
+
+
+## 9. Estado consolidado — 2026-11-10
+
+A sequência atual é: **Scanner/IKP já implementado → validar ZIP real → construir Receive / Validate / Archive no PHC Knowledge**. A plataforma central continua sem projetos próprios em `src/` e testes próprios em `tests/`. A primeira fatia não associa automaticamente a instalação, não materializa observações, não calcula remoções e não publica conhecimento.
+
+A base central escolhida é SQL Server Express; SQL Server 2025 Express inclui Full-Text Search, mas a versão concreta e a adequação dos limites de capacidade ainda têm de ser fixadas. Os pacotes IKP e definições originais ficam em arquivo de ficheiros imutável, fora da base relacional. SignalR mantém-se na arquitetura.
