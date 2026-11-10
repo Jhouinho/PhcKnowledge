@@ -3,7 +3,7 @@
 | Campo | Valor |
 | --- | --- |
 | Data inicial | 2026-11-06 |
-| Última consolidação | 2026-11-10 (stack revista: SQL Server central + SignalR) |
+| Última consolidação | 2026-11-10 (SQL Server Express central + SignalR) |
 | Estado | Stack, fronteiras, utilização centralizada e direção do IKP 0.1 consolidadas; contrato em revisão técnica e fixtures — ver [`ikp-0.1-specification.md`](ikp-0.1-specification.md) |
 | Âmbito | Stack da plataforma PHC Knowledge + bases do contrato de importação do Scanner independente |
 | Implementação | Nenhuma nesta etapa |
@@ -24,7 +24,7 @@ Legenda:
 
 ## 1. Resumo executivo
 
-**Stack acordada** `[acordado]`: .NET 10 + ASP.NET Core; React + TypeScript; SQL Server central; SQLite só auxiliar (workspace/cache/local); pesquisa textual inicial com SQL Server Full-Text Search (a validar no desenho físico); tempo real com SignalR; desktop Windows-first via WebView2 da mesma SPA. OpenSearch **fora** desta fase (evolução futura permitida, sem antecipar complexidade).
+**Stack acordada** `[acordado]`: .NET 10 + ASP.NET Core; React + TypeScript; SQL Server Express central; SQLite só auxiliar (workspace/cache/local); tecnologia de pesquisa textual a validar para a edição Express; tempo real com SignalR; desktop Windows-first via WebView2 da mesma SPA. OpenSearch **fora** desta fase (evolução futura permitida, sem antecipar complexidade).
 
 **Fronteiras** `[acordado]`: Scanner independente produz pacotes; PHC Knowledge importa e transforma; sem runtime do Scanner na plataforma; sem recuperar Discovery/Fusion do ConsoleApp.
 
@@ -34,7 +34,7 @@ Legenda:
 
 **Armazenamento de pacotes** `[acordado]`: abstração de armazenamento — filesystem (dev / servidor on-prem) e object storage (quando aplicável); pacotes imutáveis; fornecedor concreto em aberto `[pendente]`.
 
-**Modelo de utilização** `[acordado]`: instalação **centralizada** num servidor da organização; clientes (browser / desktop WebView2) ligam ao mesmo backend e SQL Server; sem modo autónomo offline e sem sincronização entre bases locais — ver §5.
+**Modelo de utilização** `[acordado]`: instalação **centralizada** num servidor da organização; clientes (browser / desktop WebView2) ligam ao mesmo backend e SQL Server Express; sem modo autónomo offline e sem sincronização entre bases locais — ver §5.
 
 **Sequência atual** `[acordado]`: (1) stack e utilização centralizada — concluídos; (2) princípios de observação/identidade/linhagem — consolidados; (3) contrato IKP 0.1 — consolidado documentalmente; (4) fixtures e matriz de compatibilidade — em curso; (5) tarefas de implementação por componente; (6) implementação após revisão técnica e instrução explícita.
 
@@ -119,9 +119,9 @@ A investigação analisa sobretudo o **ConsoleApp / Scanner V1 histórico**. As 
 │ Desktop WPF / CLI   │                            │  ASP.NET Core API (.NET 10)  │
 │ SQLite workspace    │                            │  Serviços de domínio         │
 │ Export → IKP        │                            │  Importação / Staging / Pub. │
-└─────────────────────┘                            │  SQL Server (central)        │
+└─────────────────────┘                            │  SQL Server Express (central)│
                                                    │  Package store (abstração)   │
-                                                   │  SignalR + SQL Server FTS     │
+                                                   │  SignalR + pesquisa textual     │
                                                    │         ▲                    │
                                                    │         │ mesma SPA          │
                                                    │  React+TS Web ◄── WebView2   │
@@ -136,9 +136,9 @@ A investigação analisa sobretudo o **ConsoleApp / Scanner V1 histórico**. As 
 | Backend | .NET 10 + ASP.NET Core | Alinhamento com Scanner (`global.json` 10.x) `[código]`; um ecossistema; SignalR nativo | Sem project references ao Scanner (ADR 0003) |
 | Web | React + TypeScript | UI rica; partilha com desktop via WebView; Blazor do ConsoleApp fica referência UX, não stack | Cliente OpenAPI a partir da API `[proposta]` de detalhe |
 | Desktop plataforma | Windows-first, SPA em WebView2 | Uma UI/lógica; evita WPF/Avalonia duplicados | Não impede evolução multiplataforma futura; Scanner mantém WPF próprio |
-| BD central | SQL Server | Integração natural com .NET e ecossistema PHC; capacidade relacional e Full-Text Search | Edição/licenciamento e configuração física a validar antes do deployment |
-| SQLite | Workspace Scanner / cache auxiliar no cliente ou servidor | Já usado no Scanner `[código]`; auxiliar apenas | **Não** substitui SQL Server; desktop **não** mantém knowledge DB autónoma |
-| Pesquisa | SQL Server Full-Text Search como ponto de partida | Evita introduzir um motor externo na primeira fase | Validar necessidades de idioma, ranking e indexação; OpenSearch **não** nesta fase |
+| BD central | SQL Server Express | Integração natural com .NET e ecossistema PHC; base relacional central sem custo de licença da edição Express | Limites de capacidade/recursos e funcionalidades da edição devem ser validados face ao volume esperado |
+| SQLite | Workspace Scanner / cache auxiliar no cliente ou servidor | Já usado no Scanner `[código]`; auxiliar apenas | **Não** substitui SQL Server Express; desktop **não** mantém knowledge DB autónoma |
+| Pesquisa | Mecanismo nativo de SQL Server a definir após validação da edição Express | Evita introduzir um motor externo sem necessidade demonstrada | Confirmar disponibilidade/suporte de Full-Text Search na versão/instalação Express escolhida e validar idioma, ranking e indexação; OpenSearch **não** nesta fase |
 | Tempo real | SignalR | Nativo no stack ASP.NET | Grupos por organização/instalação `[proposta]` de detalhe |
 
 ### 4.3 Scanner e PHC Knowledge `[acordado]`
@@ -202,10 +202,10 @@ O PHC Knowledge adota um **modelo de instalação centralizada**.
 | --- | --- |
 | Onde corre a plataforma | Servidor da organização (on-premises na rede local) |
 | Como os utilizadores acedem | Browser e/ou aplicação desktop (WebView2), nos seus computadores |
-| Backend e SQL Server | Centrais no servidor — uma base partilhada |
+| Backend e SQL Server Express | Centrais no servidor — uma base partilhada |
 | Conhecimento | Partilhado: descobertas e alterações ficam disponíveis aos utilizadores autorizados |
 | Rede externa | O funcionamento diário **não** depende de serviços externos (LAN on-prem suficiente) |
-| Evolução | Continua permitido alojar a mesma plataforma de forma central externa no futuro, **sem** alterar o modelo funcional (clientes → um backend → um SQL Server) |
+| Evolução | Continua permitido alojar a mesma plataforma de forma central externa no futuro, **sem** alterar o modelo funcional (clientes → um backend → um SQL Server Express) |
 
 ### 5.2 Consequências explícitas
 
@@ -214,8 +214,8 @@ O PHC Knowledge adota um **modelo de instalação centralizada**.
 | Modo autónomo offline (stack completa num posto sem servidor) | **Não** |
 | Sincronização entre bases de dados autónomas / instalações locais independentes | **Não** |
 | Resolução de conflitos entre knowledge DBs locais | **Não necessário** |
-| SQL Server como BD de conhecimento em on-prem | **Sim** (central) |
-| SQLite como substituto de SQL Server para o knowledge partilhado | **Não** — só auxiliar / workspace Scanner / cache eventual |
+| SQL Server Express como BD de conhecimento em on-prem | **Sim** (central) |
+| SQLite como substituto de SQL Server Express para o knowledge partilhado | **Não** — só auxiliar / workspace Scanner / cache eventual |
 | Desktop com base de conhecimento independente | **Não** — o desktop liga ao backend central |
 
 **Distinção importante:** “sincronização entre bases autónomas” (fora do âmbito) ≠ mecanismos normais cliente–servidor (HTTP/API, SignalR, atualização de índices Full-Text Search no servidor, refresh da UI). Estes últimos são comunicação com o servidor central, não sync peer-to-peer de dados.
@@ -444,7 +444,7 @@ Sem DDL nesta fase.
 
 ### Decisões acordadas
 
-- Stack: .NET 10, ASP.NET Core, React+TS, SQL Server central, SQLite auxiliar, SQL Server Full-Text Search, SignalR.  
+- Stack: .NET 10, ASP.NET Core, React+TS, SQL Server Express central, SQLite auxiliar, pesquisa textual a validar, SignalR.  
 - Desktop Windows-first WebView2 (mesma SPA); evolução multiplataforma não bloqueada.  
 - **Utilização centralizada** no servidor da organização; sem autónomo offline; sem sync entre bases locais (§5).  
 - Scanner independente; Knowledge sem runtime Scanner; sem Discovery/Fusion operacional.  
@@ -504,16 +504,16 @@ Concluir fixtures e matriz de compatibilidade; depois preparar tarefas de implem
 
 ## 11. Revisão da decisão de base de dados — 2026-11-10
 
-Na revisão de 2026-11-10, o responsável do projeto confirmou **SQL Server como base de dados central do PHC Knowledge** e confirmou a manutenção do **SignalR** na arquitetura.
+Na revisão de 2026-11-10, o responsável do projeto confirmou **SQL Server Express como edição da base de dados central do PHC Knowledge** e confirmou a manutenção do **SignalR** na arquitetura.
 
 Esta decisão substitui a referência anterior a PostgreSQL, que tinha sido registada como acordada sem aprovação explícita do responsável do projeto. Essa classificação anterior fica revogada; não deve ser usada como requisito.
 
 Decisões em vigor:
 
-- **SQL Server:** base de dados central e partilhada da plataforma, alojada no servidor da organização (on-premises), sem misturar o modelo de Knowledge com as bases operacionais PHC dos clientes.
+- **SQL Server Express:** edição escolhida para a base de dados central e partilhada da plataforma, alojada no servidor da organização (on-premises), sem misturar o modelo de Knowledge com as bases operacionais PHC dos clientes.
 - **SQLite:** limitado ao workspace do Scanner e a cache local/auxiliar; não é a base de dados central nem uma base autónoma de Knowledge.
-- **Pesquisa textual:** SQL Server Full-Text Search como ponto de partida, sujeito à validação dos requisitos concretos de pesquisa e configuração.
+- **Pesquisa textual:** mecanismo e disponibilidade a confirmar na edição/versão Express selecionada; não assumir Full-Text Search antes dessa confirmação.
 - **SignalR:** mantido como capacidade de comunicação em tempo real entre backend e clientes, por exemplo para progresso de importações, operações demoradas e notificações. A sua presença na arquitetura não obriga a implementar todos estes fluxos na primeira entrega.
-- **Licenciamento e edição do SQL Server:** escolha concreta ainda por validar em função do ambiente de alojamento, volume, concorrência e custos.
+- **Capacidade da edição Express:** validar limites de tamanho da base de dados, CPU/memória e funcionalidades face ao volume e concorrência esperados. A escolha da edição está fechada; a validação de adequação operacional continua pendente.
 
 A arquitetura centralizada, a API ASP.NET Core, React + TypeScript, o cliente Windows via WebView2 e a fronteira funcional entre Scanner e Knowledge mantêm-se inalterados.
