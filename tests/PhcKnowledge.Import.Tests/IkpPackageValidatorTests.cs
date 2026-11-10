@@ -52,6 +52,8 @@ public sealed class IkpPackageValidatorTests
         {
             foreach (var file in Directory.EnumerateFiles(FixtureDirectory, "*", SearchOption.AllDirectories))
             {
+                if (Path.GetExtension(file).Equals(".md", StringComparison.OrdinalIgnoreCase))
+                    continue; // Fixture documentation is not part of the IKP package.
                 var relative = Path.GetRelativePath(FixtureDirectory, file).Replace(Path.DirectorySeparatorChar, '/');
                 var entry = archive.CreateEntry(relative, CompressionLevel.Optimal);
                 using var target = entry.Open();
