@@ -85,8 +85,8 @@ Esta é uma direção futura, não uma descrição de componentes já implementa
 
 ## 6. Sequência de evolução
 
-1. **Agora — Scanner e IKP fiáveis:** fechar P1.B, validar o object-index e produzir um pacote real íntegro.
-2. **Plataforma central:** importar capturas, preservar histórico e garantir isolamento por instalação.
+1. **Scanner e IKP fiáveis:** P1.B e exportador IKP 0.1 implementados; projeção do Object Index validada com captura real (8/21 kinds). Falta validar o ZIP completo produzido pelo exportador com o validador independente.
+2. **Plataforma central — primeira fatia:** Receive / Validate / Archive, com arquivo imutável e registo no SQL Server Express. Associação de instalação, materialização de observações e histórico serão etapas posteriores.
 3. **Conhecimento consultável:** identidade lógica, comparação, relações, pesquisa textual/estruturada e anotações.
 4. **Preparação de corpus:** incorporar documentação e outras fontes com metadados, direitos de utilização, versões e proveniência.
 5. **RAG experimental:** implementar retrieval híbrido e respostas com citações num conjunto controlado de perguntas.
@@ -111,7 +111,7 @@ Antes de avançar para um piloto RAG relevante, devemos conseguir:
 
 Esta decisão complementa, não substitui, o roadmap visual do PHC Knowledge de 2026-11-06. A Fase 4 — Investigação assistida — deve ser entendida como a futura camada RAG/investigação, construída sobre as fases anteriores.
 
-O foco imediato mantém-se no P1.B e na validação do IKP com uma captura real. Não se deve desviar esforço para embeddings, chat UI ou integração LLM antes de a base de conhecimento suportar contexto, proveniência e evidência.
+O foco imediato é validar o ZIP IKP real e implementar Receive / Validate / Archive no Knowledge. Não desviar esforço para embeddings, chat UI ou integração LLM antes de a base de conhecimento suportar contexto, proveniência e evidência.
 
 ## 9. Regra de orientação para futuras decisões
 
@@ -124,3 +124,8 @@ Quando surgir uma proposta técnica, perguntar:
 Se uma proposta antecipar a camada RAG sem resolver as fundações, deve ser adiada ou tratada apenas como experiência isolada.
 
 **Decisão resumida:** o PHC Knowledge é primeiro uma plataforma de conhecimento técnico fiável e reutilizável; a sua evolução natural poderá ser um sistema RAG híbrido, contextual e fundamentado em evidências.
+
+
+## Atualização de estado — 2026-11-10
+
+A decisão Knowledge-first mantém-se. O Scanner já tem exportador IKP 0.1; a projeção do Object Index foi exercitada com a captura PHC default, embora apenas 8/21 kinds estivessem presentes. A validação do ZIP completo com o validador independente e a primeira fatia da plataforma central continuam pendentes. RAG permanece objetivo futuro, não parte do importador inicial.
