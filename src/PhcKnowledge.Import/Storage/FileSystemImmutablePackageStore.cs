@@ -43,16 +43,32 @@ public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore
             return new ArchivedPackage(relativeKey.Replace(Path.DirectorySeparatorChar, '/'), true);
         }
 
+        var temporaryDestination = destination + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
-            File.Move(validatedPackagePath, destination, overwrite: false);
-            File.SetAttributes(destination, File.GetAttributes(destination) | FileAttributes.ReadOnly);
-            return new ArchivedPackage(relativeKey.Replace(Path.DirectorySeparatorChar, '/'), false);
+            await using (var source = File.OpenRead(validatedPackagePath))
+            await using (var target = new FileStream(temporaryDestination, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true))
+            {
+                await source.CopyToAsync(target, 81920, cancellationToken);
+                await target.FlushAsync(cancellationToken);
+            }
+
+            await EnsureSameContentAsync(temporaryDestination, hash, actualLength, cancellationToken);
+            try
+            {
+                File.Move(temporaryDestination, destination, overwrite: false);
+                File.SetAttributes(destination, File.GetAttributes(destination) | FileAttributes.ReadOnly);
+                return new ArchivedPackage(relativeKey.Replace(Path.DirectorySeparatorChar, '/'), false);
+            }
+            catch (IOException) when (File.Exists(destination))
+            {
+                await EnsureSameContentAsync(destination, hash, actualLength, cancellationToken);
+                return new ArchivedPackage(relativeKey.Replace(Path.DirectorySeparatorChar, '/'), true);
+            }
         }
-        catch (IOException) when (File.Exists(destination))
+        finally
         {
-            await EnsureSameContentAsync(destination, hash, actualLength, cancellationToken);
-            return new ArchivedPackage(relativeKey.Replace(Path.DirectorySeparatorChar, '/'), true);
+            try { if (File.Exists(temporaryDestination)) File.Delete(temporaryDestination); } catch { }
         }
     }
 
