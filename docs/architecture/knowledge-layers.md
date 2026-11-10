@@ -1,7 +1,7 @@
 # Camadas de conhecimento e proveniência
 
 Fonte consolidada a partir de [`../sources/analisar-base-phc-2026-11.txt`](../sources/analisar-base-phc-2026-11.txt) e dos ADRs do Scanner em `PhcKnowledgeScanner/docs/decisions/`.  
-Estado: princípios orientadores; implementação na plataforma PHC Knowledge ainda não definida.
+Estado: princípios de domínio; não confundir com modelo físico já implementado. Para identidade/proveniência, prevalecem `p1-identity-provenance-contract.md` e `ikp-0.1-specification.md`.
 
 ## Princípio
 
@@ -33,9 +33,9 @@ Distinções obrigatórias:
 - Interpretação técnica ≠ conhecimento validado.
 - Referência textual num artefacto ≠ claim de dependência.
 
-## Identidade, versão e anotações (proposta 1e)
+## Identidade, versão e anotações — contexto histórico e direção de domínio
 
-Entidades lógicas propostas na conversa (ainda não fechadas para a plataforma):
+Os nomes abaixo registam conceitos exploratórios da proposta 1e; não são entidades físicas aprovadas. A identidade da origem e os fingerprints têm semântica normativa nos contratos P1/IKP. O modelo persistente da plataforma será definido durante a implementação, sem assumir que estes nomes têm de se tornar tabelas:
 
 - **CustomizationIdentity** — identidade estável da personalização na instalação.
 - **CustomizationVersion** — instância num scan (hash de conteúdo).
@@ -64,3 +64,11 @@ Comportamento desejado entre scans:
 - Usar `KnowledgeRelation` genérico para tudo.
 - Promover conhecimento geral por semelhança de nomes.
 - Inventar significado funcional no Scanner ou na ingestão automática.
+
+
+## Regras consolidadas adicionais
+
+- A base central agrega conhecimento observado em várias instalações; instalação é dimensão de proveniência e filtro, não limite da pesquisa global.
+- Distinguir PHC Standard confirmado por referência, conhecimento observado e personalização específica. A presença numa ou várias instalações não promove automaticamente um objeto a standard.
+- Factos REL/DTL declarados e relações derivadas (por exemplo, FK SQL ou interpretações) mantêm-se separados.
+- As dependências funcionais são distintas de relações estruturais e referências textuais; devem conservar tipo de evidência, confiança e proveniência.
