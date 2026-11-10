@@ -1,9 +1,9 @@
 # Estado do projeto e próximos passos
 
-**Última atualização:** 2026-11-04  
-**Repositório:** [Jhouinho/PhcKnowledgeScanner](https://github.com/Jhouinho/PhcKnowledgeScanner)  
+**Última atualização:** 2026-11-10  
+**Repositório:** [Jhouinho/PhcKnowledge](https://github.com/Jhouinho/PhcKnowledge) — monorepo canónico; Scanner em `PhcKnowledgeScanner/`  
 **Branch de referência:** `main`  
-**Commit de referência:** `3e8bea674ed1b8505127d37b68f87f0e3ae5740d`
+**Nota de referência:** o histórico de commits e ADRs do Scanner mantém-se no monorepo; esta revisão documental não declara uma nova execução de build/testes.
 
 Este documento é o ponto único de situação do projeto. Deve ser atualizado no final de cada ciclo de trabalho, distinguindo sempre o que está implementado, o que foi validado, o que está em curso e o que é apenas uma ideia. Não substitui ADRs nem handoffs técnicos específicos.
 
@@ -28,12 +28,12 @@ Princípios que se mantêm:
 - Nunca alterar a base de dados PHC.
 - Não normalizar nem reescrever destrutivamente o código original.
 - Não truncar silenciosamente conteúdos.
-- Não misturar este projeto com `Jhouinho/ConsoleApp` (PHC Knowledge / Scanner V1).
+- Não misturar este projeto com `Jhouinho/ConsoleApp` (arquitetura histórica / Scanner V1). O produto PHC Knowledge atual está no repositório `Jhouinho/PhcKnowledge`, fora da pasta Scanner.
 - Aplicação desktop nativa WPF; não introduzir uma interface web, HTTP ou WebView.
 
 ## 2. Estado atual — resumo
 
-A fundação inicial evoluiu para uma aplicação desktop funcional, com recolha SQL/PHC, workspace SQLite, exportação ZIP e exploração do inventário e das relações declaradas.
+A aplicação Scanner evoluiu para desktop WPF + CLI, com recolha SQL/PHC, workspace SQLite, análise relacional e exportação IKP 0.1. O código é autónomo, mas o repositório canónico é agora o monorepo `Jhouinho/PhcKnowledge`.
 
 | Área | Estado atual |
 |---|---|
@@ -44,7 +44,7 @@ A fundação inicial evoluiu para uma aplicação desktop funcional, com recolha
 | Recolha estrutural SQL | Implementada |
 | Recolha de personalizações PHC | Implementada para as famílias já identificadas no collector |
 | Workspace SQLite | Implementado |
-| Exportação ZIP | Implementada |
+| Exportação ZIP legado | Implementada; mantém compatibilidade com fluxos existentes |\n| Exportação IKP 0.1 | Implementada em `PhcKnowledgeScanner.Export`; CLI `scan-ikp` e `export-ikp`; testes dedicados |
 | Inventário de tabelas e chaves | Implementado |
 | Recolha e interpretação de relações declaradas REL/DTL | Implementada, com parser determinístico V1.1 |
 | Extração de FieldMappings | Implementada |
@@ -178,12 +178,13 @@ Critérios obrigatórios desta evolução:
 - Explicações devem indicar quando são inferências ou quando a evidência é insuficiente.
 - A análise não deve executar código PHC nem SQL recolhido.
 
-### P3 — Integração futura com PHC Knowledge
+### P3 — Integração com PHC Knowledge
 
-- Clarificar o contrato de intercâmbio entre Scanner e PHC Knowledge.
-- ZIP continua a ser o formato de exportação implementado.
-- Exportação JSON direta e integração/importação no PHC Knowledge não devem ser consideradas concluídas até existir implementação e validação explícitas.
-- Preservar a independência do Scanner: não criar dependência de projeto para `ConsoleApp`.
+- **Contrato de intercâmbio:** IKP 0.1 definido por especificação, schemas, fixtures, validador e matriz de compatibilidade.
+- **Exportação IKP:** implementada em `PhcKnowledgeScanner.Export`, com comandos CLI `scan-ikp` e `export-ikp`.
+- **Validação real:** Object Index projetado com a captura PHC default `CSDefault202603` (8/21 kinds presentes; 16.618 objetos e 49 artefactos com tamanho/hash confirmados). Falta validar o ZIP completo produzido pelo exportador com o validador independente.
+- **Importação no Knowledge:** ainda não implementada; a primeira fatia será Receive / Validate / Archive no projeto central.
+- Preservar a independência do Scanner: não criar dependência runtime ou referência de projeto para a plataforma Knowledge.
 
 ## 6. Fora de âmbito / não assumir como decidido
 
@@ -192,7 +193,7 @@ Critérios obrigatórios desta evolução:
 - Comentários funcionais automáticos por IA: ainda não implementados.
 - Reescrita ou correção automática de código PHC: não pretendida.
 - Escrita na base de dados PHC: fora de âmbito.
-- Exportação JSON direta para PHC Knowledge: não confirmada como implementada.
+- Importação no PHC Knowledge: ainda não implementada. O emissor IKP 0.1 existe; o Knowledge ainda não tem API/armazenamento próprios.
 - Qualquer alteração ao `ConsoleApp`/PHC Knowledge: projeto separado.
 
 As decisões técnicas ainda em aberto continuam registadas em [open-decisions.md](open-decisions.md). Não converter automaticamente esses pontos em requisitos.
@@ -211,8 +212,13 @@ No final de cada ciclo de implementação, atualizar apenas o necessário:
 
 ## 8. Estado de referência para retomar
 
-**Último trabalho confirmado:** exploração desktop do Inventário com relações e FieldMappings, commit `3e8bea674ed1b8505127d37b68f87f0e3ae5740d` em `main`.
+**Estado de referência — 2026-11-10:** Scanner desktop/CLI, collectors SQL/PHC, workspace SQLite, análise REL/DTL e exportador IKP 0.1 implementados. A plataforma Knowledge não é executada pelo Scanner. A próxima validação do lado Scanner é o ZIP IKP real; a próxima implementação do lado Knowledge é Receive / Validate / Archive.
 
 **Próxima atividade recomendada:** consolidar e validar a experiência atual de abertura/exploração de workspaces; depois fechar a cobertura das expressões e só então iniciar a evolução da compreensão do código PHC.
 
 **Não começar já:** grafo visual, explicações por IA ou reescrita de código. Primeiro confirmar cobertura, estrutura e critérios de validação.
+
+
+## 9. Integração com o PHC Knowledge — fronteira atual
+
+O Scanner é produtor de factos e pacotes. Não conhece nem chama a API do Knowledge, não acede à base central e não mantém histórico multi-captura. O IKP transporta uma captura e a respetiva cobertura/proveniência. A plataforma central validará e arquivará o pacote, associará instalações e materializará conhecimento em etapas próprias.
