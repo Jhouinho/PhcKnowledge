@@ -4,9 +4,9 @@
 | --- | --- |
 | Data inicial | 2026-11-06 |
 | Última consolidação | 2026-11-10 (SQL Server Express central + SignalR) |
-| Estado | Stack, fronteiras, utilização centralizada e direção do IKP 0.1 consolidadas; contrato em revisão técnica e fixtures — ver [`ikp-0.1-specification.md`](ikp-0.1-specification.md) |
+| Estado | Stack e contrato IKP 0.1 consolidados; exportador implementado no Scanner; plataforma central ainda por implementar |
 | Âmbito | Stack da plataforma PHC Knowledge + bases do contrato de importação do Scanner independente |
-| Implementação | Nenhuma nesta etapa |
+| Implementação | Scanner e exportador IKP implementados; nenhuma implementação da plataforma central nesta etapa |
 
 Legenda:
 
@@ -28,7 +28,7 @@ Legenda:
 
 **Fronteiras** `[acordado]`: Scanner independente produz pacotes; PHC Knowledge importa e transforma; sem runtime do Scanner na plataforma; sem recuperar Discovery/Fusion do ConsoleApp.
 
-**IKP** `[acordado]`: contrato 0.1 consolidado para revisão técnica através de fixtures e matriz de compatibilidade: [`ikp-0.1-specification.md`](ikp-0.1-specification.md). Parte do Database Schema Snapshot; não junta ZIPs atuais nem recupera Snapshot V1 histórico.
+**IKP** `[acordado]`: contrato 0.1 definido por especificação, schemas, fixtures e validador. O Scanner já emite IKP nativamente através de `IkpPackageExporter`; a plataforma central ainda não o recebe/importa.
 
 **Instalações** `[acordado]`: IDs próprios na plataforma; associação guiada na 1.ª importação (existente / nova / pendente se ambígua); servidor/BD **não** são identificadores definitivos.
 
@@ -36,7 +36,7 @@ Legenda:
 
 **Modelo de utilização** `[acordado]`: instalação **centralizada** num servidor da organização; clientes (browser / desktop WebView2) ligam ao mesmo backend e SQL Server Express; sem modo autónomo offline e sem sincronização entre bases locais — ver §5.
 
-**Sequência atual** `[acordado]`: (1) stack e utilização centralizada — concluídos; (2) princípios de observação/identidade/linhagem — consolidados; (3) contrato IKP 0.1 — consolidado documentalmente; (4) fixtures e matriz de compatibilidade — em curso; (5) tarefas de implementação por componente; (6) implementação após revisão técnica e instrução explícita.
+**Sequência atual (2026-11-10)**: (1) stack e utilização centralizada — concluídas; (2) contratos P1 e IKP 0.1 — definidos e aplicados no Scanner; (3) exportador IKP — implementado; (4) validação end-to-end do ZIP real — pendente; (5) Receive / Validate / Archive no Knowledge — próxima implementação aprovada.
 
 Fontes: este repositório (`product-boundaries.md`, `knowledge-layers.md`, `extract-2026-11-conversation.md`, `PROJECT_GUIDELINES.md`); Scanner incluído; investigação [`2026-11-05.md`](https://github.com/Jhouinho/ConsoleApp/blob/master/docs/investigation/2026-11-05.md) no GitHub `master`.
 
@@ -138,7 +138,7 @@ A investigação analisa sobretudo o **ConsoleApp / Scanner V1 histórico**. As 
 | Desktop plataforma | Windows-first, SPA em WebView2 | Uma UI/lógica; evita WPF/Avalonia duplicados | Não impede evolução multiplataforma futura; Scanner mantém WPF próprio |
 | BD central | SQL Server Express | Integração natural com .NET e ecossistema PHC; base relacional central sem custo de licença da edição Express | Limites de capacidade/recursos e funcionalidades da edição devem ser validados face ao volume esperado |
 | SQLite | Workspace Scanner / cache auxiliar no cliente ou servidor | Já usado no Scanner `[código]`; auxiliar apenas | **Não** substitui SQL Server Express; desktop **não** mantém knowledge DB autónoma |
-| Pesquisa | Mecanismo nativo de SQL Server a definir após validação da edição Express | Evita introduzir um motor externo sem necessidade demonstrada | SQL Server 2025 Express inclui Full-Text Search; em versões anteriores confirmar o pacote/edição de instalação. Validar idioma, ranking e indexação. SQL Server 2025 Express limita cada BD relacional a 50 GB, o motor a 4 cores e o buffer pool a 1.410 MB; dimensionar o Knowledge e manter artefactos originais fora da BD. OpenSearch **não** nesta fase |
+| Pesquisa | SQL Server Full-Text Search como ponto de partida, caso se confirme SQL Server 2025 Express | Pesquisa textual integrada sem motor externo adicional | Confirmar versão instalada, idioma, ranking e indexação. SQL Server 2025 Express limita cada BD relacional a 50 GB, o motor a 4 cores e o buffer pool a 1.410 MB; dimensionar o Knowledge e manter artefactos originais fora da BD. OpenSearch **não** nesta fase |
 | Tempo real | SignalR | Nativo no stack ASP.NET | Grupos por organização/instalação `[proposta]` de detalhe |
 
 ### 4.3 Scanner e PHC Knowledge `[acordado]`
@@ -418,13 +418,13 @@ Sem DDL nesta fase.
 | Schema snapshot + hash canónico + Partial | **Já no Scanner atual** | ADR 0014; `SchemaSnapshotHasher` |
 | Comparação schema coverage-aware (`NotObserved`) | **Parcial** — compara, mas Remove sem coverage | `DatabaseSchemaSnapshotComparer` |
 | ZIP scan com manifesto mínimo | **Parcial** — exporta, contrato insuficiente | `ZipScanExporter` |
-| Pacote unificado IKP (schema+custom+relations+coverage) | **Ainda não existe** | — |
-| Ingestão Receive/Validate/Archive | **Existe no ConsoleApp (histórico)** — adaptar, não copiar cego | Phase 7.10 `SnapshotIngestionService` |
+| Pacote unificado IKP (schema+custom+relations+coverage) | **Implementado no Scanner** | `IkpPackageExporter`; testes automatizados; falta validação end-to-end com captura real |
+| Ingestão Receive/Validate/Archive | **Ainda não existe no PHC Knowledge** | Implementação nova; não copiar pipeline histórico sem validação |
 | Candidate / Activation | **Existe como desenho/histórico** | Phase 7.12 |
 | EntityIdentity scoped | **Existe no ConsoleApp** — adaptar conceitos | `EntityIdentityPolicy` |
 | Discovery → Fusion → Store live | **Não reutilizar como arquitetura operacional** | ADR-0049; guidelines |
 | Explorer Blazor / FTS Store V1 | **Património UX/pesquisa** — adaptar ideias, não o pipeline | ConsoleApp |
-| Multiempresa + RLS + SignalR + React | **Ainda não existe** no produto alvo | — |
+| Multiempresa + API + SignalR + React | **Ainda não existe** na plataforma central | Arquitetura definida; implementação futura por fatias |
 | Anotações humanas / promoção Standard | **Modelo conceptual** (docs) / Domain D histórico separado | `knowledge-layers.md`; IK piloto ConsoleApp |
 
 ---
@@ -444,21 +444,22 @@ Sem DDL nesta fase.
 
 ### Decisões acordadas
 
-- Stack: .NET 10, ASP.NET Core, React+TS, SQL Server Express central, SQLite auxiliar, pesquisa textual a validar, SignalR.  
+- Stack: .NET 10, ASP.NET Core, React+TS, SQL Server Express central, SQLite auxiliar, SignalR. SQL Server 2025 Express inclui Full-Text Search; se for escolhida versão anterior, confirmar variante/pacote de instalação.  
 - Desktop Windows-first WebView2 (mesma SPA); evolução multiplataforma não bloqueada.  
 - **Utilização centralizada** no servidor da organização; sem autónomo offline; sem sync entre bases locais (§5).  
 - Scanner independente; Knowledge sem runtime Scanner; sem Discovery/Fusion operacional.  
 - IKP a partir do Database Schema Snapshot (não ZIP V1; não união ingénua dos exports).  
 - Associação guiada de instalações; IDs próprios; servidor/BD ≠ identidade definitiva.  
 - Abstração de package store (FS + object storage); pacotes imutáveis.  
-- Sequência de trabalho da §10 (passos 1–2 concluídos).
+- Sequência de trabalho da §10: stack/contrato/Scanner concluídos; validação end-to-end e primeira fatia do Knowledge pendentes.
 
 ### Ainda pendente
 
-1. **Validação conjunta da especificação IKP 0.1** (decisões de envelope, emissão, integridade e partilha já consolidadas em [`ikp-0.1-specification.md`](ikp-0.1-specification.md) §13).  
+1. **Validação end-to-end do IKP real:** gerar ZIP a partir da captura PHC default existente e validar com schemas e validador independente.  
 2. **Fornecedor concreto de object storage** (quando não bastar filesystem no servidor).  
-3. Detalhe de autenticação on-prem (contas locais vs AD/OIDC) — não bloqueia o modelo §5.  
-4. Opcional: obter `docs/investigation/` no clone local do ConsoleApp.
+3. Detalhe de autenticação on-prem (contas locais vs AD/OIDC) — não bloqueia a primeira fatia.  
+4. Versão concreta do SQL Server Express e validação de capacidade/limites.  
+5. Fornecedor de object storage, apenas quando filesystem local deixar de ser suficiente.
 
 ### Princípios técnicos assumidos (não são ADRs de implementação)
 
@@ -494,7 +495,7 @@ A implementação começa por uma fatia pequena e verificável. Receber/arquivar
 
 | Item | Nota |
 | --- | --- |
-| IKP real | Falta validar pacote produzido a partir de captura PHC real com o validador independente |
+| IKP real | Object Index já validado com captura real (8/21 kinds); falta validar o ZIP completo produzido pelo exportador com o validador independente |
 | Ingestão Knowledge | Ainda não existe endpoint, validação de ZIP, arquivo imutável ou registo SQL |
 | Associação/publicação | Pertencem a etapas posteriores; não entram na primeira fatia |
 | Comparação | Não implementar remoções sem cobertura compatível e completa |
@@ -514,7 +515,7 @@ Referências oficiais:
 - [SQL Server 2025 — edições e funcionalidades suportadas](https://learn.microsoft.com/en-us/sql/sql-server/editions-and-components-of-sql-server-2025?view=sql-server-ver17)
 - [SQL Server 2025 — novidades e limites da edição Express](https://learn.microsoft.com/sql/sql-server/what-s-new-in-sql-server-2025?view=sql-server-ver17)
 
-## 11. Revisão da decisão de base de dados — 2026-11-10
+## 12. Revisão da decisão de base de dados — 2026-11-10
 
 Na revisão de 2026-11-10, o responsável do projeto confirmou **SQL Server Express como edição da base de dados central do PHC Knowledge** e confirmou a manutenção do **SignalR** na arquitetura.
 
@@ -524,7 +525,7 @@ Decisões em vigor:
 
 - **SQL Server Express:** edição escolhida para a base de dados central e partilhada da plataforma, alojada no servidor da organização (on-premises), sem misturar o modelo de Knowledge com as bases operacionais PHC dos clientes.
 - **SQLite:** limitado ao workspace do Scanner e a cache local/auxiliar; não é a base de dados central nem uma base autónoma de Knowledge.
-- **Pesquisa textual:** mecanismo e disponibilidade a confirmar na edição/versão Express selecionada; não assumir Full-Text Search antes dessa confirmação.
+- **Pesquisa textual:** SQL Server 2025 Express inclui Full-Text Search. Se for escolhida versão anterior, confirmar variante/pacote de instalação. Validar idioma, ranking e indexação.
 - **SignalR:** mantido como capacidade de comunicação em tempo real entre backend e clientes, por exemplo para progresso de importações, operações demoradas e notificações. A sua presença na arquitetura não obriga a implementar todos estes fluxos na primeira entrega.
 - **Capacidade da edição Express:** validar limites de tamanho da base de dados, CPU/memória e funcionalidades face ao volume e concorrência esperados. A escolha da edição está fechada; a validação de adequação operacional continua pendente.
 
