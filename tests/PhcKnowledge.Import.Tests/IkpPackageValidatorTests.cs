@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using PhcKnowledge.Import.Ikp;
+using PhcKnowledge.Import.Receipts;
 
 namespace PhcKnowledge.Import.Tests;
 
@@ -64,6 +65,39 @@ public sealed class IkpPackageValidatorTests
     }
 
     [Fact]
+    public async Task Valid_package_registers_receipt_for_the_authenticated_organization()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"phc-knowledge-receipt-{Guid.NewGuid():N}");
+        var organizationId = Guid.NewGuid();
+        var repository = new RecordingReceiptRepository();
+        try
+        {
+            var validator = new IkpPackageValidator(SchemaDirectory);
+            var store = new PhcKnowledge.Import.Storage.FileSystemImmutablePackageStore(Path.Combine(root, "archive"));
+            var ingestion = new IkpPackageIngestionService(
+                validator, store, Path.Combine(root, "staging"), receiptRepository: repository);
+
+            await using var package = CreateFixtureZip();
+            var result = await ingestion.ReceiveValidateArchiveAsync(package, organizationId);
+
+            Assert.NotNull(result.Receipt);
+            Assert.Equal(organizationId, result.Receipt.OrganizationId);
+            Assert.Equal(result.Validation.PackageId, result.Receipt.PackageId);
+            Assert.Equal(result.Archive.StorageKey, result.Receipt.StorageKey);
+            Assert.Equal(organizationId, repository.OrganizationId);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+                    File.SetAttributes(file, FileAttributes.Normal);
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task Zip_path_traversal_is_rejected()
     {
         await using var package = CreateFixtureZip(includeTraversalEntry: true);
@@ -81,6 +115,26 @@ public sealed class IkpPackageValidatorTests
 
         await Assert.ThrowsAsync<IkpPackageValidationException>(
             () => validator.ValidateAsync(package));
+    }
+
+    private sealed class RecordingReceiptRepository : IPackageReceiptRepository
+    {
+        public Guid? OrganizationId { get; private set; }
+
+        public Task<PackageReceiptRegistration> RegisterArchivedPackageAsync(
+            Guid organizationId,
+            IkpPackageValidationResult validation,
+            PhcKnowledge.Import.Storage.ArchivedPackage archive,
+            CancellationToken cancellationToken = default)
+        {
+            OrganizationId = organizationId;
+            var receipt = new PackageReceipt(
+                Guid.NewGuid(), organizationId, validation.PackageId, validation.CaptureId,
+                validation.ContractVersion, validation.ProducerProductId, validation.ProducerProductVersion,
+                validation.OriginDatabaseName, validation.ZipSha256, validation.ZipByteLength,
+                archive.StorageKey, DateTimeOffset.UtcNow, "{}");
+            return Task.FromResult(new PackageReceiptRegistration(receipt, false));
+        }
     }
 
     private static MemoryStream CreateFixtureZip(bool includeTraversalEntry = false, bool tamperPayload = false)
