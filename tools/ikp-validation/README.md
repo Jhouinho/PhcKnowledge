@@ -25,6 +25,16 @@ python tools/ikp-validation/validate_object_index.py caminho/para/object-index.j
 
 Isto valida os bytes emitidos pelo código C#, sem duplicar o JSON Schema no projector.
 
+## Validar um ZIP IKP completo
+
+Depois de exportar um pacote pelo Scanner:
+
+```bash
+python tools/ikp-validation/validate_ikp_zip.py caminho/para/package.ikp.zip
+```
+
+O validador verifica a estrutura do ZIP, CRC, paths canónicos, entradas duplicadas, entradas cifradas e links simbólicos; extrai para uma pasta temporária e executa o validador de contrato sobre o conteúdo. A extração é sempre feita depois da validação dos paths.
+
 ## Executar testes positivos e negativos
 
 ```bash
