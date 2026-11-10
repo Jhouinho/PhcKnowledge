@@ -115,8 +115,10 @@ Concluído:
 
 A integração do leitor read-only com o projector foi validada no GitHub Actions run `42418465891`: build concluído, 307 testes .NET aprovados e a saída C# de uma captura sintética mista validada pelo JSON Schema IKP 0.1 Draft 2020-12. A suite inclui leitura seletiva de artefactos referenciados, validação cruzada de capabilities/coverage, cenários sintéticos dos 21 kinds e determinismo com diferentes ordens de entrada.
 
-Restante:
-1. Fechar a geração e validação do pacote IKP completo a partir do workspace.
-2. Executar contra captura real quando o SQLite e a pasta completa de artefactos estiverem disponíveis.
+Atualização 2026-11-10:
+- O projector foi exercitado com a captura real `CSDefault202603` (16.618 objetos; 49 artefactos com tamanho/hash confirmados).
+- O exportador IKP completo está implementado e integrado na CLI.
+- Falta validar o ZIP IKP completo produzido a partir da captura real com o validador independente.
+- A captura real cobre 8/21 kinds; os restantes continuam cobertos apenas sinteticamente.
 
-Até à validação com captura real, não alterar schema SQLite, collectors, queries, IDs atuais ou artefactos já produzidos.
+Até existir evidência de uma lacuna concreta, manter inalterados schema SQLite, collectors, queries, IDs atuais e artefactos já produzidos.
