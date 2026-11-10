@@ -34,6 +34,7 @@ jobs:
         run: dotnet test PhcKnowledge.sln --no-build --configuration Release --logger "console;verbosity=normal"
         env:
           PHC_KNOWLEDGE_IKP_OUTPUT: ${{ runner.temp }}/object-index.synthetic.json
+          PHC_KNOWLEDGE_IKP_PACKAGE_OUTPUT: ${{ runner.temp }}/ikp-synthetic.zip
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -43,3 +44,7 @@ jobs:
         run: python tools/ikp-validation/validate_object_index.py "$env:PHC_KNOWLEDGE_IKP_OUTPUT"
         env:
           PHC_KNOWLEDGE_IKP_OUTPUT: ${{ runner.temp }}/object-index.synthetic.json
+      - name: Validate C#-generated IKP ZIP against the independent contract validator
+        run: python tools/ikp-validation/validate_ikp_zip.py "$env:PHC_KNOWLEDGE_IKP_PACKAGE_OUTPUT"
+        env:
+          PHC_KNOWLEDGE_IKP_PACKAGE_OUTPUT: ${{ runner.temp }}/ikp-synthetic.zip
