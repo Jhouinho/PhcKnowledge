@@ -34,7 +34,8 @@ Não é: clone do PHC, explorador SQL genérico, repositório de ficheiros, nem 
 - Relaciona informação de várias fontes.
 - Representa implementações, comportamentos, dependências e conhecimento validado.
 - Reutiliza conhecimento standard entre organizações; isola conhecimento de instalação.
-- Consome artefactos exportados; não depende de correr o Scanner em runtime.
+- Recebe, valida e importa pacotes IKP 0.1; mantém o conhecimento central, histórico, identidade e proveniência.
+- Não depende de correr o Scanner em runtime nem acede ao workspace SQLite.
 
 ### Motor de investigação / IA (futuro)
 
@@ -49,6 +50,7 @@ Não é: clone do PHC, explorador SQL genérico, repositório de ficheiros, nem 
 3. Exportação deve servir importação no PHC Knowledge (além do ZIP atual).
 4. Ferramenta de recolha deve ser simples de transportar (ligação, progresso, exportação).
 5. Evolução começa por conhecimento estruturado, pesquisável e rastreável — não por chatbot.
+6. O conhecimento deve compreender dependências funcionais e transitivas entre objetos, distinguindo referências detetadas, dependências confirmadas e inferências; deve permitir avaliar o que falta ou precisa de adaptação ao reutilizar um objeto noutra instalação.
 
 ## Domínios de conhecimento
 
@@ -66,3 +68,11 @@ Usados para avaliar arquitetura (não como backlog imediato):
 1. Encontrar implementações semelhantes entre clientes.
 2. Avaliar impacto de alterar um evento / componente.
 3. Explicar um comportamento PHC (standard + personalizações + configs).
+
+
+## Estado de implementação — 2026-11-10
+
+- **Scanner:** componente autónomo existente; exportador IKP 0.1 integrado na CLI.
+- **IKP:** contrato, schemas, fixtures, validador e testes existentes. A projeção do Object Index foi validada com uma captura PHC real; o ciclo completo do ZIP do exportador com captura real ainda carece de confirmação.
+- **PHC Knowledge:** a plataforma central ainda não tem projetos próprios em `src/` nem testes em `tests/`. A primeira fatia aprovada para implementação é Receive / Validate / Archive.
+- **Fora da primeira fatia:** associação de instalação, materialização de observações, comparação histórica, dependências funcionais e publicação.
