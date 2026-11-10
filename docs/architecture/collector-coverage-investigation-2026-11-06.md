@@ -3,12 +3,12 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-06 |
-| Estado | Investigação concluída; recomendações por validar |
+| Estado | Investigação histórica concluída; contrato P0/IKP e exportador implementados posteriormente |
 | Repositório analisado | `Jhouinho/PhcKnowledgeScanner`, branch `main` |
 | Âmbito | Cobertura, resultados vazios, ausência de estruturas, falhas e limites de observação |
 | Implementação | Nenhuma alteração ao código do Scanner ou ao contrato IKP nesta investigação |
 
-Este documento regista a análise realizada em 2026-11-06 para preservar o contexto antes de avançar para a revisão do contrato de cobertura do IKP. Descreve o comportamento encontrado no código, não uma implementação já existente de cobertura granular.
+Este documento regista a análise realizada em 2026-11-06 e descreve o comportamento então encontrado. Desde essa data, foram implementados no Scanner o catálogo de capabilities, coverage por operação e exportador IKP 0.1. As conclusões abaixo são históricas; o estado atual é descrito na matriz `ikp-0.1-scanner-compatibility-matrix.md`.
 
 ## 1. Objetivo
 
@@ -295,9 +295,9 @@ A secção 7.1 enumera atualmente `Succeeded`, `SucceededWithWarnings`, `Partial
 
 **Conclusão principal:** o PHC Knowledge não deve comparar apenas dois inventários. Deve comparar duas observações, cada uma com a sua cobertura, âmbito, proveniência e capacidade efetiva de recolha.
 
-## 11. Próximo passo recomendado
+## 11. Próximo passo recomendado à data — histórico
 
-Rever a secção 7 do IKP 0.1 em conjunto com esta análise e definir um contrato de cobertura único, compatível com os collectors e com a importação.
+Este passo foi executado posteriormente: a semântica de capabilities/coverage foi incorporada no contrato IKP 0.1 e implementada no Scanner. Consultar a matriz de compatibilidade para validações ainda pendentes.
 
 Ordem recomendada:
 
@@ -308,3 +308,8 @@ Ordem recomendada:
 5. Só depois avaliar alterações ao Scanner e testes de comparação de capturas.
 
 Não iniciar ainda a implementação do comparador nem alterar os collectors antes de validar este contrato.
+
+
+## Atualização de estado — 2026-11-10
+
+O contrato IKP 0.1 e o Scanner já dispõem de coverage por operação, capabilities e exportador dedicado. A validação real do Object Index cobriu 8/21 kinds da captura default; não se deve generalizar essa validação aos restantes kinds. A investigação original permanece preservada como diagnóstico da situação de 2026-11-06.
