@@ -246,7 +246,7 @@ public sealed class IkpPackageValidator
             checksums.GetProperty("algorithm").GetString() != "SHA-256")
             throw new IkpPackageValidationException("Formato de checksums não suportado.");
 
-        var result = new Dictionary<string, (long, string)>(StringComparer.Ordinal);
+        var result = new Dictionary<string, (long Length, string Hash)>(StringComparer.Ordinal);
         foreach (var entry in checksums.GetProperty("files").EnumerateArray())
         {
             var relative = NormalizeSafePath(entry.GetProperty("path").GetString()!);
@@ -309,10 +309,12 @@ public sealed class IkpPackageValidator
             throw new IkpPackageValidationException("Versão de capabilities não suportada.");
         var ids = new HashSet<string>(StringComparer.Ordinal);
         foreach (var operation in capabilities.GetProperty("operations").EnumerateArray())
+        {
             if (!ids.Add(operation.GetProperty("operationId").GetString()!))
                 throw new IkpPackageValidationException("operationId duplicado em capabilities.");
             if (!operation.TryGetProperty("supported", out var supported) || supported.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
                 throw new IkpPackageValidationException("Capability sem indicador supported válido.");
+        }
         return ids;
     }
 
