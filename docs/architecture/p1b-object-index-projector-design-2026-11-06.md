@@ -1,6 +1,6 @@
 # P1.B — Desenho do projetor object-index
 **Data:** 2026-11-06  
-**Estado:** primeiro projector end-to-end implementado; validação sintética e de fixture em curso  
+**Estado em 2026-11-10:** projector integrado no exportador IKP; validação sintética concluída e validação real parcial  
 **Âmbito:** transformar um workspace Scanner existente em `object-index.json` IKP 0.1
 
 ## 1. Objetivo e limites
@@ -199,14 +199,14 @@ Componentes:
 
 ### Limites ainda em aberto
 
-- A validação direta do object-index C# contra o JSON Schema está automatizada; a geração e validação de um pacote IKP completo a partir de um workspace ainda não está fechada.
-- Ainda não foi executado o projector sobre um workspace completo gerado por uma captura PHC real.
+- A validação direta do Object Index C# contra o JSON Schema está automatizada. O exportador IKP completo está implementado; falta confirmar o ZIP gerado a partir da captura real com o validador independente.
+- Atualização: o projector foi executado sobre a captura real `CSDefault202603`; foram projetados 16.618 objetos e confirmados 49 artefactos por tamanho/hash. A captura contém 8/21 kinds mapeados.
 - Não foram alterados schema SQLite, collectors ou queries PHC/SQL.
 
-### Próximo passo
+### Próximo passo — atualizado em 2026-11-10
 
-1. Aumentar os cenários sintéticos para PK/FK, views, procedures, triggers, variantes de função e falhas/ausências de artefactos.
-2. Fechar a geração de todos os ficheiros do pacote IKP a partir do workspace e validar o pacote completo com o validador de referência.
-3. Depois, validar a integração com uma captura controlada: primeiro base demo standard e, posteriormente, instalação personalizada.
+1. Validar um ZIP IKP produzido pelo exportador com a captura default real, usando o validador independente.
+2. Exercitar os kinds não presentes na captura real e manter os testes sintéticos para cobertura dos 21 kinds.
+3. Testar estabilidade de identidade entre capturas, sem alterar SQLite/collectors sem evidência concreta.
 
 A ausência de captura real não impede fechar o contrato nem validar o comportamento puro do projector.
