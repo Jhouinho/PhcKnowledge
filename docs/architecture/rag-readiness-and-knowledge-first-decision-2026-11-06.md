@@ -126,6 +126,6 @@ Se uma proposta antecipar a camada RAG sem resolver as fundações, deve ser adi
 **Decisão resumida:** o PHC Knowledge é primeiro uma plataforma de conhecimento técnico fiável e reutilizável; a sua evolução natural poderá ser um sistema RAG híbrido, contextual e fundamentado em evidências.
 
 
-## Atualização de estado — 2026-11-10
+## Atualização de estado — 2026-11-11
 
-A decisão Knowledge-first mantém-se. O Scanner já tem exportador IKP 0.1; a projeção do Object Index foi exercitada com a captura PHC default, embora apenas 8/21 kinds estivessem presentes. A validação do ZIP completo com o validador independente e a primeira fatia da plataforma central continuam pendentes. RAG permanece objetivo futuro, não parte do importador inicial.
+A decisão Knowledge-first mantém-se. O Scanner já tem exportador IKP 0.1; a projeção do Object Index foi exercitada com a captura PHC default, embora apenas 8/21 kinds estivessem presentes. O teste A/B da validação IKP identificou uma penalização severa de `uniqueItems` no array raiz `objects`; foi decidida a remoção localizada dessa regra, mantendo a unicidade de `sourceObjectId` no validador C# e de `artifactIds` no schema. A alteração, os testes/build e a validação end-to-end do ZIP continuam pendentes. A primeira fatia da plataforma central também não foi iniciada. RAG permanece objetivo futuro, não parte do importador inicial.
