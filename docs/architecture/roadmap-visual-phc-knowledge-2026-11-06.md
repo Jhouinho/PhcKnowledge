@@ -1,7 +1,7 @@
 # Roadmap visual do PHC Knowledge — visão, fases e estado atual
 
-**Data de referência:** 2026-11-10  
-**Estado:** roadmap atualizado em 2026-11-10 após implementação do exportador IKP no Scanner e validação da projeção do Object Index com captura real.  
+**Data de referência:** 2026-11-11  
+**Estado:** roadmap atualizado em 2026-11-11 com a evidência de desempenho da validação IKP 0.1 e a decisão pendente de ajuste localizado do JSON Schema.  
 **Nota:** as percentagens não são estimadas; os estados indicam maturidade qualitativa.
 
 ## 1. Objetivo do produto
@@ -43,7 +43,7 @@ flowchart TB
       B3["Cobertura e estados individuais<br/>Ausente ≠ vazio ≠ não recolhido"]
       B4["Validação sintética do Object Index<br/>21 kinds + JSON Schema oficial"]
       B5["Exportador IKP 0.1<br/>Implementado no Scanner"]
-      B6["Validação do ZIP real<br/>Exportador → validador independente"]
+      B6["Validação do ZIP real<br/>Schema, desempenho e validador independente"]
       B7["Validação com captura real<br/>Demo standard → instalação personalizada"]
       B1 --> B2
       B2 --> B3
@@ -158,14 +158,28 @@ O validador de referência também verifica referências cruzadas, paths seguros
 
 Limitação identificada: o workspace atual não persiste timestamps reais de início/fim, ScanMode, ScannerVersion nem um origin descriptor estruturado. O exportador não pode inventar esses valores nem inferi-los de `created_at_utc` ou do label da instalação. Para a primeira versão, o manifesto completo terá de estar disponível em memória no momento da exportação.
 
+#### P1.C.1 — Desempenho da validação do Object Index: causa isolada; correção pendente
+
+Em 2026-11-11 foi executado um teste A/B com o mesmo pacote real `CSDefault202603-ikp-validation.zip`, usando JsonSchema.Net 7.3.1:
+
+- Com `uniqueItems: true` no array principal `objects` de `object-index.schema.json`, a validação ultrapassou 120 segundos sem terminar.
+- Numa cópia temporária do schema, removendo apenas esse `uniqueItems`, a avaliação do schema terminou em 2,64 segundos; o diagnóstico completo terminou em 2,82 segundos e o pacote foi aceite.
+- A leitura do JSON (9.000.983 bytes) demorou cerca de 0,10 segundos e o carregamento do schema cerca de 0,05 segundos. A diferença observada está, portanto, na avaliação da regra `uniqueItems` sobre o array grande, não na leitura do ficheiro.
+- `IkpPackageValidator.ValidateObjectIndex` já verifica duplicados de `sourceObjectId` com `HashSet<string>` e `StringComparer.Ordinal`, preservando a unicidade dos identificadores em tempo linear.
+
+**Decisão técnica:** remover exclusivamente `uniqueItems: true` do array raiz `objects`. Manter `uniqueItems: true` em `definition.artifactIds`, que é uma lista pequena e cuja unicidade continua a ser relevante. Não alterar outras regras do schema, o contrato IKP 0.1, o código do Scanner, SQLite, collectors ou a lógica de identidade nesta intervenção.
+
+**Estado:** decisão sustentada por teste A/B; a alteração ao schema ainda não foi aplicada nem validada no repositório. O teste A/B confirma o comportamento do schema com o pacote usado, mas não substitui a validação end-to-end final do ZIP exportado.
+
 #### Próximos passos da Fase 1
 
-1. Executar build e testes atuais e confirmar CI.
-2. Produzir um ZIP IKP com `scan-ikp` a partir da captura PHC default já existente.
-3. Validar o ZIP real com schemas e validador independente; inspecionar os cinco documentos, payloads, checksums e digest lógico.
-4. Confirmar categorias/artefactos efetivamente exportados e compatibilidade entre manifesto, capabilities, coverage e Object Index.
-5. Manter por validar os kinds não presentes na captura real (13/21) e a estabilidade de identidade entre capturas.
-6. Não alterar SQLite/collectors sem evidência concreta de lacuna.
+1. Fazer backup e remover apenas `uniqueItems: true` do array principal `objects` em `docs/architecture/schemas/ikp-0.1/object-index.schema.json`; manter a regra em `definition.artifactIds`.
+2. Confirmar no código que `ValidateObjectIndex` continua a rejeitar `sourceObjectId` duplicados através do `HashSet`.
+3. Executar `dotnet clean PhcKnowledge.sln`, `dotnet test PhcKnowledge.sln` e `dotnet build PhcKnowledge.sln`; confirmar também que `artifactIds` duplicados continuam a ser rejeitados.
+4. Revalidar `CSDefault202603-ikp-validation.zip`, registar tempos e confirmar aceitação. Depois, executar a validação end-to-end do ZIP efetivamente produzido por `scan-ikp` / `export-ikp`, inspeccionando os cinco documentos, payloads, checksums e digest lógico.
+5. Confirmar categorias/artefactos efetivamente exportados e compatibilidade entre manifesto, capabilities, coverage e Object Index.
+6. Manter por validar os kinds não presentes na captura real (13/21) e a estabilidade de identidade entre capturas.
+7. Não alterar SQLite/collectors sem evidência concreta de lacuna.
 
 #### Fase 1 — estado resumido
 
@@ -173,7 +187,8 @@ Limitação identificada: o workspace atual não persiste timestamps reais de in
 - **Implementado:** P1.B Object Index, identidade, fingerprints e estados individuais; 21 kinds cobertos sinteticamente.
 - **Validado com captura real:** projeção para 8/21 kinds presentes na `CSDefault202603`, com hashes/tamanhos de artefactos verificados.
 - **Implementado:** exportador IKP 0.1 e comandos CLI `scan-ikp` / `export-ikp`.
-- **Pendente:** validação end-to-end do ZIP real com validador independente; kinds não observados na captura real; identidade entre capturas.
+- **Pendente imediato:** aplicar a correção localizada de `uniqueItems` no schema e executar testes/build; concluir validação end-to-end do ZIP exportado com validador independente.
+- **Pendente adicional:** kinds não observados na captura real; identidade entre capturas.
 
 ### Fase 2 — Plataforma central
 
@@ -223,12 +238,13 @@ A IA não deverá inventar factos nem substituir a proveniência. Deve investiga
 | 1 | P0 — CaptureId, capabilities e coverage | **Concluído.** Contratos e testes de captura/cobertura existentes. |
 | 2 | P1.B — Object Index | **Implementado.** 21 kinds cobertos sinteticamente; captura real validou 8/21 kinds e 49 artefactos (tamanho/hash). |
 | 3 | Exportador IKP 0.1 | **Implementado no Scanner.** `IkpPackageExporter`, `scan-ikp` e `export-ikp`. |
-| 4 | Validação end-to-end de IKP real | **Pendente.** Gerar pacote da captura default existente e validar com schemas/validador independente. |
-| 5 | Receive / Validate / Archive | **Próxima implementação no Knowledge.** Endpoint, segurança, integridade, arquivo imutável e registo SQL idempotente. |
-| 6 | Associação, materialização e comparação | Posterior; não faz parte da primeira fatia. |
-| 7 | Histórico, identidade e diff | Comparar capturas sem confundir instalação, objeto observado e entidade lógica; só inferir remoções com cobertura suficiente. |
-| 8 | Dependências, conhecimento e pesquisa | Consultas devolvem objetos, evidências, contexto e anotações rastreáveis. |
-| 9 | Investigação assistida por IA | Respostas fundamentadas em evidências, proveniência e incerteza explícita. |
+| 4 | Correção de desempenho do schema IKP | **Decisão tomada; alteração pendente.** Remover `uniqueItems` apenas de `objects`; manter unicidade de `sourceObjectId` no validador C# e de `artifactIds` no schema. Repetir testes e medição. |
+| 5 | Validação end-to-end de IKP real | **Pendente.** Gerar pacote da captura default existente e validar com schemas/validador independente. |
+| 6 | Receive / Validate / Archive | **Próxima implementação no Knowledge.** Endpoint, segurança, integridade, arquivo imutável e registo SQL idempotente. |
+| 7 | Associação, materialização e comparação | Posterior; não faz parte da primeira fatia. |
+| 8 | Histórico, identidade e diff | Comparar capturas sem confundir instalação, objeto observado e entidade lógica; só inferir remoções com cobertura suficiente. |
+| 9 | Dependências, conhecimento e pesquisa | Consultas devolvem objetos, evidências, contexto e anotações rastreáveis. |
+| 10 | Investigação assistida por IA | Respostas fundamentadas em evidências, proveniência e incerteza explícita. |
 
 ## 5. Critério para não perder o rumo
 
@@ -251,7 +267,7 @@ Cada fase deve produzir uma capacidade verificável:
 - `docs/architecture/p1b-static-consistency-audit-2026-11-06.md` — auditoria estática do object-index.
 - `docs/architecture/p1b-projector-workspace-read-contract-2026-11-06.md` — leitura read-only do workspace.
 
-**Nota de rigor:** este roadmap é uma síntese do estado documental, do código e dos resultados de CI observados na branch `main`, em 2026-11-07. Não representa percentagens de conclusão. A validação sintética do Object Index não substitui a validação de integração com uma captura PHC real.
+**Nota de rigor:** este roadmap é uma síntese do estado documental, do código, dos resultados de CI e dos testes comunicados até 2026-11-11. Não representa percentagens de conclusão. O teste A/B de desempenho foi executado com um pacote real e uma cópia temporária do schema; não equivale à validação end-to-end final do ZIP produzido pelo exportador.
 
 
 ## 7. Decisão transversal — preparação para RAG
@@ -274,8 +290,8 @@ Esta capacidade pertence ao Scanner, não à plataforma central. Os collectors m
 Detalhe e salvaguardas: [scanner-controlled-change-management-vision-2026-11-07.md](scanner-controlled-change-management-vision-2026-11-07.md).
 
 
-## 9. Estado consolidado — 2026-11-10
+## 9. Estado consolidado — 2026-11-11
 
-A sequência atual é: **Scanner/IKP já implementado → validar ZIP real → construir Receive / Validate / Archive no PHC Knowledge**. A plataforma central continua sem projetos próprios em `src/` e testes próprios em `tests/`. A primeira fatia não associa automaticamente a instalação, não materializa observações, não calcula remoções e não publica conhecimento.
+A sequência atual é: **Scanner/IKP já implementado → corrigir e fechar a validação do schema/ZIP real → construir Receive / Validate / Archive no PHC Knowledge**. O teste A/B identificou uma penalização severa causada por `uniqueItems` no array principal `objects`; a remoção localizada foi decidida, mas ainda não aplicada. A validação end-to-end do ZIP produzido pelo exportador continua pendente. A plataforma central continua sem projetos próprios em `src/` e testes próprios em `tests/`. A primeira fatia não associa automaticamente a instalação, não materializa observações, não calcula remoções e não publica conhecimento.
 
 A base central escolhida é SQL Server Express; SQL Server 2025 Express inclui Full-Text Search, mas a versão concreta e a adequação dos limites de capacidade ainda têm de ser fixadas. Os pacotes IKP e definições originais ficam em arquivo de ficheiros imutável, fora da base relacional. SignalR mantém-se na arquitetura.
