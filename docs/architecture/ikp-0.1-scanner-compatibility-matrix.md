@@ -1,7 +1,7 @@
 # Matriz de compatibilidade — IKP 0.1 e Scanner atual
 
-Data: 2026-11-10  
-Estado: P0 e P1 implementados; exportador IKP 0.1 integrado na CLI; projeção validada com captura real (8/21 kinds); validação do ZIP completo e importação na plataforma ainda pendentes.
+Data: 2026-11-11  
+Estado: P0 e P1 implementados; exportador IKP 0.1 integrado na CLI; projeção validada com captura real (8/21 kinds); teste A/B identificou o custo de `uniqueItems` no array raiz `objects`; correção do schema e validação end-to-end do ZIP ainda pendentes.
 
 ## Conclusão
 
@@ -23,9 +23,9 @@ A projeção foi também validada com a captura real `CSDefault202603`: 16.618 o
 | Object Index | Projeção read-only; validada com captura real para 8/21 kinds (16.618 objetos) | Validar 13 kinds não presentes e estabilidade entre capturas |
 | Artefactos | 49 artefactos da captura real com byte length e SHA-256 confirmados na projeção/export preparation | Validar pacote ZIP completo e categorias adicionais |
 | REL/DTL | Factos declarados e interpretações em payloads separados; valida contagens e referências | Confirmar payloads com a captura default e uma captura personalizada |
-| IKP ZIP | IkpPackageExporter implementado; manifesto, capabilities, coverage, object-index, checksums e payload | Validar ZIP real com schemas e validador independente |
+| IKP ZIP | IkpPackageExporter implementado; manifesto, capabilities, coverage, object-index, checksums e payload | Aplicar correção localizada de desempenho no schema; validar ZIP real com schemas e validador independente |
 | CLI | scan-ikp e export-ikp integrados | Testar os dois caminhos com captura real |
-| Validador independente | Schemas JSON e validador Python existem | Executar contra ZIP real, não apenas fixture sintética |
+| Validador independente | Schemas JSON e validador Python existem; `IkpPackageValidator` C# verifica duplicados de `sourceObjectId` com `HashSet` ordinal | Remover `uniqueItems` apenas do array raiz `objects`, manter a regra em `definition.artifactIds`, testar ambos os casos e executar contra ZIP real |
 | PHC Knowledge | Ainda sem projetos em src/ e tests/ | Implementar receção, validação, arquivo e registo de importação |
 
 ## Próxima fatia de implementação
@@ -45,11 +45,12 @@ A primeira fatia **não** associa automaticamente o pacote a uma instalação, n
 
 ## Validação posterior do Scanner
 
-1. Executar build e testes atuais.
-2. Gerar IKP com a captura PHC default de referência já existente.
-3. Validar o ZIP com tools/ikp-validation/validate_ikp_fixture.py.
-4. Inspecionar contagens e payloads, sem inventar dados em falta.
-5. Repetir com uma captura de instalação personalizada quando estiver disponível.
+1. Remover apenas `uniqueItems` do array raiz `objects` em `object-index.schema.json`; manter a regra em `definition.artifactIds`.
+2. Confirmar que o validador C# rejeita `sourceObjectId` duplicados e que o schema rejeita `artifactIds` duplicados.
+3. Executar clean, testes e build da solução.
+4. Gerar IKP com a captura PHC default de referência já existente e validar o ZIP com `tools/ikp-validation/validate_ikp_zip.py`.
+5. Registar tempos, inspecionar os cinco documentos, payloads, checksums e digest lógico, sem inventar dados em falta.
+6. Repetir com uma captura de instalação personalizada quando estiver disponível.
 
 ## Limites
 
