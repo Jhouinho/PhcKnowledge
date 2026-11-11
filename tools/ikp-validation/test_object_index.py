@@ -28,6 +28,21 @@ class ObjectIndexSchemaTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "is not a 'uuid'"):
             validate_object_index(self.document, DEFAULT_SCHEMA)
 
+    def test_duplicate_artifact_ids_are_rejected_by_unique_items(self):
+        self.document["objects"][0]["definition"]["artifactIds"] = [
+            "artifact-schema-ft",
+            "artifact-schema-ft",
+        ]
+        with self.assertRaisesRegex(ValueError, "has non-unique elements"):
+            validate_object_index(self.document, DEFAULT_SCHEMA)
+
+    def test_objects_array_no_longer_declares_unique_items(self):
+        schema = json.loads(DEFAULT_SCHEMA.read_text(encoding="utf-8"))
+        self.assertNotIn("uniqueItems", schema["properties"]["objects"])
+        self.assertTrue(
+            schema["properties"]["objects"]["items"]["properties"]["definition"]["properties"]["artifactIds"]["uniqueItems"]
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
