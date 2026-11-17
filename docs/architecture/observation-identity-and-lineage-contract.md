@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-17 |
-| Estado | **Documento de contexto arquitetural; semântica detalhada consolidada em P1** |
+| Estado | **Contexto arquitetural revisto para o modelo de domínio 0.2; P1 mantém a semântica normativa de identidade e fingerprints** |
 | Âmbito | Scanner independente, IKP e PHC Knowledge |
 | Implementação | Documento conceptual de 2026-11-06; Scanner e exportador IKP evoluíram posteriormente |
 | Relação | Complementa `ikp-0.1-specification.md` e `collector-coverage-investigation-2026-11-06.md` |
