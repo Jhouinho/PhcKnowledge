@@ -11,7 +11,7 @@
 | Contrato complementar normativo | [P1 — Identidade, proveniência e fingerprints](p1-identity-provenance-contract.md) |
 | Contexto arquitetural | [Contrato de observação, identidade e linhagem](observation-identity-and-lineage-contract.md) |
 
-Este documento define o pacote de transferência entre o Scanner PHC independente e a plataforma PHC Knowledge. Distingue o contrato pretendido da capacidade atualmente existente no Scanner. O Scanner já emite IKP 0.1 através de `IkpPackageExporter` e dos comandos CLI `scan-ikp` e `export-ikp`. A plataforma central ainda não o importa. Para a semântica normativa de SourceObjectId, SourceIdentity, estados individuais de definição, proveniência e fingerprints, prevalece o [contrato P1 de identidade e proveniência](p1-identity-provenance-contract.md); este documento define a sua representação no pacote.
+Este documento define o pacote de transferência entre o Scanner PHC independente e a plataforma PHC Knowledge. Distingue o contrato pretendido da capacidade atualmente existente no Scanner. O Scanner já emite IKP 0.1 através de `IkpPackageExporter` e dos comandos CLI `scan-ikp` e `export-ikp`. O núcleo PhcKnowledge.Import já implementa validação, arquivo imutável e receipt SQL; a integração HTTP/autenticação e a materialização de conhecimento ainda não existem. Para a semântica normativa de SourceObjectId, SourceIdentity, estados individuais de definição, proveniência e fingerprints, prevalece o [contrato P1 de identidade e proveniência](p1-identity-provenance-contract.md); este documento define a sua representação no pacote.
 
 ## 1. Objetivo e fronteiras
 
