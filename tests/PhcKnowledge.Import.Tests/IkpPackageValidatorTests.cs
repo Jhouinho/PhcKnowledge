@@ -82,7 +82,10 @@ public sealed class IkpPackageValidatorTests
                 validator, store, Path.Combine(root, "staging"),
                 attemptRepository: attemptRepository);
 
-            await using var package = CreateFixtureZip();
+            byte[] packageBytes;
+            await using (var fixture = CreateFixtureZip())
+                packageBytes = fixture.ToArray();
+            await using var package = new MemoryStream(packageBytes);
             var result = await ingestion.ReceiveValidateArchiveAsync(package, organizationId);
 
             Assert.NotNull(result.Receipt);
@@ -90,7 +93,12 @@ public sealed class IkpPackageValidatorTests
             Assert.Equal(result.Validation.PackageId, result.Receipt.PackageId);
             Assert.Equal(result.Archive.StorageKey, result.Receipt.StorageKey);
             Assert.Equal(organizationId, attemptRepository.OrganizationId);
-            Assert.Equal(1, attemptRepository.CreateCalls);
+
+            await using var duplicatePackage = new MemoryStream(packageBytes);
+            var duplicate = await ingestion.ReceiveValidateArchiveAsync(duplicatePackage, organizationId);
+            Assert.Equal(result.Receipt.ReceiptId, duplicate.Receipt?.ReceiptId);
+            Assert.True(duplicate.Archive.AlreadyExisted);
+            Assert.Equal(2, attemptRepository.CreateCalls);
         }
         finally
         {
@@ -127,6 +135,7 @@ public sealed class IkpPackageValidatorTests
     {
         private PackageReceiptAttempt? _attempt;
         private Guid? _leaseToken;
+        private PackageReceipt? _receipt;
         public int CreateCalls { get; private set; }
         public Guid? OrganizationId => _attempt?.OrganizationId;
 
@@ -161,7 +170,7 @@ public sealed class IkpPackageValidatorTests
 
         public Task<PackageReceipt?> GetCompletedReceiptAsync(
             Guid attemptId, CancellationToken cancellationToken = default) =>
-            Task.FromResult<PackageReceipt?>(null);
+            Task.FromResult(_attempt?.AttemptId == attemptId && _attempt.Status == "Completed" ? _receipt : null);
 
         public Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
             CancellationToken cancellationToken = default)
@@ -192,6 +201,7 @@ public sealed class IkpPackageValidatorTests
                 validation.ProducerProductId, validation.ProducerProductVersion,
                 validation.OriginDatabaseName, validation.ZipSha256, validation.ZipByteLength,
                 archive.StorageKey, DateTimeOffset.UtcNow, "{}");
+            _receipt = receipt;
             _attempt = _attempt with { Status = "Completed", LeaseToken = null, LeaseUntilUtc = null };
             return Task.FromResult(new PackageReceiptRegistration(receipt, false));
         }
