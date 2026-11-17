@@ -170,7 +170,7 @@ public sealed class IkpPackageValidatorTests
 
         public Task<PackageReceipt?> GetCompletedReceiptAsync(
             Guid attemptId, CancellationToken cancellationToken = default) =>
-            Task.FromResult(_attempt?.AttemptId == attemptId && _attempt.Status == "Completed" ? _receipt : null);
+            Task.FromResult(_attempt is { Status: "Completed" } completed && completed.AttemptId == attemptId ? _receipt : null);
 
         public Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
             CancellationToken cancellationToken = default)
