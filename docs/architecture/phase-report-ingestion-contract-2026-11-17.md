@@ -1,4 +1,6 @@
-# Relatório de fase — Fecho dos bloqueadores do modelo 0.2
+# Relatório de fase — Fecho dos bloqueadores de contrato e domínio do modelo 0.2
+
+> Este relatório fecha os bloqueadores de contrato/domínio (PackageId/SHA-256, REL/DTL e SourceObjectId). Não significa que os bloqueadores técnicos de ingestão estejam fechados: SQL Server real, reconciliação arquivo/receipt e HTTP/autenticação permanecem pendentes.
 
 | Campo | Valor |
 |---|---|
