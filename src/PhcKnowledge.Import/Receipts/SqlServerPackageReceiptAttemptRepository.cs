@@ -113,6 +113,40 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
         return new PackageReceiptAttemptRegistration(attempt, attempt.AttemptId != attemptId);
     }
 
+    public async Task<PackageReceiptAttemptLease?> ClaimByIdAsync(
+        Guid attemptId, TimeSpan leaseDuration, DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default)
+    {
+        if (leaseDuration <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(leaseDuration));
+        const string sql = """
+            UPDATE dbo.PackageReceiptAttempts WITH (UPDLOCK, ROWLOCK)
+               SET LeaseToken = NEWID(), LeaseUntilUtc = @LeaseUntilUtc,
+                   AttemptCount = AttemptCount + 1, UpdatedAtUtc = @NowUtc
+            OUTPUT inserted.AttemptId, inserted.OrganizationId, inserted.PackageId,
+                   inserted.CaptureId, inserted.ContractVersion, inserted.ProducerProductId,
+                   inserted.ProducerProductVersion, inserted.OriginDatabaseName,
+                   inserted.ValidationSummaryJson, inserted.ValidationJson, inserted.ZipSha256,
+                   inserted.ZipByteLength, inserted.StorageKey, inserted.StagingKey,
+                   inserted.Status, inserted.AttemptCount, inserted.NextAttemptAtUtc,
+                   inserted.LeaseToken, inserted.LeaseUntilUtc, inserted.LastErrorCode,
+                   inserted.LastErrorMessage, inserted.CreatedAtUtc, inserted.UpdatedAtUtc,
+                   inserted.CompletedAtUtc
+             WHERE AttemptId = @AttemptId AND Status = 'PendingArchive'
+               AND NextAttemptAtUtc <= @NowUtc
+               AND (LeaseUntilUtc IS NULL OR LeaseUntilUtc <= @NowUtc);
+            """;
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add("@AttemptId", SqlDbType.UniqueIdentifier).Value = attemptId;
+        command.Parameters.Add("@NowUtc", SqlDbType.DateTime2).Value = nowUtc.UtcDateTime;
+        command.Parameters.Add("@LeaseUntilUtc", SqlDbType.DateTime2).Value = nowUtc.Add(leaseDuration).UtcDateTime;
+        await using var reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken)) return null;
+        var attempt = ReadAttempt(reader);
+        return new PackageReceiptAttemptLease(attempt, attempt.LeaseToken!.Value);
+    }
+
     public async Task<IReadOnlyList<PackageReceiptAttemptLease>> ClaimDueAsync(
         int batchSize, TimeSpan leaseDuration, DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default)
