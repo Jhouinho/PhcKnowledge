@@ -147,14 +147,14 @@ As alterações documentais clarificam a semântica do PHC Knowledge e corrigem 
 
 ## 13. Questões reservadas ao desenho lógico/físico
 
-1. Aprovar a política de remoção: a proposta conservadora exige duas capturas consecutivas, completas e comparáveis; o limiar ainda não foi aprovado.
+1. A política de remoção está aprovada: duas capturas consecutivas, completas e comparáveis, seguidas obrigatoriamente de confirmação humana explícita e auditada. A confirmação nunca é automática.
 2. Definir a política de localização quando DatabaseName é conhecido e ServerName não.
 3. Fechar a cardinalidade e índices de DatabaseLocation por Environment.
 4. Escolher a concretização física do histórico append-only e das projeções de estado atual.
 5. Definir permissões administrativas, papéis e auditoria para associações, decisões de identidade e transferências entre Organizations.
 6. Definir a estratégia técnica de execução/retenção de reavaliações (fila/job, retries e observabilidade), sem alterar as regras funcionais.
 
-Os estados e transições funcionais propostos para contexto, identidade e presença estão descritos em [domain-model-0.2-state-transitions.md](domain-model-0.2-state-transitions.md). A proposta está pronta para validação funcional; os pontos acima têm de ser fechados antes do schema relacional.
+Os estados e transições funcionais para contexto, identidade e presença estão descritos em [domain-model-0.2-state-transitions.md](domain-model-0.2-state-transitions.md). A política de remoção foi aprovada em 2026-11-17: duas ausências consecutivas completas e comparáveis e confirmação humana obrigatória. Os restantes pontos acima têm de ser fechados antes do schema relacional.
 
 ## 14. Artefactos da revisão e próximo passo
 
