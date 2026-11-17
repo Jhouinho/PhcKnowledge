@@ -39,7 +39,10 @@ public sealed class IkpPackageValidatorTests
             var store = new PhcKnowledge.Import.Storage.FileSystemImmutablePackageStore(archiveRoot);
             var ingestion = new IkpPackageIngestionService(validator, store, stagingRoot);
 
-            await using var firstPackage = CreateFixtureZip();
+            byte[] packageBytes;
+            await using (var fixture = CreateFixtureZip())
+                packageBytes = fixture.ToArray();
+            await using var firstPackage = new MemoryStream(packageBytes);
             var first = await ingestion.ReceiveValidateArchiveAsync(firstPackage);
             Assert.False(first.Archive.AlreadyExisted);
 
@@ -47,7 +50,7 @@ public sealed class IkpPackageValidatorTests
             Assert.True(File.Exists(archivedPath));
             Assert.True((File.GetAttributes(archivedPath) & FileAttributes.ReadOnly) != 0);
 
-            await using var secondPackage = CreateFixtureZip();
+            await using var secondPackage = new MemoryStream(packageBytes);
             var second = await ingestion.ReceiveValidateArchiveAsync(secondPackage);
             Assert.True(second.Archive.AlreadyExisted);
             Assert.Equal(first.Archive.StorageKey, second.Archive.StorageKey);
