@@ -207,8 +207,13 @@ public sealed class PackageReceiptRecoveryService
         return TimeSpan.FromMinutes(minutes);
     }
 
-    private static bool IsTransient(Exception exception) =>
-        exception is (IOException and not InvalidDataException) or TimeoutException or System.Data.Common.DbException;
+    private static bool IsTransient(Exception exception)
+    {
+        if (exception is InvalidDataException)
+            return false;
+
+        return exception is IOException or TimeoutException or System.Data.Common.DbException;
+    }
 
     private static string SafeMessage(Exception exception)
     {
