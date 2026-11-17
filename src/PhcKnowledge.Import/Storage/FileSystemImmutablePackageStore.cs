@@ -80,7 +80,7 @@ public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore, IR
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(storageKey);
-        if (Path.IsPathRooted(storageKey) || storageKey.Contains('\\\\') ||
+        if (Path.IsPathRooted(storageKey) || storageKey.Contains('\\') ||
             storageKey.Split('/').Any(part => part is "" or "." or ".."))
             throw new ArgumentException("StorageKey inválida.", nameof(storageKey));
         if (expectedSha256.Length != 64 || expectedSha256.Any(c => !Uri.IsHexDigit(c)) ||
