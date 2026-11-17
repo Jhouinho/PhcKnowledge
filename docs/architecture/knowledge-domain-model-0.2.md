@@ -253,6 +253,50 @@ Remoção:
 
 **Estado:** conceptual/futuro.
 
+## Mapa global de entidades — destino 0.2
+
+O catálogo abaixo é um mapa de responsabilidades, não uma ordem de implementação nem uma exigência de criar todas as tabelas na primeira migration.
+
+| Área | Entidades de destino | Estado |
+|---|---|---|
+| Core | Organization, Installation, Environment, DatabaseLocation, DatabaseLocationRevision, NameChangeAudit | OrganizationId já é usado no receipt; restantes entidades não materializadas |
+| Ingestion | Capture, Package, PackageReceipt, PackageReceiptAttempt, PackageValidation, PackageCapability, PackageOperationCoverage, PackageIssue, PackageProcessing, PackageProcessingAttempt, PackageFileIntegrity, PackageArtifact | PackageReceipt parcial implementado; restante modelo é destino/parcial no ZIP |
+| Materialização | CaptureMaterialization, CaptureMaterializationAttempt, Observation, ObservationArtifact, DeclaredRelation, DeclaredRelationInterpretation | Não implementado; dados de origem permanecem no ZIP |
+| Identity | CaptureAssociationCandidate, CaptureContextAssignment, EntityIdentity, IdentityMatch, IdentityEnvironmentState, EntityIdentityLifecycleEvent | Destino conceptual |
+| Governance | DomainEvent, OutboxMessage, InstallationLineageEvent | Futuro; Outbox só quando existir protocolo transacional concreto |
+| Knowledge | StandardCatalog, CatalogEntry, CatalogEntryVersion, KnowledgeEntry, KnowledgeEntryVersion, KnowledgeProposal | Futuro; catálogo standard curado e conhecimento privado por Organization |
+
+### Relações principais
+
+```mermaid
+erDiagram
+    ORGANIZATION ||--o{ INSTALLATION : owns
+    INSTALLATION ||--o{ ENVIRONMENT : contains
+    ENVIRONMENT ||--o{ DATABASE_LOCATION : has_history
+    DATABASE_LOCATION ||--o{ DATABASE_LOCATION_REVISION : revised_by
+
+    CAPTURE ||--o{ PACKAGE : exported_as
+    PACKAGE ||--o{ PACKAGE_RECEIPT : received_as
+    ORGANIZATION ||--o{ PACKAGE_RECEIPT : owns
+    PACKAGE_RECEIPT ||--o{ PACKAGE_ARTIFACT : declares
+    PACKAGE_RECEIPT ||--o{ PACKAGE_VALIDATION : validated_by
+
+    CAPTURE ||--o{ OBSERVATION : contains
+    OBSERVATION ||--o{ OBSERVATION_ARTIFACT : supported_by
+    PACKAGE_ARTIFACT ||--o{ OBSERVATION_ARTIFACT : referenced_by
+    CAPTURE ||--o{ DECLARED_RELATION : declares
+    DECLARED_RELATION ||--o{ DECLARED_RELATION_INTERPRETATION : interpreted_as
+
+    CAPTURE ||--o{ CAPTURE_CONTEXT_ASSIGNMENT : assigned_context
+    INSTALLATION ||--o{ ENTITY_IDENTITY : owns
+    OBSERVATION ||--o{ IDENTITY_MATCH : candidate_match
+    ENTITY_IDENTITY ||--o{ IDENTITY_MATCH : matched_identity
+    ENTITY_IDENTITY ||--o{ IDENTITY_ENVIRONMENT_STATE : state_by_environment
+    ENVIRONMENT ||--o{ IDENTITY_ENVIRONMENT_STATE : scopes
+```
+
+O diagrama omite entidades de tentativa, processamento, auditoria e governação para manter legibilidade. Todas as relações são conceptuais; cardinalidades e constraints físicas só serão fechadas quando a fatia correspondente for desenhada e validada.
+
 ## 11. Decisões físicas e de evolução
 
 - SQL Server Express central é fonte de verdade relacional.
