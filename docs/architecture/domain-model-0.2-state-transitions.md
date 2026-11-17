@@ -206,26 +206,51 @@ A decisão aprovada é, portanto: **2 ausências consecutivas completas e compar
 
 ## 5. Eventos, auditoria e consistência
 
-A proposta é manter eventos append-only para decisões e avaliações, com uma projeção do estado atual para consulta.
+<badge>Decisão funcional confirmada em 2026-11-17</badge>
 
-Eventos mínimos a considerar no desenho físico:
+O modelo aprovado combina **histórico append-only de eventos** com **projeções persistentes do estado atual**. Os eventos constituem o registo histórico autoritativo das alterações relevantes; as projeções servem as consultas operacionais do portal.
+
+### 5.1 Âmbito dos eventos
+
+Devem gerar eventos todas as alterações relevantes de estado, decisões humanas e avaliações automáticas, incluindo resultados que não alterem o estado projetado quando sejam relevantes para auditoria, explicabilidade ou reavaliação.
+
+Exemplos mínimos por ciclo:
 
 | Ciclo | Eventos |
 |---|---|
 | Contexto | ContextAssignmentConfirmed, ContextAssignmentSuperseded, ContextAssignmentRevoked, ContextReevaluationRequested, ContextReevaluationCompleted, ContextReevaluationFailed |
 | Identidade | IdentityCandidateCreated, IdentityMatchConfirmed, IdentityMatchRejected, IdentityMatchSuperseded, IdentityMatchReassessmentRequired, EntityIdentityCreated |
-| Estado ambiental | EnvironmentPresenceEvaluated, EnvironmentPresenceReappeared, EnvironmentRemovalConfirmed, EnvironmentReviewRequested |
+| Estado ambiental | EnvironmentPresenceEvaluated, EnvironmentPresenceReappeared, EnvironmentRemovalProposed, EnvironmentRemovalConfirmed, EnvironmentRemovalRejected, EnvironmentReviewRequested |
 
-Cada evento deve identificar entidade/ciclo, instante UTC, ator (utilizador ou processo), motivo, evidência, correlação e revisão de contexto/capability usada quando aplicável.
+A lista é extensível; o catálogo e os payloads definitivos serão fechados no desenho físico. Eventos de avaliação devem registar também resultados inconclusivos ou sem transição de estado, quando necessários para explicar por que razão uma decisão não foi tomada.
 
-As operações que alteram o estado atual devem ser transacionais. Em particular:
+Cada evento deve identificar entidade/ciclo, instante UTC, ator (utilizador ou processo), tipo e versão do evento, motivo, evidência, correlação e revisão de contexto/capability/política usada quando aplicável. Os eventos são imutáveis: não são editados nem eliminados por operações normais da aplicação. Correcções são representadas por novos eventos que referenciam os anteriores.
+
+### 5.2 Projeções do estado atual
+
+As entidades operacionais mantêm projeções persistentes do estado atual, consultadas diretamente pelo portal. As projeções não substituem nem apagam o histórico; são representações derivadas e reconstruíveis a partir dos eventos.
+
+A reconstrução deve:
+- permitir gerar novamente uma projeção a partir do histórico relevante;
+- preservar a versão do projetor e das regras necessárias para reproduzir a interpretação;
+- ser executável sem duplicar eventos ou produzir efeitos externos;
+- permitir validar o resultado reconstruído antes de o publicar como estado operacional.
+
+Isto **não impõe Event Sourcing integral** a todo o domínio. Captures, PackageReceipts, Observations, PackageArtifacts e outros registos de aquisição mantêm os seus próprios registos persistentes; só os ciclos de decisão/estado definidos no domínio usam o padrão de eventos e projeções conforme necessário.
+
+### 5.3 Consistência transacional
+
+A gravação do evento e a atualização da projeção correspondente devem ocorrer **na mesma transação SQL**. A operação confirma ambas ou nenhuma; não pode deixar um evento confirmado sem a atualização correspondente, nem uma projeção alterada sem o evento que a justifica.
+
+As operações devem ainda respeitar as seguintes invariantes:
 - não pode haver duas atribuições de contexto ativas para a mesma Capture;
 - não pode haver duas correspondências confirmadas atuais para a mesma Observation;
 - não pode haver dois estados atuais concorrentes para a mesma combinação EntityIdentity + Environment;
 - uma confirmação de identidade tem de validar a Installation da atribuição de contexto no momento da confirmação;
 - reavaliações devem ser idempotentes para a mesma revisão de contexto e versão de política.
 
-O desenho físico pode usar tabelas de eventos mais tabelas de projeção, ou uma estrutura relacional equivalente, desde que preserve o histórico e garanta as invariantes.
+Qualquer processamento posterior ou efeito externo deve ser desencadeado de forma fiável a partir do registo transacional, sem enfraquecer a atomicidade do evento e da projeção. Os mecanismos concretos (por exemplo, outbox, fila, jobs, retries) ficam para o desenho técnico.
+
 
 ## 6. Matriz de decisões para aprovação
 
@@ -238,7 +263,7 @@ O desenho físico pode usar tabelas de eventos mais tabelas de projeção, ou um
 | Criação de EntityIdentity | Ação explícita, nunca automática por ausência de match | Alinhada com decisão confirmada |
 | IdentityEnvironmentState | Present / NotObserved / PendingReview / Removed; ausência de registo = NotYetEvaluated | Proposta |
 | Limiar de remoção | Duas capturas consecutivas completas e comparáveis + confirmação humana obrigatória | **Aprovado em 2026-11-17** |
-| Eventos | Histórico append-only + projeção atual | Proposta |
+| Eventos | Todas as alterações relevantes, decisões e avaliações em histórico append-only; projeções reconstruíveis; evento e projeção na mesma transação SQL | **Aprovado em 2026-11-17** |
 | Reavaliação | Apenas dependências afectadas, versionada e idempotente | Alinhada com decisão confirmada |
 
 ## 7. Fora do âmbito
