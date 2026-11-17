@@ -115,6 +115,39 @@ public sealed class PackageReceiptRecoveryServiceTests
         }
     }
 
+    [Fact]
+    public async Task Staging_cleanup_keeps_pending_files_and_deletes_only_expired_orphans()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"phc-staging-cleanup-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var protectedPath = Path.Combine(root, "upload.tmp");
+        var orphanPath = Path.Combine(root, "orphan.tmp");
+        var freshPath = Path.Combine(root, "fresh.tmp");
+        await File.WriteAllTextAsync(protectedPath, "pending");
+        await File.WriteAllTextAsync(orphanPath, "orphan");
+        await File.WriteAllTextAsync(freshPath, "fresh");
+        var now = DateTimeOffset.UtcNow;
+        File.SetLastWriteTimeUtc(protectedPath, now.AddDays(-2).UtcDateTime);
+        File.SetLastWriteTimeUtc(orphanPath, now.AddDays(-2).UtcDateTime);
+        File.SetLastWriteTimeUtc(freshPath, now.AddHours(-1).UtcDateTime);
+        var repository = new RecordingAttemptRepository(
+            CreateAttempt(CreateValidation(), "upload.tmp", "sha256/ab/package.ikp.zip"));
+        try
+        {
+            var cleanup = new PackageStagingCleanupService(repository, root);
+            var deleted = await cleanup.CleanupAsync(now);
+
+            Assert.Equal(1, deleted);
+            Assert.True(File.Exists(protectedPath));
+            Assert.False(File.Exists(orphanPath));
+            Assert.True(File.Exists(freshPath));
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static IkpPackageValidationResult CreateValidation() => new(
         Guid.NewGuid(), Guid.NewGuid(), "0.1", "PhcKnowledgeScanner", "1.0",
         "TEST", new string('a', 64), 24, 1, 1, 1, 1, 1, 0, new string('b', 64));
@@ -163,6 +196,10 @@ public sealed class PackageReceiptRecoveryServiceTests
                     LeaseToken = Guid.Parse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"),
                     LeaseUntilUtc = nowUtc.Add(leaseDuration)
                 }, Guid.Parse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"))]);
+
+        public Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlySet<string>>(new HashSet<string>([attempt.StagingKey], StringComparer.Ordinal));
 
         public Task<bool> RenewLeaseAsync(Guid attemptId, Guid leaseToken,
             DateTimeOffset leaseUntilUtc, CancellationToken cancellationToken = default) =>
