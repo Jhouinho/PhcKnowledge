@@ -7,7 +7,7 @@ namespace PhcKnowledge.Import.Storage;
 /// Content-addressed filesystem archive. Existing objects are never overwritten;
 /// a pre-existing object is accepted only after its length and SHA-256 are rechecked.
 /// </summary>
-public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore
+public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore, IRecoverableImmutablePackageStore
 {
     private readonly string _root;
 
@@ -70,6 +70,35 @@ public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore
         {
             try { if (File.Exists(temporaryDestination)) File.Delete(temporaryDestination); } catch { }
         }
+    }
+
+
+    public async Task<bool> VerifyArchivedPackageAsync(
+        string storageKey,
+        string expectedSha256,
+        long expectedByteLength,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(storageKey);
+        if (Path.IsPathRooted(storageKey) || storageKey.Contains('\\\\') ||
+            storageKey.Split('/').Any(part => part is "" or "." or ".."))
+            throw new ArgumentException("StorageKey inválida.", nameof(storageKey));
+        if (expectedSha256.Length != 64 || expectedSha256.Any(c => !Uri.IsHexDigit(c)) ||
+            expectedSha256 != expectedSha256.ToLowerInvariant() || expectedByteLength <= 0)
+            throw new ArgumentException("Integridade esperada inválida.");
+
+        var path = Path.GetFullPath(Path.Combine(
+            _root, storageKey.Replace('/', Path.DirectorySeparatorChar)));
+        var rootPrefix = _root.EndsWith(Path.DirectorySeparatorChar)
+            ? _root
+            : _root + Path.DirectorySeparatorChar;
+        if (!path.StartsWith(rootPrefix, OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+            throw new ArgumentException("StorageKey fora do arquivo.", nameof(storageKey));
+        if (!File.Exists(path)) return false;
+
+        await EnsureSameContentAsync(path, expectedSha256, expectedByteLength, cancellationToken);
+        return true;
     }
 
     private static async Task EnsureSameContentAsync(
