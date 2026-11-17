@@ -87,7 +87,8 @@ flowchart TB
     class B1,B2,B3,B4 done
     class B5 done
     class B6,B7 validation
-    class C1,C3,D1,D2,D3,D4,D5,E1,E2,E3,E4 pending\n    class C2 progress
+    class C1,C3,D1,D2,D3,D4,D5,E1,E2,E3,E4 pending
+    class C2 progress
 ```
 
 > O diagrama é sequencial para comunicar dependências, mas algumas atividades podem decorrer em paralelo. A análise relacional já existente no Scanner é uma capacidade reaproveitável; não significa que a plataforma central esteja implementada.
