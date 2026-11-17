@@ -15,7 +15,6 @@ public sealed class IkpPackageIngestionService
     private readonly IImmutablePackageStore _store;
     private readonly string _stagingDirectory;
     private readonly long _maxUploadBytes;
-    private readonly IPackageReceiptRepository? _receiptRepository;
     private readonly IPackageReceiptAttemptRepository? _attemptRepository;
 
     public IkpPackageIngestionService(
@@ -23,7 +22,6 @@ public sealed class IkpPackageIngestionService
         IImmutablePackageStore store,
         string stagingDirectory,
         long maxUploadBytes = 250L * 1024 * 1024,
-        IPackageReceiptRepository? receiptRepository = null,
         IPackageReceiptAttemptRepository? attemptRepository = null)
     {
         _validator = validator ?? throw new ArgumentNullException(nameof(validator));
@@ -31,12 +29,8 @@ public sealed class IkpPackageIngestionService
         ArgumentException.ThrowIfNullOrWhiteSpace(stagingDirectory);
         _stagingDirectory = Path.GetFullPath(stagingDirectory);
         _maxUploadBytes = maxUploadBytes > 0 ? maxUploadBytes : throw new ArgumentOutOfRangeException(nameof(maxUploadBytes));
-        _receiptRepository = receiptRepository;
         _attemptRepository = attemptRepository;
 
-        if ((_receiptRepository is null) != (_attemptRepository is null))
-            throw new ArgumentException(
-                "A persistência de receipts exige configurar em conjunto o receipt repository e o attempt repository.");
         if (_attemptRepository is not null &&
             (_store is not IExpectedStorageKeyProvider || _store is not IRecoverableImmutablePackageStore))
             throw new ArgumentException(
@@ -49,7 +43,7 @@ public sealed class IkpPackageIngestionService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(upload);
-        if ((_receiptRepository is not null || _attemptRepository is not null) &&
+        if (_attemptRepository is not null &&
             (!organizationId.HasValue || organizationId.Value == Guid.Empty))
             throw new ArgumentException("OrganizationId é obrigatório para registar a recepção.", nameof(organizationId));
 
@@ -86,9 +80,12 @@ public sealed class IkpPackageIngestionService
                         throw new PackageReceiptConflictException(
                             "A tentativa está concluída, mas o objecto imutável não existe no arquivo.");
                     var archived = new ArchivedPackage(registration.Attempt.StorageKey, true);
-                    var existingReceipt = await _receiptRepository!.RegisterArchivedPackageAsync(
-                        organizationId.Value, validation, archived, cancellationToken);
-                    return new IkpIngestionResult(validation, archived, existingReceipt.Receipt);
+                    var existingReceipt = await _attemptRepository.GetCompletedReceiptAsync(
+                        registration.Attempt.AttemptId, cancellationToken);
+                    if (existingReceipt is null)
+                        throw new PackageReceiptConflictException(
+                            "A tentativa está marcada como concluída, mas o receipt correspondente não existe.");
+                    return new IkpIngestionResult(validation, archived, existingReceipt);
                 }
 
                 var recovery = new PackageReceiptRecoveryService(
@@ -105,7 +102,7 @@ public sealed class IkpPackageIngestionService
                     validation, recovered.Archive, recovered.Registration.Receipt);
             }
 
-            // Validation/archive-only mode for harnesses. Any persisted receipt must use
+            // Validation/archive-only mode for harnesses. Persisted receipts always use
             // the durable attempt path above; archive->receipt is intentionally not exposed.
             var archive = await _store.ArchiveValidatedPackageAsync(stagedPath, validation, cancellationToken);
             return new IkpIngestionResult(validation, archive, null);
