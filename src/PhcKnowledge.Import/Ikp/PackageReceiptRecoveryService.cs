@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using PhcKnowledge.Import.Receipts;
 using PhcKnowledge.Import.Storage;
 
@@ -216,8 +217,30 @@ public sealed class PackageReceiptRecoveryService
         if (exception is InvalidDataException)
             return false;
 
-        return exception is IOException or TimeoutException or System.Data.Common.DbException;
+        // Only known temporary SQL Server conditions are retried. Treating every
+        // DbException as transient can loop forever on permanent schema, data,
+        // constraint, or permission errors.
+        if (exception is SqlException sqlException)
+            return sqlException.Errors.Cast<SqlError>().Any(error => IsTransientSqlError(error.Number));
+
+        if (exception is AggregateException aggregate)
+            return aggregate.InnerExceptions.Count > 0 &&
+                   aggregate.InnerExceptions.All(IsTransient);
+
+        if (exception.InnerException is not null)
+            return IsTransient(exception.InnerException);
+
+        return exception is IOException or TimeoutException;
     }
+
+    private static bool IsTransientSqlError(int number) => number is
+        -2 or       // command timeout
+        2 or 53 or 64 or 121 or 233 or // connection/network interruptions
+        1205 or 1222 or                // deadlock / lock request timeout
+        10053 or 10054 or 10060 or     // transport-level interruptions
+        10928 or 10929 or              // Azure SQL resource throttling
+        40197 or 40501 or 40613 or     // transient Azure SQL service conditions
+        49918 or 49919 or 49920;       // Azure SQL resource limits
 
     private static string SafeMessage(Exception exception)
     {
