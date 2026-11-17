@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using PhcKnowledge.Import.Ikp;
 using PhcKnowledge.Import.Receipts;
+using PhcKnowledge.Import.Storage;
 
 namespace PhcKnowledge.Import.Tests;
 
@@ -39,7 +40,10 @@ public sealed class IkpPackageValidatorTests
             var store = new PhcKnowledge.Import.Storage.FileSystemImmutablePackageStore(archiveRoot);
             var ingestion = new IkpPackageIngestionService(validator, store, stagingRoot);
 
-            await using var firstPackage = CreateFixtureZip();
+            byte[] packageBytes;
+            await using (var fixture = CreateFixtureZip())
+                packageBytes = fixture.ToArray();
+            await using var firstPackage = new MemoryStream(packageBytes);
             var first = await ingestion.ReceiveValidateArchiveAsync(firstPackage);
             Assert.False(first.Archive.AlreadyExisted);
 
@@ -47,7 +51,7 @@ public sealed class IkpPackageValidatorTests
             Assert.True(File.Exists(archivedPath));
             Assert.True((File.GetAttributes(archivedPath) & FileAttributes.ReadOnly) != 0);
 
-            await using var secondPackage = CreateFixtureZip();
+            await using var secondPackage = new MemoryStream(packageBytes);
             var second = await ingestion.ReceiveValidateArchiveAsync(secondPackage);
             Assert.True(second.Archive.AlreadyExisted);
             Assert.Equal(first.Archive.StorageKey, second.Archive.StorageKey);
@@ -69,22 +73,32 @@ public sealed class IkpPackageValidatorTests
     {
         var root = Path.Combine(Path.GetTempPath(), $"phc-knowledge-receipt-{Guid.NewGuid():N}");
         var organizationId = Guid.NewGuid();
-        var repository = new RecordingReceiptRepository();
         try
         {
             var validator = new IkpPackageValidator(SchemaDirectory);
             var store = new PhcKnowledge.Import.Storage.FileSystemImmutablePackageStore(Path.Combine(root, "archive"));
+            var attemptRepository = new RecordingIngestionAttemptRepository();
             var ingestion = new IkpPackageIngestionService(
-                validator, store, Path.Combine(root, "staging"), receiptRepository: repository);
+                validator, store, Path.Combine(root, "staging"),
+                attemptRepository: attemptRepository);
 
-            await using var package = CreateFixtureZip();
+            byte[] packageBytes;
+            await using (var fixture = CreateFixtureZip())
+                packageBytes = fixture.ToArray();
+            await using var package = new MemoryStream(packageBytes);
             var result = await ingestion.ReceiveValidateArchiveAsync(package, organizationId);
 
             Assert.NotNull(result.Receipt);
             Assert.Equal(organizationId, result.Receipt.OrganizationId);
             Assert.Equal(result.Validation.PackageId, result.Receipt.PackageId);
             Assert.Equal(result.Archive.StorageKey, result.Receipt.StorageKey);
-            Assert.Equal(organizationId, repository.OrganizationId);
+            Assert.Equal(organizationId, attemptRepository.OrganizationId);
+
+            await using var duplicatePackage = new MemoryStream(packageBytes);
+            var duplicate = await ingestion.ReceiveValidateArchiveAsync(duplicatePackage, organizationId);
+            Assert.Equal(result.Receipt.ReceiptId, duplicate.Receipt?.ReceiptId);
+            Assert.True(duplicate.Archive.AlreadyExisted);
+            Assert.Equal(2, attemptRepository.CreateCalls);
         }
         finally
         {
@@ -117,24 +131,89 @@ public sealed class IkpPackageValidatorTests
             () => validator.ValidateAsync(package));
     }
 
-    private sealed class RecordingReceiptRepository : IPackageReceiptRepository
+    private sealed class RecordingIngestionAttemptRepository : IPackageReceiptAttemptRepository
     {
-        public Guid? OrganizationId { get; private set; }
+        private PackageReceiptAttempt? _attempt;
+        private Guid? _leaseToken;
+        private PackageReceipt? _receipt;
+        public int CreateCalls { get; private set; }
+        public Guid? OrganizationId => _attempt?.OrganizationId;
 
-        public Task<PackageReceiptRegistration> RegisterArchivedPackageAsync(
-            Guid organizationId,
-            IkpPackageValidationResult validation,
-            PhcKnowledge.Import.Storage.ArchivedPackage archive,
+        public Task<PackageReceiptAttemptRegistration> CreateOrGetPendingAsync(
+            Guid organizationId, IkpPackageValidationResult validation, string storageKey,
+            string stagingKey, CancellationToken cancellationToken = default)
+        {
+            CreateCalls++;
+            var now = DateTimeOffset.UtcNow;
+            _attempt ??= new PackageReceiptAttempt(
+                Guid.NewGuid(), organizationId, validation, storageKey, stagingKey,
+                "PendingArchive", 0, now, null, null, null, null, now, now);
+            return Task.FromResult(new PackageReceiptAttemptRegistration(_attempt, CreateCalls > 1));
+        }
+
+        public Task<PackageReceiptAttemptLease?> ClaimByIdAsync(
+            Guid attemptId, TimeSpan leaseDuration, DateTimeOffset nowUtc,
             CancellationToken cancellationToken = default)
         {
-            OrganizationId = organizationId;
-            var receipt = new PackageReceipt(
-                Guid.NewGuid(), organizationId, validation.PackageId, validation.CaptureId,
-                validation.ContractVersion, validation.ProducerProductId, validation.ProducerProductVersion,
+            if (_attempt is null || _attempt.AttemptId != attemptId || _attempt.Status != "PendingArchive")
+                return Task.FromResult<PackageReceiptAttemptLease?>(null);
+            _leaseToken = Guid.NewGuid();
+            _attempt = _attempt with { LeaseToken = _leaseToken, LeaseUntilUtc = nowUtc.Add(leaseDuration) };
+            return Task.FromResult<PackageReceiptAttemptLease?>(
+                new PackageReceiptAttemptLease(_attempt, _leaseToken.Value));
+        }
+
+        public Task<IReadOnlyList<PackageReceiptAttemptLease>> ClaimDueAsync(
+            int batchSize, TimeSpan leaseDuration, DateTimeOffset nowUtc,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<PackageReceiptAttemptLease>>(Array.Empty<PackageReceiptAttemptLease>());
+
+        public Task<PackageReceipt?> GetCompletedReceiptAsync(
+            Guid attemptId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(_attempt is { Status: "Completed" } completed && completed.AttemptId == attemptId ? _receipt : null);
+
+        public Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
+            CancellationToken cancellationToken = default)
+        {
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+            if (_attempt is { Status: "PendingArchive" or "NeedsAttention" })
+                keys.Add(_attempt.StagingKey);
+            return Task.FromResult<IReadOnlySet<string>>(keys);
+        }
+
+        public Task<bool> RenewLeaseAsync(Guid attemptId, Guid leaseToken,
+            DateTimeOffset leaseUntilUtc, CancellationToken cancellationToken = default)
+        {
+            if (_attempt is null || _attempt.AttemptId != attemptId || _leaseToken != leaseToken)
+                return Task.FromResult(false);
+            _attempt = _attempt with { LeaseUntilUtc = leaseUntilUtc };
+            return Task.FromResult(true);
+        }
+
+        public Task<PackageReceiptRegistration> CompleteAsync(Guid attemptId, Guid leaseToken,
+            ArchivedPackage archive, CancellationToken cancellationToken = default)
+        {
+            if (_attempt is null || _attempt.AttemptId != attemptId || _leaseToken != leaseToken)
+                throw new InvalidOperationException("Lease inválida.");
+            var validation = _attempt.Validation;
+            var receipt = new PackageReceipt(Guid.NewGuid(), _attempt.OrganizationId,
+                validation.PackageId, validation.CaptureId, validation.ContractVersion,
+                validation.ProducerProductId, validation.ProducerProductVersion,
                 validation.OriginDatabaseName, validation.ZipSha256, validation.ZipByteLength,
                 archive.StorageKey, DateTimeOffset.UtcNow, "{}");
+            _receipt = receipt;
+            _attempt = _attempt with { Status = "Completed", LeaseToken = null, LeaseUntilUtc = null };
             return Task.FromResult(new PackageReceiptRegistration(receipt, false));
         }
+
+        public Task<bool> ScheduleRetryAsync(Guid attemptId, Guid leaseToken,
+            DateTimeOffset nextAttemptAtUtc, string errorCode, string errorMessage,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
+        public Task<bool> MarkNeedsAttentionAsync(Guid attemptId, Guid leaseToken,
+            string errorCode, string errorMessage, CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
     }
 
     private static MemoryStream CreateFixtureZip(bool includeTraversalEntry = false, bool tamperPayload = false)

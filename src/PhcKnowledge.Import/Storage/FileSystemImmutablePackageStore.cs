@@ -7,7 +7,7 @@ namespace PhcKnowledge.Import.Storage;
 /// Content-addressed filesystem archive. Existing objects are never overwritten;
 /// a pre-existing object is accepted only after its length and SHA-256 are rechecked.
 /// </summary>
-public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore
+public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore, IRecoverableImmutablePackageStore, IExpectedStorageKeyProvider
 {
     private readonly string _root;
 
@@ -15,6 +15,16 @@ public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
         _root = Path.GetFullPath(root);
+    }
+
+    public string GetStorageKey(IkpPackageValidationResult validation)
+    {
+        ArgumentNullException.ThrowIfNull(validation);
+        var hash = validation.ZipSha256;
+        if (hash.Length != 64 || hash.Any(c => !Uri.IsHexDigit(c)) ||
+            hash != hash.ToLowerInvariant())
+            throw new ArgumentException("SHA-256 inválido para arquivo.", nameof(validation));
+        return $"sha256/{hash[..2]}/{hash}.ikp.zip";
     }
 
     public async Task<ArchivedPackage> ArchiveValidatedPackageAsync(
@@ -72,12 +82,44 @@ public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore
         }
     }
 
+
+    public async Task<bool> VerifyArchivedPackageAsync(
+        string storageKey,
+        string expectedSha256,
+        long expectedByteLength,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(storageKey);
+        if (Path.IsPathRooted(storageKey) || storageKey.Contains('\\') ||
+            storageKey.Split('/').Any(part => part is "" or "." or ".."))
+            throw new ArgumentException("StorageKey inválida.", nameof(storageKey));
+        if (expectedSha256.Length != 64 || expectedSha256.Any(c => !Uri.IsHexDigit(c)) ||
+            expectedSha256 != expectedSha256.ToLowerInvariant() || expectedByteLength <= 0)
+            throw new ArgumentException("Integridade esperada inválida.");
+        var expectedStorageKey = $"sha256/{expectedSha256[..2]}/{expectedSha256}.ikp.zip";
+        if (!string.Equals(storageKey, expectedStorageKey, StringComparison.Ordinal))
+            throw new ArgumentException("StorageKey não corresponde ao SHA-256 esperado.", nameof(storageKey));
+
+        var path = Path.GetFullPath(Path.Combine(
+            _root, storageKey.Replace('/', Path.DirectorySeparatorChar)));
+        var rootPrefix = _root.EndsWith(Path.DirectorySeparatorChar)
+            ? _root
+            : _root + Path.DirectorySeparatorChar;
+        if (!path.StartsWith(rootPrefix, OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+            throw new ArgumentException("StorageKey fora do arquivo.", nameof(storageKey));
+        if (!File.Exists(path)) return false;
+
+        await EnsureSameContentAsync(path, expectedSha256, expectedByteLength, cancellationToken);
+        return true;
+    }
+
     private static async Task EnsureSameContentAsync(
         string path, string expectedHash, long expectedLength, CancellationToken cancellationToken)
     {
         var (hash, length) = await HashFileAsync(path, cancellationToken);
         if (length != expectedLength || !string.Equals(hash, expectedHash, StringComparison.Ordinal))
-            throw new IOException("Colisão ou corrupção no arquivo content-addressed; o ficheiro existente não foi substituído.");
+            throw new InvalidDataException("Colisão ou corrupção no arquivo content-addressed; o ficheiro existente não foi substituído.");
     }
 
     private static async Task<(string Hash, long Length)> HashFileAsync(
