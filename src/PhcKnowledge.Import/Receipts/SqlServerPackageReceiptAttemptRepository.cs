@@ -53,6 +53,7 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
                    SET StagingKey = @StagingKey, NextAttemptAtUtc = @NowUtc,
                        UpdatedAtUtc = @NowUtc
                  WHERE AttemptId = @ExistingAttemptId
+                   AND PackageId = @PackageId AND ZipSha256 = @ZipSha256
                    AND Status = 'PendingArchive'
                    AND (LeaseUntilUtc IS NULL OR LeaseUntilUtc <= @NowUtc);
 
