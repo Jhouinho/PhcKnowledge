@@ -474,7 +474,7 @@ Sem DDL nesta fase.
 1. ~~Consolidar stack/fronteiras e modelo de utilização.~~ **Concluído.**
 2. ~~Consolidar contrato IKP 0.1, schemas, fixtures e validador.~~ **Concluído.**
 3. ~~Implementar no Scanner a captura, capabilities, coverage, Object Index e exportador IKP.~~ **Implementado; captura real e pacote de referência examinados.**
-4. ~~Implementar Receive / Validate / Archive como serviço.~~ **Implementado na primeira fatia:** validator, ingestion service, arquivo imutável e receipt SQL; testes P1–N1 com workspace sintético.
+4. ~~Implementar Receive / Validate / Archive como serviço.~~ **Implementado na primeira fatia:** validator, ingestion service, arquivo imutável e receipt SQL; testes sobre fixture IKP / ZIP sintético → Validator / Ingestion.
 5. **Fechar a robustez da primeira fatia:** testar SQL Server real; definir reconciliação/retry para arquivo sem receipt; completar testes de idempotência/conflitos globais.
 6. **Desenhar e implementar a fronteira HTTP/autenticação**, garantindo que OrganizationId deriva do contexto autenticado e não de input livre.
 7. Só numa etapa posterior: associação guiada a Installation/Environment, materialização de observações, comparação multi-captura e publicação.
@@ -490,7 +490,7 @@ A implementação começa por uma fatia pequena e verificável. Receber/arquivar
 - Stack, fronteiras e utilização centralizada **acordados**.
 - SQL Server Express escolhido para a base central; versão concreta e dimensionamento ainda por fechar.
 - Scanner já contém exportador IKP 0.1 e integração na CLI.
-- PhcKnowledge.Import já existe em src/, com testes unitários e de integração P1–N1; API e restantes áreas da plataforma continuam por construir.
+- PhcKnowledge.Import já existe em src/, com testes unitários e de integração sobre fixture IKP / ZIP sintético → Validator / Ingestion; API e restantes áreas da plataforma continuam por construir.
 
 ### Lacunas / validações
 

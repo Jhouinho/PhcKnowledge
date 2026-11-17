@@ -146,7 +146,7 @@ A primeira fatia de ingestão já existe no código:
 - FileSystemImmutablePackageStore: arquivo content-addressed global por SHA-256, sem overwrite;
 - SqlServerPackageReceiptRepository: receipt por organização no SQL Server;
 - migration 001_package_ingestion_receipts.sql;
-- testes unitários e integração P1–N1 com workspace sintético.
+- testes unitários e de integração sobre fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado).
 
 A implementação não demonstra ainda endpoint HTTP, autenticação/contexto de Organization, execução contra SQL Server real nem reconciliação automática de ficheiros arquivados sem receipt. A ordem actual é arquivo antes de receipt SQL; esta janela de falha deve ser tratada antes de ampliar a ingestão.
 

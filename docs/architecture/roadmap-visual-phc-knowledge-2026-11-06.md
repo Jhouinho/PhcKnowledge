@@ -193,13 +193,13 @@ Em 2026-11-11 foi executado um teste A/B com o mesmo pacote real `CSDefault20260
 
 ### Fase 2 — Plataforma central
 
-**Estado: por construir; próxima fase de implementação aprovada**
+**Estado: parcial — Import service implementado; HTTP, SQL Server real e materialização pendentes**
 
-O núcleo `PhcKnowledge.Import` já contém validator, serviço de ingestão, arquivo imutável e repositório SQL de receipts, com testes P1–N1. A implementação atual não demonstra API HTTP/autenticação nem execução contra SQL Server real. Depois, e em etapas separadas, construir:
+O núcleo `PhcKnowledge.Import` já contém validator, serviço de ingestão, arquivo imutável e repositório SQL de receipts, com testes sobre fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado). A implementação atual não demonstra API HTTP/autenticação nem execução contra SQL Server real. Depois, e em etapas separadas, construir:
 - registo e gestão de instalações;
-- receção HTTP, validação estrutural/de segurança/integridade e arquivo imutável de pacotes IKP;
-- ingestão transacional e idempotente;
-- armazenamento de capturas imutáveis e respetivos artefactos;
+- fronteira HTTP/autenticação sobre a receção já existente;
+- robustez de ingestão (SQL Server real, reconciliação arquivo/receipt, idempotência e conflitos);
+- armazenamento de capturas materializadas e respetivos artefactos;
 - consulta do inventário importado.
 
 A plataforma deverá consumir IKP; não deverá ligar-se diretamente às bases de dados dos clientes nem executar o Scanner em runtime.
@@ -295,7 +295,7 @@ Detalhe e salvaguardas: [scanner-controlled-change-management-vision-2026-11-07.
 
 A sequência atual é: **Scanner/IKP implementado e captura real examinada → Receive / Validate / Archive implementado como serviço em PhcKnowledge.Import → robustecer SQL/arquivo e desenhar HTTP/autenticação → materializar conhecimento**.
 
-A primeira fatia inclui IkpPackageValidator, IkpPackageIngestionService, FileSystemImmutablePackageStore, SqlServerPackageReceiptRepository, migration 001_package_ingestion_receipts.sql e testes P1–N1. Os testes usam workspace sintético; não provam execução SQL Server real, API HTTP/autenticação nem validação end-to-end com o ZIP real CSDefault202603 no serviço Import.
+A primeira fatia inclui IkpPackageValidator, IkpPackageIngestionService, FileSystemImmutablePackageStore, SqlServerPackageReceiptRepository, migration 001_package_ingestion_receipts.sql e testes sobre fixture IKP / ZIP sintético → Validator / Ingestion. Os testes não provam execução SQL Server real, API HTTP/autenticação nem validação end-to-end com o ZIP real CSDefault202603 no serviço Import.
 
 O arquivo acontece antes da gravação SQL do receipt. Falha SQL posterior pode deixar ficheiro órfão; reconciliação/retry é um bloqueador técnico antes de alargar a ingestão. O modelo de destino separa Package global de PackageReceipt por Organization; a migration atual ainda tem unicidade por Organization.
 

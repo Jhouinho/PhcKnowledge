@@ -56,9 +56,9 @@ Também se mantém a solução específica do Scanner em `PhcKnowledgeScanner/Ph
 
 ## Estado da plataforma — 2026-11-17
 
-A solução já contém uma primeira fatia funcional do núcleo PHC Knowledge, em src/PhcKnowledge.Import: validação de pacotes IKP, serviço de ingestão, arquivo imutável por SHA-256 e persistência de receipts no SQL Server. Existem testes unitários e de integração P1–N1.
+A solução já contém uma primeira fatia funcional do núcleo PHC Knowledge, em src/PhcKnowledge.Import: validação de pacotes IKP, serviço de ingestão, arquivo imutável por SHA-256 e persistência de receipts no SQL Server. Existem testes unitários e de integração sobre fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado).
 
-**Implementado no código:** IkpPackageValidator, IkpPackageIngestionService, FileSystemImmutablePackageStore, SqlServerPackageReceiptRepository e migration 001_package_ingestion_receipts.sql. Os testes usam workspace sintético Scanner → ZIP → Validator; não demonstram API HTTP/autenticação nem integração SQL Server real.
+**Implementado no código:** IkpPackageValidator, IkpPackageIngestionService, FileSystemImmutablePackageStore, SqlServerPackageReceiptRepository e migration 001_package_ingestion_receipts.sql. Os testes usam fixture IKP / ZIP sintético → Validator / Ingestion; não demonstram API HTTP/autenticação nem integração SQL Server real.
 
 **Limite importante:** o serviço arquiva o ZIP antes de persistir o receipt. Uma falha SQL posterior pode deixar um ficheiro arquivado sem receipt; reconciliação/retry é evolução necessária. O arquivo é global e content-addressed; os receipts são isolados por organização.
 

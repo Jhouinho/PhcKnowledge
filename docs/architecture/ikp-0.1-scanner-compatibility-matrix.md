@@ -6,7 +6,7 @@ Data de revisão: 2026-11-17
 
 O Scanner emite IKP 0.1. A captura real CSDefault202603 foi examinada: 16.618 objetos, 921 relações declaradas e 921 interpretações REL/DTL. O Object Index inclui 8 dos 21 kinds mapeados; os restantes continuam sem validação real nesta captura.
 
-O núcleo PhcKnowledge.Import já implementa a primeira fatia Receive / Validate / Archive como serviço, com validator, arquivo imutável por SHA-256 e persistência SQL de receipts. Os testes P1–N1 usam workspace sintético Scanner → ZIP → Validator; não são prova de execução contra SQL Server real nem de API HTTP/autenticação.
+O núcleo PhcKnowledge.Import já implementa a primeira fatia Receive / Validate / Archive como serviço, com validator, arquivo imutável por SHA-256 e persistência SQL de receipts. Os testes usam fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado); não são prova de execução contra SQL Server real nem de API HTTP/autenticação.
 
 ## Matriz
 
@@ -22,7 +22,7 @@ O núcleo PhcKnowledge.Import já implementa a primeira fatia Receive / Validate
 | Ingestion service | IkpPackageIngestionService coordena validação, arquivo e receipt | Não é endpoint HTTP |
 | Package store | FileSystemImmutablePackageStore; content-addressed global por SHA-256; não sobrescreve | Reconciliação de ficheiros sem receipt após falha SQL |
 | Receipt SQL | SqlServerPackageReceiptRepository + migration 001_package_ingestion_receipts.sql | Testar em SQL Server real; constraints atuais são por Organization |
-| Testes | P1–N1 unitários/integração com workspace sintético, incluindo payload adulterado | Não prova SQL Server real, API, autenticação ou ZIP real CSDefault202603 |
+| Testes | Fixture IKP / ZIP sintético → Validator / Ingestion (aceitação, arquivo idempotente, receipt, path traversal, payload adulterado) | Não prova SQL Server real, API, autenticação ou ZIP real CSDefault202603 |
 | API / autenticação | Não demonstradas | Criar fronteira HTTP; OrganizationId deve vir do contexto autenticado |
 | Materialização Knowledge | Ainda não implementada | PackageArtifact/Observation/REL/DTL e processamento posterior |
 

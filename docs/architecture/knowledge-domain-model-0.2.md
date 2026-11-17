@@ -107,13 +107,13 @@ O exportador atual gera novo PackageId por exportação. Reexportar a mesma Capt
 - FileSystemImmutablePackageStore: arquivo content-addressed global por SHA-256; não sobrescreve e valida conteúdo existente.
 - SqlServerPackageReceiptRepository: persiste receipts em SQL Server.
 - Migration 001_package_ingestion_receipts.sql.
-- Testes unitários e integração P1–N1 com workspace sintético Scanner → ZIP → Validator, incluindo payload adulterado.
+- Testes unitários e de integração sobre fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado).
 
 **Limites comprovados:**
 - OrganizationId é exigido quando o serviço usa receipt repository; sem repositório de receipts, o harness pode validar/arquivar sem Organization.
 - API HTTP/autenticação não está demonstrada; OrganizationId deve derivar do contexto autenticado na futura fronteira HTTP.
 - A ordem atual é arquivo ZIP antes da gravação SQL do receipt. Se SQL falhar após arquivo, fica um ZIP sem receipt. É necessário protocolo de reconciliação/retry.
-- Testes P1–N1 não demonstram SQL Server real, API HTTP nem receção do ZIP binário real CSDefault202603 pelo serviço.
+- Estes testes não demonstram SQL Server real, API HTTP nem receção do ZIP binário real CSDefault202603 pelo serviço.
 - ZIP original é preservado permanentemente.
 
 **Estado da migration atual:** índices únicos (OrganizationId, PackageId) e (OrganizationId, ZipSha256). Isto descreve a fatia atual, não o destino global. Não alterar migrations nesta fase.

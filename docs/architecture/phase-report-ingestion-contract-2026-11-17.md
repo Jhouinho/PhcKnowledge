@@ -45,9 +45,9 @@ Confirmado no main analisado:
 - FileSystemImmutablePackageStore;
 - SqlServerPackageReceiptRepository;
 - migration 001_package_ingestion_receipts.sql;
-- testes unitários e integração P1–N1.
+- testes unitários e de integração sobre fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado).
 
-O fluxo dos testes usa workspace sintético Scanner → ZIP → Validator e inclui adulteração de payload. Não demonstra execução SQL Server real, endpoint HTTP/autenticação nem receção end-to-end do ZIP real CSDefault202603 pelo serviço Import.
+O fluxo dos testes usa fixture IKP / ZIP sintético → Validator / Ingestion e inclui adulteração de payload. Não demonstra execução SQL Server real, endpoint HTTP/autenticação nem receção end-to-end do ZIP real CSDefault202603 pelo serviço Import.
 
 Ordem atual: arquivo ZIP antes da gravação SQL do receipt. Uma falha SQL posterior pode deixar um arquivo sem receipt. Reconciliação/retry permanece bloqueador técnico.
 

@@ -544,7 +544,7 @@ A confirmação de remoção em capturas completas sucessivas pode ser introduzi
 
 **Estado confirmado em 2026-11-17:** o Scanner contém o exportador IKP 0.1 e os comandos CLI scan-ikp e export-ikp. A captura real CSDefault202603 foi examinada: 16.618 objetos; 8.307 SourceIdentity; 16.581 MetadataFingerprint; 49 definições associadas; 921 factos REL/DTL e 921 interpretações. O ZIP real foi inspecionado e a estrutura combinada REL/DTL foi confirmada.
 
-O núcleo PhcKnowledge.Import já implementa IkpPackageValidator, IkpPackageIngestionService, FileSystemImmutablePackageStore e SqlServerPackageReceiptRepository, com migration e testes P1–N1. Estes testes usam workspace sintético e não demonstram SQL Server real, API HTTP/autenticação ou materialização do Knowledge.
+O núcleo PhcKnowledge.Import já implementa IkpPackageValidator, IkpPackageIngestionService, FileSystemImmutablePackageStore e SqlServerPackageReceiptRepository, com migration e testes sobre fixture IKP / ZIP sintético → Validator / Ingestion. Estes testes não demonstram SQL Server real, API HTTP/autenticação ou materialização do Knowledge.
 
 Lacunas e validações restantes:
 - executar build e testes atuais do monorepo e confirmar o resultado CI mais recente;
