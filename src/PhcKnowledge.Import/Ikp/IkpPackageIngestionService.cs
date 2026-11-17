@@ -5,9 +5,9 @@ using PhcKnowledge.Import.Receipts;
 namespace PhcKnowledge.Import.Ikp;
 
 /// <summary>
-/// Receives an upload, validates it before storage, then archives the original
-/// ZIP by content hash. It deliberately does not associate an installation or
-/// materialise observations.
+/// Receives and validates IKP uploads. When durable attempt persistence is configured,
+/// it records the attempt before touching the immutable archive and delegates completion
+/// to PackageReceiptRecoveryService.
 /// </summary>
 public sealed class IkpPackageIngestionService
 {
@@ -16,20 +16,29 @@ public sealed class IkpPackageIngestionService
     private readonly string _stagingDirectory;
     private readonly long _maxUploadBytes;
     private readonly IPackageReceiptRepository? _receiptRepository;
+    private readonly IPackageReceiptAttemptRepository? _attemptRepository;
 
     public IkpPackageIngestionService(
         IkpPackageValidator validator,
         IImmutablePackageStore store,
         string stagingDirectory,
         long maxUploadBytes = 250L * 1024 * 1024,
-        IPackageReceiptRepository? receiptRepository = null)
+        IPackageReceiptRepository? receiptRepository = null,
+        IPackageReceiptAttemptRepository? attemptRepository = null)
     {
         _validator = validator ?? throw new ArgumentNullException(nameof(validator));
         _store = store ?? throw new ArgumentNullException(nameof(store));
         ArgumentException.ThrowIfNullOrWhiteSpace(stagingDirectory);
         _stagingDirectory = Path.GetFullPath(stagingDirectory);
-        _maxUploadBytes = maxUploadBytes;
+        _maxUploadBytes = maxUploadBytes > 0 ? maxUploadBytes : throw new ArgumentOutOfRangeException(nameof(maxUploadBytes));
         _receiptRepository = receiptRepository;
+        _attemptRepository = attemptRepository;
+
+        if (_attemptRepository is not null &&
+            (_receiptRepository is null || _store is not IExpectedStorageKeyProvider ||
+             _store is not IRecoverableImmutablePackageStore))
+            throw new ArgumentException(
+                "A recuperação durável exige receipt repository e store com chave determinística e verificação de arquivo.");
     }
 
     public async Task<IkpIngestionResult> ReceiveValidateArchiveAsync(
@@ -38,10 +47,14 @@ public sealed class IkpPackageIngestionService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(upload);
-        if (_receiptRepository is not null && (!organizationId.HasValue || organizationId.Value == Guid.Empty))
+        if ((_receiptRepository is not null || _attemptRepository is not null) &&
+            (!organizationId.HasValue || organizationId.Value == Guid.Empty))
             throw new ArgumentException("OrganizationId é obrigatório para registar a recepção.", nameof(organizationId));
+
         Directory.CreateDirectory(_stagingDirectory);
-        var stagedPath = Path.Combine(_stagingDirectory, $"receive-{Guid.NewGuid():N}.tmp");
+        var stagingKey = $"receive-{Guid.NewGuid():N}.tmp";
+        var stagedPath = Path.Combine(_stagingDirectory, stagingKey);
+        var preserveStaging = false;
         try
         {
             var (hash, length) = await StageUploadAsync(upload, stagedPath, cancellationToken);
@@ -51,27 +64,61 @@ public sealed class IkpPackageIngestionService
                 !string.Equals(validation.ZipSha256, hash, StringComparison.Ordinal))
                 throw new IkpPackageValidationException("O conteúdo recebido mudou entre a recepção e a validação.");
 
+            if (_attemptRepository is not null)
+            {
+                var keyProvider = (IExpectedStorageKeyProvider)_store;
+                var recoverableStore = (IRecoverableImmutablePackageStore)_store;
+                var storageKey = keyProvider.GetStorageKey(validation);
+                var registration = await _attemptRepository.CreateOrGetPendingAsync(
+                    organizationId!.Value, validation, storageKey, stagingKey, cancellationToken);
+
+                if (registration.Attempt.Status == "NeedsAttention")
+                    throw new PackageReceiptNeedsAttentionException(registration.Attempt.AttemptId);
+
+                if (registration.Attempt.Status == "Completed")
+                {
+                    var exists = await recoverableStore.VerifyArchivedPackageAsync(
+                        registration.Attempt.StorageKey, validation.ZipSha256,
+                        validation.ZipByteLength, cancellationToken);
+                    if (!exists)
+                        throw new PackageReceiptConflictException(
+                            "A tentativa está concluída, mas o objecto imutável não existe no arquivo.");
+                    var archived = new ArchivedPackage(registration.Attempt.StorageKey, true);
+                    var existingReceipt = await _receiptRepository!.RegisterArchivedPackageAsync(
+                        organizationId.Value, validation, archived, cancellationToken);
+                    return new IkpIngestionResult(validation, archived, existingReceipt.Receipt);
+                }
+
+                var recovery = new PackageReceiptRecoveryService(
+                    _attemptRepository, _store, _stagingDirectory);
+                var recovered = await recovery.ProcessAttemptAsync(
+                    registration.Attempt.AttemptId, cancellationToken);
+                if (recovered is null)
+                {
+                    preserveStaging = true;
+                    throw new PackageReceiptPendingException(registration.Attempt.AttemptId);
+                }
+
+                return new IkpIngestionResult(
+                    validation, recovered.Archive, recovered.Registration.Receipt);
+            }
+
+            // Compatibility path for validation-only and legacy callers. Product deployments
+            // should configure IPackageReceiptAttemptRepository to close the filesystem/SQL gap.
             var archive = await _store.ArchiveValidatedPackageAsync(stagedPath, validation, cancellationToken);
             PackageReceipt? receipt = null;
             if (_receiptRepository is not null)
             {
-                var registration = await _receiptRepository.RegisterArchivedPackageAsync(
+                var receiptRegistration = await _receiptRepository.RegisterArchivedPackageAsync(
                     organizationId!.Value, validation, archive, cancellationToken);
-                receipt = registration.Receipt;
+                receipt = receiptRegistration.Receipt;
             }
             return new IkpIngestionResult(validation, archive, receipt);
         }
         finally
         {
-            try
-            {
-                if (File.Exists(stagedPath))
-                {
-                    File.SetAttributes(stagedPath, FileAttributes.Normal);
-                    File.Delete(stagedPath);
-                }
-            }
-            catch { /* Best-effort cleanup; a later staging cleanup can remove leftovers. */ }
+            if (!preserveStaging)
+                TryDeleteStaging(stagedPath);
         }
     }
 
@@ -96,9 +143,35 @@ public sealed class IkpPackageIngestionService
         await output.FlushAsync(cancellationToken);
         return (Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant(), total);
     }
+
+    private static void TryDeleteStaging(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return;
+            File.SetAttributes(path, FileAttributes.Normal);
+            File.Delete(path);
+        }
+        catch
+        {
+            // A staging janitor may remove unreferenced leftovers after the retention period.
+        }
+    }
 }
 
 public sealed record IkpIngestionResult(
     IkpPackageValidationResult Validation,
     ArchivedPackage Archive,
     PackageReceipt? Receipt);
+
+public sealed class PackageReceiptPendingException(Guid attemptId)
+    : Exception($"A recepção foi registada e aguarda recuperação automática. AttemptId: {attemptId}.")
+{
+    public Guid AttemptId { get; } = attemptId;
+}
+
+public sealed class PackageReceiptNeedsAttentionException(Guid attemptId)
+    : Exception($"A recepção requer intervenção. AttemptId: {attemptId}.")
+{
+    public Guid AttemptId { get; } = attemptId;
+}
