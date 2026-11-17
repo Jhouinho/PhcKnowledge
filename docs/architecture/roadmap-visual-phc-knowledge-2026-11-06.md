@@ -404,7 +404,7 @@ O fluxo é apresentado por dependências principais. Dentro de uma etapa, ativid
 
 ## E. Próximo trabalho recomendado
 
-**Próximo passo:** validar funcionalmente os estados e transições de contexto, identidade e presença descritos em [domain-model-0.2-state-transitions.md](domain-model-0.2-state-transitions.md). A política de remoção já está aprovada: duas capturas consecutivas completas e comparáveis, com confirmação humana obrigatória. Falta fechar a política de DatabaseLocation quando ServerName é desconhecido e o modelo de eventos/projeções; só então produzir o desenho físico SQL Server Express (tabelas, PK/FK, índices, constraints, auditoria e transações) e respetivos testes de integridade.
+**Próximo passo:** validar funcionalmente os estados e transições de contexto, identidade e presença descritos em [domain-model-0.2-state-transitions.md](domain-model-0.2-state-transitions.md). A política de remoção já está aprovada: duas capturas consecutivas completas e comparáveis, com confirmação humana obrigatória. A política funcional de DatabaseLocation está decidida: criar localização provisória com ServerName desconhecido e enriquecê-la, preservando histórico, quando o servidor for identificado. Falta fechar a cardinalidade/índices e o modelo de eventos/projeções; só então produzir o desenho físico SQL Server Express (tabelas, PK/FK, índices, constraints, auditoria e transações) e respetivos testes de integridade.
 
 A implementação deve continuar a começar por Receive / Validate / Archive, sem antecipar materialização, associação, identidade ou comparação na primeira entrega.
 
