@@ -7,7 +7,7 @@ using PhcKnowledge.Import.Storage;
 
 namespace PhcKnowledge.Import.SqlServer.Integration.Tests;
 
-[CollectionDefinition(Name, DisableParallelization = true)]
+[CollectionDefinition("SQL Server integration", DisableParallelization = true)]
 public sealed class SqlServerIntegrationCollection
 {
     public const string Name = "SQL Server integration";
