@@ -604,6 +604,7 @@ O emissor IKP já está implementado no Scanner. O próximo resultado de produto
 
 ## Referências
 
+- [Decisões de domínio PHC Knowledge 0.2](domain-model-0.2-decisions.md)
 - [Contrato de observação, identidade e linhagem](observation-identity-and-lineage-contract.md)
 - [Investigação de cobertura dos collectors](collector-coverage-investigation-2026-11-06.md)
 - [Fixture IKP 0.1 mínima](fixtures/ikp-0.1/minimal-valid/README.md)
