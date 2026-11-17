@@ -147,20 +147,21 @@ As alterações documentais clarificam a semântica do PHC Knowledge e corrigem 
 
 ## 13. Questões reservadas ao desenho lógico/físico
 
-1. Fechar os estados e transições de CaptureContextAssignment, incluindo revogação e reatribuição.
+1. Aprovar a política de remoção: a proposta conservadora exige duas capturas consecutivas, completas e comparáveis; o limiar ainda não foi aprovado.
 2. Definir a política de localização quando DatabaseName é conhecido e ServerName não.
 3. Fechar a cardinalidade e índices de DatabaseLocation por Environment.
-4. Definir o modelo append-only de eventos de identidade e estados ambientais.
-5. Definir as regras de reavaliação controlada e a forma de identificar apenas os elementos afectados.
-6. Definir permissões administrativas e auditoria para associações e transferências entre Organizations.
+4. Escolher a concretização física do histórico append-only e das projeções de estado atual.
+5. Definir permissões administrativas, papéis e auditoria para associações, decisões de identidade e transferências entre Organizations.
+6. Definir a estratégia técnica de execução/retenção de reavaliações (fila/job, retries e observabilidade), sem alterar as regras funcionais.
 
-Estas questões não bloqueiam a consolidação conceptual, mas têm de ser fechadas antes da implementação do schema relacional.
+Os estados e transições funcionais propostos para contexto, identidade e presença estão descritos em [domain-model-0.2-state-transitions.md](domain-model-0.2-state-transitions.md). A proposta está pronta para validação funcional; os pontos acima têm de ser fechados antes do schema relacional.
 
 ## 14. Artefactos da revisão e próximo passo
 
-Os diagramas ER e de classes conceptuais e o roadmap foram atualizados para refletir esta revisão:
+Os artefactos da revisão 0.2 são:
 
 - [Diagramas ER e de classes — Scanner e plataforma central](diagramas-projeto-er-e-classes-2026-11-06.md), secção 5 para o domínio 0.2;
-- [Roadmap visual PHC Knowledge](roadmap-visual-phc-knowledge-2026-11-06.md), secção «Revisão do roadmap — modelo de domínio 0.2».
+- [Roadmap visual PHC Knowledge](roadmap-visual-phc-knowledge-2026-11-06.md), secção «Revisão do roadmap — modelo de domínio 0.2»;
+- [Estados e transições de contexto, identidade e presença](domain-model-0.2-state-transitions.md), proposta funcional para validação.
 
 O próximo passo é fechar os estados/transições e as regras de contexto, identidade e curadoria reservadas na secção 13. Depois preparar o desenho físico SQL Server Express (tabelas, PK/FK, índices, constraints, auditoria e transações) e os respetivos testes de integridade. A implementação continua a começar por Receive / Validate / Archive.
