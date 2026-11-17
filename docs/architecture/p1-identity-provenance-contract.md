@@ -71,9 +71,20 @@ Cada objeto do índice tem de apontar para a operação lógica que sustenta a s
 - Não atribuir uma operação por inferência ambígua baseada apenas no nome da tabela ou no collector.
 - O mapeamento `objectKind → operationId` deve ser explícito e versionado na matriz de compatibilidade. Se um kind puder ser produzido por operações distintas, o mapeamento é resolvido no momento da recolha e guardado no registo; não se escolhe arbitrariamente uma.
 - Se não for possível determinar a operação que observou o objeto, o objeto não pode ser usado para sustentar conclusões de cobertura/remoção até a lacuna ser resolvida. Não inventar um operationId genérico.
-- Não adicionar `ObservationId` ao Scanner. A plataforma pode derivá-lo de `InstallationId + CaptureId + SourceObjectId` (e `objectKind` se necessário), mantendo a sua chave persistente própria.
+- Não adicionar `ObservationId` ao Scanner. A plataforma atribui um `ObservationId` próprio a cada observação materializada. A unicidade funcional é `UNIQUE(CaptureId, SourceObjectId)`; a identidade da observação não depende de `InstallationId`, `EnvironmentId` ou de `EntityIdentityId`. A Observation pode existir antes da associação de contexto e antes da resolução de identidade.
 
 A proposta de `collectedByOperationId` é uma extensão opcional do objeto `definition`; antes de ser adotada no schema JSON, confirmar que a distinção inventário/recuperação de definição existe para a categoria concreta. Não tornar o campo obrigatório para todos os objetos.
+
+### 3.1 Identidade persistente da Observation na plataforma
+
+A identidade da Observation é responsabilidade exclusiva do PHC Knowledge e não faz parte do contrato de emissão do Scanner.
+
+- O Scanner continua a emitir SourceObjectId único no âmbito de cada Capture e não recebe InstallationId, EnvironmentId ou ObservationId.
+- A plataforma gera ObservationId como chave própria de persistência.
+- A restrição funcional é a unicidade do par CaptureId + SourceObjectId.
+- A Observation não depende de contexto confirmado nem de EntityIdentity.
+- EntityIdentity é uma associação lógica posterior, no âmbito de uma Installation, resolvida através de IdentityMatch.
+- A reassociação de contexto não altera ObservationId nem os factos de origem; pode apenas desencadear reavaliação controlada de correspondências e comparações.
 
 ## 4. Estado individual da definição
 
@@ -148,7 +159,7 @@ A matriz de normalização por `objectKind` é uma dependência de P1.B: deve se
 2. O inventário standard PHC não deve ser repetido apenas para preencher o índice. Reutilizar o snapshot/schema e os dados já recolhidos quando forem suficientes.
 3. Só recolher metadados adicionais se uma lacuna demonstrada impedir identidade, proveniência ou comparação correta.
 4. Objetos derivados/projetados devem ser identificados como derivados, com versão do projetor e referências às evidências de origem; não os confundir com factos nativos.
-5. Relações REL/DTL sem stamp podem aparecer como objetos/relações com SourceObjectId sintético e fingerprint de conteúdo, mas sem alegar identidade nativa forte.
+5. Relações REL/DTL permanecem no payload de factos declarados e interpretações, fora do Object Index de objetos técnicos. A ausência de stamp não lhes confere identidade nativa; identificadores derivados de hash/atributos permanecem referências sintéticas no respetivo payload.
 6. A ausência de uma família no índice é interpretada com capabilities e coverage, nunca isoladamente.
 
 ## 7. Compatibilidade com IKP 0.1
@@ -186,10 +197,13 @@ Não preencher os valores da matriz por suposição. A matriz deve ser construí
 ## 9. Responsabilidades da plataforma
 
 A plataforma é responsável por:
-- associar CaptureId a uma instalação;
-- derivar e persistir a identidade da observação;
-- manter EntityIdentity e histórico;
+- manter Organization, Installation, Environment e DatabaseLocation como contexto de domínio próprio;
+- associar Capture a DatabaseLocation através de CaptureContextAssignment, com histórico e no máximo uma atribuição ativa;
+- materializar Observation independentemente da associação de contexto, atribuindo ObservationId próprio e impondo `UNIQUE(CaptureId, SourceObjectId)`;
+- manter EntityIdentity no âmbito de uma única Installation, permitindo partilha entre Environments apenas após correspondência confirmada;
+- manter Observations sem EntityIdentity quando não existe correspondência confirmada;
 - resolver correspondências e renomeações com evidência e decisões auditáveis;
+- reavaliar de forma controlada as correspondências/comparações afetadas por correções de contexto;
 - aplicar compatibilidade de capabilities e coverage antes de declarar Added/Removed;
 - manter linhagem entre instalações sem fundir os respetivos históricos.
 
