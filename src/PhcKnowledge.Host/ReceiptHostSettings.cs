@@ -14,6 +14,7 @@ public sealed class ReceiptHostSettings
     public TimeSpan StagingRetention { get; init; } = TimeSpan.FromHours(24);
     public TimeSpan OperationsMonitorInterval { get; init; } = TimeSpan.FromMinutes(5);
     public TimeSpan PendingAlertThreshold { get; init; } = TimeSpan.FromHours(1);
+    public TimeSpan AlertRepeatInterval { get; init; } = TimeSpan.FromHours(1);
 
     public static ReceiptHostSettings Load(IConfiguration configuration)
     {
@@ -39,7 +40,8 @@ public sealed class ReceiptHostSettings
             CleanupInterval = TimeSpan.FromMinutes(ReadInt(configuration, "Staging:CleanupIntervalMinutes", 15)),
             StagingRetention = TimeSpan.FromHours(ReadInt(configuration, "Staging:RetentionHours", 24)),
             OperationsMonitorInterval = TimeSpan.FromMinutes(ReadInt(configuration, "Operations:MonitorIntervalMinutes", 5)),
-            PendingAlertThreshold = TimeSpan.FromMinutes(ReadInt(configuration, "Operations:PendingAlertAfterMinutes", 60))
+            PendingAlertThreshold = TimeSpan.FromMinutes(ReadInt(configuration, "Operations:PendingAlertAfterMinutes", 60)),
+            AlertRepeatInterval = TimeSpan.FromMinutes(ReadInt(configuration, "Operations:AlertRepeatIntervalMinutes", 60))
         };
 
         if (settings.RecoveryBatchSize is < 1 or > 500)
@@ -49,7 +51,8 @@ public sealed class ReceiptHostSettings
             settings.CleanupInterval <= TimeSpan.Zero ||
             settings.StagingRetention <= TimeSpan.Zero ||
             settings.OperationsMonitorInterval <= TimeSpan.Zero ||
-            settings.PendingAlertThreshold <= TimeSpan.Zero)
+            settings.PendingAlertThreshold <= TimeSpan.Zero ||
+            settings.AlertRepeatInterval <= TimeSpan.Zero)
             throw new InvalidOperationException("Os intervalos e durações do host têm de ser positivos.");
 
         return settings;
@@ -73,15 +76,30 @@ public sealed class ReceiptHostSettings
         return value;
     }
 
-    private static bool PathsOverlap(string first, string second)
+    private static bool PathsOverlap(string first, string second) =>
+        IsSameOrDescendant(first, second) || IsSameOrDescendant(second, first);
+
+    private static bool IsSameOrDescendant(string parent, string candidate)
     {
         var comparison = OperatingSystem.IsWindows()
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
-        var firstPrefix = Path.TrimEndingDirectorySeparator(first) + Path.DirectorySeparatorChar;
-        var secondPrefix = Path.TrimEndingDirectorySeparator(second) + Path.DirectorySeparatorChar;
-        return string.Equals(first, second, comparison) ||
-               first.StartsWith(secondPrefix, comparison) ||
-               second.StartsWith(firstPrefix, comparison);
+
+        if (string.Equals(parent, candidate, comparison))
+            return true;
+
+        var relative = Path.GetRelativePath(parent, candidate);
+        if (relative == ".")
+            return true;
+
+        if (Path.IsPathRooted(relative))
+            return false;
+
+        var firstSegment = relative.Split(
+            new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar },
+            StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+
+        return firstSegment is not null &&
+               !string.Equals(firstSegment, "..", comparison);
     }
 }
