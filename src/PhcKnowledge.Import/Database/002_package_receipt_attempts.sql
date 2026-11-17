@@ -18,6 +18,7 @@ BEGIN
         ProducerProductVersion NVARCHAR(64) NOT NULL,
         OriginDatabaseName NVARCHAR(128) NULL,
         ValidationSummaryJson NVARCHAR(MAX) NOT NULL,
+        ValidationJson NVARCHAR(MAX) NOT NULL,
 
         ZipSha256 CHAR(64) NOT NULL,
         ZipByteLength BIGINT NOT NULL,
@@ -39,6 +40,8 @@ BEGIN
 
         CONSTRAINT PK_PackageReceiptAttempts PRIMARY KEY CLUSTERED (AttemptId),
         CONSTRAINT CK_PackageReceiptAttempts_ByteLength CHECK (ZipByteLength > 0),
+        CONSTRAINT CK_PackageReceiptAttempts_ValidationJson CHECK (ISJSON(ValidationJson) = 1),
+        CONSTRAINT CK_PackageReceiptAttempts_SummaryJson CHECK (ISJSON(ValidationSummaryJson) = 1),
         CONSTRAINT CK_PackageReceiptAttempts_Sha256 CHECK (LEN(ZipSha256) = 64),
         CONSTRAINT CK_PackageReceiptAttempts_AttemptCount CHECK (AttemptCount >= 0),
         CONSTRAINT CK_PackageReceiptAttempts_Status CHECK
