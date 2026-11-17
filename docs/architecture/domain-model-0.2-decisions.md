@@ -156,6 +156,11 @@ As alterações documentais clarificam a semântica do PHC Knowledge e corrigem 
 
 Estas questões não bloqueiam a consolidação conceptual, mas têm de ser fechadas antes da implementação do schema relacional.
 
-## 14. Próximo passo
+## 14. Artefactos da revisão e próximo passo
 
-Depois de validar esta revisão documental, produzir o modelo lógico definitivo, ER e diagrama de classes alinhados com os contratos. Só depois preparar o desenho SQL Server Express e o plano de implementação por fases.
+Os diagramas ER e de classes conceptuais e o roadmap foram atualizados para refletir esta revisão:
+
+- [Diagramas ER e de classes — Scanner e plataforma central](diagramas-projeto-er-e-classes-2026-11-06.md), secção 5 para o domínio 0.2;
+- [Roadmap visual PHC Knowledge](roadmap-visual-phc-knowledge-2026-11-06.md), secção «Revisão do roadmap — modelo de domínio 0.2».
+
+O próximo passo é fechar os estados/transições e as regras de contexto, identidade e curadoria reservadas na secção 13. Depois preparar o desenho físico SQL Server Express (tabelas, PK/FK, índices, constraints, auditoria e transações) e os respetivos testes de integridade. A implementação continua a começar por Receive / Validate / Archive.
