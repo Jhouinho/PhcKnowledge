@@ -3,14 +3,14 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-17 |
-| Estado | **Decisões funcionais confirmadas; revisão documental em branch própria** |
+| Estado | **Decisões funcionais confirmadas; modelo consolidado para revisão, sem aprovação do schema físico** |
 | Repositório | Jhouinho/PhcKnowledge |
 | Branch de revisão | architecture/domain-model-0.2-review |
 | Âmbito | Modelo de domínio da plataforma PHC Knowledge, alinhamento IKP 0.1 / P1 |
 | Persistência central | Microsoft SQL Server Express |
 | Persistência local | SQLite apenas para workspace/cache local |
 
-Este documento consolida as decisões da revisão 0.2. Não representa uma migração de base de dados nem autoriza alterações ao Scanner, schemas JSON, SQLite ou collectors. O IKP 0.1 mantém a sua versão e formato; as alterações aqui descritas clarificam a semântica e as responsabilidades internas do PHC Knowledge.
+Este documento consolida as decisões e propostas de domínio da revisão 0.2. As decisões confirmadas nesta etapa são: Observation permanece sem EntityIdentity até existir correspondência confirmada; a correção de contexto desencadeia reavaliação controlada dos elementos afetados; e o catálogo standard é publicado exclusivamente pela administração central, aceitando propostas das organizações. Mantêm-se também as decisões previamente alinhadas de identidade partilhável entre ambientes da mesma Installation mediante confirmação e de linhagem entre Installations sem fusão de identidades. Os restantes detalhes constituem o modelo conceptual a validar antes do desenho físico. Não representa uma migração de base de dados nem autoriza alterações ao Scanner, schemas JSON, SQLite ou collectors. O IKP 0.1 mantém a sua versão e formato; as alterações aqui descritas clarificam a semântica e as responsabilidades internas do PHC Knowledge.
 
 ## 1. Organização, instalação e ambiente
 
