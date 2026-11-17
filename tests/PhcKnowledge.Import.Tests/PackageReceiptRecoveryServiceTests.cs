@@ -116,6 +116,32 @@ public sealed class PackageReceiptRecoveryServiceTests
     }
 
     [Fact]
+    public async Task Corrupted_archive_is_sent_to_attention_instead_of_retried()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"phc-recovery-corrupt-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var staging = Path.Combine(root, "staging");
+        Directory.CreateDirectory(staging);
+        await File.WriteAllTextAsync(Path.Combine(staging, "upload.tmp"), "bytes");
+        var attempt = CreateAttempt(CreateValidation(), "upload.tmp", "sha256/ab/package.ikp.zip");
+        var repository = new RecordingAttemptRepository(attempt);
+        var store = new RecordingPackageStore { ThrowOnCorruptArchive = true };
+        try
+        {
+            var service = new PackageReceiptRecoveryService(repository, store, staging);
+            var processed = await service.ProcessDueAsync();
+
+            Assert.Equal(0, processed);
+            Assert.Equal(1, repository.NeedsAttentionCalls);
+            Assert.Equal(0, repository.RetryCalls);
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Staging_cleanup_keeps_pending_files_and_deletes_only_expired_orphans()
     {
         var root = Path.Combine(Path.GetTempPath(), $"phc-staging-cleanup-{Guid.NewGuid():N}");
@@ -244,12 +270,14 @@ public sealed class PackageReceiptRecoveryServiceTests
         public int VerifyCalls { get; private set; }
         public bool ArchiveExists { get; init; }
         public bool ThrowOnArchive { get; init; }
+        public bool ThrowOnCorruptArchive { get; init; }
 
         public Task<ArchivedPackage> ArchiveValidatedPackageAsync(
             string validatedPackagePath, IkpPackageValidationResult validation,
             CancellationToken cancellationToken = default)
         {
             ArchiveCalls++;
+            if (ThrowOnCorruptArchive) throw new InvalidDataException("Archive content is corrupt.");
             if (ThrowOnArchive) throw new IOException("Temporary archive failure.");
             return Task.FromResult(new ArchivedPackage("sha256/ab/package.ikp.zip", false));
         }
