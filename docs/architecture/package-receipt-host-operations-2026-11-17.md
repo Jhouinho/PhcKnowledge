@@ -54,6 +54,12 @@ O mesmo estado não volta a gerar alertas em todos os ciclos: só volta a ser em
 
 A integração com email, Teams, PagerDuty ou outro canal não está incluída. O sistema de observabilidade/deployment deve recolher estes logs e criar regras de alerta para os níveis Warning e Error. Não são registados connection strings nem credenciais.
 
+## Validação automatizada
+
+- Testes unitários cobrem defaults, parâmetros inválidos, caminhos iguais/aninhados e a protecção da raiz do sistema de ficheiros.
+- Teste do worker confirma execução imediata e continuação após falha num ciclo.
+- A suite SQL Server 2022 executa o preflight contra as migrations reais, além dos testes transaccionais de recuperação.
+
 ## Limites desta fase
 
 O host executa apenas a recuperação de receipts e a limpeza de staging. Não disponibiliza API HTTP, autenticação, upload, nem processamento/materialização de artefactos IKP.
