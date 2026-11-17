@@ -14,7 +14,7 @@ Este documento conserva o contexto arquitetural e as decisões de alto nível so
 
 - **Scanner independente:** recolhe factos, identifica objetos na origem, declara capacidades e cobertura da captura, preserva conteúdo original e evidências, produz o IKP.
 - **IKP:** transporta uma observação imutável e autocontida da captura, incluindo capacidades, cobertura, índices de objetos, referências a artefactos e proveniência.
-- **PHC Knowledge:** associa a captura a uma instalação, mantém entidades lógicas, histórico de observações e versões, compara capturas, reconhece correspondências de identidade e gere linhagem entre instalações.
+- **PHC Knowledge:** recebe e preserva capturas, associa-as a contextos técnicos (DatabaseLocation → Environment → Installation → Organization), materializa observações, mantém entidades lógicas e histórico, compara capturas e gere correspondências de identidade e linhagem.
 - O PHC Knowledge não executa o Scanner em runtime.
 - O Scanner não depende do catálogo central do PHC Knowledge.
 
