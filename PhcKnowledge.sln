@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhcKnowledge.Ikp.Integratio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhcKnowledge.Import.SqlServer.Integration.Tests", "tests\PhcKnowledge.Import.SqlServer.Integration.Tests\PhcKnowledge.Import.SqlServer.Integration.Tests.csproj", "{5B4D29E8-9C2C-4DB7-A1B2-8C6F9D45A011}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhcKnowledge.Host", "src\PhcKnowledge.Host\PhcKnowledge.Host.csproj", "{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -227,6 +229,18 @@ Global
 		{5B4D29E8-9C2C-4DB7-A1B2-8C6F9D45A011}.Release|x64.Build.0 = Release|Any CPU
 		{5B4D29E8-9C2C-4DB7-A1B2-8C6F9D45A011}.Release|x86.ActiveCfg = Release|Any CPU
 		{5B4D29E8-9C2C-4DB7-A1B2-8C6F9D45A011}.Release|x86.Build.0 = Release|Any CPU
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}.Debug|x64.Build.0 = Debug|Any CPU
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}.Debug|x86.Build.0 = Debug|Any CPU
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}.Release|x64.ActiveCfg = Release|Any CPU
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}.Release|x64.Build.0 = Release|Any CPU
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}.Release|x86.ActiveCfg = Release|Any CPU
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -247,5 +261,6 @@ Global
 		{8D51D09A-28F4-47F5-A4E6-7D9A73E6C12F} = {A7C04ECC-442D-4834-860F-C61665815EA0}
 		{29CAAAAC-9F0C-478A-AA8D-198631E518CE} = {A7C04ECC-442D-4834-860F-C61665815EA0}
 		{5B4D29E8-9C2C-4DB7-A1B2-8C6F9D45A011} = {A7C04ECC-442D-4834-860F-C61665815EA0}
+		{A47E9C30-6B8B-4F1A-9E4D-2C0F7A8B1D62} = {888198E0-1C7E-47A0-953D-7F75255BD281}
 	EndGlobalSection
 EndGlobal
