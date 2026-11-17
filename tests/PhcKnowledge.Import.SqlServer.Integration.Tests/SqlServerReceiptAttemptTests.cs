@@ -16,8 +16,6 @@ public sealed class SqlServerIntegrationCollection
 [Collection(SqlServerIntegrationCollection.Name)]
 public sealed class SqlServerReceiptAttemptTests
 {
-    private readonly string? _connectionString = Environment.GetEnvironmentVariable("PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING");
-
     private static string RequireConnectionString()
     {
         var value = Environment.GetEnvironmentVariable("PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING");
@@ -85,7 +83,7 @@ public sealed class SqlServerReceiptAttemptTests
         await command.ExecuteNonQueryAsync();
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Concurrent_claims_grant_exactly_one_lease()
     {
         var connectionString = await SetupAsync();
@@ -105,7 +103,7 @@ public sealed class SqlServerReceiptAttemptTests
         finally { await CleanupAsync(connectionString, organizationId); }
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Expired_lease_can_be_reclaimed_but_old_token_is_fenced()
     {
         var connectionString = await SetupAsync();
@@ -130,7 +128,7 @@ public sealed class SqlServerReceiptAttemptTests
         finally { await CleanupAsync(connectionString, organizationId); }
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Completion_commits_receipt_and_attempt_state_together()
     {
         var connectionString = await SetupAsync();
@@ -153,7 +151,7 @@ public sealed class SqlServerReceiptAttemptTests
         finally { await CleanupAsync(connectionString, organizationId); }
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Receipt_insert_is_rolled_back_when_attempt_completion_fails()
     {
         var connectionString = await SetupAsync();
