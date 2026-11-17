@@ -8,7 +8,7 @@
 | Âmbito | Scanner PHC, IKP 0.1 e PHC Knowledge |
 | Base | investigação P1, especificação IKP 0.1, schemas e contrato de observação/linhagem |
 
-Este documento é a referência normativa para identidade, proveniência e fingerprints no Object Index / IKP 0.1. As decisões foram aplicadas no Scanner. A validação com captura real confirmou a projeção para os kinds efetivamente presentes, mas não cobre todos os 21 kinds nem a estabilidade de identidade entre capturas. Não autoriza recolha indiscriminada nem inferências de identidade fora do âmbito definido.
+Este documento é a referência normativa para identidade de origem, proveniência e fingerprints no Object Index / IKP 0.1. As decisões de emissão foram aplicadas no Scanner. A validação com captura real confirmou a projeção para os kinds efetivamente presentes, mas não cobre todos os 21 kinds nem a estabilidade de identidade entre capturas. A secção 3.1 clarifica a identidade persistente da Observation na plataforma, sem alterar o contrato de emissão do Scanner ou o schema IKP. Não autoriza recolha indiscriminada nem inferências de identidade fora do âmbito definido.
 
 ## 1. Decisões fundamentais
 
