@@ -194,7 +194,7 @@ Em 2026-11-11 foi executado um teste A/B com o mesmo pacote real `CSDefault20260
 
 **Estado: por construir; próxima fase de implementação aprovada**
 
-A pasta `src/` da plataforma central ainda não contém implementação funcional e `tests/` não tem testes próprios da plataforma. A primeira fatia a implementar é Receive / Validate / Archive. Depois, e em etapas separadas, construir:
+O núcleo `PhcKnowledge.Import` já contém validator, serviço de ingestão, arquivo imutável e repositório SQL de receipts, com testes P1–N1. A implementação atual não demonstra API HTTP/autenticação nem execução contra SQL Server real. Depois, e em etapas separadas, construir:
 - registo e gestão de instalações;
 - receção HTTP, validação estrutural/de segurança/integridade e arquivo imutável de pacotes IKP;
 - ingestão transacional e idempotente;
