@@ -1,7 +1,7 @@
 # Roadmap visual do PHC Knowledge — visão, fases e estado atual
 
-**Data de referência:** 2026-11-11  
-**Estado:** roadmap atualizado em 2026-11-11 com a evidência de desempenho da validação IKP 0.1 e a decisão pendente de ajuste localizado do JSON Schema.  
+**Data de referência:** 2026-11-17  
+**Estado:** roadmap revisto em 2026-11-17; Scanner/IKP e primeira fatia Import já implementados. API, SQL real, reconciliação e materialização continuam por concluir.  
 **Nota:** as percentagens não são estimadas; os estados indicam maturidade qualitativa.
 
 ## 1. Objetivo do produto
@@ -240,7 +240,7 @@ A IA não deverá inventar factos nem substituir a proveniência. Deve investiga
 | 3 | Exportador IKP 0.1 | **Implementado no Scanner.** `IkpPackageExporter`, `scan-ikp` e `export-ikp`. |
 | 4 | Correção de desempenho do schema IKP | **Decisão tomada; alteração pendente.** Remover `uniqueItems` apenas de `objects`; manter unicidade de `sourceObjectId` no validador C# e de `artifactIds` no schema. Repetir testes e medição. |
 | 5 | Validação end-to-end de IKP real | **Pendente.** Gerar pacote da captura default existente e validar com schemas/validador independente. |
-| 6 | Receive / Validate / Archive | **Próxima implementação no Knowledge.** Endpoint, segurança, integridade, arquivo imutável e registo SQL idempotente. |
+| 6 | Receive / Validate / Archive | **Implementado como serviço Import.** Endpoint HTTP/autenticação, SQL Server real e reconciliação ainda pendentes. |
 | 7 | Associação, materialização e comparação | Posterior; não faz parte da primeira fatia. |
 | 8 | Histórico, identidade e diff | Comparar capturas sem confundir instalação, objeto observado e entidade lógica; só inferir remoções com cobertura suficiente. |
 | 9 | Dependências, conhecimento e pesquisa | Consultas devolvem objetos, evidências, contexto e anotações rastreáveis. |
@@ -290,8 +290,14 @@ Esta capacidade pertence ao Scanner, não à plataforma central. Os collectors m
 Detalhe e salvaguardas: [scanner-controlled-change-management-vision-2026-11-07.md](scanner-controlled-change-management-vision-2026-11-07.md).
 
 
-## 9. Estado consolidado — 2026-11-11
+## 9. Estado consolidado — 2026-11-17
 
-A sequência atual é: **Scanner/IKP já implementado → corrigir e fechar a validação do schema/ZIP real → construir Receive / Validate / Archive no PHC Knowledge**. O teste A/B identificou uma penalização severa causada por `uniqueItems` no array principal `objects`; a remoção localizada foi decidida, mas ainda não aplicada. A validação end-to-end do ZIP produzido pelo exportador continua pendente. A plataforma central continua sem projetos próprios em `src/` e testes próprios em `tests/`. A primeira fatia não associa automaticamente a instalação, não materializa observações, não calcula remoções e não publica conhecimento.
+A sequência atual é: **Scanner/IKP implementado e captura real examinada → Receive / Validate / Archive implementado como serviço em PhcKnowledge.Import → robustecer SQL/arquivo e desenhar HTTP/autenticação → materializar conhecimento**.
 
-A base central escolhida é SQL Server Express; SQL Server 2025 Express inclui Full-Text Search, mas a versão concreta e a adequação dos limites de capacidade ainda têm de ser fixadas. Os pacotes IKP e definições originais ficam em arquivo de ficheiros imutável, fora da base relacional. SignalR mantém-se na arquitetura.
+A primeira fatia inclui IkpPackageValidator, IkpPackageIngestionService, FileSystemImmutablePackageStore, SqlServerPackageReceiptRepository, migration 001_package_ingestion_receipts.sql e testes P1–N1. Os testes usam workspace sintético; não provam execução SQL Server real, API HTTP/autenticação nem validação end-to-end com o ZIP real CSDefault202603 no serviço Import.
+
+O arquivo acontece antes da gravação SQL do receipt. Falha SQL posterior pode deixar ficheiro órfão; reconciliação/retry é um bloqueador técnico antes de alargar a ingestão. O modelo de destino separa Package global de PackageReceipt por Organization; a migration atual ainda tem unicidade por Organization.
+
+A captura real confirmou 16.618 SourceObjectIds, máximo 54, sem duplicados ordinais, espaços nas extremidades ou valores não-ASCII. O destino proposto é NVARCHAR(256) com comparação ordinal. REL/DTL está num ficheiro físico único com coleções declaredRelations e interpretations; as entidades de domínio permanecem separadas.
+
+A base central escolhida é SQL Server Express; versão concreta e adequação operacional continuam por validar. ZIPs originais ficam em arquivo imutável fora da base relacional. SignalR mantém-se na arquitetura.
