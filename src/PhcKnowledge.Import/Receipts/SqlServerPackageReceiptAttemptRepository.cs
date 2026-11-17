@@ -202,6 +202,24 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
         return leases;
     }
 
+    public async Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            SELECT StagingKey
+            FROM dbo.PackageReceiptAttempts
+            WHERE Status = 'PendingArchive';
+            """;
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+            keys.Add(reader.GetString(0));
+        return keys;
+    }
+
     public async Task<bool> RenewLeaseAsync(
         Guid attemptId, Guid leaseToken, DateTimeOffset leaseUntilUtc,
         CancellationToken cancellationToken = default)
