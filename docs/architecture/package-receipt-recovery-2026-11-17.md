@@ -34,7 +34,7 @@ Não é necessário estado `Archived`: o worker verifica a existência, tamanho 
 ## Retry e operação
 
 - Erros transitórios: manter `PendingArchive`, guardar diagnóstico e agendar retry com backoff exponencial limitado a 15 minutos.
-- Após uma hora pendente: emitir alerta operacional, mas continuar a tentar automaticamente.
+- Regra operacional definida: após uma hora pendente deve existir alerta, mantendo retries automáticos. A emissão desse alerta ainda não está ligada a um sistema de observabilidade e fica para a integração do host.
 - Corrupção, hash divergente, metadados inconsistentes ou colisão PackageId/conteúdo: `NeedsAttention`.
 - Tentativas pendentes não expiram automaticamente.
 - Ficheiros de staging sem tentativa SQL associada podem ser eliminados após 24 horas. `PackageStagingCleanupService` consulta as tentativas pendentes e protege os respectivos `StagingKey`; a invocação periódica depende do host.
@@ -70,6 +70,7 @@ Os índices únicos por OrganizationId + PackageId e OrganizationId + ZipSha256 
 - A recuperação deve ser um serviço do Import, invocado por um BackgroundService no futuro host. Este repositório ainda não tem esse host.
 - O percurso de produto deve configurar `SqlServerPackageReceiptAttemptRepository` e `IPackageReceiptRepository`; sem o repositório de tentativas, permanece o caminho legado arquivo→receipt, que não fecha a janela de falha.
 - A migration e o locking/atomicidade ainda precisam de execução contra SQL Server real. A pipeline .NET valida build e testes unitários, não substitui essa validação.
+- O alerta operacional para tentativas pendentes há mais de uma hora ainda não está implementado; depende da integração com a observabilidade do host.
 
 ## Critérios de aceitação
 
