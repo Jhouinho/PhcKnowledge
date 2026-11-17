@@ -243,6 +243,8 @@ CaptureContextAssignment regista a associação confirmada entre uma Capture e u
 
 Uma alteração de contexto desencadeia reavaliação controlada apenas das correspondências de identidade e comparações dependentes desse contexto. A reavaliação preserva decisões anteriores, resultados, versões de contexto e motivo. Não implica reconstruir indiscriminadamente todo o histórico.
 
+Os estados concretos, transições permitidas, invalidação de correspondências e política proposta de remoção estão detalhados em [domain-model-0.2-state-transitions.md](domain-model-0.2-state-transitions.md). Esse documento é a referência funcional da revisão 0.2; o presente contrato mantém os princípios de alto nível e as regras de proveniência.
+
 ### 8.3 Sequência de processamento
 
 1. Receber, validar e arquivar o pacote original.
