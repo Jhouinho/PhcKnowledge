@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Data da revisão | 2026-11-10 |
+| Data da revisão | 2026-11-17 (revisão semântica de domínio 0.2; contrato/schema IKP mantém 0.1) |
 | Contrato | ikpContractVersion = 0.1 |
 | Content-Type | phc.installation.knowledge.package |
 | Transporte canónico | ZIP |
