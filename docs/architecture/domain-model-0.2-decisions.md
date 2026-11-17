@@ -152,7 +152,7 @@ As alterações documentais clarificam a semântica do PHC Knowledge e corrigem 
 
 1. A política de remoção está aprovada: duas capturas consecutivas, completas e comparáveis, seguidas obrigatoriamente de confirmação humana explícita e auditada. A confirmação nunca é automática.
 2. Fechar a cardinalidade e índices de DatabaseLocation por Environment, incluindo a garantia de enriquecimento da localização provisória sem duplicação.
-3. Escolher a concretização física do histórico append-only e das projeções de estado atual.
+3. Definir o desenho físico do histórico de eventos e das projeções: catálogo/versionamento de eventos, payloads, chaves, índices, retenção e procedimento seguro de reconstrução. A regra funcional está aprovada: todas as alterações relevantes, decisões e avaliações geram eventos append-only; as projeções são reconstruíveis; evento e projeção são gravados na mesma transação SQL.
 4. Definir permissões administrativas, papéis e auditoria para associações, decisões de identidade e transferências entre Organizations.
 5. Definir a estratégia técnica de execução/retenção de reavaliações (fila/job, retries e observabilidade), sem alterar as regras funcionais.
 
@@ -166,4 +166,4 @@ Os artefactos da revisão 0.2 são:
 - [Roadmap visual PHC Knowledge](roadmap-visual-phc-knowledge-2026-11-06.md), secção «Revisão do roadmap — modelo de domínio 0.2»;
 - [Estados e transições de contexto, identidade e presença](domain-model-0.2-state-transitions.md), proposta funcional para validação.
 
-O próximo passo é validar funcionalmente a proposta de estados/transições, em particular o limiar de remoção, e fechar as questões de localização, eventos/projeções e permissões indicadas na secção 13. Depois preparar o desenho físico SQL Server Express (tabelas, PK/FK, índices, constraints, auditoria e transações) e os respetivos testes de integridade. A implementação continua a começar por Receive / Validate / Archive.
+As decisões funcionais de remoção, DatabaseLocation e eventos/projeções estão aprovadas e refletidas nos documentos desta revisão. Permanecem por fechar a cardinalidade/índices de DatabaseLocation, o desenho físico dos eventos e projeções, permissões/auditoria e estratégia técnica de reavaliações. Depois preparar o desenho físico SQL Server Express (tabelas, PK/FK, índices, constraints, auditoria e transações) e os respetivos testes de integridade. A implementação continua a começar por Receive / Validate / Archive.
