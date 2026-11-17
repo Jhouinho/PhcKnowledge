@@ -202,6 +202,34 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
         return leases;
     }
 
+    public async Task<PackageReceipt?> GetCompletedReceiptAsync(
+        Guid attemptId,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            SELECT r.ReceiptId, r.OrganizationId, r.PackageId, r.CaptureId,
+                   r.ContractVersion, r.ProducerProductId, r.ProducerProductVersion,
+                   r.OriginDatabaseName, r.ZipSha256, r.ZipByteLength, r.StorageKey,
+                   r.ReceivedAtUtc, r.ValidationSummaryJson
+            FROM dbo.PackageReceiptAttempts a
+            INNER JOIN dbo.PackageIngestionReceipts r
+                ON r.OrganizationId = a.OrganizationId AND r.PackageId = a.PackageId
+            WHERE a.AttemptId = @AttemptId AND a.Status = 'Completed';
+            """;
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add("@AttemptId", SqlDbType.UniqueIdentifier).Value = attemptId;
+        await using var reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            return null;
+        var received = DateTime.SpecifyKind(reader.GetDateTime(11), DateTimeKind.Utc);
+        return new PackageReceipt(reader.GetGuid(0), reader.GetGuid(1), reader.GetGuid(2),
+            reader.GetGuid(3), reader.GetString(4), reader.GetString(5), reader.GetString(6),
+            reader.IsDBNull(7) ? null : reader.GetString(7), reader.GetString(8).Trim(),
+            reader.GetInt64(9), reader.GetString(10), new DateTimeOffset(received), reader.GetString(12));
+    }
+
     public async Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
         CancellationToken cancellationToken = default)
     {
