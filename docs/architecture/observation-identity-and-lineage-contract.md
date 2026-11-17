@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Data | 2026-11-06 |
+| Data | 2026-11-17 |
 | Estado | **Documento de contexto arquitetural; semântica detalhada consolidada em P1** |
 | Âmbito | Scanner independente, IKP e PHC Knowledge |
 | Implementação | Documento conceptual de 2026-11-06; Scanner e exportador IKP evoluíram posteriormente |
