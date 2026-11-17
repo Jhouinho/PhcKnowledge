@@ -1,8 +1,8 @@
 # Roadmap visual do PHC Knowledge — visão, fases e estado atual
 
-**Data de referência:** 2026-11-11  
-**Estado:** roadmap atualizado em 2026-11-11 com a evidência de desempenho da validação IKP 0.1 e a decisão pendente de ajuste localizado do JSON Schema.  
-**Nota:** as percentagens não são estimadas; os estados indicam maturidade qualitativa.
+**Data de referência:** 2026-11-17  
+**Estado:** roadmap revisto para refletir o modelo de domínio 0.2 e a sequência de construção da plataforma central.  
+**Nota:** os estados indicam maturidade qualitativa; a revisão 0.2 é documental/conceptual e não representa implementação funcional.
 
 ## 1. Objetivo do produto
 
@@ -295,3 +295,124 @@ Detalhe e salvaguardas: [scanner-controlled-change-management-vision-2026-11-07.
 A sequência atual é: **Scanner/IKP já implementado → corrigir e fechar a validação do schema/ZIP real → construir Receive / Validate / Archive no PHC Knowledge**. O teste A/B identificou uma penalização severa causada por `uniqueItems` no array principal `objects`; a remoção localizada foi decidida, mas ainda não aplicada. A validação end-to-end do ZIP produzido pelo exportador continua pendente. A plataforma central continua sem projetos próprios em `src/` e testes próprios em `tests/`. A primeira fatia não associa automaticamente a instalação, não materializa observações, não calcula remoções e não publica conhecimento.
 
 A base central escolhida é SQL Server Express; SQL Server 2025 Express inclui Full-Text Search, mas a versão concreta e a adequação dos limites de capacidade ainda têm de ser fixadas. Os pacotes IKP e definições originais ficam em arquivo de ficheiros imutável, fora da base relacional. SignalR mantém-se na arquitetura.
+
+
+---
+
+# Revisão do roadmap — modelo de domínio 0.2 (2026-11-17)
+
+> **Esta secção é a referência atual para a sequência da plataforma central.** Substitui a sequência simplificada das antigas Fases 2–4 quando exista conflito. Não altera retroativamente o estado do Scanner/IKP descrito acima.
+
+## A. Princípios de planeamento
+
+- O Scanner e o exportador IKP são o mecanismo de aquisição e transporte; a plataforma central consome pacotes IKP e não executa o Scanner em runtime.
+- Base de dados central: **Microsoft SQL Server Express**. SQLite permanece apenas no workspace/cache local do Scanner/cliente.
+- A receção do pacote é independente da associação a Organization / Installation / Environment.
+- Observation é um facto de uma Capture; EntityIdentity é uma identidade lógica reconhecida posteriormente no âmbito de uma Installation.
+- Correções de contexto são controladas, auditáveis e não reescrevem a captura original.
+- O catálogo PHC standard é global e publicado centralmente; conhecimento privado é isolado por Organization.
+- Pesquisa estruturada/textual precede a implementação de RAG. RAG é uma capacidade futura de recuperação, não uma entidade obrigatória do modelo inicial.
+
+## B. Roadmap revisto
+
+```mermaid
+flowchart TB
+    V["PHC Knowledge<br/>Conhecimento técnico PHC reutilizável, contextualizado e comprovável"]
+
+    subgraph S0["ETAPA 0 — Scanner e aquisição"]
+      A1["Collectors read-only<br/>SQL Server / PHC"]
+      A2["Workspace SQLite<br/>inventário, artefactos e coverage"]
+      A3["Object Index + fingerprints<br/>SourceIdentity / proveniência"]
+      A4["Exportador IKP 0.1<br/>pacote normalizado"]
+      A1 --> A2 --> A3 --> A4
+    end
+
+    subgraph S1["ETAPA 1 — Fecho da cadeia IKP"]
+      B1["Validação end-to-end<br/>ZIP real do exportador"]
+      B2["Schemas, checksums<br/>digest e compatibilidade"]
+      B1 --> B2
+    end
+
+    subgraph S2["ETAPA 2 — Receive / Validate / Archive"]
+      C1["Receção segura"]
+      C2["Validação estrutural<br/>integridade e paths"]
+      C3["Arquivo imutável"]
+      C4["Capture + PackageReceipt<br/>idempotência"]
+      C1 --> C2 --> C3 --> C4
+    end
+
+    subgraph S3["ETAPA 3 — Materialização e contexto"]
+      D1["Materializar Observation<br/>sem exigir contexto"]
+      D2["DeclaredRelation<br/>e artefactos com proveniência"]
+      D3["Gerir Organization / Installation<br/>Environment / DatabaseLocation"]
+      D4["CaptureContextAssignment<br/>candidatos, confirmação e correção"]
+      D1 --> D2
+      D3 --> D4
+    end
+
+    subgraph S4["ETAPA 4 — Identidade e histórico"]
+      E1["IdentityMatch<br/>candidatos e decisão humana"]
+      E2["EntityIdentity por Installation"]
+      E3["Estado por Environment<br/>coverage-aware"]
+      E4["Comparação histórica<br/>Added / Changed / Removed"]
+      E1 --> E2 --> E3 --> E4
+    end
+
+    subgraph S5["ETAPA 5 — Curadoria de conhecimento"]
+      F1["Catálogo standard central<br/>versionado"]
+      F2["Conhecimento privado<br/>por Organization"]
+      F3["Propostas, revisão<br/>e publicação controlada"]
+      F1 --> F3
+      F2 --> F3
+    end
+
+    subgraph S6["ETAPA 6 — Pesquisa e recuperação"]
+      G1["Pesquisa textual e estruturada"]
+      G2["Pesquisa contextual<br/>e relações"]
+      G3["Preparação semântica"]
+      G4["RAG fundamentado<br/>em evidências"]
+      G1 --> G2 --> G3 --> G4
+    end
+
+    V
+    S0 --> S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> V
+```
+
+O fluxo é apresentado por dependências principais. Dentro de uma etapa, atividades podem decorrer em paralelo quando os seus pré-requisitos estão satisfeitos. Em particular, a materialização de Observations não depende da conclusão da associação de contexto.
+
+## C. Etapas, entregáveis e critérios de conclusão
+
+| Etapa | Estado em 2026-11-17 | Entregável / critério de conclusão |
+|---|---|---|
+| 0 — Scanner e aquisição | **Implementado no Scanner**, com validações reais parciais | Captura read-only, workspace, Object Index, proveniência, fingerprints e exportador IKP 0.1. Manter explícitas as lacunas de validação dos kinds não observados e de identidade entre capturas. |
+| 1 — Fecho IKP | **Pendente de validação end-to-end**, conforme estado técnico detalhado na secção Fase 1 acima | ZIP efetivamente produzido pelo exportador validado por schemas/validador independente; checksums, digest, paths, artefactos e referências cruzadas verificados. Não confundir teste sintético com validação real. |
+| 2 — Receive / Validate / Archive | **Próxima fatia de implementação da plataforma** | Endpoint/serviço de receção, validação estrutural e de segurança, arquivo imutável, Capture/PackageReceipt, checksum, idempotência e conflito PackageId/checksum. Sem associação de contexto ou materialização nesta fatia. |
+| 3 — Materialização e contexto | **Modelo conceptual definido; por construir** | Materializar Observation, PackageArtifact/ObservationArtifact e factos declarados sem exigir contexto; gerir Organization, Installation, Environment, DatabaseLocation, candidatos e CaptureContextAssignment com histórico de correções. |
+| 4 — Identidade e histórico | **Modelo conceptual definido; por construir** | IdentityMatch auditável; EntityIdentity por Installation; estados por Environment; comparações coverage-aware; nenhuma remoção inferida apenas pela ausência. |
+| 5 — Curadoria de conhecimento | **Modelo conceptual definido; por construir** | Catálogo standard central versionado; conhecimento privado por Organization; workflow de proposta, revisão, aprovação e publicação. |
+| 6 — Pesquisa e recuperação | **Visão futura; por construir** | Pesquisa textual/estruturada e contextual; preparação para recuperação semântica; RAG só depois de existir conhecimento curado, rastreável e com evidências. |
+
+## D. Dependências e regras de passagem
+
+1. A Etapa 1 fecha a confiança no pacote produzido pelo Scanner; não é substituída por testes sintéticos.
+2. A Etapa 2 não precisa de conhecer Organization, Installation ou Environment e não materializa Observations.
+3. A Etapa 3 pode materializar Observations antes da associação de contexto. A resolução de EntityIdentity e as comparações dependentes do contexto ficam bloqueadas até existir atribuição confirmada.
+4. A correção de CaptureContextAssignment não altera a origem; reavalia apenas correspondências e comparações afetadas, mantendo o histórico e a versão de contexto usada.
+5. A Etapa 4 exige contexto confirmado e coverage/compatibilidade adequadas. Removed é uma conclusão da plataforma, não um valor recebido do Scanner.
+6. A Etapa 5 separa publicação standard central de conhecimento privado organizacional. Uma personalização de cliente não altera automaticamente o catálogo global.
+7. A Etapa 6 não deve escolher prematuramente LLM, embeddings ou vector store. A primeira obrigação é garantir qualidade, proveniência e pesquisa estruturada.
+
+## E. Próximo trabalho recomendado
+
+**Próximo artefacto:** fechar o modelo lógico e os estados/transições de contexto, identidade e curadoria, usando os diagramas da revisão 0.2 como base. Depois produzir o desenho físico SQL Server Express (tabelas, PK/FK, índices, constraints, auditoria e transações) e respetivos testes de integridade.
+
+A implementação deve continuar a começar por Receive / Validate / Archive, sem antecipar materialização, associação, identidade ou comparação na primeira entrega.
+
+## F. Fora do âmbito desta revisão
+
+- Não foi criado nem alterado schema SQL Server.
+- Não foram criadas entidades EF Core nem escolhida uma estratégia ORM.
+- Não foram alterados IKP 0.1, schemas JSON, Scanner, SQLite ou collectors.
+- Não foi implementada receção HTTP, armazenamento de pacotes ou qualquer serviço da plataforma.
+- Não foi escolhida tecnologia de embeddings, vector database ou fornecedor de LLM.
+- Os diagramas são conceptuais; cardinalidades, constraints e índices têm de ser fechados no desenho físico compatível com SQL Server Express.
