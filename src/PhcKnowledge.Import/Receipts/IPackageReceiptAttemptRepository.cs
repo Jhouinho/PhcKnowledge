@@ -16,6 +16,12 @@ public interface IPackageReceiptAttemptRepository
         string stagingKey,
         CancellationToken cancellationToken = default);
 
+    Task<PackageReceiptAttemptLease?> ClaimByIdAsync(
+        Guid attemptId,
+        TimeSpan leaseDuration,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<PackageReceiptAttemptLease>> ClaimDueAsync(
         int batchSize,
         TimeSpan leaseDuration,
