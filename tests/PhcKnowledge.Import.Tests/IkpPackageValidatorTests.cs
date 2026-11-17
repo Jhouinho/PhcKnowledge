@@ -184,7 +184,7 @@ public sealed class IkpPackageValidatorTests
             Task.FromResult<PackageReceipt?>(null);
 
         public Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
-            CancellationToken cancellationToken = default) =>
+            CancellationToken cancellationToken = default)
         {
             var keys = new HashSet<string>(StringComparer.Ordinal);
             if (_attempt is { Status: "PendingArchive" or "NeedsAttention" })
