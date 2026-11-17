@@ -63,7 +63,10 @@ O diagrama representa o estado agregado da Capture. `Superseded` e `Revoked` sã
 - Uma correção de contexto executa atomicamente: (a) fechar a atribuição anterior como `Superseded`; (b) criar a nova atribuição `Active`; (c) registar autor, instante, motivo, evidência e referência à decisão anterior; (d) emitir um pedido de reavaliação.
 - A retirada sem substituição fecha a atribuição como `Revoked`; a Capture regressa a `Unassigned`.
 - Uma Capture só pode ter uma atribuição `Active`. Não se permite sobreposição temporal nem duas decisões ativas.
-- Uma nova DatabaseLocation não deve ser criada automaticamente apenas porque ServerName é desconhecido ou mudou. A identificação/gestão da localização é um caso de uso separado.
+- Quando DatabaseName é conhecido e ServerName é desconhecido, pode ser criada uma DatabaseLocation provisória com ServerName = null, no contexto confirmado de Environment/Installation.
+- Quando ServerName for posteriormente conhecido, a localização provisória é enriquecida com essa informação, preservando o histórico e a evidência da alteração; não se cria outra DatabaseLocation apenas por esta descoberta.
+- A actualização exige evidência suficiente de que se trata da mesma localização lógica. Uma mudança real de servidor/localização, e não mero enriquecimento de informação, continua a ser tratada como mudança técnica distinta.
+- ServerName nunca é inferido nem preenchido por aproximação.
 - PackageReceipt, Capture, PackageArtifact e Observation não são alterados pela atribuição ou correção de contexto.
 
 ### 2.4 Reavaliação controlada
