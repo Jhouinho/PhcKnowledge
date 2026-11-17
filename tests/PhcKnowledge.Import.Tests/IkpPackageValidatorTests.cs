@@ -123,26 +123,6 @@ public sealed class IkpPackageValidatorTests
             () => validator.ValidateAsync(package));
     }
 
-    private sealed class RecordingReceiptRepository : IPackageReceiptRepository
-    {
-        public Guid? OrganizationId { get; private set; }
-
-        public Task<PackageReceiptRegistration> RegisterArchivedPackageAsync(
-            Guid organizationId,
-            IkpPackageValidationResult validation,
-            PhcKnowledge.Import.Storage.ArchivedPackage archive,
-            CancellationToken cancellationToken = default)
-        {
-            OrganizationId = organizationId;
-            var receipt = new PackageReceipt(
-                Guid.NewGuid(), organizationId, validation.PackageId, validation.CaptureId,
-                validation.ContractVersion, validation.ProducerProductId, validation.ProducerProductVersion,
-                validation.OriginDatabaseName, validation.ZipSha256, validation.ZipByteLength,
-                archive.StorageKey, DateTimeOffset.UtcNow, "{}");
-            return Task.FromResult(new PackageReceiptRegistration(receipt, false));
-        }
-    }
-
     private sealed class RecordingIngestionAttemptRepository : IPackageReceiptAttemptRepository
     {
         private PackageReceiptAttempt? _attempt;
