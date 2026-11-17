@@ -36,66 +36,94 @@ public sealed class PackageReceiptRecoveryService
         if (batchSize is < 1 or > 500)
             throw new ArgumentOutOfRangeException(nameof(batchSize));
 
-        var now = DateTimeOffset.UtcNow;
         var claimed = await _attempts.ClaimDueAsync(
-            batchSize, _leaseDuration, now, cancellationToken);
-
+            batchSize, _leaseDuration, DateTimeOffset.UtcNow, cancellationToken);
         var completed = 0;
         foreach (var lease in claimed)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var attempt = lease.Attempt;
-            try
-            {
-                var stagingPath = ResolveStagingPath(attempt.StagingKey);
-                ArchivedPackage archive;
-                if (File.Exists(stagingPath))
-                {
-                    archive = await _store.ArchiveValidatedPackageAsync(
-                        stagingPath, attempt.Validation, cancellationToken);
-                }
-                else if (_store is IRecoverableImmutablePackageStore recoverable &&
-                         await recoverable.VerifyArchivedPackageAsync(
-                             attempt.StorageKey, attempt.Validation.ZipSha256,
-                             attempt.Validation.ZipByteLength, cancellationToken))
-                {
-                    archive = new ArchivedPackage(attempt.StorageKey, true);
-                }
-                else
-                {
-                    await _attempts.MarkNeedsAttentionAsync(
-                        attempt.AttemptId, lease.LeaseToken,
-                        "StagingAndArchiveMissing",
-                        "O ficheiro de staging e o objecto correspondente no arquivo não existem.",
-                        cancellationToken);
-                    continue;
-                }
-
-                await _attempts.CompleteAsync(
-                    attempt.AttemptId, lease.LeaseToken, archive, cancellationToken);
-                TryDeleteStaging(stagingPath);
+            if (await ProcessLeaseAsync(lease, cancellationToken) is not null)
                 completed++;
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        }
+        return completed;
+    }
+
+    /// <summary>
+    /// Attempts immediate processing after the upload path has persisted an attempt.
+    /// Returns null when another worker owns it, it is not due, or recovery was deferred.
+    /// </summary>
+    public async Task<PackageReceiptRegistration?> ProcessAttemptAsync(
+        Guid attemptId,
+        CancellationToken cancellationToken = default)
+    {
+        var lease = await _attempts.ClaimByIdAsync(
+            attemptId, _leaseDuration, DateTimeOffset.UtcNow, cancellationToken);
+        return lease is null ? null : await ProcessLeaseAsync(lease, cancellationToken);
+    }
+
+    private async Task<PackageReceiptRegistration?> ProcessLeaseAsync(
+        PackageReceiptAttemptLease lease,
+        CancellationToken cancellationToken)
+    {
+        var attempt = lease.Attempt;
+        var stagingPath = ResolveStagingPath(attempt.StagingKey);
+        try
+        {
+            ArchivedPackage archive;
+            if (File.Exists(stagingPath))
             {
-                throw;
+                archive = await _store.ArchiveValidatedPackageAsync(
+                    stagingPath, attempt.Validation, cancellationToken);
             }
-            catch (Exception ex) when (IsTransient(ex))
+            else if (_store is IRecoverableImmutablePackageStore recoverable &&
+                     await recoverable.VerifyArchivedPackageAsync(
+                         attempt.StorageKey, attempt.Validation.ZipSha256,
+                         attempt.Validation.ZipByteLength, cancellationToken))
             {
-                var delay = RetryDelay(attempt.AttemptCount + 1);
-                await _attempts.ScheduleRetryAsync(
-                    attempt.AttemptId, lease.LeaseToken,
-                    DateTimeOffset.UtcNow.Add(delay),
-                    ex.GetType().Name, SafeMessage(ex), cancellationToken);
+                archive = new ArchivedPackage(attempt.StorageKey, true);
             }
-            catch (Exception ex)
+            else
             {
                 await _attempts.MarkNeedsAttentionAsync(
                     attempt.AttemptId, lease.LeaseToken,
-                    ex.GetType().Name, SafeMessage(ex), cancellationToken);
+                    "StagingAndArchiveMissing",
+                    "O ficheiro de staging e o objecto correspondente no arquivo não existem.",
+                    cancellationToken);
+                return null;
             }
+
+            // Fence the completion after potentially long filesystem work.
+            var renewed = await _attempts.RenewLeaseAsync(
+                attempt.AttemptId, lease.LeaseToken,
+                DateTimeOffset.UtcNow.Add(_leaseDuration), cancellationToken);
+            if (!renewed)
+                return null;
+
+            var registration = await _attempts.CompleteAsync(
+                attempt.AttemptId, lease.LeaseToken, archive, cancellationToken);
+            TryDeleteStaging(stagingPath);
+            return registration;
         }
-        return completed;
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex) when (IsTransient(ex))
+        {
+            var delay = RetryDelay(attempt.AttemptCount);
+            await _attempts.ScheduleRetryAsync(
+                attempt.AttemptId, lease.LeaseToken,
+                DateTimeOffset.UtcNow.Add(delay),
+                ex.GetType().Name, SafeMessage(ex), cancellationToken);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            await _attempts.MarkNeedsAttentionAsync(
+                attempt.AttemptId, lease.LeaseToken,
+                ex.GetType().Name, SafeMessage(ex), cancellationToken);
+            return null;
+        }
     }
 
     private string ResolveStagingPath(string stagingKey)
@@ -141,7 +169,7 @@ public sealed class PackageReceiptRecoveryService
         }
         catch
         {
-            // Safe to retry cleanup: Completed attempts no longer depend on staging.
+            // Cleanup is idempotent; completed attempts no longer depend on staging.
         }
     }
 }
