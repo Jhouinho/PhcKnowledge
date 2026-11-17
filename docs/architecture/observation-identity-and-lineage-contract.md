@@ -268,9 +268,8 @@ O IKP deve transportar:
 O IKP não transporta:
 - OrganizationId, InstallationId, EnvironmentId ou DatabaseLocationId internos atribuídos/geridos pelo PHC Knowledge;
 - PackageReceiptId ou ObservationId internos da plataforma;
-- EntityIdentityId e decisões históricas de correspondência;
+- EntityIdentityId e decisões históricas de correspondência/renomeação próprias da plataforma;
 - histórico completo de observações da instalação;
-- decisões históricas de correspondência/renomeação próprias da plataforma;
 - linhagem global mantida pela plataforma, salvo hints de origem expressamente definidos e não autoritativos.
 
 ## 10. Sequência de trabalho original — histórico
