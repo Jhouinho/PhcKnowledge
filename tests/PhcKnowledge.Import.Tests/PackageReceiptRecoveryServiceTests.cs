@@ -142,6 +142,18 @@ public sealed class PackageReceiptRecoveryServiceTests
             string stagingKey, CancellationToken cancellationToken = default) =>
             throw new NotImplementedException();
 
+        public Task<PackageReceiptAttemptLease?> ClaimByIdAsync(
+            Guid attemptId, TimeSpan leaseDuration, DateTimeOffset nowUtc,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<PackageReceiptAttemptLease?>(
+                attempt.AttemptId == attemptId
+                    ? new PackageReceiptAttemptLease(attempt with
+                    {
+                        LeaseToken = Guid.Parse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"),
+                        LeaseUntilUtc = nowUtc.Add(leaseDuration)
+                    }, Guid.Parse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"))
+                    : null);
+
         public Task<IReadOnlyList<PackageReceiptAttemptLease>> ClaimDueAsync(
             int batchSize, TimeSpan leaseDuration, DateTimeOffset nowUtc,
             CancellationToken cancellationToken = default) =>
