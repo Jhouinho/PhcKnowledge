@@ -277,7 +277,8 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
             SELECT OrganizationId, PackageId, CaptureId, ContractVersion,
                    ProducerProductId, ProducerProductVersion, OriginDatabaseName,
                    ValidationSummaryJson, ValidationJson, ZipSha256, ZipByteLength, StorageKey,
-                   Status, LeaseToken, LeaseUntilUtc
+                   Status, LeaseToken, LeaseUntilUtc,
+                   CASE WHEN LeaseUntilUtc > SYSUTCDATETIME() THEN 1 ELSE 0 END AS LeaseIsValid
             FROM dbo.PackageReceiptAttempts WITH (UPDLOCK, HOLDLOCK)
             WHERE AttemptId = @AttemptId;
             """;
@@ -296,7 +297,7 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
                 throw new InvalidOperationException("A tentativa já está concluída; não pode ser reclamada novamente.");
             if (reader.GetString(12) != "PendingArchive" ||
                 reader.IsDBNull(13) || reader.GetGuid(13) != leaseToken ||
-                reader.IsDBNull(14) || reader.GetDateTime(14) <= DateTime.UtcNow)
+                reader.IsDBNull(14) || reader.GetInt32(15) != 1)
                 throw new InvalidOperationException("A lease da tentativa expirou ou deixou de ser proprietária.");
 
             organizationId = reader.GetGuid(0);
