@@ -68,13 +68,18 @@ public sealed class PackageReceiptRecoveryService
             ArchivedPackage archive;
             if (File.Exists(stagingPath))
             {
-                archive = await _store.ArchiveValidatedPackageAsync(
-                    stagingPath, attempt.Validation, cancellationToken);
+                archive = await WithLeaseHeartbeatAsync(
+                    attempt, lease.LeaseToken,
+                    token => _store.ArchiveValidatedPackageAsync(stagingPath, attempt.Validation, token),
+                    cancellationToken);
             }
             else if (_store is IRecoverableImmutablePackageStore recoverable &&
-                     await recoverable.VerifyArchivedPackageAsync(
-                         attempt.StorageKey, attempt.Validation.ZipSha256,
-                         attempt.Validation.ZipByteLength, cancellationToken))
+                     await WithLeaseHeartbeatAsync(
+                         attempt, lease.LeaseToken,
+                         token => recoverable.VerifyArchivedPackageAsync(
+                             attempt.StorageKey, attempt.Validation.ZipSha256,
+                             attempt.Validation.ZipByteLength, token),
+                         cancellationToken))
             {
                 archive = new ArchivedPackage(attempt.StorageKey, true);
             }
@@ -121,6 +126,62 @@ public sealed class PackageReceiptRecoveryService
             return null;
         }
     }
+
+    private async Task<T> WithLeaseHeartbeatAsync<T>(
+        PackageReceiptAttempt attempt,
+        Guid leaseToken,
+        Func<CancellationToken, Task<T>> operation,
+        CancellationToken cancellationToken)
+    {
+        using var operationCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        using var heartbeatStop = new CancellationTokenSource();
+        var heartbeat = MaintainLeaseAsync(
+            attempt.AttemptId, leaseToken, operationCts, heartbeatStop.Token);
+        try
+        {
+            return await operation(operationCts.Token);
+        }
+        finally
+        {
+            heartbeatStop.Cancel();
+            await heartbeat;
+        }
+    }
+
+    private async Task MaintainLeaseAsync(
+        Guid attemptId,
+        Guid leaseToken,
+        CancellationTokenSource operationCts,
+        CancellationToken stopToken)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(stopToken))
+            {
+                var renewed = await _attempts.RenewLeaseAsync(
+                    attemptId, leaseToken,
+                    DateTimeOffset.UtcNow.Add(_leaseDuration), stopToken);
+                if (renewed)
+                    continue;
+
+                operationCts.Cancel();
+                throw new LeaseLostException();
+            }
+        }
+        catch (OperationCanceledException) when (stopToken.IsCancellationRequested)
+        {
+            // Normal shutdown after the filesystem operation completes.
+        }
+        catch
+        {
+            operationCts.Cancel();
+            throw;
+        }
+    }
+
+    private sealed class LeaseLostException()
+        : IOException("A lease da tentativa foi perdida durante o processamento.");
 
     private string ResolveStagingPath(string stagingKey)
     {
