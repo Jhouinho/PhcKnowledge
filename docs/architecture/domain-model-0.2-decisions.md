@@ -164,4 +164,4 @@ Os artefactos da revisão 0.2 são:
 - [Roadmap visual PHC Knowledge](roadmap-visual-phc-knowledge-2026-11-06.md), secção «Revisão do roadmap — modelo de domínio 0.2»;
 - [Estados e transições de contexto, identidade e presença](domain-model-0.2-state-transitions.md), proposta funcional para validação.
 
-O próximo passo é fechar os estados/transições e as regras de contexto, identidade e curadoria reservadas na secção 13. Depois preparar o desenho físico SQL Server Express (tabelas, PK/FK, índices, constraints, auditoria e transações) e os respetivos testes de integridade. A implementação continua a começar por Receive / Validate / Archive.
+O próximo passo é validar funcionalmente a proposta de estados/transições, em particular o limiar de remoção, e fechar as questões de localização, eventos/projeções e permissões indicadas na secção 13. Depois preparar o desenho físico SQL Server Express (tabelas, PK/FK, índices, constraints, auditoria e transações) e os respetivos testes de integridade. A implementação continua a começar por Receive / Validate / Archive.
