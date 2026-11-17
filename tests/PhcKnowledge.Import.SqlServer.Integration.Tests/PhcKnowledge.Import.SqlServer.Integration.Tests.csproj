@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/PhcKnowledge.Import/PhcKnowledge.Import.csproj" />
+    <ProjectReference Include="../../src/PhcKnowledge.Host/PhcKnowledge.Host.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="../../src/PhcKnowledge.Import/Database/001_package_ingestion_receipts.sql" Link="Migrations/001_package_ingestion_receipts.sql" CopyToOutputDirectory="PreserveNewest" />
