@@ -28,7 +28,7 @@ Legenda:
 
 **Fronteiras** `[acordado]`: Scanner independente produz pacotes; PHC Knowledge importa e transforma; sem runtime do Scanner na plataforma; sem recuperar Discovery/Fusion do ConsoleApp.
 
-**IKP** `[acordado]`: contrato 0.1 definido por especificação, schemas, fixtures e validador. O Scanner já emite IKP nativamente através de `IkpPackageExporter`; a plataforma central ainda não o recebe/importa.
+**IKP** `[acordado]`: contrato 0.1 definido por especificação, schemas, fixtures e validador. O Scanner emite IKP nativamente através de `IkpPackageExporter`; o núcleo `PhcKnowledge.Import` já valida, arquiva e regista receipts. API HTTP e materialização permanecem por implementar.
 
 **Instalações** `[acordado]`: IDs próprios na plataforma; associação guiada na 1.ª importação (existente / nova / pendente se ambígua); servidor/BD **não** são identificadores definitivos.
 
@@ -439,7 +439,7 @@ Sem DDL nesta fase.
 | Ausência classificada como Removed | Falsos “removidos” | Coverage + `NotObserved` no contrato |
 | ReplaceExisting na BD partilhada | Perda de histórico/anotações | Staging + publicação atómica |
 | Reintroduzir SQL direto na plataforma | Viola fronteira Scanner | Gate de arquitetura |
-| Antecipar OpenSearch / pesquisa vetorial / API além da fatia aprovada | Complexidade precoce | Implementar Receive / Validate / Archive primeiro; evoluir por fatias |
+| Antecipar OpenSearch / pesquisa vetorial / API além da fatia aprovada | Complexidade precoce | Fechar robustez SQL/arquivo e fronteira HTTP antes de materialização; evoluir por fatias |
 | Assumir knowledge DB no desktop | Divergência e “sync” indevido | Modelo centralizado §5; desktop = cliente fino |
 
 ### Decisões acordadas
