@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/PhcKnowledge.Import/PhcKnowledge.Import.csproj" />
+    <ProjectReference Include="../../src/PhcKnowledge.Host/PhcKnowledge.Host.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="../../docs/architecture/schemas/ikp-0.1/*.schema.json" Link="Schemas/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
