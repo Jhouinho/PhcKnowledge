@@ -1,8 +1,8 @@
 # Diagramas do projeto — modelo ER e diagrama de classes
 
-**Data:** 2026-11-06  
-**Âmbito:** estado atual do código em `PhcKnowledgeScanner/`  
-**Tipo:** documentação de arquitetura derivada da implementação existente
+**Data da revisão:** 2026-11-17  
+**Âmbito:** dois modelos distintos: (1) ER/classes do Scanner efetivamente implementados em `PhcKnowledgeScanner/`; (2) modelo lógico conceptual da plataforma central PHC Knowledge, revisão de domínio 0.2.  
+**Tipo:** documentação de arquitetura; os diagramas da plataforma são conceptuais e não representam tabelas ou classes já implementadas.
 
 Este documento contém dois diagramas complementares:
 
@@ -473,3 +473,470 @@ flowchart TD
 ## Atualização de estado — 2026-11-10
 
 Este diagrama descreve principalmente o workspace e os contratos do Scanner, não o modelo físico da futura plataforma central. O Object Index e o exportador IKP 0.1 já estão implementados no Scanner; o PHC Knowledge ainda não tem modelo relacional/API próprios em `src/`. Não interpretar as entidades conceptuais deste documento como tabelas já criadas na base central. A próxima implementação da plataforma é Receive / Validate / Archive.
+
+
+---
+
+## 5. Modelo lógico da plataforma central — domínio 0.2
+
+Esta secção é independente do ER SQLite apresentado na secção 1 e do diagrama de classes do Scanner apresentado na secção 2. Representa o modelo lógico proposto para a futura plataforma central PHC Knowledge.
+
+**Não é o schema físico SQL Server Express nem descreve código já existente.** As cardinalidades e constraints são regras conceptuais a transformar em desenho relacional e testes antes da implementação.
+
+### 5.1 Diagrama ER conceptual
+
+```mermaid
+erDiagram
+    ORGANIZATION ||--o{ INSTALLATION : owns
+    INSTALLATION ||--o{ ENVIRONMENT : contains
+    ENVIRONMENT ||--o{ DATABASE_LOCATION : has_history
+
+    CAPTURE ||--o{ PACKAGE_RECEIPT : received_as
+    PACKAGE_RECEIPT ||--o{ PACKAGE_ARTIFACT : contains
+    CAPTURE ||--o{ CAPTURE_CONTEXT_ASSIGNMENT : context_history
+    DATABASE_LOCATION ||--o{ CAPTURE_CONTEXT_ASSIGNMENT : assigned_to
+    CAPTURE ||--o{ CAPTURE_ASSOCIATION_CANDIDATE : suggests
+
+    CAPTURE ||--o{ OBSERVATION : observes
+    OBSERVATION ||--o{ OBSERVATION_ARTIFACT : supported_by
+    PACKAGE_ARTIFACT ||--o{ OBSERVATION_ARTIFACT : referenced_by
+
+    INSTALLATION ||--o{ ENTITY_IDENTITY : owns
+    OBSERVATION ||--o{ IDENTITY_MATCH : evaluated_by
+    ENTITY_IDENTITY ||--o{ IDENTITY_MATCH : candidate_identity
+    ENTITY_IDENTITY ||--o{ IDENTITY_ENVIRONMENT_STATE : state_in
+    ENVIRONMENT ||--o{ IDENTITY_ENVIRONMENT_STATE : tracks
+    ENTITY_IDENTITY ||--o{ ENTITY_IDENTITY_LIFECYCLE_EVENT : lifecycle
+
+    CAPTURE ||--o{ DECLARED_RELATION : declares
+    DECLARED_RELATION ||--o{ RELATION_INTERPRETATION : interpreted_as
+
+    STANDARD_CATALOG ||--o{ CATALOG_VERSION : versions
+    CATALOG_VERSION ||--o{ CATALOG_ENTRY_VERSION : contains
+    CATALOG_ENTRY ||--o{ CATALOG_ENTRY_VERSION : versioned_as
+
+    ORGANIZATION ||--o{ ORGANIZATION_KNOWLEDGE_ENTRY : owns_private
+    ORGANIZATION_KNOWLEDGE_ENTRY ||--o{ ORGANIZATION_KNOWLEDGE_VERSION : versions
+
+    INSTALLATION ||--o{ INSTALLATION_LINEAGE_EVENT : source_or_target
+
+    ORGANIZATION {
+        uniqueidentifier OrganizationId PK
+        string Name
+        string Status
+    }
+    INSTALLATION {
+        uniqueidentifier InstallationId PK
+        uniqueidentifier OrganizationId FK
+        string Name
+        string Status
+    }
+    ENVIRONMENT {
+        uniqueidentifier EnvironmentId PK
+        uniqueidentifier InstallationId FK
+        string Name
+        string EnvironmentType
+    }
+    DATABASE_LOCATION {
+        uniqueidentifier DatabaseLocationId PK
+        uniqueidentifier EnvironmentId FK
+        string ServerName
+        string DatabaseName
+        datetime2 ActiveFrom
+        datetime2 ActiveTo
+    }
+    CAPTURE {
+        uniqueidentifier CaptureId PK
+        datetime2 CapturedAtUtc
+        string SourceVersion
+    }
+    PACKAGE_RECEIPT {
+        uniqueidentifier PackageReceiptId PK
+        uniqueidentifier CaptureId FK
+        string PackageId
+        string ZipSha256
+        datetime2 ReceivedAtUtc
+        string ValidationStatus
+    }
+    PACKAGE_ARTIFACT {
+        uniqueidentifier PackageArtifactId PK
+        uniqueidentifier PackageReceiptId FK
+        string RelativePath
+        string Sha256
+        bigint ByteLength
+    }
+    CAPTURE_CONTEXT_ASSIGNMENT {
+        uniqueidentifier AssignmentId PK
+        uniqueidentifier CaptureId FK
+        uniqueidentifier DatabaseLocationId FK
+        string Status
+        datetime2 AssignedAtUtc
+        string Reason
+    }
+    CAPTURE_ASSOCIATION_CANDIDATE {
+        uniqueidentifier CandidateId PK
+        uniqueidentifier CaptureId FK
+        uniqueidentifier DatabaseLocationId FK
+        string Evidence
+        string Status
+    }
+    OBSERVATION {
+        uniqueidentifier ObservationId PK
+        uniqueidentifier CaptureId FK
+        string SourceObjectId
+        string ObjectKind
+        string DefinitionFingerprint
+        string MetadataFingerprint
+    }
+    OBSERVATION_ARTIFACT {
+        uniqueidentifier ObservationId FK
+        uniqueidentifier PackageArtifactId FK
+        string ArtifactRole
+    }
+    ENTITY_IDENTITY {
+        uniqueidentifier EntityIdentityId PK
+        uniqueidentifier InstallationId FK
+        string Status
+    }
+    IDENTITY_MATCH {
+        uniqueidentifier IdentityMatchId PK
+        uniqueidentifier ObservationId FK
+        uniqueidentifier EntityIdentityId FK
+        string Status
+        string Evidence
+        datetime2 DecidedAtUtc
+    }
+    IDENTITY_ENVIRONMENT_STATE {
+        uniqueidentifier EntityIdentityId FK
+        uniqueidentifier EnvironmentId FK
+        string State
+        datetime2 EvaluatedAtUtc
+    }
+    ENTITY_IDENTITY_LIFECYCLE_EVENT {
+        uniqueidentifier EventId PK
+        uniqueidentifier EntityIdentityId FK
+        string EventType
+        datetime2 OccurredAtUtc
+        string Evidence
+    }
+    DECLARED_RELATION {
+        uniqueidentifier DeclaredRelationId PK
+        uniqueidentifier CaptureId FK
+        string SourceRecordId
+        string OriginalExpression
+        string RawMetadata
+    }
+    RELATION_INTERPRETATION {
+        uniqueidentifier InterpretationId PK
+        uniqueidentifier DeclaredRelationId FK
+        string ParserVersion
+        string ParseStatus
+        string Ast
+        string Diagnostics
+    }
+    STANDARD_CATALOG {
+        uniqueidentifier StandardCatalogId PK
+        string Name
+    }
+    CATALOG_VERSION {
+        uniqueidentifier CatalogVersionId PK
+        uniqueidentifier StandardCatalogId FK
+        string Version
+        string Status
+    }
+    CATALOG_ENTRY {
+        uniqueidentifier CatalogEntryId PK
+        string EntryKey
+        string EntryType
+    }
+    CATALOG_ENTRY_VERSION {
+        uniqueidentifier CatalogEntryVersionId PK
+        uniqueidentifier CatalogVersionId FK
+        uniqueidentifier CatalogEntryId FK
+        string Content
+    }
+    ORGANIZATION_KNOWLEDGE_ENTRY {
+        uniqueidentifier OrganizationKnowledgeEntryId PK
+        uniqueidentifier OrganizationId FK
+        string EntryType
+        string Status
+    }
+    ORGANIZATION_KNOWLEDGE_VERSION {
+        uniqueidentifier OrganizationKnowledgeVersionId PK
+        uniqueidentifier OrganizationKnowledgeEntryId FK
+        string Content
+        datetime2 CreatedAtUtc
+    }
+    INSTALLATION_LINEAGE_EVENT {
+        uniqueidentifier LineageEventId PK
+        uniqueidentifier SourceInstallationId FK
+        uniqueidentifier TargetInstallationId FK
+        string EventType
+        string ConfirmationStatus
+        datetime2 OccurredAtUtc
+    }
+```
+
+**Restrições conceptuais relevantes (a concretizar em SQL Server):**
+
+- `UNIQUE(CaptureId, SourceObjectId)` em Observation.
+- `PackageId` identifica univocamente a receção lógica do pacote; reuso com checksum diferente é conflito de integridade.
+- Uma Capture pode ter várias atribuições históricas, mas apenas uma ativa.
+- Uma Observation pode ter vários IdentityMatch candidatos, mas no máximo um confirmado e ativo.
+- `UNIQUE(EntityIdentityId, EnvironmentId)` em IdentityEnvironmentState.
+- `UNIQUE(CatalogVersionId, CatalogEntryId)` em CatalogEntryVersion.
+- Índices únicos filtrados são uma opção de implementação SQL Server para garantir unicidade de registos ativos; o desenho físico ainda não está fechado.
+- DeclaredRelation não usa SourceObjectId isolado como chave: uma captura pode conter várias ocorrências de relações declaradas.
+- A relação InstallationLineageEvent → Installation representa papel de origem/destino; no desenho físico deverá ser explicitada por duas FKs distintas.
+
+### 5.2 Diagrama de classes conceptual da plataforma
+
+```mermaid
+classDiagram
+    direction TB
+
+    class Organization {
+      +OrganizationId
+      +Name
+      +Status
+    }
+    class Installation {
+      +InstallationId
+      +OrganizationId
+      +Name
+      +Status
+    }
+    class Environment {
+      +EnvironmentId
+      +InstallationId
+      +EnvironmentType
+    }
+    class DatabaseLocation {
+      +DatabaseLocationId
+      +EnvironmentId
+      +ServerName?
+      +DatabaseName
+      +ActiveFrom
+      +ActiveTo?
+    }
+    class Capture {
+      +CaptureId
+      +CapturedAtUtc
+      +SourceVersion
+    }
+    class PackageReceipt {
+      +PackageReceiptId
+      +PackageId
+      +ZipSha256
+      +ReceivedAtUtc
+      +ValidationStatus
+    }
+    class Observation {
+      +ObservationId
+      +CaptureId
+      +SourceObjectId
+      +ObjectKind
+      +DefinitionFingerprint
+      +MetadataFingerprint
+    }
+    class EntityIdentity {
+      +EntityIdentityId
+      +InstallationId
+      +Status
+    }
+    class IdentityMatch {
+      +IdentityMatchId
+      +ObservationId
+      +EntityIdentityId?
+      +Status
+      +Evidence
+      +Decide()
+      +Reject()
+    }
+    class IdentityEnvironmentState {
+      +EntityIdentityId
+      +EnvironmentId
+      +State
+      +EvaluatedAtUtc
+    }
+    class CaptureContextAssignment {
+      +AssignmentId
+      +CaptureId
+      +DatabaseLocationId
+      +Status
+      +Reason
+      +Confirm()
+      +Revoke()
+    }
+    class CaptureAssociationCandidate {
+      +CandidateId
+      +CaptureId
+      +DatabaseLocationId?
+      +Evidence
+      +Status
+    }
+    class PackageArtifact {
+      +PackageArtifactId
+      +PackageReceiptId
+      +RelativePath
+      +Sha256
+    }
+    class ObservationArtifact {
+      +ObservationId
+      +PackageArtifactId
+      +ArtifactRole
+    }
+    class DeclaredRelation {
+      +DeclaredRelationId
+      +CaptureId
+      +SourceRecordId
+      +OriginalExpression
+    }
+    class RelationInterpretation {
+      +InterpretationId
+      +ParserVersion
+      +ParseStatus
+      +Ast
+      +Diagnostics
+    }
+    class EntityIdentityLifecycleEvent {
+      +EventId
+      +EntityIdentityId
+      +EventType
+      +OccurredAtUtc
+    }
+    class InstallationLineageEvent {
+      +LineageEventId
+      +SourceInstallationId
+      +TargetInstallationId
+      +EventType
+      +ConfirmationStatus
+    }
+    class StandardCatalog {
+      +StandardCatalogId
+      +PublishVersion()
+    }
+    class CatalogVersion {
+      +CatalogVersionId
+      +Version
+      +Status
+    }
+    class CatalogEntry {
+      +CatalogEntryId
+      +EntryKey
+      +EntryType
+    }
+    class CatalogEntryVersion {
+      +CatalogEntryVersionId
+      +Content
+    }
+    class OrganizationKnowledgeEntry {
+      +OrganizationKnowledgeEntryId
+      +OrganizationId
+      +Status
+    }
+    class OrganizationKnowledgeVersion {
+      +OrganizationKnowledgeVersionId
+      +Content
+    }
+
+    class PackageIngestionService {
+      +ReceiveAsync()
+      +ValidateAsync()
+      +ArchiveAsync()
+    }
+    class ObservationMaterializationService {
+      +MaterializeAsync(captureId)
+    }
+    class ContextAssignmentService {
+      +SuggestAsync(captureId)
+      +AssignAsync(captureId, databaseLocationId)
+      +CorrectAsync(assignmentId, reason)
+    }
+    class IdentityResolutionService {
+      +FindCandidatesAsync(observationId)
+      +ConfirmMatchAsync(matchId)
+      +RejectMatchAsync(matchId)
+    }
+    class ContextReevaluationService {
+      +ReevaluateAffectedAsync(assignmentId)
+    }
+    class HistoricalComparisonService {
+      +CompareAsync(captureId)
+    }
+    class CatalogCurationService {
+      +ProposeAsync()
+      +ReviewAsync()
+      +PublishVersionAsync()
+    }
+    class KnowledgeRetrievalService {
+      +SearchAsync(query, context)
+      +RetrieveEvidenceAsync()
+    }
+
+    Organization "1" --> "many" Installation
+    Installation "1" --> "many" Environment
+    Environment "1" --> "many" DatabaseLocation
+    Capture "1" --> "many" PackageReceipt
+    Capture "1" --> "many" Observation
+    Capture "1" --> "many" CaptureContextAssignment
+    DatabaseLocation "1" --> "many" CaptureContextAssignment
+    Capture "1" --> "many" CaptureAssociationCandidate
+    PackageReceipt "1" --> "many" PackageArtifact
+    Observation "1" --> "many" ObservationArtifact
+    PackageArtifact "1" --> "many" ObservationArtifact
+    Installation "1" --> "many" EntityIdentity
+    Observation "1" --> "many" IdentityMatch
+    EntityIdentity "1" --> "many" IdentityMatch
+    EntityIdentity "1" --> "many" IdentityEnvironmentState
+    Environment "1" --> "many" IdentityEnvironmentState
+    EntityIdentity "1" --> "many" EntityIdentityLifecycleEvent
+    Capture "1" --> "many" DeclaredRelation
+    DeclaredRelation "1" --> "many" RelationInterpretation
+    StandardCatalog "1" --> "many" CatalogVersion
+    CatalogVersion "1" --> "many" CatalogEntryVersion
+    CatalogEntry "1" --> "many" CatalogEntryVersion
+    Organization "1" --> "many" OrganizationKnowledgeEntry
+    OrganizationKnowledgeEntry "1" --> "many" OrganizationKnowledgeVersion
+    InstallationLineageEvent ..> Installation : source and target
+
+    PackageIngestionService ..> Capture
+    PackageIngestionService ..> PackageReceipt
+    ObservationMaterializationService ..> Observation
+    ContextAssignmentService ..> CaptureContextAssignment
+    ContextAssignmentService ..> CaptureAssociationCandidate
+    IdentityResolutionService ..> IdentityMatch
+    IdentityResolutionService ..> EntityIdentity
+    ContextReevaluationService ..> IdentityMatch
+    ContextReevaluationService ..> HistoricalComparisonService
+    CatalogCurationService ..> StandardCatalog
+    CatalogCurationService ..> OrganizationKnowledgeEntry
+    KnowledgeRetrievalService ..> Observation
+    KnowledgeRetrievalService ..> EntityIdentity
+    KnowledgeRetrievalService ..> CatalogEntryVersion
+    KnowledgeRetrievalService ..> OrganizationKnowledgeVersion
+```
+
+### 5.3 Regras de leitura do modelo da plataforma
+
+1. **Receção não é associação:** PackageReceipt/Capture podem existir sem Organization, Installation ou Environment atribuídos.
+2. **Observation não é identidade:** Observation é materializada a partir do Object Index e pode permanecer sem EntityIdentity.
+3. **Contexto é corrigível com histórico:** CaptureContextAssignment é versionado por decisões; uma correção não reescreve o pacote nem a Observation.
+4. **Identidade pertence à Installation:** uma EntityIdentity pode ser reconhecida em vários Environments da mesma Installation após confirmação, mas não é fundida automaticamente entre Installations.
+5. **Ausência não é remoção:** IdentityEnvironmentState só pode chegar a Removed com contexto, compatibilidade e coverage adequados.
+6. **Facto não é interpretação:** DeclaredRelation preserva REL/DTL; RelationInterpretation preserva a leitura versionada.
+7. **Standard não é privado:** catálogo standard é publicado centralmente; conhecimento privado pertence à Organization.
+8. **RAG é consumidor futuro:** KnowledgeRetrievalService representa uma fronteira conceptual de consulta; não implica motor RAG, embeddings ou vector store nesta fase.
+
+### 5.4 Limites e decisões ainda reservadas
+
+O diagrama não fecha:
+- estados exatos e transições de CaptureContextAssignment;
+- regra de unicidade física de DatabaseLocation quando ServerName é desconhecido;
+- colunas de auditoria, concurrency tokens e política de retenção;
+- desenho append-only de eventos ambientais;
+- estratégia de reavaliação incremental;
+- permissões detalhadas e workflow de curadoria;
+- índices, tipos SQL, particionamento, storage de ZIPs ou ORM.
+
+Estes pontos são obrigatórios no desenho lógico/físico antes de criar o schema central SQL Server Express.
