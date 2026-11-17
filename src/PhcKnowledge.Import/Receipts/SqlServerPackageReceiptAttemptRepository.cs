@@ -49,6 +49,13 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
 
             IF @ExistingAttemptId IS NOT NULL
             BEGIN
+                UPDATE dbo.PackageReceiptAttempts
+                   SET StagingKey = @StagingKey, NextAttemptAtUtc = @NowUtc,
+                       UpdatedAtUtc = @NowUtc
+                 WHERE AttemptId = @ExistingAttemptId
+                   AND Status = 'PendingArchive'
+                   AND (LeaseUntilUtc IS NULL OR LeaseUntilUtc <= @NowUtc);
+
                 SELECT AttemptId, OrganizationId, PackageId, CaptureId, ContractVersion,
                        ProducerProductId, ProducerProductVersion, OriginDatabaseName,
                        ValidationSummaryJson, ValidationJson, ZipSha256, ZipByteLength,
