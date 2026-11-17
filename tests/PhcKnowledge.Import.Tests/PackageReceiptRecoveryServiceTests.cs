@@ -299,7 +299,7 @@ public sealed class PackageReceiptRecoveryServiceTests
         }
     }
 
-    private sealed class PermanentDatabaseException(string message) : DbException(message);
+    private sealed class PermanentDatabaseException(string message) : DbException(message) { }
 
     private sealed class RecordingPackageStore : IImmutablePackageStore, IRecoverableImmutablePackageStore
     {
