@@ -1,6 +1,6 @@
 # P1.B — Matriz SourceIdentity e scopes dos emissores
 **Data:** 2026-11-06  
-**Estado:** matriz implementada no núcleo puro do Export; integração no projector e validação com captura real pendentes  
+**Estado:** matriz integrada no projector e validada parcialmente com a captura real CSDefault202603 (8/21 kinds); estabilidade entre capturas e kinds não observados continuam por validar  
 **Âmbito:** primeiro `object-index.json` IKP 0.1
 
 ## 1. Objetivo
