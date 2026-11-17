@@ -154,7 +154,11 @@ public sealed class PackageReceiptRecoveryService
         CancellationTokenSource operationCts,
         CancellationToken stopToken)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+        // Keep the heartbeat safely inside the lease window, including tests or
+        // deployments that configure a lease shorter than the five-minute default.
+        var heartbeatInterval = TimeSpan.FromTicks(
+            Math.Min(TimeSpan.FromMinutes(1).Ticks, Math.Max(1, _leaseDuration.Ticks / 3)));
+        using var timer = new PeriodicTimer(heartbeatInterval);
         try
         {
             while (await timer.WaitForNextTickAsync(stopToken))
