@@ -214,6 +214,7 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
             FROM dbo.PackageReceiptAttempts a
             INNER JOIN dbo.PackageIngestionReceipts r
                 ON r.OrganizationId = a.OrganizationId AND r.PackageId = a.PackageId
+               AND r.ZipSha256 = a.ZipSha256
             WHERE a.AttemptId = @AttemptId AND a.Status = 'Completed';
             """;
         await using var connection = new SqlConnection(_connectionString);
