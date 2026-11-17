@@ -37,9 +37,9 @@ O IKP parte do Database Schema Snapshot atual, mas não é a junção direta dos
 6. A distinção entre Installation e Environment pertence ao PHC Knowledge: uma Installation pode conter vários Environments, incluindo Production, Test e Development.
 7. Bases de dados de empresas/instalações distintas mantêm Installations independentes. Uma cópia/restauro pode representar outro Environment da mesma Installation quando essa continuidade for confirmada; quando representar uma Installation distinta, a relação é registada por linhagem.
 8. Linhagem regista proveniência entre Installations; nunca funde os seus históricos.
-8. O pacote não transporta o InstallationId interno da plataforma.
-9. Artefactos originais e factos declarados não devem ser substituídos por interpretações derivadas.
-10. Receber ou validar um pacote não equivale a publicar conhecimento.
+9. O pacote não transporta identificadores internos de Organization, Installation, Environment, DatabaseLocation, Observation ou EntityIdentity.
+10. Artefactos originais e factos declarados não devem ser substituídos por interpretações derivadas.
+11. Receber ou validar um pacote não equivale a publicar conhecimento.
 
 ## 3. Estrutura do pacote
 
@@ -499,16 +499,19 @@ Qualquer falha bloqueia a materialização/publicação. O blob recebido pode se
 
 ~~~text
 Receção
-  → armazenamento imutável do pacote
   → validação estrutural e integridade
-  → associação guiada à organização/instalação
+  → arquivo imutável e registo Capture/PackageReceipt
   → interpretação de capacidades e cobertura
-  → staging de observações e artefactos
+  → staging/materialização de Observations e artefactos
+  → associação de contexto, quando confirmada
+  → resolução de IdentityMatch e EntityIdentity
   → comparação coverage-aware
   → relatório de validação/publicação
   → publicação atómica
   → registo de auditoria e notificação
 ~~~
+
+A materialização de Observations não depende da associação de contexto. A resolução de EntityIdentity e as comparações que dependem da instalação/ambiente ficam adiadas até existir CaptureContextAssignment confirmado. Esta sequência descreve a evolução funcional da plataforma; a primeira fatia continua limitada a Receive / Validate / Archive.
 
 Estados conceptuais:
 - Received: pacote recebido;
@@ -576,8 +579,12 @@ A matriz de compatibilidade deve descrever o código atual e as lacunas remanesc
 | Extensibilidade | Categorias/payloads opcionais com regras comuns de extensão |
 | Partilha | Permitida após validação técnica e de segurança efetiva |
 | Integridade | SHA-256 do ZIP recebido, SHA-256 por ficheiro e digest canónico lógico |
-| Instalação | Um InstallationId por base de dados PHC registada |
-| Ambientes | Não existe entidade EnvironmentId no modelo |
+| Instalação | Uma Installation pode conter vários Environments; a associação de uma captura é feita através de DatabaseLocation e CaptureContextAssignment |
+| Ambientes | Production, Test e Development são contextos de uma Installation quando a continuidade é confirmada |
+| Observation | ObservationId interno atribuído pela plataforma; UNIQUE(CaptureId, SourceObjectId); não depende de contexto nem de EntityIdentity |
+| Identidade lógica | EntityIdentity pertence a uma Installation e só é associada após correspondência confirmada |
+| Receção | Capture e PackageReceipt são distintos; uma Capture pode ter vários PackageReceipts |
+| Associação | Pode ficar pendente e ser corrigida com histórico; no máximo uma atribuição ativa por Capture |
 | Histórico | Mantido na plataforma, não no Scanner nem em cada IKP |
 | Identidade | Identidade lógica separada de identidade da origem e fingerprints |
 | Linhagem | Relações/eventos de cópia/restauro sem fusão de instalações |
@@ -590,9 +597,9 @@ A matriz de compatibilidade deve descrever o código atual e as lacunas remanesc
 3. ~~Criar schemas JSON executáveis para os cinco ficheiros de contrato.~~ **Concluído:** JSON Schema Draft 2020-12 em [schemas/ikp-0.1](schemas/ikp-0.1/README.md).
 4. ~~Criar catálogo de casos negativos e de fronteira e validador executável.~~ **Concluído:** [casos negativos](fixtures/ikp-0.1/negative-cases/cases.json) e [validador/testes Python](../../tools/ikp-validation/README.md). Os 18 cenários positivos/negativos foram executados localmente (18/18 PASS); o workflow CI está preparado para repetição automática, sem resultado CI confirmado nesta revisão.
 5. Executar e estabilizar a validação CI; depois definir exemplos de compatibilidade de capabilities entre versões e fechar os casos de linhagem.
-6. **PHC Knowledge:** implementar receção, validação de segurança/integridade e arquivo imutável de pacotes IKP, com testes de aceitação. A associação à instalação e a publicação ficam fora desta primeira fatia.
+6. **PHC Knowledge:** implementar receção, validação de segurança/integridade e arquivo imutável de pacotes IKP, com testes de aceitação. A associação de contexto, materialização de Observations e publicação são fases distintas e ficam fora desta primeira fatia.
 
-O emissor IKP já está implementado no Scanner. O próximo resultado de produto é Receive / Validate / Archive na plataforma central, conforme a matriz de compatibilidade. Antes disso, validar um ZIP produzido pelo exportador a partir da captura PHC default real com o validador independente. A associação à instalação, materialização de observações, comparação e publicação permanecem fora da primeira fatia.
+O emissor IKP já está implementado no Scanner. O próximo resultado de produto é Receive / Validate / Archive na plataforma central, conforme a matriz de compatibilidade. A validação do ZIP real do exportador permanece uma lacuna própria do Scanner/contrato. A primeira fatia do Knowledge não associa contexto, não materializa Observations, não resolve EntityIdentity e não compara capturas. Essas responsabilidades avançam em fases posteriores, sem depender umas das outras além dos pré-requisitos de contexto para identidade e comparação.
 
 ## Referências
 
