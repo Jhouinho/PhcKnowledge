@@ -34,8 +34,9 @@ O IKP parte do Database Schema Snapshot atual, mas não é a junção direta dos
 3. Ausência de um objeto só pode fundamentar remoção após comparação compatível e cobertura completa.
 4. O Scanner produz observações; a plataforma mantém entidades e histórico.
 5. Identidade lógica, identidade nativa da origem, identidade da observação e fingerprints são conceitos separados.
-6. Duas bases de dados PHC diferentes são duas instalações diferentes, mesmo que uma resulte de cópia/restauro da outra.
-7. Linhagem regista proveniência entre instalações; nunca funde os seus históricos.
+6. A distinção entre Installation e Environment pertence ao PHC Knowledge: uma Installation pode conter vários Environments, incluindo Production, Test e Development.
+7. Bases de dados de empresas/instalações distintas mantêm Installations independentes. Uma cópia/restauro pode representar outro Environment da mesma Installation quando essa continuidade for confirmada; quando representar uma Installation distinta, a relação é registada por linhagem.
+8. Linhagem regista proveniência entre Installations; nunca funde os seus históricos.
 8. O pacote não transporta o InstallationId interno da plataforma.
 9. Artefactos originais e factos declarados não devem ser substituídos por interpretações derivadas.
 10. Receber ou validar um pacote não equivale a publicar conhecimento.
@@ -122,7 +123,7 @@ O pacote pode transportar apenas um perfil ou vários. A ausência de knowledge 
 | sharing.safeForPublicShare | Não | Declaração opcional do emissor, não certificação de segurança |
 | sharing.assessment | Opcional | Informação sobre verificações realizadas e respetiva versão |
 
-Não existe EnvironmentId no modelo. O utilizador não precisa de separar ambientes dentro da mesma instalação: cada base de dados registada é uma instalação própria. Uma base de dados de testes restaurada de produção é uma instalação diferente, ligada por linhagem.
+O IKP 0.1 não transporta OrganizationId, InstallationId, EnvironmentId nem DatabaseLocationId. Estes identificadores pertencem ao modelo interno do PHC Knowledge e são atribuídos/confirmados pela plataforma. O pacote pode transportar origem técnica, como databaseName, serverLabel e originFingerprint, apenas como evidência não autoritativa. A plataforma decide se uma base de dados corresponde a um Environment de uma Installation existente ou a uma Installation distinta.
 
 ### 4.2 Identificadores e âmbito
 
@@ -134,22 +135,28 @@ Não existe EnvironmentId no modelo. O utilizador não precisa de separar ambien
 | SourceObjectId | Scanner | Identificador do objeto na captura, referenciável dentro do pacote |
 | SourceIdentity | Origem PHC/SQL | Identificadores nativos e respetivo âmbito |
 | EntityIdentity | PHC Knowledge | Identidade lógica da entidade no âmbito da instalação |
-| ObservationIdentity | PHC Knowledge | Entidade observada numa captura |
+| ObservationId | PHC Knowledge | Identificador interno próprio da Observation; não é transportado no IKP |
 | MetadataFingerprint | Scanner/plataforma | Fingerprint dos metadados relevantes |
 | DefinitionFingerprint | Scanner/plataforma | Fingerprint da definição técnica original |
 
 CaptureId e PackageId nunca entram na identidade lógica da entidade. Stamps PHC, nomes SQL, object_id e column_id são evidências com âmbito e estabilidade diferentes; nenhum deve ser tratado como identificador universal.\n\n### 4.2.1 Cálculo dos fingerprints\n\n- Todos os fingerprints usam SHA-256 e hexadecimal minúsculo de 64 caracteres.\n- MetadataFingerprint: SHA-256 dos bytes UTF-8 do objeto `metadata` serializado segundo JSON Canonicalization Scheme (RFC 8785). Excluir datas de recolha, timestamps voláteis, caminhos temporários e dados de execução que não descrevam o objeto. A política de inclusão de cada campo pertence ao contrato da respetiva categoria.\n- DefinitionFingerprint: SHA-256 dos bytes exatos da definição original, sem normalização de espaços, encoding ou quebras de linha. O encoding e o formato devem ser identificados pelo artefacto.\n- Se uma definição for composta por vários artefactos, calcular um digest composto a partir da lista ordenada ordinalmente de `artifactId + LF + sha256 + LF`, em UTF-8, e aplicar SHA-256 ao resultado.\n- Não calcular DefinitionFingerprint para estados `Empty`, `Unavailable` ou `NotCollected`. A ausência de fingerprint nesses estados não equivale a hash vazio.
 
-### 4.3 Associação à instalação
+### 4.3 Receção e associação ao contexto
 
-Na importação:
-1. O utilizador escolhe a organização.
-2. A plataforma apresenta uma instalação existente candidata, permite criar uma instalação nova ou deixa a associação pendente quando há ambiguidade.
-3. A decisão e as evidências de associação ficam registadas na plataforma.
-4. O pacote permanece imutável; a plataforma não escreve o seu InstallationId no ZIP.
-5. Reimportar o mesmo PackageId com o mesmo checksum do ZIP é idempotente. Mesmo CaptureId em pacotes diferentes deve ser tratado como a mesma captura com múltiplas representações/pacotes, não como recolhas independentes.
+A receção do IKP não exige que a organização, Installation ou Environment sejam conhecidos. O processo é separado em responsabilidades:
 
-A correspondência por fingerprint da origem ou hints é sugestão, não associação automática irrevogável.
+1. Receber o ZIP e calcular o checksum dos bytes recebidos.
+2. Validar a estrutura, os ficheiros obrigatórios, os schemas, as referências cruzadas e os checksums.
+3. Arquivar o pacote original de forma imutável e registar PackageReceipt/Capture no PHC Knowledge.
+4. Permitir que a Capture permaneça sem associação de contexto enquanto não existir decisão suficientemente fundamentada.
+5. Materializar Observations numa fase posterior, sem exigir contexto confirmado e sem atribuir automaticamente EntityIdentity.
+6. Quando o contexto for conhecido, registar CaptureContextAssignment para uma DatabaseLocation; a partir daí resolvem-se Environment, Installation e Organization.
+
+Capture representa a recolha lógica identificada por CaptureId. PackageReceipt representa cada pacote físico recebido, identificado por PackageId. Uma Capture pode ter vários PackageReceipts; cada PackageReceipt pertence a uma Capture. Repetir o mesmo PackageId com o mesmo checksum é idempotente. O mesmo PackageId com checksum diferente é conflito de integridade e não pode substituir o pacote original. Pacotes diferentes com o mesmo CaptureId são representações/receções da mesma captura lógica.
+
+A associação de contexto é uma decisão da plataforma, registada com autor, data, evidência e motivo. Pode permanecer pendente e pode ser corrigida através de nova atribuição histórica, mantendo no máximo uma atribuição ativa. Fingerprints da origem, nome da base de dados e hints são sugestões, não associação automática irrevogável.
+
+O IKP permanece imutável. Nenhum ID interno de organização, instalação, ambiente, localização, observação ou identidade lógica é escrito no pacote.
 
 ## 5. Capacidades — capabilities.json
 
