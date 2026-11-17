@@ -2,7 +2,8 @@
 
 | Campo | Valor |
 |---|---|
-| Data | 2026-11-06 |
+| Data original | 2026-11-06 |
+| Revisão de estado | 2026-11-17 |
 | Estado | **Documento de contexto arquitetural; semântica detalhada consolidada em P1** |
 | Âmbito | Scanner independente, IKP e PHC Knowledge |
 | Implementação | Documento conceptual de 2026-11-06; Scanner e exportador IKP evoluíram posteriormente |
@@ -201,7 +202,7 @@ A sequência abaixo regista o plano original de 2026-11-06 e está concluída/su
 4. Só depois, definir tarefas de implementação separadas:
    - Scanner: capacidades, cobertura granular, identidade de origem, índice estruturado e emissor IKP;
    - PHC Knowledge: ingestão, observações, fingerprints, histórico, comparador coverage-aware e gestão de linhagem.
-5. **Concluído/substituído:** o Scanner já tem emissor IKP 0.1; a próxima implementação no Knowledge é Receive / Validate / Archive, conforme a matriz de compatibilidade.
+5. **Estado em 2026-11-06:** o Scanner já tinha emissor IKP 0.1; Receive / Validate / Archive era então a próxima implementação planeada no Knowledge. Esta etapa foi entretanto parcialmente implementada, conforme o registo de estado de 2026-11-17.
 
 ## 11. Limites e assuntos ainda por especificar
 
@@ -218,6 +219,15 @@ Este documento fecha princípios, não todos os detalhes de serialização. Perm
 Estes pontos devem ser resolvidos agrupados na revisão do contrato e nos exemplos de referência, evitando novas rondas de decisões isoladas sem artefactos concretos.
 
 
-## Estado atual — 2026-11-10
+## Registo histórico de estado — 2026-11-10
 
-A especificação IKP 0.1 e os contratos P1 são as referências atuais. O Scanner já implementa capabilities, coverage, Object Index e exportador IKP. A projeção do Object Index foi validada com uma captura PHC real; a validação end-to-end do ZIP do exportador com essa captura continua pendente. O PHC Knowledge ainda não tem API nem armazenamento central implementados. A primeira fatia é receção, validação e arquivo imutável do pacote, sem associação ou publicação.
+**Nota histórica — não representa o estado atual do repositório.** Nesta data, a especificação IKP 0.1 e os contratos P1 eram as referências atuais. O Scanner já implementava capabilities, coverage, Object Index e exportador IKP. A projeção do Object Index tinha sido validada com uma captura PHC real, mas a validação end-to-end do ZIP continuava pendente. O PHC Knowledge ainda não tinha API nem armazenamento central implementados e Receive / Validate / Archive era a fatia planeada. Desde então, o núcleo `PhcKnowledge.Import` passou a incluir validator, serviço de ingestão, arquivo imutável e receipt SQL. A situação atual está registada na secção seguinte e no [assessment de arquitetura](technology-and-import-contract-assessment.md).
+
+
+## Estado e decisões de destino — 2026-11-17
+
+O modelo global de domínio 0.2, incluindo Core, Package/PackageReceipt, Observation, identidade e estados por Environment, está consolidado em [knowledge-domain-model-0.2.md](knowledge-domain-model-0.2.md). Esse documento distingue explicitamente destino conceptual de implementação física.
+
+A captura real CSDefault202603 confirmou 16.618 SourceObjectIds, máximo de 54 caracteres, sem duplicados ordinais, espaços nas extremidades ou caracteres não-ASCII. A proposta de destino é NVARCHAR(256), unicidade por CaptureId e comparação ordinal, com validação explícita de vazio e espaços nas extremidades.
+
+A receção atual não materializa ainda Observations nem resolve EntityIdentity. O serviço Import valida, arquiva e regista PackageReceipt; contexto e identidade permanecem fases posteriores.

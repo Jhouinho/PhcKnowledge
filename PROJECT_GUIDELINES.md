@@ -50,9 +50,9 @@ Decisões consolidadas em [`docs/architecture/technology-and-import-contract-ass
 | Pesquisa inicial | SQL Server 2025 Express inclui Full-Text Search; versão concreta ainda por fixar e validar se for anterior a 2025 |
 | Tempo real | SignalR (mantido na arquitetura; implementação conforme os casos de uso) |
 | Scanner | Componente funcionalmente autónomo, versionado neste monorepo; Knowledge não o executa em runtime |
-| Importação | IKP 0.1 definido por schemas/fixtures/validador e emitido pelo Scanner; ingestão no Knowledge ainda por implementar |
+| Importação | IKP 0.1 emitido pelo Scanner; primeira fatia Receive / Validate / Archive implementada no projeto Import, sem API HTTP/autenticação demonstradas |
 
-O Scanner já implementa o exportador IKP 0.1 e os comandos CLI `scan-ikp` e `export-ikp`. O contrato deve evoluir sempre com schemas, fixtures e testes. Não ligar o Scanner ao backend em runtime.
+O Scanner já implementa o exportador IKP 0.1 e os comandos CLI `scan-ikp` e `export-ikp`. O núcleo PhcKnowledge.Import já implementa validação, arquivo imutável e persistência de receipts. O contrato deve evoluir sempre com schemas, fixtures e testes. Não ligar o Scanner ao backend em runtime.
 
 ## Projetos anteriores
 
@@ -138,8 +138,21 @@ No final de cada fase:
 
 Não avançar automaticamente para a fase seguinte sem validação conjunta.
 
-## Próxima etapa prevista
+## Estado e próxima etapa — 2026-11-17
 
-O Scanner já implementa a exportação IKP 0.1 (comandos CLI `scan-ikp` e `export-ikp`), incluindo manifesto, capabilities, coverage, Object Index, checksums e payloads suportados. O contrato dispõe de schemas, fixtures, validador e testes. A projeção do Object Index foi validada também com uma captura real; a validação end-to-end do ZIP IKP produzido pelo exportador com essa captura continua por confirmar.
+A primeira fatia de ingestão já existe no código:
+- IkpPackageValidator: valida estrutura, schemas, checksums e referências do pacote;
+- IkpPackageIngestionService: coordena validação, arquivo e receipt;
+- FileSystemImmutablePackageStore: arquivo content-addressed global por SHA-256, sem overwrite;
+- SqlServerPackageReceiptRepository: receipt por organização no SQL Server;
+- migration 001_package_ingestion_receipts.sql;
+- testes unitários e de integração sobre fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado).
 
-A próxima etapa é implementar no núcleo PHC Knowledge a primeira fatia de ingestão: receber o ZIP, validar estrutura/segurança/integridade e arquivar o pacote original de forma imutável, registando o resultado no SQL Server Express. Não associar automaticamente a instalação nem publicar conhecimento nesta primeira fatia. Validar depois o fluxo com um IKP produzido a partir da captura PHC default já existente.
+A implementação não demonstra ainda endpoint HTTP, autenticação/contexto de Organization, execução contra SQL Server real nem reconciliação automática de ficheiros arquivados sem receipt. A ordem actual é arquivo antes de receipt SQL; esta janela de falha deve ser tratada antes de ampliar a ingestão.
+
+O modelo de destino 0.2 está em [knowledge-domain-model-0.2.md](docs/architecture/knowledge-domain-model-0.2.md). Distinguir sempre:
+- **Implementado:** serviço Receive / Validate / Archive, arquivo imutável e receipt SQL.
+- **Parcial / apenas no ZIP:** capabilities, coverage, issues, artefactos e REL/DTL; não materializados ainda em tabelas próprias.
+- **Futuro:** API HTTP/autenticação, Core Organization/Installation/Environment, materialização de Observations, contexto, identidade, comparação e conhecimento.
+
+Não alterar migrations globais antes de fechar os bloqueadores de domínio documentados no modelo 0.2. A próxima etapa é testar SQL Server real e desenhar reconciliação/retry e fronteira HTTP/autenticação.

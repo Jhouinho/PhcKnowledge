@@ -54,14 +54,19 @@ dotnet run --project PhcKnowledgeScanner/src/PhcKnowledgeScanner.Cli -- test-con
 
 Também se mantém a solução específica do Scanner em `PhcKnowledgeScanner/PhcKnowledgeScanner.sln` para desenvolvimento isolado do componente.
 
-## Estado da plataforma
+## Estado da plataforma — 2026-11-17
 
-A arquitetura, decisões de produto e contrato de importação estão documentados em:
+A solução já contém uma primeira fatia funcional do núcleo PHC Knowledge, em src/PhcKnowledge.Import: validação de pacotes IKP, serviço de ingestão, arquivo imutável por SHA-256 e persistência de receipts no SQL Server. Existem testes unitários e de integração sobre fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado).
 
-- [Orientações do projeto](PROJECT_GUIDELINES.md)
-- [Arquitetura](docs/architecture/)
-- [Especificação IKP 0.1](docs/architecture/ikp-0.1-specification.md)
-- [Schemas e validação IKP 0.1](docs/architecture/schemas/ikp-0.1/README.md)
-- [Validador e testes de contrato](tools/ikp-validation/README.md)
+**Implementado no código:** IkpPackageValidator, IkpPackageIngestionService, FileSystemImmutablePackageStore, SqlServerPackageReceiptRepository e migration 001_package_ingestion_receipts.sql. Os testes usam fixture IKP / ZIP sintético → Validator / Ingestion; não demonstram API HTTP/autenticação nem integração SQL Server real.
 
-**Estado em 2026-11-11:** o Scanner é executável e já exporta pacotes IKP 0.1 através da CLI. A projeção do Object Index foi validada com dados de uma captura PHC real (8/21 kinds presentes). Foi também identificado um problema de desempenho na validação do array `objects`: com `uniqueItems` a validação excedeu 120 segundos; numa cópia temporária do schema sem essa regra terminou em 2,82 segundos. A decisão é remover apenas essa regra do array raiz, mantendo a unicidade de `sourceObjectId` no validador C# e `artifactIds` no schema. **A alteração ao schema ainda está pendente**, assim como os testes/build e a validação end-to-end do ZIP produzido pelo exportador. A plataforma central ainda não tem projetos próprios em `src/` nem testes em `tests/`. A próxima entrega funcional continua a ser Receive / Validate / Archive, depois de fechar a validação do pacote. Não inclui ainda associação automática à instalação, materialização de conhecimento ou publicação.
+**Limite importante:** o serviço arquiva o ZIP antes de persistir o receipt. Uma falha SQL posterior pode deixar um ficheiro arquivado sem receipt; reconciliação/retry é evolução necessária. O arquivo é global e content-addressed; os receipts são isolados por organização.
+
+O modelo de destino 0.2 está em [Modelo de domínio 0.2](docs/architecture/knowledge-domain-model-0.2.md). Distingue:
+- **Implementado:** receção por serviço, validação, arquivo imutável e receipt SQL.
+- **Parcial — apenas no ZIP:** capabilities, coverage, issues, artefactos e REL/DTL ainda não são materializados em tabelas próprias.
+- **Futuro:** API HTTP/autenticação, associação a instalação/ambiente, materialização de Observations, resolução de identidade, comparação de capturas e publicação de conhecimento.
+
+A captura real CSDefault202603 confirmou 16.618 SourceObjectIds, máximo de 54 caracteres, sem duplicados ordinais nem espaços nas extremidades. O modelo de destino propõe NVARCHAR(256), comparação ordinal e validação explícita. Não existe ainda migration para Observation.
+
+A próxima etapa é fechar a reconciliação entre arquivo e receipt, testar a persistência contra SQL Server real e desenhar a fronteira HTTP/autenticação. Não criar migrations globais adicionais antes de fechar esses pontos.

@@ -1,60 +1,56 @@
-# Matriz de compatibilidade — IKP 0.1 e Scanner atual
+# Matriz de compatibilidade — IKP 0.1, Scanner e PHC Knowledge
 
-Data: 2026-11-11  
-Estado: P0 e P1 implementados; exportador IKP 0.1 integrado na CLI; projeção validada com captura real (8/21 kinds); teste A/B identificou o custo de `uniqueItems` no array raiz `objects`; correção do schema e validação end-to-end do ZIP ainda pendentes.
+Data de revisão: 2026-11-17
 
 ## Conclusão
 
-O Scanner atual já gera CaptureId, declara capabilities, regista coverage por operação, projeta o Object Index com SourceIdentity e fingerprints e exporta pacotes IKP 0.1 através de IkpPackageExporter. A CLI disponibiliza scan-ikp (captura + exportação) e export-ikp (exportação a partir de workspace).
+O Scanner emite IKP 0.1. A captura real CSDefault202603 foi examinada: 16.618 objetos, 921 relações declaradas e 921 interpretações REL/DTL. O Object Index inclui 8 dos 21 kinds mapeados; os restantes continuam sem validação real nesta captura.
 
-O exportador constrói os cinco ficheiros de contrato obrigatórios, inclui artefactos referenciados, diagnósticos e factos REL/DTL/interpretations quando existem, calcula SHA-256 por ficheiro e digest lógico e escreve o ZIP atomicamente. Existem testes unitários dedicados ao exportador.
-
-A projeção foi também validada com a captura real `CSDefault202603`: 16.618 objetos projetados, 8.307 SourceIdentity, 16.581 MetadataFingerprint e 49 artefactos com tamanho/hash confirmados. A captura contém apenas 8 dos 21 kinds mapeados; os restantes não ficam validados por esta evidência.
-
-**Limite da confirmação atual:** a validação real incidiu na projeção do Object Index e nos artefactos da captura, não confirma ainda o ZIP completo produzido pelo exportador com o validador independente. A importação no Knowledge também não existe.
+O núcleo PhcKnowledge.Import já implementa a primeira fatia Receive / Validate / Archive como serviço, com validator, arquivo imutável por SHA-256 e persistência SQL de receipts. Os testes usam fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado); não são prova de execução contra SQL Server real nem de API HTTP/autenticação.
 
 ## Matriz
 
-| Componente | Estado atual confirmado | Lacuna / validação restante |
+| Componente | Estado confirmado | Limite / trabalho restante |
 |---|---|---|
-| ScanManifest / CaptureId | CaptureId, capabilities, coverage, timestamps, modo e versão disponíveis durante o scan | Workspaces antigos podem não preservar todo o manifesto; manter metadados desconhecidos explícitos |
-| CollectorResult / OperationCoverage | Cobertura por operação, resultado, disponibilidade, contagem e issues | Validar coerência para operações/kinds ainda não exercitados em captura real |
-| ScanEngine / ScanMode | Full, Selective e ProbeOnly com semântica de cobertura | Executar suite atual e verificar CI |
-| Object Index | Projeção read-only; validada com captura real para 8/21 kinds (16.618 objetos) | Validar 13 kinds não presentes e estabilidade entre capturas |
-| Artefactos | 49 artefactos da captura real com byte length e SHA-256 confirmados na projeção/export preparation | Validar pacote ZIP completo e categorias adicionais |
-| REL/DTL | Factos declarados e interpretações em payloads separados; valida contagens e referências | Confirmar payloads com a captura default e uma captura personalizada |
-| IKP ZIP | IkpPackageExporter implementado; manifesto, capabilities, coverage, object-index, checksums e payload | Aplicar correção localizada de desempenho no schema; validar ZIP real com schemas e validador independente |
-| CLI | scan-ikp e export-ikp integrados | Testar os dois caminhos com captura real |
-| Validador independente | Schemas JSON e validador Python existem; `IkpPackageValidator` C# verifica duplicados de `sourceObjectId` com `HashSet` ordinal | Remover `uniqueItems` apenas do array raiz `objects`, manter a regra em `definition.artifactIds`, testar ambos os casos e executar contra ZIP real |
-| PHC Knowledge | Ainda sem projetos em src/ e tests/ | Implementar receção, validação, arquivo e registo de importação |
+| Scanner / CaptureId | CaptureId, capabilities, coverage e Object Index implementados | Validar kinds ausentes e estabilidade entre capturas |
+| Object Index | 16.618 objetos na captura real; 8/21 kinds presentes | Não generalizar para os 21 kinds |
+| SourceObjectId | Máximo 54; mínimo 12; zero duplicados ordinais, espaços nas extremidades ou não-ASCII na captura | Modelo destino NVARCHAR(256); ainda sem tabela Observation/migration |
+| Artefactos | 49 definições associadas e artefactos reais verificados; pacote real inclui manifesto e checksums | Materialização SQL dos artefactos continua futura |
+| REL/DTL | 921 factos + 921 interpretações; 295 REL / 626 DTL; zero órfãos | Spec alinhada nesta revisão; entidades SQL futuras |
+| IKP ZIP | Exportador IkpPackageExporter; cinco ficheiros de contrato; arquivo ZIP com integridade | Segurança operacional adicional, assinatura/antimalware e política de partilha fora da fatia atual |
+| Validator C# | Estrutura, schemas, checksums e referências cruzadas; duplicados sourceObjectId com comparação ordinal | Cobertura de validações semânticas não é idêntica à do exporter |
+| Ingestion service | IkpPackageIngestionService coordena validação, arquivo e receipt | Não é endpoint HTTP |
+| Package store | FileSystemImmutablePackageStore; content-addressed global por SHA-256; não sobrescreve | Reconciliação de ficheiros sem receipt após falha SQL |
+| Receipt SQL | SqlServerPackageReceiptRepository + migration 001_package_ingestion_receipts.sql | Testar em SQL Server real; constraints atuais são por Organization |
+| Testes | Fixture IKP / ZIP sintético → Validator / Ingestion (aceitação, arquivo idempotente, receipt, path traversal, payload adulterado) | Não prova SQL Server real, API, autenticação ou ZIP real CSDefault202603 |
+| API / autenticação | Não demonstradas | Criar fronteira HTTP; OrganizationId deve vir do contexto autenticado |
+| Materialização Knowledge | Ainda não implementada | PackageArtifact/Observation/REL/DTL e processamento posterior |
 
-## Próxima fatia de implementação
+## Identidade de pacote e recepção
 
-**PHC Knowledge — Receive / Validate / Archive**
+- PackageId identifica globalmente o pacote IKP.
+- ZipSha256 identifica os bytes exatos do ZIP e é global no arquivo.
+- Num pacote válido, o mesmo SHA-256 implica o mesmo manifesto e o mesmo PackageId.
+- Mesmo PackageId com SHA diferente é conflito global.
+- Mesmo PackageId e SHA na mesma Organization é receção idempotente.
+- Mesmo PackageId e SHA noutra Organization é uma nova receção organizacional ligada ao mesmo Package global e ao mesmo arquivo físico.
+- Mesmo CaptureId com PackageIds diferentes é permitido: uma captura pode ser exportada em mais do que um pacote.
+- O modelo de destino separa Package global de PackageReceipt por Organization. A migration atual ainda não implementa esta separação física.
 
-1. Receber ZIP IKP por endpoint HTTP, com limites de tamanho e número de entradas.
-2. Calcular SHA-256 dos bytes recebidos.
-3. Validar estrutura ZIP e impedir path traversal, caminhos duplicados e entradas não declaradas.
-4. Validar os cinco ficheiros obrigatórios, schemas, referências cruzadas e checksums.
-5. Arquivar o ZIP original de forma imutável, fora da base de dados relacional.
-6. Registar no SQL Server Express a tentativa de importação, PackageId, CaptureId, checksum, estado e diagnóstico.
-7. Tornar a receção idempotente para o mesmo PackageId + checksum; rejeitar conflito de mesmo PackageId com conteúdo diferente.
-8. Cobrir casos válidos, ZIP malicioso, checksum incorreto, contrato incompatível, duplicado idempotente e falha de arquivo.
+## REL/DTL — contrato efetivamente emitido
 
-A primeira fatia **não** associa automaticamente o pacote a uma instalação, não materializa entidades/observações, não calcula remoções e não publica conhecimento.
+Ficheiro único: payload/relations/declared-relations.json.
 
-## Validação posterior do Scanner
+Envelope: schemaVersion, captureId, declaredRelations e interpretations.
 
-1. Remover apenas `uniqueItems` do array raiz `objects` em `object-index.schema.json`; manter a regra em `definition.artifactIds`.
-2. Confirmar que o validador C# rejeita `sourceObjectId` duplicados e que o schema rejeita `artifactIds` duplicados.
-3. Executar clean, testes e build da solução.
-4. Gerar IKP com a captura PHC default de referência já existente e validar o ZIP com `tools/ikp-validation/validate_ikp_zip.py`.
-5. Registar tempos, inspecionar os cinco documentos, payloads, checksums e digest lógico, sem inventar dados em falta.
-6. Repetir com uma captura de instalação personalizada quando estiver disponível.
+Factos e interpretações são coleções lógicas separadas. O Knowledge deverá persistir DeclaredRelation e DeclaredRelationInterpretation como entidades distintas. A interpretação é derivada/versionada; não substitui o facto original nem a expressão PHC.
 
-## Limites
+## Próxima etapa
 
-- O Scanner continua a ser produtor de factos e pacotes; não recebe dependência runtime do Knowledge.
-- O workspace SQLite não é lido diretamente pela plataforma.
-- O pacote original é preservado; a base de dados central guarda metadados e estado da importação, não o ZIP como BLOB.
-- Receber/validar/arquivar não equivale a associar, interpretar, materializar ou publicar conhecimento.
+1. Testar a persistência e as constraints atuais contra SQL Server real.
+2. Definir reconciliação/retry para ZIP arquivado sem receipt SQL (arquivo ocorre antes do receipt).
+3. Testar explicitamente idempotência e conflitos de PackageId/SHA, incluindo receções multi-organização.
+4. Desenhar endpoint HTTP e autenticação; obter OrganizationId do contexto autenticado.
+5. Só depois avançar para materialização de artefactos, Observations, REL/DTL e associação de contexto.
+
+Não gerar migrations globais novas nesta etapa. Ver [Modelo de domínio 0.2](knowledge-domain-model-0.2.md).
