@@ -223,6 +223,10 @@ public sealed class PackageReceiptRecoveryServiceTests
                     LeaseUntilUtc = nowUtc.Add(leaseDuration)
                 }, Guid.Parse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"))]);
 
+        public Task<PackageReceipt?> GetCompletedReceiptAsync(
+            Guid attemptId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<PackageReceipt?>(null);
+
         public Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlySet<string>>(new HashSet<string>([attempt.StagingKey], StringComparer.Ordinal));
