@@ -49,10 +49,8 @@ Uma Capture sem atribuição ativa está **Unassigned** por ausência de atribui
 stateDiagram-v2
     [*] --> Unassigned
     Unassigned --> Active: Confirmar atribuição
-    Active --> Superseded: Corrigir / reatribuir
-    Superseded --> Active: Nova atribuição (novo registo)
-    Active --> Revoked: Retirar associação
-    Revoked --> Active: Nova atribuição (novo registo)
+    Active --> Active: Corrigir (novo registo; anterior Superseded)
+    Active --> Unassigned: Retirar associação (anterior Revoked)
 ```
 
 O diagrama representa o estado agregado da Capture. `Superseded` e `Revoked` são estados terminais do registo de atribuição antigo; uma nova atribuição é sempre outro registo.
