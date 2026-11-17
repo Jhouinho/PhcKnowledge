@@ -11,6 +11,8 @@ Esta matriz não cria identificadores. Apenas projeta para o contrato IKP a evid
 
 O `SourceObjectId` atual mantém-se como referência do objeto dentro da captura. Não deve ser substituído nem reinterpretado como identidade nativa.
 
+A matriz descreve exclusivamente o scope técnico da evidência recolhida pelo Scanner. Não representa Organization, Installation ou Environment. O PHC Knowledge associa a Capture a um contexto através de CaptureContextAssignment; não deve acrescentar EnvironmentId ou InstallationId ao SourceIdentity nem inferir continuidade entre ambientes apenas porque scheme, value e scope coincidem. A interpretação da mesma evidência entre ambientes depende da Installation confirmada e da resolução de IdentityMatch.
+
 ## 2. Regras de decisão
 
 1. `SourceIdentity` só é emitida quando existe um identificador nativo cuja semântica e scope são conhecidos.
