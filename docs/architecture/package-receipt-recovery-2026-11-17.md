@@ -1,6 +1,6 @@
 # Protocolo de recuperação de PackageReceipt
 
-> Estado: protocolo implementado parcialmente na branch `feat/package-receipt-recovery`. Não existe ainda endpoint HTTP nem host ASP.NET Core/Worker; os serviços de recuperação e limpeza são invocáveis, mas têm de ser agendados pelo host do produto.
+> Estado: protocolo implementado na branch `feat/package-receipt-recovery` através da biblioteca `PhcKnowledge.Import` e do Generic Host `PhcKnowledge.Host`. A PR #9 permanece em Draft e ainda não foi integrada na `main`. Não existe ainda endpoint HTTP, autenticação ou upload HTTP.
 
 ## Objectivo
 
@@ -33,8 +33,8 @@ Não é necessário estado `Archived`: o worker verifica a existência, tamanho 
 
 ## Retry e operação
 
-- Erros transitórios: manter `PendingArchive`, guardar diagnóstico e agendar retry com backoff exponencial limitado a 15 minutos.
-- Regra operacional definida: após uma hora pendente deve existir alerta, mantendo retries automáticos. A emissão desse alerta ainda não está ligada a um sistema de observabilidade e fica para a integração do host.
+- Erros transitórios: manter `PendingArchive`, guardar diagnóstico e agendar retry com backoff exponencial limitado a 15 minutos. Para SQL Server, só são repetidos códigos conhecidos como transitórios (timeouts, interrupções de rede, deadlocks, lock timeouts e throttling/indisponibilidade transitória Azure SQL); erros SQL não classificados como transitórios seguem para `NeedsAttention`.
+- Regra operacional: o `PackageReceiptOperationsMonitor` emite Warning para `PendingArchive` acima de uma hora e Error para `NeedsAttention`, incluindo contagens, amostras de AttemptIds e últimos erros. A repetição é suprimida até alteração da amostra/contagem ou decorrer uma hora. Os logs ainda precisam de ser encaminhados para o sistema de observabilidade/deployment.
 - Corrupção, hash divergente, metadados inconsistentes ou colisão PackageId/conteúdo: `NeedsAttention`.
 - Tentativas pendentes não expiram automaticamente.
 - Ficheiros de staging sem tentativa SQL associada podem ser eliminados após 24 horas. `PackageStagingCleanupService` consulta as tentativas pendentes e protege os respectivos `StagingKey`; a invocação periódica depende do host.
@@ -60,17 +60,19 @@ Os índices únicos por OrganizationId + PackageId e OrganizationId + ZipSha256 
 - `PackageReceiptRecoveryService`: recuperação imediata e processamento de tentativas vencidas; valida o staging path e confirma o arquivo por hash quando o staging já não existe.
 - `FileSystemImmutablePackageStore`: fornece a chave content-addressed determinística e verifica objectos arquivados sem os alterar.
 - `IkpPackageIngestionService`: quando recebe o repositório de tentativas, regista a tentativa antes do arquivo e preserva o staging quando a recepção fica pendente. A persistência de receipts só é possível através deste percurso durável; sem repositório de tentativas, o serviço limita-se a validar e arquivar para harnesses.
-- `PackageStagingCleanupService`: remove apenas ficheiros antigos sem referência a tentativas pendentes.
-- Testes unitários cobrem os principais caminhos do processador e a protecção do staging.
+- `PackageStagingCleanupService`: remove apenas ficheiros antigos sem referência a tentativas `PendingArchive` ou `NeedsAttention`.
+- `PhcKnowledge.Host`: Generic Host .NET 10 com preflight SQL e workers de recuperação (60s), limpeza (15 min) e monitorização (5 min).
+- Testes unitários cobrem os principais caminhos do processador, configuração do host, workers e protecção do staging. Testes de integração SQL Server 2022 cobrem claims concorrentes, fencing, atomicidade/rollback, preflight completo/incompleto e reutilização de uma única tentativa para recepções concorrentes do mesmo pacote.
 
 ## Limites de responsabilidade
 
 - `PackageReceiptAttempt` não substitui `PackageReceipt`.
 - Não introduzir Event Sourcing, Outbox genérico, materialização de Observations ou associação a Installation/Environment.
-- A recuperação deve ser um serviço do Import, invocado por um BackgroundService no futuro host. Este repositório ainda não tem esse host.
+- O Generic Host executa os workers, mas ainda requer configuração de deployment, identidade/permissões e armazenamento persistente no ambiente de destino.
 - O percurso de produto deve configurar `SqlServerPackageReceiptAttemptRepository`; sem o repositório de tentativas, o serviço não regista receipts.
-- A migration e o locking/atomicidade ainda precisam de execução contra SQL Server real. A pipeline .NET valida build e testes unitários, não substitui essa validação.
-- O alerta operacional para tentativas pendentes há mais de uma hora ainda não está implementado; depende da integração com a observabilidade do host.
+- A suite SQL Server 2022 em GitHub Actions executa as migrations e os testes de integração numa base de dados efémera isolada; não substitui a validação de deployment no ambiente de destino.
+- Os alertas são emitidos como logs Warning/Error; a entrega a email, Teams, PagerDuty ou outro canal depende da integração com a plataforma de observabilidade.
+- A deduplicação de alertas é em memória e reinicia com o processo.
 
 ## Critérios de aceitação
 
