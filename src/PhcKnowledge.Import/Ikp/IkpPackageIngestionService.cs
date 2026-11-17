@@ -68,6 +68,14 @@ public sealed class IkpPackageIngestionService
                 var registration = await _attemptRepository.CreateOrGetPendingAsync(
                     organizationId!.Value, validation, storageKey, stagingKey, cancellationToken);
 
+                // Once this exact staged file is referenced by a durable pending attempt,
+                // preserve it even if immediate processing is interrupted by cancellation
+                // or a repository/store failure. A different existing staging key belongs
+                // to the previously registered attempt, so this new upload remains disposable.
+                preserveStaging =
+                    registration.Attempt.Status == "PendingArchive" &&
+                    string.Equals(registration.Attempt.StagingKey, stagingKey, StringComparison.Ordinal);
+
                 if (registration.Attempt.Status == "NeedsAttention")
                     throw new PackageReceiptNeedsAttentionException(registration.Attempt.AttemptId);
 
