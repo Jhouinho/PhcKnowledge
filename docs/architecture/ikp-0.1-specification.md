@@ -2,12 +2,12 @@
 
 | Campo | Valor |
 |---|---|
-| Data da revisão | 2026-11-10 |
+| Data da revisão | 2026-11-17 |
 | Contrato | ikpContractVersion = 0.1 |
 | Content-Type | phc.installation.knowledge.package |
 | Transporte canónico | ZIP |
-| Estado | **Contrato IKP 0.1 consolidado; schemas, fixtures, validador e emissor no Scanner** |
-| Implementação | Exportador no Scanner implementado; importador da plataforma central por implementar |
+| Estado | **Contrato IKP 0.1 consolidado; emissor no Scanner; primeira fatia Import no Knowledge implementada** |
+| Implementação | Exportador no Scanner e serviço Receive / Validate / Archive implementados; API HTTP e materialização por implementar |
 | Contrato complementar normativo | [P1 — Identidade, proveniência e fingerprints](p1-identity-provenance-contract.md) |
 | Contexto arquitetural | [Contrato de observação, identidade e linhagem](observation-identity-and-lineage-contract.md) |
 
@@ -101,7 +101,7 @@ O pacote pode transportar apenas um perfil ou vários. A ausência de knowledge 
 |---|---:|---|
 | ikpContractVersion | Sim | Versão do contrato, inicialmente 0.1 |
 | contentType | Sim | phc.installation.knowledge.package |
-| packageId | Sim | UUID único deste pacote físico |
+| packageId | Sim | UUID global que identifica este pacote IKP físico; gerado pelo Scanner em cada exportação |
 | producedAtUtc | Sim | Data/hora de criação do ZIP |
 | producer.productId | Sim | Identificador do produto emissor, ex. PhcKnowledgeScanner |
 | producer.productVersion | Sim | Versão do produto/exportador que produziu este pacote; não representa necessariamente a versão do Scanner que realizou a captura |
@@ -128,7 +128,7 @@ Não existe EnvironmentId no modelo. O utilizador não precisa de separar ambien
 
 | Conceito | Origem | Regra |
 |---|---|---|
-| PackageId | Scanner | Identifica o pacote físico; novo por cada pacote produzido |
+| PackageId | Scanner | Identidade global do pacote físico; novo por cada exportação produzida |
 | CaptureId | Scanner | Identifica uma recolha; pode originar vários pacotes |
 | InstallationId | PHC Knowledge | Atribuído/confirmado na importação; nunca incluído como ID autoritativo no IKP |
 | SourceObjectId | Scanner | Identificador do objeto na captura, referenciável dentro do pacote |
@@ -138,7 +138,7 @@ Não existe EnvironmentId no modelo. O utilizador não precisa de separar ambien
 | MetadataFingerprint | Scanner/plataforma | Fingerprint dos metadados relevantes |
 | DefinitionFingerprint | Scanner/plataforma | Fingerprint da definição técnica original |
 
-CaptureId e PackageId nunca entram na identidade lógica da entidade. Stamps PHC, nomes SQL, object_id e column_id são evidências com âmbito e estabilidade diferentes; nenhum deve ser tratado como identificador universal.\n\n### 4.2.1 Cálculo dos fingerprints\n\n- Todos os fingerprints usam SHA-256 e hexadecimal minúsculo de 64 caracteres.\n- MetadataFingerprint: SHA-256 dos bytes UTF-8 do objeto `metadata` serializado segundo JSON Canonicalization Scheme (RFC 8785). Excluir datas de recolha, timestamps voláteis, caminhos temporários e dados de execução que não descrevam o objeto. A política de inclusão de cada campo pertence ao contrato da respetiva categoria.\n- DefinitionFingerprint: SHA-256 dos bytes exatos da definição original, sem normalização de espaços, encoding ou quebras de linha. O encoding e o formato devem ser identificados pelo artefacto.\n- Se uma definição for composta por vários artefactos, calcular um digest composto a partir da lista ordenada ordinalmente de `artifactId + LF + sha256 + LF`, em UTF-8, e aplicar SHA-256 ao resultado.\n- Não calcular DefinitionFingerprint para estados `Empty`, `Unavailable` ou `NotCollected`. A ausência de fingerprint nesses estados não equivale a hash vazio.
+CaptureId e PackageId nunca entram na identidade lógica da entidade. O mesmo SHA-256 do ZIP implica os mesmos bytes e, num IKP válido, o mesmo PackageId do manifesto. Um CaptureId pode originar vários PackageIds. No modelo de destino do Knowledge, Package é global e PackageReceipt representa cada receção por Organization; a migration atual ainda mantém os índices de PackageId e ZipSha256 no âmbito da Organization. Stamps PHC, nomes SQL, object_id e column_id são evidências com âmbito e estabilidade diferentes; nenhum deve ser tratado como identificador universal.\n\n### 4.2.1 Cálculo dos fingerprints\n\n- Todos os fingerprints usam SHA-256 e hexadecimal minúsculo de 64 caracteres.\n- MetadataFingerprint: SHA-256 dos bytes UTF-8 do objeto `metadata` serializado segundo JSON Canonicalization Scheme (RFC 8785). Excluir datas de recolha, timestamps voláteis, caminhos temporários e dados de execução que não descrevam o objeto. A política de inclusão de cada campo pertence ao contrato da respetiva categoria.\n- DefinitionFingerprint: SHA-256 dos bytes exatos da definição original, sem normalização de espaços, encoding ou quebras de linha. O encoding e o formato devem ser identificados pelo artefacto.\n- Se uma definição for composta por vários artefactos, calcular um digest composto a partir da lista ordenada ordinalmente de `artifactId + LF + sha256 + LF`, em UTF-8, e aplicar SHA-256 ao resultado.\n- Não calcular DefinitionFingerprint para estados `Empty`, `Unavailable` ou `NotCollected`. A ausência de fingerprint nesses estados não equivale a hash vazio.
 
 ### 4.3 Associação à instalação
 
@@ -421,12 +421,12 @@ Não recolher dados operacionais dos clientes (faturação, clientes, documentos
 
 ### 9.3 Relações
 
-O perfil de relações preserva factos e interpretações em ficheiros distintos:
+O perfil de relações preserva factos e interpretações em duas coleções lógicas dentro de um único ficheiro físico:
 
-- `payload/relations/declared-relations.json`: registos declarados PHC provenientes de REL e DTL, mantendo `sourceType`, `sourceRecordId`, tabelas de origem/destino, expressão original, metadados de auditoria, estado de resolução e correspondência;
-- `payload/relations/declared-relation-interpretations.json`: interpretações associadas por `relationId`, incluindo versão do parser, estado, confiança, AST, diagnósticos e métricas de referências.
+- `payload/relations/declared-relations.json`: coleção `declaredRelations`, com factos PHC provenientes de REL e DTL, mantendo `sourceObjectId`, `sourceType`, `sourceStamp`, tabelas de origem/destino, expressão original, resolução dos extremos, correspondência e `interpretationIds`;
+- coleção `interpretations`: interpretações associadas por `sourceObjectId`, incluindo `interpretationId`, `parserId`, `parserVersion`, estado, confiança, AST, diagnósticos e métricas de referências.
 
-Cada ficheiro usa um envelope com `schemaVersion`, `captureId` e `records`. O primeiro é incluído quando existem factos REL/DTL ou quando a cobertura declara que a operação foi recolhida, mesmo que o resultado seja uma lista vazia. O segundo só é incluído quando existem interpretações persistidas. Os artefactos são declarados no manifesto e cobertos por checksums como qualquer outro payload.
+O envelope emitido pelo Scanner contém `schemaVersion`, `captureId`, `declaredRelations` e `interpretations`. Não existe no exportador atual um segundo ficheiro `declared-relation-interpretations.json`, nem um envelope comum `records`. A separação entre factos e interpretações é lógica e de domínio, não exige ficheiros físicos distintos. O ficheiro é declarado no manifesto e coberto por checksums como qualquer outro payload.
 
 A cobertura REL/DTL deve corresponder ao número de factos persistidos por `sourceType`; divergências entre `observedCount` e os registos do workspace bloqueiam a exportação, em vez de produzirem um pacote aparentemente completo.
 
@@ -542,18 +542,18 @@ A confirmação de remoção em capturas completas sucessivas pode ser introduzi
 
 ## 14. Estado real e lacunas Scanner ↔ IKP
 
-**Estado confirmado no código atual:** o Scanner já contém um exportador IKP 0.1 dedicado (IkpPackageExporter), integrado na CLI através dos comandos scan-ikp e export-ikp. O exportador produz os cinco ficheiros de contrato obrigatórios, calcula checksums por ficheiro e digest lógico, inclui os artefactos referenciados, diagnósticos e factos REL/DTL com interpretações separadas. Existem testes automatizados específicos do exportador.
+**Estado confirmado em 2026-11-17:** o Scanner contém o exportador IKP 0.1 e os comandos CLI scan-ikp e export-ikp. A captura real CSDefault202603 foi examinada: 16.618 objetos; 8.307 SourceIdentity; 16.581 MetadataFingerprint; 49 definições associadas; 921 factos REL/DTL e 921 interpretações. O ZIP real foi inspecionado e a estrutura combinada REL/DTL foi confirmada.
 
-Isto confirma a existência da implementação do emissor, mas **não confirma ainda uma validação end-to-end com uma captura real completa** nem a integração funcional com a plataforma central.
+O núcleo PhcKnowledge.Import já implementa IkpPackageValidator, IkpPackageIngestionService, FileSystemImmutablePackageStore e SqlServerPackageReceiptRepository, com migration e testes P1–N1. Estes testes usam workspace sintético e não demonstram SQL Server real, API HTTP/autenticação ou materialização do Knowledge.
 
 Lacunas e validações restantes:
 - executar build e testes atuais do monorepo e confirmar o resultado CI mais recente;
-- validar um pacote produzido a partir de uma captura real do Scanner, começando pela base PHC default já disponível como referência;
-- confirmar o ZIP real com o validador independente e schemas IKP 0.1;
+- alargar a validação real aos kinds ausentes na captura atual e a novas capturas;
+- manter schemas/fixtures alinhados com o payload REL/DTL efetivamente emitido;
 - confirmar que os perfis de schema e customizations estão efetivamente incluídos, para além do índice, artefactos referenciados, diagnósticos e REL/DTL;
 - rever a política de exportação de workspaces antigos sem ScanManifest completo; os valores desconhecidos devem continuar explícitos e nunca inferidos;
 - validar os limites de segurança do ZIP e a coerência entre manifesto, checksums, capabilities, coverage, object-index e payload;
-- implementar no PHC Knowledge a receção, validação, arquivo imutável e registo da importação;
+- testar a persistência do receipt contra SQL Server real e definir reconciliação/retry para arquivo sem receipt;
 - a associação de instalação, materialização de observações, comparação e publicação permanecem responsabilidades futuras da plataforma.
 
 A matriz de compatibilidade deve descrever o código atual e as lacunas remanescentes, não repetir o estado histórico anterior à implementação do exportador.
@@ -563,7 +563,8 @@ A matriz de compatibilidade deve descrever o código atual e as lacunas remanesc
 | Tema | Decisão |
 |---|---|
 | Emissor | Scanner produz IKP nativamente; plataforma valida/importa |
-| PackageId | Gerado pelo Scanner por pacote |
+| PackageId | Gerado pelo Scanner por pacote; identidade global no modelo de destino |
+| Package / Receipt | Package global; PackageReceipt por Organization; a migration atual ainda tem unicidade por Organization |
 | CaptureId | Gerado pelo Scanner no início da recolha |
 | Manifestos | Um manifesto IKP na raiz; manifesto original do Schema Snapshot preservado em payload/schema/source-manifest.json |
 | Extensibilidade | Categorias/payloads opcionais com regras comuns de extensão |
@@ -583,9 +584,9 @@ A matriz de compatibilidade deve descrever o código atual e as lacunas remanesc
 3. ~~Criar schemas JSON executáveis para os cinco ficheiros de contrato.~~ **Concluído:** JSON Schema Draft 2020-12 em [schemas/ikp-0.1](schemas/ikp-0.1/README.md).
 4. ~~Criar catálogo de casos negativos e de fronteira e validador executável.~~ **Concluído:** [casos negativos](fixtures/ikp-0.1/negative-cases/cases.json) e [validador/testes Python](../../tools/ikp-validation/README.md). Os 18 cenários positivos/negativos foram executados localmente (18/18 PASS); o workflow CI está preparado para repetição automática, sem resultado CI confirmado nesta revisão.
 5. Executar e estabilizar a validação CI; depois definir exemplos de compatibilidade de capabilities entre versões e fechar os casos de linhagem.
-6. **PHC Knowledge:** implementar receção, validação de segurança/integridade e arquivo imutável de pacotes IKP, com testes de aceitação. A associação à instalação e a publicação ficam fora desta primeira fatia.
+6. ~~PHC Knowledge: primeira fatia Receive / Validate / Archive.~~ **Implementada no núcleo Import**; faltam testes SQL Server real, API/autenticação e reconciliação do arquivo com receipt.
 
-O emissor IKP já está implementado no Scanner. O próximo resultado de produto é Receive / Validate / Archive na plataforma central, conforme a matriz de compatibilidade. Antes disso, validar um ZIP produzido pelo exportador a partir da captura PHC default real com o validador independente. A associação à instalação, materialização de observações, comparação e publicação permanecem fora da primeira fatia.
+O emissor IKP está implementado no Scanner e o serviço Receive / Validate / Archive já existe em PhcKnowledge.Import. A captura real confirmou o payload combinado REL/DTL e a dimensão observada de SourceObjectId. O próximo passo é robustecer a persistência/reconciliação e desenhar HTTP/autenticação. Associação à instalação, materialização de observações, comparação e publicação permanecem fora desta fatia.
 
 ## Referências
 
@@ -599,3 +600,10 @@ O emissor IKP já está implementado no Scanner. O próximo resultado de produto
 - [Avaliação tecnológica e contrato de importação](technology-and-import-contract-assessment.md)
 - [Orientações do projeto](../../PROJECT_GUIDELINES.md)
 - Código canónico do Scanner: [`PhcKnowledgeScanner/`](../../PhcKnowledgeScanner/), neste monorepo.
+
+
+## Nota de alinhamento do contrato — 2026-11-17
+
+A especificação descreve a identidade lógica do pacote, não o schema físico atual do Knowledge. O modelo de destino separa Package global de PackageReceipt por Organization. O arquivo é content-addressed global por SHA-256; o receipt é organizacional. O mesmo SHA-256 implica os mesmos bytes e, num pacote IKP válido, o mesmo PackageId do manifesto. A migration atual não foi alterada e ainda impõe unicidade no âmbito da Organization.
+
+Na captura real examinada, SourceObjectId teve máximo de 54 caracteres (16.618 registos; zero duplicados ordinais, espaços nas extremidades ou valores não-ASCII). O modelo de destino propõe NVARCHAR(256), unicidade por CaptureId e comparação ordinal, com validação de vazio e espaços nas extremidades. Esta proposta não é ainda uma coluna/migration implementada.
