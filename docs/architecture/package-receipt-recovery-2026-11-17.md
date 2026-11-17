@@ -1,6 +1,6 @@
 # Protocolo de recuperação de PackageReceipt
 
-> Estado: especificação técnica para a evolução do Import. Esta fase não cria ainda um endpoint HTTP nem um processo hospedado: o repositório actual contém uma biblioteca Import, sem host ASP.NET Core/Worker onde registar o serviço de recuperação.
+> Estado: protocolo implementado parcialmente na branch `feat/package-receipt-recovery`. Não existe ainda endpoint HTTP nem host ASP.NET Core/Worker; os serviços de recuperação e limpeza são invocáveis, mas têm de ser agendados pelo host do produto.
 
 ## Objectivo
 
@@ -26,7 +26,7 @@ Não é necessário estado `Archived`: o worker verifica a existência, tamanho 
 ## Lease e concorrência
 
 - Reclamação atómica no SQL Server; apenas uma lease válida por tentativa.
-- Duração inicial: 5 minutos; renovação aproximadamente a cada minuto enquanto o processamento estiver activo.
+- Duração inicial: 5 minutos; o processador renova a lease a cada minuto durante o arquivo/verificação e volta a confirmar a lease antes da transacção final.
 - Cada reclamação usa `LeaseToken` novo. Todas as actualizações de progresso/conclusão verificam AttemptId + LeaseToken e lease ainda válida.
 - Lease expirada pode ser reclamada por outra instância.
 - O processamento é idempotente: o arquivo content-addressed e o receipt são verificados antes de criar novos registos.
@@ -37,7 +37,7 @@ Não é necessário estado `Archived`: o worker verifica a existência, tamanho 
 - Após uma hora pendente: emitir alerta operacional, mas continuar a tentar automaticamente.
 - Corrupção, hash divergente, metadados inconsistentes ou colisão PackageId/conteúdo: `NeedsAttention`.
 - Tentativas pendentes não expiram automaticamente.
-- Ficheiros de staging sem tentativa SQL associada podem ser eliminados após 24 horas. Nunca aplicar esta regra a staging referenciado por tentativa pendente.
+- Ficheiros de staging sem tentativa SQL associada podem ser eliminados após 24 horas. `PackageStagingCleanupService` consulta as tentativas pendentes e protege os respectivos `StagingKey`; a invocação periódica depende do host.
 - Se o staging desaparecer mas o arquivo válido existir, concluir usando metadados validados persistidos.
 - Se ambos desaparecerem, marcar `NeedsAttention`; será necessário novo envio.
 - O ZIP original arquivado mantém-se imutável e permanente, conforme a política já aprovada.
@@ -46,7 +46,7 @@ Não é necessário estado `Archived`: o worker verifica a existência, tamanho 
 
 A tabela `PackageReceiptAttempts` contém:
 - identidade e tenancy: AttemptId, OrganizationId, PackageId, CaptureId;
-- contrato validado: ContractVersion, ProducerProductId, ProducerProductVersion, OriginDatabaseName e ValidationSummaryJson;
+- contrato validado: ContractVersion, ProducerProductId, ProducerProductVersion, OriginDatabaseName, ValidationSummaryJson e ValidationJson (serialização completa do resultado validado);
 - integridade/arquivo: ZipSha256, ZipByteLength, StorageKey;
 - staging: StagingKey relativo, nunca caminho absoluto;
 - controlo: Status, AttemptCount, NextAttemptAtUtc, LeaseToken, LeaseUntilUtc;
@@ -54,12 +54,22 @@ A tabela `PackageReceiptAttempts` contém:
 
 Os índices únicos por OrganizationId + PackageId e OrganizationId + ZipSha256 impedem tentativas concorrentes duplicadas dentro da mesma organização, mantendo alinhamento com as constraints actuais do receipt. A política global Package/Receipt multi-organização continua a ser uma evolução separada do modelo 0.2 e não é alterada por esta migration.
 
+## Implementação na branch
+
+- `SqlServerPackageReceiptAttemptRepository`: criação/reutilização idempotente, claim por ID ou lote, lease, retry, NeedsAttention e conclusão transaccional de receipt + tentativa.
+- `PackageReceiptRecoveryService`: recuperação imediata e processamento de tentativas vencidas; valida o staging path e confirma o arquivo por hash quando o staging já não existe.
+- `FileSystemImmutablePackageStore`: fornece a chave content-addressed determinística e verifica objectos arquivados sem os alterar.
+- `IkpPackageIngestionService`: quando recebe o repositório de tentativas, regista a tentativa antes do arquivo e preserva o staging quando a recepção fica pendente. O caminho legado permanece disponível por compatibilidade e não deve ser usado no percurso de produto após a configuração do novo repositório.
+- `PackageStagingCleanupService`: remove apenas ficheiros antigos sem referência a tentativas pendentes.
+- Testes unitários cobrem os principais caminhos do processador e a protecção do staging.
+
 ## Limites de responsabilidade
 
 - `PackageReceiptAttempt` não substitui `PackageReceipt`.
 - Não introduzir Event Sourcing, Outbox genérico, materialização de Observations ou associação a Installation/Environment.
 - A recuperação deve ser um serviço do Import, invocado por um BackgroundService no futuro host. Este repositório ainda não tem esse host.
-- A recepção sem `IPackageReceiptRepository` mantém-se como modo de validação/arquivo isolado para harnesses; o fluxo de produto com persistência exige OrganizationId.
+- O percurso de produto deve configurar `SqlServerPackageReceiptAttemptRepository` e `IPackageReceiptRepository`; sem o repositório de tentativas, permanece o caminho legado arquivo→receipt, que não fecha a janela de falha.
+- A migration e o locking/atomicidade ainda precisam de execução contra SQL Server real. A pipeline .NET valida build e testes unitários, não substitui essa validação.
 
 ## Critérios de aceitação
 
