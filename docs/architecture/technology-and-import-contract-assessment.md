@@ -451,11 +451,11 @@ Sem DDL nesta fase.
 - IKP a partir do Database Schema Snapshot (não ZIP V1; não união ingénua dos exports).  
 - Associação guiada de instalações; IDs próprios; servidor/BD ≠ identidade definitiva.  
 - Abstração de package store (FS + object storage); pacotes imutáveis.  
-- Sequência de trabalho da §10: stack/contrato/Scanner concluídos; validação end-to-end e primeira fatia do Knowledge pendentes.
+- Sequência de trabalho da §10: stack/contrato/Scanner concluídos; primeira fatia Import implementada; validação independente end-to-end do ZIP real ainda pendente.
 
 ### Ainda pendente
 
-1. **Validação end-to-end do IKP real:** gerar ZIP a partir da captura PHC default existente e validar com schemas e validador independente.  
+1. **Validação end-to-end do IKP real:** executar o validador independente sobre o ZIP completo da captura PHC default já disponível; a inspeção dos conteúdos e a medição do Object Index/REL-DTL não substituem esse teste.  
 2. **Fornecedor concreto de object storage** (quando não bastar filesystem no servidor).  
 3. Detalhe de autenticação on-prem (contas locais vs AD/OIDC) — não bloqueia a primeira fatia.  
 4. Versão concreta do SQL Server Express e validação de capacidade/limites.  
@@ -496,7 +496,7 @@ A implementação começa por uma fatia pequena e verificável. Receber/arquivar
 
 | Item | Nota |
 | --- | --- |
-| IKP real | Object Index já validado com captura real (8/21 kinds); falta validar o ZIP completo produzido pelo exportador com o validador independente |
+| IKP real | Captura real e conteúdo do ZIP examinados (8/21 kinds); falta executar o validador independente sobre o ZIP completo e validar o fluxo end-to-end |
 | Ingestão Knowledge | Serviço de validação/arquivo/receipt implementado; endpoint HTTP e autenticação não demonstrados |
 | Associação/publicação | Pertencem a etapas posteriores; não entram na primeira fatia |
 | Comparação | Não implementar remoções sem cobertura compatível e completa |
