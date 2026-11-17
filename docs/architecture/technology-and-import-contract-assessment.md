@@ -3,10 +3,10 @@
 | Campo | Valor |
 | --- | --- |
 | Data inicial | 2026-11-06 |
-| Última consolidação | 2026-11-10 (SQL Server Express central + SignalR) |
-| Estado | Stack e contrato IKP 0.1 consolidados; exportador implementado no Scanner; plataforma central ainda por implementar |
+| Última consolidação | 2026-11-17 (baseline Import e modelo de domínio 0.2) |
+| Estado | Stack e IKP 0.1 consolidados; primeira fatia Receive / Validate / Archive implementada; API e materialização ainda futuras |
 | Âmbito | Stack da plataforma PHC Knowledge + bases do contrato de importação do Scanner independente |
-| Implementação | Scanner e exportador IKP implementados; nenhuma implementação da plataforma central nesta etapa |
+| Implementação | Scanner/exportador IKP e primeira fatia PhcKnowledge.Import implementados; Core/API/materialização não implementados |
 
 Legenda:
 
@@ -36,7 +36,7 @@ Legenda:
 
 **Modelo de utilização** `[acordado]`: instalação **centralizada** num servidor da organização; clientes (browser / desktop WebView2) ligam ao mesmo backend e SQL Server Express; sem modo autónomo offline e sem sincronização entre bases locais — ver §5.
 
-**Sequência atual (2026-11-10)**: (1) stack e utilização centralizada — concluídas; (2) contratos P1 e IKP 0.1 — definidos e aplicados no Scanner; (3) exportador IKP — implementado; (4) validação end-to-end do ZIP real — pendente; (5) Receive / Validate / Archive no Knowledge — próxima implementação aprovada.
+**Sequência atual (2026-11-17)**: (1) stack e utilização centralizada — concluídas; (2) P1/IKP 0.1 e exportador — implementados; (3) captura real e formato REL/DTL — verificados; (4) Receive / Validate / Archive — primeira fatia implementada em PhcKnowledge.Import; (5) SQL Server real, API/autenticação e reconciliação — próximos bloqueios.
 
 Fontes: este repositório (`product-boundaries.md`, `knowledge-layers.md`, `extract-2026-11-conversation.md`, `PROJECT_GUIDELINES.md`); Scanner incluído; investigação [`2026-11-05.md`](https://github.com/Jhouinho/ConsoleApp/blob/master/docs/investigation/2026-11-05.md) no GitHub `master`.
 
@@ -419,7 +419,7 @@ Sem DDL nesta fase.
 | Comparação schema coverage-aware (`NotObserved`) | **Parcial** — compara, mas Remove sem coverage | `DatabaseSchemaSnapshotComparer` |
 | ZIP scan com manifesto mínimo | **Parcial** — exporta, contrato insuficiente | `ZipScanExporter` |
 | Pacote unificado IKP (schema+custom+relations+coverage) | **Implementado no Scanner** | `IkpPackageExporter`; testes automatizados; falta validação end-to-end com captura real |
-| Ingestão Receive/Validate/Archive | **Ainda não existe no PHC Knowledge** | Implementação nova; não copiar pipeline histórico sem validação |
+| Ingestão Receive/Validate/Archive | **Implementada parcialmente no núcleo Import** | Serviço, validator, arquivo imutável e receipt SQL existem; falta SQL Server real, API/autenticação e reconciliação de arquivo órfão |
 | Candidate / Activation | **Existe como desenho/histórico** | Phase 7.12 |
 | EntityIdentity scoped | **Existe no ConsoleApp** — adaptar conceitos | `EntityIdentityPolicy` |
 | Discovery → Fusion → Store live | **Não reutilizar como arquitetura operacional** | ADR-0049; guidelines |
@@ -473,10 +473,11 @@ Sem DDL nesta fase.
 
 1. ~~Consolidar stack/fronteiras e modelo de utilização.~~ **Concluído.**
 2. ~~Consolidar contrato IKP 0.1, schemas, fixtures e validador.~~ **Concluído.**
-3. ~~Implementar no Scanner a captura, capabilities, coverage, Object Index e exportador IKP.~~ **Implementado no código; falta validação end-to-end com captura PHC real.**
-4. **Implementar a primeira fatia da plataforma:** receção HTTP, validação estrutural e de segurança, integridade e arquivo imutável do ZIP IKP, com registo no SQL Server Express.
-5. Validar a primeira fatia com pacotes válidos e negativos e, depois, com o pacote produzido pela captura PHC default existente.
-6. Só numa etapa posterior: associação guiada à instalação, materialização de observações, comparação multi-captura e publicação.
+3. ~~Implementar no Scanner a captura, capabilities, coverage, Object Index e exportador IKP.~~ **Implementado; captura real e pacote de referência examinados.**
+4. ~~Implementar Receive / Validate / Archive como serviço.~~ **Implementado na primeira fatia:** validator, ingestion service, arquivo imutável e receipt SQL; testes P1–N1 com workspace sintético.
+5. **Fechar a robustez da primeira fatia:** testar SQL Server real; definir reconciliação/retry para arquivo sem receipt; completar testes de idempotência/conflitos globais.
+6. **Desenhar e implementar a fronteira HTTP/autenticação**, garantindo que OrganizationId deriva do contexto autenticado e não de input livre.
+7. Só numa etapa posterior: associação guiada a Installation/Environment, materialização de observações, comparação multi-captura e publicação.
 
 A implementação começa por uma fatia pequena e verificável. Receber/arquivar um pacote não equivale a publicar conhecimento.
 
@@ -489,20 +490,20 @@ A implementação começa por uma fatia pequena e verificável. Receber/arquivar
 - Stack, fronteiras e utilização centralizada **acordados**.
 - SQL Server Express escolhido para a base central; versão concreta e dimensionamento ainda por fechar.
 - Scanner já contém exportador IKP 0.1 e integração na CLI.
-- Plataforma central ainda não tem projetos em src/ nem testes próprios.
+- PhcKnowledge.Import já existe em src/, com testes unitários e de integração P1–N1; API e restantes áreas da plataforma continuam por construir.
 
 ### Lacunas / validações
 
 | Item | Nota |
 | --- | --- |
 | IKP real | Object Index já validado com captura real (8/21 kinds); falta validar o ZIP completo produzido pelo exportador com o validador independente |
-| Ingestão Knowledge | Ainda não existe endpoint, validação de ZIP, arquivo imutável ou registo SQL |
+| Ingestão Knowledge | Serviço de validação/arquivo/receipt implementado; endpoint HTTP e autenticação não demonstrados |
 | Associação/publicação | Pertencem a etapas posteriores; não entram na primeira fatia |
 | Comparação | Não implementar remoções sem cobertura compatível e completa |
 
 ### Próximo passo recomendado
 
-Implementar Receive / Validate / Archive na plataforma central, com testes de segurança, integridade e idempotência.
+Testar a persistência contra SQL Server real e fechar o protocolo de reconciliação/retry entre arquivo imutável e receipt SQL; depois desenhar endpoint HTTP/autenticação.
 
 
 ### Nota técnica sobre SQL Server Express (validação documental — 2026-11-10)
@@ -530,3 +531,18 @@ Decisões em vigor:
 - **Capacidade da edição Express:** validar limites de tamanho da base de dados, CPU/memória e funcionalidades face ao volume e concorrência esperados. A escolha da edição está fechada; a validação de adequação operacional continua pendente.
 
 A arquitetura centralizada, a API ASP.NET Core, React + TypeScript, o cliente Windows via WebView2 e a fronteira funcional entre Scanner e Knowledge mantêm-se inalterados.
+
+
+## 13. Consolidação do modelo de domínio 0.2 — 2026-11-17
+
+As decisões de domínio, o estado da implementação e as limitações da primeira fatia estão consolidados em [Modelo de domínio 0.2](knowledge-domain-model-0.2.md) e no [relatório de fase](phase-report-ingestion-contract-2026-11-17.md).
+
+Decisões fechadas nesta revisão:
+- Package é identidade global; PackageReceipt representa a recepção por Organization.
+- O ZIP é imutável e permanente; arquivo content-addressed global por SHA-256.
+- Mesmo SHA-256 significa mesmos bytes e, num IKP válido, o mesmo PackageId do manifesto.
+- Um CaptureId pode originar vários PackageIds.
+- REL/DTL usa um ficheiro físico com duas coleções lógicas, mantendo factos e interpretações separados.
+- SourceObjectId: destino NVARCHAR(256), unicidade por CaptureId e comparação ordinal; validar vazio e espaços nas extremidades.
+
+A migration atual mantém as constraints por Organization e não é alterada nesta fase. O modelo Package global é destino, não implementação já existente.
