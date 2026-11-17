@@ -208,7 +208,7 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
         const string sql = """
             SELECT StagingKey
             FROM dbo.PackageReceiptAttempts
-            WHERE Status = 'PendingArchive';
+            WHERE Status IN ('PendingArchive', 'NeedsAttention');
             """;
         var keys = new HashSet<string>(StringComparer.Ordinal);
         await using var connection = new SqlConnection(_connectionString);
