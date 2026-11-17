@@ -21,7 +21,7 @@ Responsabilidades:
 
 - **Scanner:** recolhe factos e definições técnicas, identifica objetos na origem, declara capacidades e cobertura, preserva artefactos originais e produz o IKP.
 - **IKP:** transporta uma captura imutável, com identidade de captura, capacidades, cobertura, índice de objetos, artefactos, integridade e proveniência.
-- **PHC Knowledge:** associa o pacote a uma instalação, valida e importa, mantém entidades e histórico, calcula/compara observações, gere correspondências de identidade e linhagem.
+- **PHC Knowledge:** recebe e valida o pacote, mantém o arquivo e os registos de receção, associa a Capture a contexto técnico quando confirmado, materializa Observations, mantém entidades e histórico, calcula/compara observações e gere correspondências de identidade e linhagem.
 
 O PHC Knowledge não executa o Scanner em runtime. O Scanner não depende do PHC Knowledge nem dos seus identificadores internos.
 
@@ -131,10 +131,11 @@ O IKP 0.1 não transporta OrganizationId, InstallationId, EnvironmentId nem Data
 |---|---|---|
 | PackageId | Scanner | Identifica o pacote físico; novo por cada pacote produzido |
 | CaptureId | Scanner | Identifica uma recolha; pode originar vários pacotes |
-| InstallationId | PHC Knowledge | Atribuído/confirmado na importação; nunca incluído como ID autoritativo no IKP |
+| OrganizationId / InstallationId / EnvironmentId / DatabaseLocationId | PHC Knowledge | Identificadores internos de contexto; nunca incluídos no IKP |
 | SourceObjectId | Scanner | Identificador do objeto na captura, referenciável dentro do pacote |
 | SourceIdentity | Origem PHC/SQL | Identificadores nativos e respetivo âmbito |
 | EntityIdentity | PHC Knowledge | Identidade lógica da entidade no âmbito da instalação |
+| PackageReceiptId | PHC Knowledge | Identifica uma receção física; não é transportado no IKP |
 | ObservationId | PHC Knowledge | Identificador interno próprio da Observation; não é transportado no IKP |
 | MetadataFingerprint | Scanner/plataforma | Fingerprint dos metadados relevantes |
 | DefinitionFingerprint | Scanner/plataforma | Fingerprint da definição técnica original |
