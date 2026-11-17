@@ -2,7 +2,8 @@
 
 | Campo | Valor |
 |---|---|
-| Data | 2026-11-06 |
+| Data original | 2026-11-06 |
+| Revisão de estado | 2026-11-17 |
 | Estado | **Documento de contexto arquitetural; semântica detalhada consolidada em P1** |
 | Âmbito | Scanner independente, IKP e PHC Knowledge |
 | Implementação | Documento conceptual de 2026-11-06; Scanner e exportador IKP evoluíram posteriormente |
@@ -221,3 +222,12 @@ Estes pontos devem ser resolvidos agrupados na revisão do contrato e nos exempl
 ## Estado atual — 2026-11-10
 
 A especificação IKP 0.1 e os contratos P1 são as referências atuais. O Scanner já implementa capabilities, coverage, Object Index e exportador IKP. A projeção do Object Index foi validada com uma captura PHC real; a validação end-to-end do ZIP do exportador com essa captura continua pendente. O PHC Knowledge ainda não tem API nem armazenamento central implementados. A primeira fatia é receção, validação e arquivo imutável do pacote, sem associação ou publicação.
+
+
+## Estado e decisões de destino — 2026-11-17
+
+O modelo global de domínio 0.2, incluindo Core, Package/PackageReceipt, Observation, identidade e estados por Environment, está consolidado em [knowledge-domain-model-0.2.md](knowledge-domain-model-0.2.md). Esse documento distingue explicitamente destino conceptual de implementação física.
+
+A captura real CSDefault202603 confirmou 16.618 SourceObjectIds, máximo de 54 caracteres, sem duplicados ordinais, espaços nas extremidades ou caracteres não-ASCII. A proposta de destino é NVARCHAR(256), unicidade por CaptureId e comparação ordinal, com validação explícita de vazio e espaços nas extremidades.
+
+A receção atual não materializa ainda Observations nem resolve EntityIdentity. O serviço Import valida, arquiva e regista PackageReceipt; contexto e identidade permanecem fases posteriores.
