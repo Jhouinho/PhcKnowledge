@@ -28,6 +28,9 @@ public interface IPackageReceiptAttemptRepository
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
+        CancellationToken cancellationToken = default);
+
     Task<bool> RenewLeaseAsync(
         Guid attemptId,
         Guid leaseToken,
