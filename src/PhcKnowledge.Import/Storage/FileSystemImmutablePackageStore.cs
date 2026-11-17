@@ -116,7 +116,7 @@ public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore, IR
     {
         var (hash, length) = await HashFileAsync(path, cancellationToken);
         if (length != expectedLength || !string.Equals(hash, expectedHash, StringComparison.Ordinal))
-            throw new IOException("Colisão ou corrupção no arquivo content-addressed; o ficheiro existente não foi substituído.");
+            throw new InvalidDataException("Colisão ou corrupção no arquivo content-addressed; o ficheiro existente não foi substituído.");
     }
 
     private static async Task<(string Hash, long Length)> HashFileAsync(
