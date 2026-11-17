@@ -38,14 +38,9 @@ public sealed class PackageReceiptRecoveryService
 
         var claimed = await _attempts.ClaimDueAsync(
             batchSize, _leaseDuration, DateTimeOffset.UtcNow, cancellationToken);
-        var completed = 0;
-        foreach (var lease in claimed)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (await ProcessLeaseAsync(lease, cancellationToken) is not null)
-                completed++;
-        }
-        return completed;
+        var results = await Task.WhenAll(
+            claimed.Select(lease => ProcessLeaseAsync(lease, cancellationToken)));
+        return results.Count(result => result is not null);
     }
 
     /// <summary>
@@ -66,9 +61,10 @@ public sealed class PackageReceiptRecoveryService
         CancellationToken cancellationToken)
     {
         var attempt = lease.Attempt;
-        var stagingPath = ResolveStagingPath(attempt.StagingKey);
+        string stagingPath;
         try
         {
+            stagingPath = ResolveStagingPath(attempt.StagingKey);
             ArchivedPackage archive;
             if (File.Exists(stagingPath))
             {
