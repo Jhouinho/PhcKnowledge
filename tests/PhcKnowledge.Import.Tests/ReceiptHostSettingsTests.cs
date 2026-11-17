@@ -56,7 +56,7 @@ public sealed class ReceiptHostSettingsTests
         Assert.Throws<InvalidOperationException>(() =>
             ReceiptHostSettings.Load(Configuration(
                 archive: root,
-                staging: Path.Combine(root, "staging")));
+                staging: Path.Combine(root, "staging"))));
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public sealed class ReceiptHostSettingsTests
         Assert.Throws<InvalidOperationException>(() =>
             ReceiptHostSettings.Load(Configuration(
                 archive: root,
-                staging: Path.Combine(Path.GetTempPath(), "phc-knowledge-tests", "staging")));
+                staging: Path.Combine(Path.GetTempPath(), "phc-knowledge-tests", "staging"))));
     }
 
     [Theory]
