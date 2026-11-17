@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using PhcKnowledge.Import.Ikp;
 using PhcKnowledge.Import.Receipts;
+using PhcKnowledge.Import.Storage;
 
 namespace PhcKnowledge.Import.Tests;
 
