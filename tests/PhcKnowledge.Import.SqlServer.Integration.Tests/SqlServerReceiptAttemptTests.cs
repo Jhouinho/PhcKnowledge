@@ -27,6 +27,47 @@ public sealed class SqlServerReceiptAttemptTests
         return value;
     }
 
+    private static async Task EnsureDatabaseAsync(string connectionString)
+    {
+        var builder = new SqlConnectionStringBuilder(connectionString);
+        var databaseName = builder.InitialCatalog;
+        builder.InitialCatalog = "master";
+
+        SqlConnection? connection = null;
+        for (var attempt = 0; attempt < 60; attempt++)
+        {
+            try
+            {
+                connection = new SqlConnection(builder.ConnectionString);
+                await connection.OpenAsync();
+                break;
+            }
+            catch (SqlException) when (attempt < 59)
+            {
+                if (connection is not null)
+                    await connection.DisposeAsync();
+                connection = null;
+                await Task.Delay(TimeSpan.FromSeconds(2));
+            }
+        }
+
+        if (connection is null)
+            throw new InvalidOperationException("Não foi possível estabelecer ligação ao SQL Server após 120 segundos.");
+
+        await using (connection)
+        await using (var command = new SqlCommand("""
+            IF DB_ID(@DatabaseName) IS NULL
+            BEGIN
+                DECLARE @sql nvarchar(max) = N'CREATE DATABASE ' + QUOTENAME(@DatabaseName);
+                EXEC sys.sp_executesql @sql;
+            END;
+            """, connection))
+        {
+            command.Parameters.AddWithValue("@DatabaseName", databaseName);
+            await command.ExecuteNonQueryAsync();
+        }
+    }
+
     private static async Task EnsureSchemaAsync(string connectionString)
     {
         await using var connection = new SqlConnection(connectionString);
@@ -67,6 +108,7 @@ public sealed class SqlServerReceiptAttemptTests
     private async Task<string> SetupAsync()
     {
         var connectionString = RequireConnectionString();
+        await EnsureDatabaseAsync(connectionString);
         await EnsureSchemaAsync(connectionString);
         return connectionString;
     }
