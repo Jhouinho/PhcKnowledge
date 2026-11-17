@@ -72,7 +72,6 @@ public sealed class IkpPackageValidatorTests
     {
         var root = Path.Combine(Path.GetTempPath(), $"phc-knowledge-receipt-{Guid.NewGuid():N}");
         var organizationId = Guid.NewGuid();
-        var repository = new RecordingReceiptRepository();
         try
         {
             var validator = new IkpPackageValidator(SchemaDirectory);
@@ -80,7 +79,7 @@ public sealed class IkpPackageValidatorTests
             var attemptRepository = new RecordingIngestionAttemptRepository();
             var ingestion = new IkpPackageIngestionService(
                 validator, store, Path.Combine(root, "staging"),
-                receiptRepository: repository, attemptRepository: attemptRepository);
+                attemptRepository: attemptRepository);
 
             await using var package = CreateFixtureZip();
             var result = await ingestion.ReceiveValidateArchiveAsync(package, organizationId);
