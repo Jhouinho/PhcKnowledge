@@ -89,7 +89,7 @@ public sealed class IkpPackageValidatorTests
             Assert.Equal(organizationId, result.Receipt.OrganizationId);
             Assert.Equal(result.Validation.PackageId, result.Receipt.PackageId);
             Assert.Equal(result.Archive.StorageKey, result.Receipt.StorageKey);
-            Assert.Equal(organizationId, repository.OrganizationId);
+            Assert.Equal(organizationId, attemptRepository.OrganizationId);
             Assert.Equal(1, attemptRepository.CreateCalls);
         }
         finally
@@ -148,6 +148,7 @@ public sealed class IkpPackageValidatorTests
         private PackageReceiptAttempt? _attempt;
         private Guid? _leaseToken;
         public int CreateCalls { get; private set; }
+        public Guid? OrganizationId => _attempt?.OrganizationId;
 
         public Task<PackageReceiptAttemptRegistration> CreateOrGetPendingAsync(
             Guid organizationId, IkpPackageValidationResult validation, string storageKey,
@@ -178,11 +179,18 @@ public sealed class IkpPackageValidatorTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<PackageReceiptAttemptLease>>(Array.Empty<PackageReceiptAttemptLease>());
 
+        public Task<PackageReceipt?> GetCompletedReceiptAsync(
+            Guid attemptId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<PackageReceipt?>(null);
+
         public Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
             CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlySet<string>>(new HashSet<string>(
-                _attempt is { Status: "PendingArchive" or "NeedsAttention" }
-                    ? [_attempt.StagingKey] : Array.Empty<string>(), StringComparer.Ordinal));
+        {
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+            if (_attempt is { Status: "PendingArchive" or "NeedsAttention" })
+                keys.Add(_attempt.StagingKey);
+            return Task.FromResult<IReadOnlySet<string>>(keys);
+        }
 
         public Task<bool> RenewLeaseAsync(Guid attemptId, Guid leaseToken,
             DateTimeOffset leaseUntilUtc, CancellationToken cancellationToken = default)
