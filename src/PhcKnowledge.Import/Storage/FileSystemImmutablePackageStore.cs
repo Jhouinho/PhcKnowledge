@@ -96,6 +96,9 @@ public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore, IR
         if (expectedSha256.Length != 64 || expectedSha256.Any(c => !Uri.IsHexDigit(c)) ||
             expectedSha256 != expectedSha256.ToLowerInvariant() || expectedByteLength <= 0)
             throw new ArgumentException("Integridade esperada inválida.");
+        var expectedStorageKey = $"sha256/{expectedSha256[..2]}/{expectedSha256}.ikp.zip";
+        if (!string.Equals(storageKey, expectedStorageKey, StringComparison.Ordinal))
+            throw new ArgumentException("StorageKey não corresponde ao SHA-256 esperado.", nameof(storageKey));
 
         var path = Path.GetFullPath(Path.Combine(
             _root, storageKey.Replace('/', Path.DirectorySeparatorChar)));
