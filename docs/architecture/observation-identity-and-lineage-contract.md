@@ -73,25 +73,69 @@ A evolução da capacidade de recolha não pode ser interpretada como alteraçã
 
 ## 4. Identidade lógica, identidade da origem e observações
 
-É obrigatório separar:
+O modelo da plataforma distingue explicitamente organização, instalação, ambiente, localização técnica, observação e identidade lógica.
 
-- **InstallationId:** identidade própria da base de dados PHC registada na plataforma.
-- **EntityIdentity:** identidade lógica de um objeto dentro do âmbito da instalação e do seu tipo.
-- **SourceObjectId:** identificador atribuído pelo Scanner para representar o objeto na origem.
-- **SourceIdentity:** evidência de identidade nativa/original, como stamp PHC ou identificadores SQL Server, contextualizada pelo respetivo âmbito.
-- **ObservationIdentity:** ocorrência da entidade numa captura específica.
-- **ContentFingerprint:** impressão digital da definição técnica observada.
-- **MetadataFingerprint:** impressão digital dos metadados relevantes do objeto.
+- **Organization:** fronteira de propriedade, administração e isolamento do conhecimento privado.
+- **Installation:** unidade lógica PHC pertencente a uma organização. Pode conter vários ambientes.
+- **Environment:** contexto operacional de uma instalação, por exemplo Production, Test ou Development.
+- **DatabaseLocation:** localização técnica e histórica de uma base de dados num ambiente. Não é, por si só, a identidade da instalação nem do ambiente.
+- **Observation:** ocorrência de um objeto identificada numa captura. Existe independentemente de a captura já estar associada a uma organização/instalação/ambiente e independentemente de ter identidade lógica confirmada.
+- **EntityIdentity:** identidade lógica reconhecida pelo PHC Knowledge no âmbito de uma Installation.
+- **SourceObjectId:** referência do objeto no índice de uma captura.
+- **SourceIdentity:** evidência nativa da origem, com scheme e scope explícitos.
+- **DefinitionFingerprint / MetadataFingerprint:** fingerprints de conteúdo e metadados; nunca são identificadores lógicos.
 
-`CaptureId` e `PackageId` não entram na identidade lógica da entidade.
+### 4.1 Organização, instalação e ambientes
 
-O Scanner atual usa estratégias diferentes por tipo:
-- stamps PHC para BRULE, eventos, UDEFS e outras personalizações;
-- `tistamp` para teclas;
-- schema/nome para tabelas, campos físicos, views, procedures e constraints;
-- stamp ou hash alternativo para relações REL/DTL.
+Uma Organization pode possuir várias Installations. Cada Installation pode conter vários Environments, normalmente Production, Test e Development.
 
-Os identificadores atuais são úteis, mas não devem ser considerados universalmente estáveis sem validação por categoria.
+Uma base de dados de testes que seja cópia/restauro de Production pode representar outro Environment da mesma Installation, quando essa continuidade for confirmada. Uma base de dados pertencente a outra empresa representa outra Installation, ainda que tenha estrutura ou personalizações semelhantes.
+
+A associação de uma base de dados a um ambiente é feita através de DatabaseLocation. Esta entidade regista a localização técnica observada ao longo do tempo, por exemplo DatabaseName e, quando conhecido, ServerName, com período de validade. Mudanças de servidor ou substituições técnicas podem originar novos registos de DatabaseLocation sem criarem automaticamente uma nova Installation.
+
+A relação entre ambientes não é enviada pelo Scanner nem inferida como facto autoritativo a partir do nome da base de dados. É contexto gerido pelo PHC Knowledge.
+
+### 4.2 Observation
+
+Cada Observation representa um objeto efetivamente presente no Object Index de uma Capture.
+
+- A plataforma atribui um ObservationId próprio, independente de InstallationId e de EntityIdentityId.
+- A chave de unicidade funcional é (CaptureId, SourceObjectId), assumindo a unicidade de SourceObjectId garantida pelo contrato do Object Index.
+- ObservationId não é acrescentado ao IKP nem ao Scanner.
+- A Observation pode ser materializada sem contexto confirmado e sem identidade lógica.
+- A Observation preserva a referência ao Capture, SourceObjectId, ObjectKind, SourceIdentity, metadados, fingerprints, estado da definição, proveniência e artefactos associados.
+- A ausência de contexto ou de EntityIdentity não invalida nem elimina a Observation.
+
+A materialização é uma responsabilidade posterior à receção, validação e arquivo do pacote. Não exige que a associação à Installation/Environment já esteja concluída.
+
+### 4.3 EntityIdentity e correspondência
+
+EntityIdentity pertence a uma única Installation. Pode ser partilhada por Observations associadas a diferentes Environments dessa mesma Installation, mas apenas após uma decisão de correspondência confirmada.
+
+Uma EntityIdentity nunca é partilhada automaticamente entre Installations. A linhagem entre instalações pode fornecer evidência ou candidatos, mas não funde identidades.
+
+A Observation não recebe uma EntityIdentity por defeito. Quando não existe correspondência confirmada:
+- a Observation permanece sem EntityIdentity;
+- podem ser registados vários candidatos em IdentityMatch;
+- os candidatos podem ficar pendentes ou ser rejeitados;
+- no máximo uma correspondência pode estar confirmada e ativa para cada Observation;
+- a criação de uma nova EntityIdentity exige uma decisão explícita de que o objeto representa uma entidade lógica nova, não sendo criada apenas para preencher uma FK.
+
+A decisão de correspondência regista evidência, confiança quando calibrada, autor, data, estado e justificação. As correspondências rejeitadas e substituídas permanecem no histórico.
+
+### 4.4 Estado por ambiente e ciclo de vida
+
+IdentityEnvironmentState representa o estado conhecido de uma EntityIdentity num Environment, não a identidade em si.
+
+Estados conceptuais:
+- Present: observada numa captura associada ao ambiente;
+- NotObserved: não observada numa captura comparável, sem evidência suficiente para declarar remoção;
+- PendingReview: a cobertura, compatibilidade ou associação exige revisão;
+- Removed: remoção concluída pela plataforma com base em evidência e cobertura adequadas.
+
+A ausência numa captura, isoladamente, nunca produz Removed. A plataforma tem de verificar compatibilidade das operações/capacidades, cobertura relevante completa e bem-sucedida, scope comparável e contexto confirmado.
+
+Os eventos globais do ciclo de vida de EntityIdentity são separados dos estados por ambiente. EntityIdentityLifecycleEvent regista acontecimentos como criação, renomeação, desativação ou correção de identidade. Alterações de presença/ausência em ambientes pertencem ao histórico do estado ambiental. Um evento num ambiente não deve ser interpretado automaticamente como alteração global da identidade.
 
 ## 5. Identificadores nativos e reconhecimento de continuidade
 
@@ -157,22 +201,58 @@ A plataforma deve distinguir alterações de metadados e alterações de defini�
 
 A confirmação de remoções pode, se necessário, ser reforçada por mais do que uma captura completa. Esta regra operacional ainda será avaliada no desenho do comparador.
 
-## 8. Instalações e linhagem
+## 8. Instalações, contextos e linhagem
 
-Cada base de dados PHC registada tem o seu próprio `InstallationId` e histórico. Bases de dados diferentes são instalações diferentes, mesmo que pertençam ao mesmo cliente ou tenham sido copiadas uma da outra.
+Uma Installation é a unidade lógica de continuidade de uma organização PHC; não equivale necessariamente a uma única base de dados física. Os Environments representam contextos operacionais distintos dentro dessa instalação.
 
-O PHC Knowledge pode representar relações de linhagem entre instalações, sem as fundir:
-- uma instalação pode ser derivada de outra por cópia/restauro;
-- uma instalação derivada pode, por sua vez, originar outras;
-- podem existir vários acontecimentos de cópia/restauro ao longo do tempo;
-- cada relação/acontecimento guarda origem, destino, tipo, data, evidência, método e estado de confirmação.
+A linhagem é registada por acontecimentos explícitos entre Installations, por exemplo cópia, restauro, migração ou separação de uma instalação. Uma instalação pode ter várias origens e destinos ao longo do tempo; o modelo não impõe uma árvore rígida.
 
-Níveis de evidência:
-- declaração confirmada pelo utilizador;
-- evidência verificável do processo de cópia/restauro;
-- semelhança técnica que apenas sugere uma origem comum.
+Cada Installation mantém identidades e histórico próprios. A linhagem:
+- preserva origem, destino, tipo de acontecimento, data, evidência, método e estado de confirmação;
+- pode gerar sugestões para resolução de identidade;
+- não funde EntityIdentity nem históricos;
+- não implica sincronização nem propagação de alterações;
+- exige autorização administrativa e auditoria quando envolve transferência entre Organizations.
 
-Semelhanças de stamps, schema ou conteúdo não estabelecem linhagem automaticamente. A linhagem nunca funde entidades nem históricos. Permite comparação entre instalações relacionadas, não sincronização nem alteração automática de bases de dados.
+### 8.1 Receção, captura e pacote
+
+Capture representa a recolha lógica identificada por CaptureId. PackageReceipt representa cada receção física de um pacote identificado por PackageId.
+
+- Uma Capture pode ter vários PackageReceipts.
+- Cada PackageReceipt pertence a uma Capture.
+- O mesmo PackageId com o mesmo checksum do ZIP é uma receção repetida idempotente.
+- O mesmo PackageId com checksum diferente é um conflito de integridade e nunca substitui o pacote anterior.
+- PackageArtifact pertence ao PackageReceipt, preservando a proveniência física dos ficheiros recebidos.
+- ObservationArtifact liga uma Observation a um ou mais PackageArtifacts que suportam a sua definição.
+- Diagnósticos, cobertura e factos declarados mantêm a proveniência da captura/pacote, sem serem artificialmente convertidos em Observations de objetos.
+
+Pacotes diferentes com o mesmo CaptureId representam diferentes representações/receções da mesma captura lógica, não capturas históricas independentes.
+
+### 8.2 Associação do contexto
+
+A receção, validação, arquivo e materialização de factos da captura não dependem de contexto organizacional confirmado.
+
+CaptureContextAssignment regista a associação confirmada entre uma Capture e uma DatabaseLocation, permitindo resolver o respetivo Environment, Installation e Organization.
+
+- Uma Capture pode não ter qualquer atribuição de contexto.
+- O histórico admite várias atribuições ao longo do tempo, mas apenas uma atribuição ativa de cada vez.
+- Uma correção não sobrescreve a atribuição anterior: revoga-a e cria uma nova atribuição, com autor, data, motivo e evidência.
+- CaptureAssociationCandidate guarda sugestões não confirmadas e não constitui uma associação efetiva.
+- A DatabaseLocation pode ter ServerName desconhecido; a ausência desse dado não deve ser preenchida por inferência.
+- A reassociação não altera Capture, PackageReceipt, PackageArtifact ou Observation.
+
+Uma alteração de contexto desencadeia reavaliação controlada apenas das correspondências de identidade e comparações dependentes desse contexto. A reavaliação preserva decisões anteriores, resultados, versões de contexto e motivo. Não implica reconstruir indiscriminadamente todo o histórico.
+
+### 8.3 Sequência de processamento
+
+1. Receber, validar e arquivar o pacote original.
+2. Registar Capture e PackageReceipt, respeitando idempotência.
+3. Numa fase posterior, materializar Observations, relações declaradas e referências a artefactos, mesmo que o contexto ainda esteja pendente.
+4. Sugerir e confirmar o contexto através de CaptureContextAssignment.
+5. Resolver IdentityMatch e associar EntityIdentity apenas após confirmação.
+6. Executar comparações e atualizar estados por ambiente apenas quando o contexto e a cobertura o permitirem.
+
+A primeira fatia de implementação do Knowledge continua limitada a Receive / Validate / Archive, conforme a matriz de compatibilidade. A materialização é uma fase distinta e não deve ser introduzida implicitamente nessa primeira fatia.
 
 ## 9. Responsabilidades de serialização no IKP
 
