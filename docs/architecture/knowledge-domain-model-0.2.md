@@ -278,7 +278,7 @@ erDiagram
     CAPTURE ||--o{ PACKAGE : exported_as
     PACKAGE ||--o{ PACKAGE_RECEIPT : received_as
     ORGANIZATION ||--o{ PACKAGE_RECEIPT : owns
-    PACKAGE_RECEIPT ||--o{ PACKAGE_ARTIFACT : declares
+    PACKAGE ||--o{ PACKAGE_ARTIFACT : declares
     PACKAGE_RECEIPT ||--o{ PACKAGE_VALIDATION : validated_by
 
     CAPTURE ||--o{ OBSERVATION : contains
