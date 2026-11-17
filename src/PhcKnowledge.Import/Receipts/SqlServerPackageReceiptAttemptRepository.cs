@@ -204,13 +204,7 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
             if (!await reader.ReadAsync(cancellationToken))
                 throw new InvalidOperationException("Tentativa de recepção não encontrada.");
             if (reader.GetString(12) == "Completed")
-            {
-                await reader.CloseAsync();
-                var existingCompleted = await FindReceiptByAttemptIdentityAsync(
-                    connection, transaction, reader.IsDBNull(0) ? Guid.Empty : Guid.Empty,
-                    Guid.Empty, string.Empty, cancellationToken);
-                throw new InvalidOperationException("Tentativa já concluída; consultar o receipt pela identidade do pacote.");
-            }
+                throw new InvalidOperationException("A tentativa já está concluída; não pode ser reclamada novamente.");
             if (reader.GetString(12) != "PendingArchive" ||
                 reader.IsDBNull(13) || reader.GetGuid(13) != leaseToken ||
                 reader.IsDBNull(14) || reader.GetDateTime(14) <= DateTime.UtcNow)
