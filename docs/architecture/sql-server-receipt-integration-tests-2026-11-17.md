@@ -1,20 +1,32 @@
 # Testes de integração SQL Server — PackageReceipt recovery
 
-Os testes reais da implementação de recuperação usam uma base de dados **dedicada** chamada `PhcKnowledgeReceiptTests`. Não apontar os testes para bases de dados PHC, desenvolvimento partilhado ou produção.
+Os testes reais da implementação de recuperação usam uma base de dados **dedicada** chamada `PhcKnowledgeReceiptTests`. Nunca apontar os testes para bases de dados PHC, desenvolvimento partilhado ou produção.
 
-## Preparação
+## Execução automática no GitHub Actions
 
-1. Criar uma base de dados vazia chamada `PhcKnowledgeReceiptTests` na instância SQL Server de testes.
-2. Definir a variável de ambiente `PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING` com uma connection string para essa base de dados.
-3. A conta SQL precisa de permissões para criar tabelas, índices e triggers nessa base de dados.
-4. Executar:
+O workflow `.github/workflows/sql-server-integration.yml` inicia um contentor SQL Server 2022 isolado em cada execução da PR ou da branch principal.
+
+O próprio projecto de testes:
+1. Aguarda que o SQL Server esteja disponível.
+2. Cria a base de dados `PhcKnowledgeReceiptTests`, se ainda não existir.
+3. Aplica as migrations 001 e 002.
+4. Executa os testes de integração reais.
+5. Remove os registos criados pelos testes.
+
+O contentor é descartado no final do job. Não são necessárias credenciais, secrets ou uma instância SQL Server na máquina do utilizador. A password usada no workflow é exclusiva do contentor efémero de CI e não deve ser reutilizada noutro ambiente.
+
+## Execução local opcional
+
+Para executar os mesmos testes numa instância SQL Server local, criar previamente uma base de dados vazia chamada `PhcKnowledgeReceiptTests` e definir a variável de ambiente `PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING`.
+
+Exemplo PowerShell:
 
 ```powershell
-$env:PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING = "Server=DESKTOP-GB9607Q\SQLEXPRESS;Database=PhcKnowledgeReceiptTests;User ID=sa;Password=$env:PHC_SCANNER_SQL_PASSWORD;TrustServerCertificate=True"
+$env:PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING = "Server=DESKTOP-GB9607Q\\SQLEXPRESS;Database=PhcKnowledgeReceiptTests;User ID=sa;Password=$env:PHC_SCANNER_SQL_PASSWORD;TrustServerCertificate=True"
 dotnet test tests/PhcKnowledge.Import.SqlServer.Integration.Tests/PhcKnowledge.Import.SqlServer.Integration.Tests.csproj --configuration Release --logger "console;verbosity=normal"
 ```
 
-A password é lida de `PHC_SCANNER_SQL_PASSWORD`; não a escrever em ficheiros, argumentos persistentes ou logs.
+A conta SQL precisa de permissões para criar a base de dados (caso ainda não exista), tabelas, índices e triggers. A password local é lida de `PHC_SCANNER_SQL_PASSWORD`; não a escrever em ficheiros, argumentos persistentes ou logs.
 
 ## Cobertura
 
@@ -23,6 +35,6 @@ A password é lida de `PHC_SCANNER_SQL_PASSWORD`; não a escrever em ficheiros, 
 - Conclusão bem-sucedida: receipt e tentativa concluída são observáveis em conjunto.
 - Falha injectada entre o INSERT do receipt e o UPDATE da tentativa: a transacção deve reverter ambos.
 
-Os testes aplicam as migrations 001 e 002 de forma idempotente na base de dados dedicada. Os registos criados pelos testes são removidos no fim. A base de dados e as tabelas permanecem para execuções seguintes.
+Os registos criados pelos testes são removidos no fim. A base de dados e as tabelas permanecem durante a vida do ambiente de testes. No GitHub Actions, o contentor completo é efémero.
 
-Os testes são opt-in: sem a variável de ambiente, ficam ignorados. O pipeline CI continua a compilar o projecto sem precisar de acesso à instância local.
+Os testes são opt-in: sem `PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING`, ficam ignorados no workflow .NET geral. O workflow SQL Server dedicado define a variável e executa-os efectivamente contra SQL Server 2022.
