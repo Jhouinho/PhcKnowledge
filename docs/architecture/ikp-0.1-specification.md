@@ -134,7 +134,7 @@ O IKP 0.1 não transporta OrganizationId, InstallationId, EnvironmentId nem Data
 | OrganizationId / InstallationId / EnvironmentId / DatabaseLocationId | PHC Knowledge | Identificadores internos de contexto; nunca incluídos no IKP |
 | SourceObjectId | Scanner | Identificador do objeto na captura, referenciável dentro do pacote |
 | SourceIdentity | Origem PHC/SQL | Identificadores nativos e respetivo âmbito |
-| EntityIdentity | PHC Knowledge | Identidade lógica da entidade no âmbito da instalação |
+| EntityIdentityId | PHC Knowledge | Identificador interno da identidade lógica; não é transportado no IKP |
 | PackageReceiptId | PHC Knowledge | Identifica uma receção física; não é transportado no IKP |
 | ObservationId | PHC Knowledge | Identificador interno próprio da Observation; não é transportado no IKP |
 | MetadataFingerprint | Scanner/plataforma | Fingerprint dos metadados relevantes |
