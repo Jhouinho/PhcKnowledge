@@ -56,10 +56,10 @@ Os índices únicos por OrganizationId + PackageId e OrganizationId + ZipSha256 
 
 ## Implementação na branch
 
-- `SqlServerPackageReceiptAttemptRepository`: criação/reutilização idempotente, claim por ID ou lote, lease, retry, NeedsAttention e conclusão transaccional de receipt + tentativa.
+- `SqlServerPackageReceiptAttemptRepository`: criação/reutilização idempotente, claim por ID ou lote, lease, retry, NeedsAttention, conclusão transaccional de receipt + tentativa e leitura do receipt concluído.
 - `PackageReceiptRecoveryService`: recuperação imediata e processamento de tentativas vencidas; valida o staging path e confirma o arquivo por hash quando o staging já não existe.
 - `FileSystemImmutablePackageStore`: fornece a chave content-addressed determinística e verifica objectos arquivados sem os alterar.
-- `IkpPackageIngestionService`: quando recebe o repositório de tentativas, regista a tentativa antes do arquivo e preserva o staging quando a recepção fica pendente. O caminho legado permanece disponível por compatibilidade e não deve ser usado no percurso de produto após a configuração do novo repositório.
+- `IkpPackageIngestionService`: quando recebe o repositório de tentativas, regista a tentativa antes do arquivo e preserva o staging quando a recepção fica pendente. A persistência de receipts só é possível através deste percurso durável; sem repositório de tentativas, o serviço limita-se a validar e arquivar para harnesses.
 - `PackageStagingCleanupService`: remove apenas ficheiros antigos sem referência a tentativas pendentes.
 - Testes unitários cobrem os principais caminhos do processador e a protecção do staging.
 
@@ -68,7 +68,7 @@ Os índices únicos por OrganizationId + PackageId e OrganizationId + ZipSha256 
 - `PackageReceiptAttempt` não substitui `PackageReceipt`.
 - Não introduzir Event Sourcing, Outbox genérico, materialização de Observations ou associação a Installation/Environment.
 - A recuperação deve ser um serviço do Import, invocado por um BackgroundService no futuro host. Este repositório ainda não tem esse host.
-- O percurso de produto deve configurar `SqlServerPackageReceiptAttemptRepository` e `IPackageReceiptRepository`; sem o repositório de tentativas, permanece o caminho legado arquivo→receipt, que não fecha a janela de falha.
+- O percurso de produto deve configurar `SqlServerPackageReceiptAttemptRepository`; sem o repositório de tentativas, o serviço não regista receipts.
 - A migration e o locking/atomicidade ainda precisam de execução contra SQL Server real. A pipeline .NET valida build e testes unitários, não substitui essa validação.
 - O alerta operacional para tentativas pendentes há mais de uma hora ainda não está implementado; depende da integração com a observabilidade do host.
 
