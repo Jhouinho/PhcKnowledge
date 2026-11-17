@@ -52,7 +52,7 @@ public sealed class PackageReceiptRecoveryService
     /// Attempts immediate processing after the upload path has persisted an attempt.
     /// Returns null when another worker owns it, it is not due, or recovery was deferred.
     /// </summary>
-    public async Task<PackageReceiptRegistration?> ProcessAttemptAsync(
+    public async Task<PackageReceiptAttemptProcessingResult?> ProcessAttemptAsync(
         Guid attemptId,
         CancellationToken cancellationToken = default)
     {
@@ -61,7 +61,7 @@ public sealed class PackageReceiptRecoveryService
         return lease is null ? null : await ProcessLeaseAsync(lease, cancellationToken);
     }
 
-    private async Task<PackageReceiptRegistration?> ProcessLeaseAsync(
+    private async Task<PackageReceiptAttemptProcessingResult?> ProcessLeaseAsync(
         PackageReceiptAttemptLease lease,
         CancellationToken cancellationToken)
     {
@@ -102,7 +102,7 @@ public sealed class PackageReceiptRecoveryService
             var registration = await _attempts.CompleteAsync(
                 attempt.AttemptId, lease.LeaseToken, archive, cancellationToken);
             TryDeleteStaging(stagingPath);
-            return registration;
+            return new PackageReceiptAttemptProcessingResult(archive, registration);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -173,3 +173,7 @@ public sealed class PackageReceiptRecoveryService
         }
     }
 }
+
+public sealed record PackageReceiptAttemptProcessingResult(
+    ArchivedPackage Archive,
+    PackageReceiptRegistration Registration);
