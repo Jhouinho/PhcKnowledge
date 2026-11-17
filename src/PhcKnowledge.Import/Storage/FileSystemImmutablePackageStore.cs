@@ -7,7 +7,7 @@ namespace PhcKnowledge.Import.Storage;
 /// Content-addressed filesystem archive. Existing objects are never overwritten;
 /// a pre-existing object is accepted only after its length and SHA-256 are rechecked.
 /// </summary>
-public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore, IRecoverableImmutablePackageStore
+public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore, IRecoverableImmutablePackageStore, IExpectedStorageKeyProvider
 {
     private readonly string _root;
 
@@ -15,6 +15,16 @@ public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore, IR
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
         _root = Path.GetFullPath(root);
+    }
+
+    public string GetStorageKey(IkpPackageValidationResult validation)
+    {
+        ArgumentNullException.ThrowIfNull(validation);
+        var hash = validation.ZipSha256;
+        if (hash.Length != 64 || hash.Any(c => !Uri.IsHexDigit(c)) ||
+            hash != hash.ToLowerInvariant())
+            throw new ArgumentException("SHA-256 inválido para arquivo.", nameof(validation));
+        return $"sha256/{hash[..2]}/{hash}.ikp.zip";
     }
 
     public async Task<ArchivedPackage> ArchiveValidatedPackageAsync(
