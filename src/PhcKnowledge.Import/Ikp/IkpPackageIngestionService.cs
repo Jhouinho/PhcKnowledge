@@ -34,11 +34,13 @@ public sealed class IkpPackageIngestionService
         _receiptRepository = receiptRepository;
         _attemptRepository = attemptRepository;
 
-        if (_attemptRepository is not null &&
-            (_receiptRepository is null || _store is not IExpectedStorageKeyProvider ||
-             _store is not IRecoverableImmutablePackageStore))
+        if ((_receiptRepository is null) != (_attemptRepository is null))
             throw new ArgumentException(
-                "A recuperação durável exige receipt repository e store com chave determinística e verificação de arquivo.");
+                "A persistência de receipts exige configurar em conjunto o receipt repository e o attempt repository.");
+        if (_attemptRepository is not null &&
+            (_store is not IExpectedStorageKeyProvider || _store is not IRecoverableImmutablePackageStore))
+            throw new ArgumentException(
+                "A recuperação durável exige store com chave determinística e verificação de arquivo.");
     }
 
     public async Task<IkpIngestionResult> ReceiveValidateArchiveAsync(
@@ -103,17 +105,10 @@ public sealed class IkpPackageIngestionService
                     validation, recovered.Archive, recovered.Registration.Receipt);
             }
 
-            // Compatibility path for validation-only and legacy callers. Product deployments
-            // should configure IPackageReceiptAttemptRepository to close the filesystem/SQL gap.
+            // Validation/archive-only mode for harnesses. Any persisted receipt must use
+            // the durable attempt path above; archive->receipt is intentionally not exposed.
             var archive = await _store.ArchiveValidatedPackageAsync(stagedPath, validation, cancellationToken);
-            PackageReceipt? receipt = null;
-            if (_receiptRepository is not null)
-            {
-                var receiptRegistration = await _receiptRepository.RegisterArchivedPackageAsync(
-                    organizationId!.Value, validation, archive, cancellationToken);
-                receipt = receiptRegistration.Receipt;
-            }
-            return new IkpIngestionResult(validation, archive, receipt);
+            return new IkpIngestionResult(validation, archive, null);
         }
         finally
         {
