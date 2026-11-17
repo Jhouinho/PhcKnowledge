@@ -91,7 +91,7 @@ Uma Organization pode possuir várias Installations. Cada Installation pode cont
 
 Uma base de dados de testes que seja cópia/restauro de Production pode representar outro Environment da mesma Installation, quando essa continuidade for confirmada. Uma base de dados pertencente a outra empresa representa outra Installation, ainda que tenha estrutura ou personalizações semelhantes.
 
-A associação de uma base de dados a um ambiente é feita através de DatabaseLocation. Esta entidade regista a localização técnica observada ao longo do tempo, por exemplo DatabaseName e, quando conhecido, ServerName, com período de validade. Mudanças de servidor ou substituições técnicas podem originar novos registos de DatabaseLocation sem criarem automaticamente uma nova Installation.
+A associação de uma base de dados a um ambiente é feita através de DatabaseLocation. Esta entidade regista a localização técnica observada ao longo do tempo, por exemplo DatabaseName e, quando conhecido, ServerName, com período de validade. Quando DatabaseName é conhecido mas ServerName não, pode ser criada uma DatabaseLocation provisória com ServerName = null. Quando o servidor for posteriormente identificado, a mesma localização lógica é enriquecida com o ServerName, preservando a evidência e o histórico da alteração; a descoberta não cria, por si só, um novo registo de DatabaseLocation. Uma mudança técnica real de servidor ou uma substituição da base de dados pode originar um novo registo de DatabaseLocation, sem criar automaticamente uma nova Installation.
 
 A relação entre ambientes não é enviada pelo Scanner nem inferida como facto autoritativo a partir do nome da base de dados. É contexto gerido pelo PHC Knowledge.
 
