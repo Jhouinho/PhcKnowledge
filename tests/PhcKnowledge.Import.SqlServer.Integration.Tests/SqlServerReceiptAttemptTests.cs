@@ -128,6 +128,39 @@ public sealed class SqlServerReceiptAttemptTests
     }
 
     [SqlServerFact]
+    public async Task Concurrent_duplicate_receipts_reuse_one_pending_attempt()
+    {
+        var connectionString = await SetupAsync();
+        var organizationId = Guid.NewGuid();
+        try
+        {
+            var repository = new SqlServerPackageReceiptAttemptRepository(connectionString);
+            var validation = NewValidation();
+
+            var registrations = await Task.WhenAll(
+                repository.CreateOrGetPendingAsync(
+                    organizationId, validation, $"sha256/{validation.ZipSha256}.zip", "first-upload.tmp"),
+                repository.CreateOrGetPendingAsync(
+                    organizationId, validation, $"sha256/{validation.ZipSha256}.zip", "second-upload.tmp"));
+
+            Assert.Equal(registrations[0].Attempt.AttemptId, registrations[1].Attempt.AttemptId);
+            Assert.Single(registrations.Select(x => x.Attempt.AttemptId).Distinct());
+
+            await using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+            await using var command = new SqlCommand("""
+                SELECT COUNT(*)
+                FROM dbo.PackageReceiptAttempts
+                WHERE OrganizationId = @OrganizationId AND PackageId = @PackageId;
+                """, connection);
+            command.Parameters.AddWithValue("@OrganizationId", organizationId);
+            command.Parameters.AddWithValue("@PackageId", validation.PackageId);
+            Assert.Equal(1, (int)await command.ExecuteScalarAsync());
+        }
+        finally { await CleanupAsync(connectionString, organizationId); }
+    }
+
+    [SqlServerFact]
     public async Task Concurrent_claims_grant_exactly_one_lease()
     {
         var connectionString = await SetupAsync();
