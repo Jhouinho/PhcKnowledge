@@ -175,18 +175,23 @@ A ausência só pode ser considerada comparável quando todas as condições seg
 
 Se qualquer condição falhar, o resultado é `PendingReview`, não `NotObserved` nem `Removed`.
 
-### 4.4 Política conservadora de remoção — proposta
+### 4.4 Política conservadora de remoção — decisão aprovada
 
-A remoção automática é uma conclusão de alto impacto. Propõe-se que a primeira versão do comparador exija **duas capturas consecutivas, completas e comparáveis**, ambas sem observar a EntityIdentity no mesmo Environment, antes de transitar para `Removed`.
+<badge>Decisão funcional confirmada em 2026-11-17</badge>
+
+A plataforma exige **duas capturas consecutivas, completas e comparáveis**, ambas sem observar a EntityIdentity no mesmo Environment, para tornar uma remoção elegível. Mesmo depois de cumprido este critério, **a transição para `Removed` exige sempre confirmação humana explícita e auditada**.
 
 - A primeira ausência comparável gera `NotObserved`.
-- Uma segunda ausência consecutiva, também completa e comparável, pode gerar `Removed`.
-- Uma observação confirmada entre as duas ausências repõe `Present` e reinicia a sequência.
+- A segunda ausência consecutiva, também completa e comparável, torna a remoção elegível para confirmação humana; não altera automaticamente o estado para `Removed`.
+- Após a segunda ausência, o estado permanece em `PendingReview` até um utilizador autorizado confirmar ou rejeitar a remoção.
+- A confirmação humana regista ator, instante, motivo, evidências e as duas Captures que sustentam a decisão.
+- Se a remoção for rejeitada, a identidade não passa a `Removed`; a decisão e a evidência ficam no histórico. Uma avaliação posterior pode voltar a propor a remoção se existirem novas capturas completas e comparáveis.
+- Uma observação confirmada antes da decisão humana repõe `Present` e reinicia a sequência de ausências.
 - Uma captura incompleta/ambígua gera `PendingReview` e não conta como ausência consecutiva.
-- O limiar deve ser política versionada, não constante espalhada pelo código.
-- A política deve permitir confirmação manual auditada, mas nunca permitir remoção baseada apenas numa captura incompleta.
+- O limiar de duas capturas é política versionada, não constante espalhada pelo código.
+- Nenhum processo automático, job ou regra de comparação pode confirmar a remoção por si só.
 
-**Esta regra de duas capturas é uma recomendação para aprovação funcional, não uma decisão já confirmada pelo utilizador.** O limiar final e a eventual necessidade de confirmação manual devem ser aprovados antes do desenho físico.
+A decisão aprovada é, portanto: **2 ausências consecutivas completas e comparáveis + confirmação humana obrigatória sempre**.
 
 ### 4.5 Estado ambiental vs ciclo de vida global
 
@@ -229,7 +234,7 @@ O desenho físico pode usar tabelas de eventos mais tabelas de projeção, ou um
 | IdentityMatch | Candidate / Confirmed / Rejected / Superseded / ReassessmentRequired | Proposta |
 | Criação de EntityIdentity | Ação explícita, nunca automática por ausência de match | Alinhada com decisão confirmada |
 | IdentityEnvironmentState | Present / NotObserved / PendingReview / Removed; ausência de registo = NotYetEvaluated | Proposta |
-| Limiar de remoção | Duas capturas consecutivas completas e comparáveis | **Pendente de aprovação** |
+| Limiar de remoção | Duas capturas consecutivas completas e comparáveis + confirmação humana obrigatória | **Aprovado em 2026-11-17** |
 | Eventos | Histórico append-only + projeção atual | Proposta |
 | Reavaliação | Apenas dependências afectadas, versionada e idempotente | Alinhada com decisão confirmada |
 
