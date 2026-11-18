@@ -5,7 +5,7 @@
 | Data | 2026-11-18 |
 | Branch de referência | `main` |
 | Repositório | `Jhouinho/PhcKnowledge` |
-| Natureza | Auditoria documental e estática do GitHub |
+| Natureza | Auditoria documental/estática da `main`, complementada por evidência histórica de validação com captura real em 2026-11-08 |
 | Estado | Preliminar; sujeito a validação por build, testes e execução real |
 
 ## 1. Objetivo e âmbito
@@ -48,7 +48,7 @@ O principal vazio do produto está depois da receção do pacote: a transformaç
 | Identidade nativa de objetos SQL | Trabalho identificado em branch própria, não confirmado na `main` durante esta revisão | Pendente de integração/decisão |
 | Scanner Desktop e experiência final | Projeto Desktop existe; branches de evolução identificadas | Maturidade funcional por validar |
 
-A captura real e as decisões de proveniência P1.B fazem parte do histórico do projeto. A validação do índice de objetos com uma captura real continua a ser um critério de aceitação relevante; não deve ser substituída por dados sintéticos.
+A validação real P1.B já foi executada em 2026-11-08 sobre `CSDefault202603`. O workspace continha 16.618 objetos, 49 artefactos, 921 relações declaradas e 6 issues. Foram verificados 16.618 `SourceObjectId` únicos, 8.307 `SourceIdentity` (8.294 SQL + 13 stamps PHC), 16.581 `MetadataFingerprint`, 49 `DefinitionFingerprint`, 8.268 parents resolvidos e 36 pendentes. O Object Index IKP 0.1 foi validado; duas exportações produziram o mesmo hash. O pacote IKP V4 continha 58 ficheiros/53 artefactos, checksums e tamanhos sem falhas, 295 REL + 626 DTL e 921 interpretações. A cobertura de procedures ficou parcial: 36 identificadas, 6 com definição `Unavailable`. Esta evidência fecha a validação real do Object Index/exportação, mas não prova ainda a receção, arquivo, materialização e persistência ponta a ponta na plataforma central.
 
 ### 3.2 Contrato e exportação IKP
 
@@ -63,7 +63,7 @@ A captura real e as decisões de proveniência P1.B fazem parte do histórico do
 | Compatibilidade histórica | Teste para metadados parciais/desconhecidos | Coberta por teste |
 | Desempenho do JSON Schema | Branch de otimização remove validação dispendiosa de unicidade do array | Revisão e integração pendentes |
 
-O teste `P1_ExportAsync_Produces_Zip_Accepted_By_IkpPackageValidator` demonstra um percurso sintético de exportação e validação. Não substitui a aceitação com uma captura real.
+O teste `P1_ExportAsync_Produces_Zip_Accepted_By_IkpPackageValidator` cobre o percurso sintético. A captura real de 2026-11-08 complementa-o e valida Object Index/exportação com dados reais. Continua por demonstrar a cadeia Import/Host com esse pacote real.
 
 ### 3.3 Receção, validação e arquivo
 
@@ -106,7 +106,7 @@ A direção documentada estabelece uma plataforma centralizada, com o Scanner co
 
 A documentação tecnológica consultada em `technology-and-import-contract-assessment.md` indica .NET 10, ASP.NET Core, React/TypeScript, SQL Server Express central, SQLite auxiliar e SignalR. Existe, porém, uma divergência com decisões anteriores do projeto que apontavam PostgreSQL como base central.
 
-**Decisão necessária:** confirmar formalmente o motor relacional central antes de criar o modelo físico e as migrations. Não desenvolver em paralelo para dois motores nem assumir que a mudança para SQL Server está aprovada sem validação explícita.
+**Decisão confirmada em 2026-11-18:** Microsoft SQL Server será o motor relacional central. A documentação de stack, o Host/Import e o modelo 0.2 ficam alinhados nesta escolha. Não manter PostgreSQL como caminho alternativo.
 
 A decisão de armazenamento dos pacotes também deve permanecer separada da escolha da base relacional: filesystem para desenvolvimento/on-prem e eventual object storage através de abstração são preocupações distintas.
 
@@ -132,10 +132,10 @@ Esta tabela é uma triagem, não uma ordem de eliminação. Antes de apagar qual
 
 | ID | Tema | Risco/impacto | Prioridade |
 |---|---|---|---|
-| A-01 | Motor central SQL Server vs PostgreSQL | Bloqueia modelo físico, migrations e integração | Crítica |
+| A-01 | Baseline SQL Server (versão/edição mínima) | Bloqueia compatibilidade e deployment, não a escolha do motor | Alta |
 | A-02 | Modelo de domínio 0.2 não consolidado na implementação | Risco de retrabalho e identidades inconsistentes | Crítica |
 | A-03 | Receção ainda não ligada à materialização de conhecimento | Pacotes arquivados sem conhecimento pesquisável | Crítica |
-| A-04 | Captura real ponta a ponta ainda é critério por fechar | Contrato pode funcionar em fixtures mas falhar em dados reais | Crítica |
+| A-04 | Receção/arquivo/materialização ponta a ponta com o pacote real | Object Index e exportação já foram validados com captura real; falta provar o percurso central completo | Crítica |
 | A-05 | Identidade nativa SQL em branch | Perda de identidade estável/precisa entre capturas | Alta |
 | A-06 | API, autenticação, autorização e isolamento | Plataforma não utilizável por organizações | Alta |
 | A-07 | Ausência de UI de produto demonstrada | Sem experiência operacional para utilizadores | Alta |
@@ -158,6 +158,6 @@ Esta tabela é uma triagem, não uma ordem de eliminação. Antes de apagar qual
 
 ## 8. Conclusão
 
-O PHC Knowledge tem uma base de captura, contrato e ingestão inicial sólida para continuar. A prioridade deixou de ser acrescentar mais tipos de recolha ou iniciar um chatbot. É necessário fechar as decisões de domínio e tecnologia, provar a cadeia com uma captura real e construir a materialização que transforma pacotes em observações e conhecimento consultável.
+O PHC Knowledge tem uma base de captura, contrato e ingestão inicial sólida. A captura real de 2026-11-08 já validou Object Index e exportação IKP; não deve ser repetida como tarefa pendente. A escolha de SQL Server está confirmada e o modelo conceptual 0.2 é recomendado para aprovação. A prioridade passa a ser fechar os detalhes físicos/operacionais ainda pendentes e provar a cadeia Import/Host → materialização → persistência central usando o pacote real existente, transformando-o em observações e conhecimento consultável.
 
 Este relatório é uma baseline técnica, não uma certificação de produção. As conclusões devem ser atualizadas depois de build/testes e validação de uma importação real.
