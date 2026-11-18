@@ -157,15 +157,42 @@ public sealed class IkpHttpApiTests : IClassFixture<IkpHttpApiFactory>
         Assert.DoesNotContain("path interno", json, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task Upload_rejects_non_zip_content_type()
+    [Theory]
+    [InlineData("application/json")]
+    [InlineData("application/zipx")]
+    [InlineData("not-a-media-type")]
+    [InlineData("")]
+    public async Task Upload_rejects_invalid_content_types(string contentType)
     {
         var client = CreateClient();
         using var content = new ByteArrayContent([0x50, 0x4B]);
-        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        if (!string.IsNullOrEmpty(contentType))
+            content.Headers.TryAddWithoutValidation("Content-Type", contentType);
+
         var response = await client.PostAsync("/api/v1/ikp/packages", content);
         Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
         await AssertPublicProblemAsync(response, "unsupported_media_type");
+    }
+
+    [Theory]
+    [InlineData("application/zip")]
+    [InlineData("APPLICATION/ZIP")]
+    [InlineData("application/zip; charset=binary")]
+    public async Task Upload_accepts_application_zip_with_optional_parameters(string contentType)
+    {
+        _factory.Gateway.Reset();
+        _factory.Gateway.OnReceive = (_, org, _) =>
+        {
+            var status = _factory.Repo.SeedCompleted(org);
+            return Task.FromResult(CompletedResult(status));
+        };
+
+        var client = CreateClient();
+        using var content = new ByteArrayContent([0x50, 0x4B]);
+        content.Headers.TryAddWithoutValidation("Content-Type", contentType);
+
+        var response = await client.PostAsync("/api/v1/ikp/packages", content);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -176,6 +203,88 @@ public sealed class IkpHttpApiTests : IClassFixture<IkpHttpApiFactory>
         content.Add(new ByteArrayContent([0x50, 0x4B]), "file", "a.zip");
         var response = await client.PostAsync("/api/v1/ikp/packages", content);
         Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
+        await AssertPublicProblemAsync(response, "unsupported_media_type");
+    }
+
+    [Fact]
+    public async Task Upload_with_duplicate_organization_claims_returns_403()
+    {
+        var org = _factory.OrganizationA.ToString("D");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.AuthenticatedHeader, "1");
+        client.DefaultRequestHeaders.Add(TestAuthHandler.ScopeHeader, "ikp.upload");
+        client.DefaultRequestHeaders.Add(TestAuthHandler.OrganizationHeader, org);
+        client.DefaultRequestHeaders.Add(TestAuthHandler.OrganizationHeader, org);
+
+        using var content = new ByteArrayContent([0x50, 0x4B]);
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
+        var response = await client.PostAsync("/api/v1/ikp/packages", content);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await AssertPublicProblemAsync(response, "forbidden");
+    }
+
+    [Fact]
+    public async Task Get_attempt_repository_failure_returns_500_without_internal_detail()
+    {
+        var status = _factory.Repo.SeedCompleted(_factory.OrganizationA);
+        var client = CreateClient(scopes: "ikp.read");
+        _factory.Repo.ReadFault = new InvalidOperationException(
+            "SqlException Server=db;Database=secret path=C:\\temp\\x");
+        try
+        {
+            var response = await client.GetAsync($"/api/v1/ikp/attempts/{status.AttemptId}");
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            var json = await AssertPublicProblemAsync(response, "internal_error");
+            Assert.DoesNotContain("SqlException", json, StringComparison.Ordinal);
+            Assert.DoesNotContain("secret", json, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("C:\\temp", json, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            _factory.Repo.ReadFault = null;
+        }
+    }
+
+    [Fact]
+    public async Task Get_package_repository_failure_returns_500_without_internal_detail()
+    {
+        var status = _factory.Repo.SeedCompleted(_factory.OrganizationA);
+        var client = CreateClient(scopes: "ikp.read");
+        _factory.Repo.ReadFault = new InvalidOperationException("connection string leaked");
+        try
+        {
+            var response = await client.GetAsync($"/api/v1/ikp/packages/{status.PackageId}");
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            await AssertPublicProblemAsync(response, "internal_error");
+        }
+        finally
+        {
+            _factory.Repo.ReadFault = null;
+        }
+    }
+
+    [Fact]
+    public async Task Upload_post_ingestion_status_lookup_failure_returns_500()
+    {
+        _factory.Gateway.OnReceive = (_, org, _) =>
+        {
+            var status = _factory.Repo.SeedCompleted(org);
+            return Task.FromResult(CompletedResult(status));
+        };
+        var client = CreateClient();
+        _factory.Repo.ReadFault = new InvalidOperationException("lookup failed after ingest");
+        try
+        {
+            using var content = new ByteArrayContent([0x50, 0x4B]);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
+            var response = await client.PostAsync("/api/v1/ikp/packages", content);
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            await AssertPublicProblemAsync(response, "internal_error");
+        }
+        finally
+        {
+            _factory.Repo.ReadFault = null;
+        }
     }
 
     [Fact]
@@ -598,6 +707,9 @@ public sealed class ControllableAttemptRepository : IPackageReceiptAttemptReposi
     private readonly Dictionary<(Guid Org, Guid Attempt), PackageIngestionStatus> _byAttempt = new();
     private readonly Dictionary<(Guid Org, Guid Package), PackageIngestionStatus> _byPackage = new();
 
+    /// <summary>When set, read methods throw this exception (for HTTP 500 mapping tests).</summary>
+    public Exception? ReadFault { get; set; }
+
     public PackageIngestionStatus SeedCompleted(Guid organizationId)
     {
         var status = new PackageIngestionStatus(
@@ -622,12 +734,20 @@ public sealed class ControllableAttemptRepository : IPackageReceiptAttemptReposi
     }
 
     public Task<PackageIngestionStatus?> GetAttemptAsync(
-        Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(_byAttempt.TryGetValue((organizationId, attemptId), out var s) ? s : null);
+        Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default)
+    {
+        if (ReadFault is not null)
+            throw ReadFault;
+        return Task.FromResult(_byAttempt.TryGetValue((organizationId, attemptId), out var s) ? s : null);
+    }
 
     public Task<PackageIngestionStatus?> GetByPackageIdAsync(
-        Guid organizationId, Guid packageId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(_byPackage.TryGetValue((organizationId, packageId), out var s) ? s : null);
+        Guid organizationId, Guid packageId, CancellationToken cancellationToken = default)
+    {
+        if (ReadFault is not null)
+            throw ReadFault;
+        return Task.FromResult(_byPackage.TryGetValue((organizationId, packageId), out var s) ? s : null);
+    }
 
     public Task<PackageReceiptAttemptRegistration> CreateOrGetPendingAsync(
         Guid organizationId, IkpPackageValidationResult validation, string storageKey, string stagingKey,
@@ -659,9 +779,11 @@ public sealed class TestAuthHandler(
             return Task.FromResult(AuthenticateResult.Fail("No test credentials."));
 
         var claims = new List<Claim> { new(ClaimTypes.Name, "test-client") };
-        if (Request.Headers.TryGetValue(OrganizationHeader, out var org) &&
-            !string.IsNullOrWhiteSpace(org))
-            claims.Add(new Claim("organization_id", org.ToString()));
+        foreach (var org in Request.Headers[OrganizationHeader])
+        {
+            if (!string.IsNullOrWhiteSpace(org))
+                claims.Add(new Claim("organization_id", org));
+        }
 
         if (Request.Headers.TryGetValue(ScopeHeader, out var scopes) &&
             !string.IsNullOrWhiteSpace(scopes))

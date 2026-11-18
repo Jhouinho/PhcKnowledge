@@ -21,23 +21,25 @@ public sealed class OrganizationIdResolver(AuthenticationHostSettings settings)
                 "O principal não está autenticado.",
                 OrganizationIdResolutionFailure.Unauthenticated);
 
-        var values = principal.FindAll(_claimType)
-            .Select(claim => claim.Value)
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
-
-        if (values.Length == 0)
+        // Cardinality is on claim instances, not distinct values: duplicates (even equal) are rejected.
+        var claims = principal.FindAll(_claimType).ToArray();
+        if (claims.Length == 0)
             throw new OrganizationIdResolutionException(
                 $"O claim '{_claimType}' está ausente.",
                 OrganizationIdResolutionFailure.ClaimMissing);
 
-        if (values.Length > 1)
+        if (claims.Length > 1)
             throw new OrganizationIdResolutionException(
                 $"O claim '{_claimType}' tem múltiplos valores.",
                 OrganizationIdResolutionFailure.ClaimInvalid);
 
-        if (!Guid.TryParse(values[0], out var organizationId) || organizationId == Guid.Empty)
+        var value = claims[0].Value;
+        if (string.IsNullOrWhiteSpace(value))
+            throw new OrganizationIdResolutionException(
+                $"O claim '{_claimType}' está vazio.",
+                OrganizationIdResolutionFailure.ClaimInvalid);
+
+        if (!Guid.TryParse(value, out var organizationId) || organizationId == Guid.Empty)
             throw new OrganizationIdResolutionException(
                 $"O claim '{_claimType}' não contém um GUID de organização válido.",
                 OrganizationIdResolutionFailure.ClaimInvalid);

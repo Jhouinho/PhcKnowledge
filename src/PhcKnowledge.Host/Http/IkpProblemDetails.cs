@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using PhcKnowledge.Import.Ikp;
 using PhcKnowledge.Import.Receipts;
 
@@ -43,7 +44,28 @@ public static class IkpProblemDetailsFactory
         return Results.Problem(problem);
     }
 
-    public static IResult FromException(HttpContext httpContext, Exception exception) =>
+    public static IResult FromException(
+        HttpContext httpContext,
+        Exception exception,
+        ILogger? logger = null)
+    {
+        if (IsClientCancellation(httpContext, exception))
+            return Results.Empty;
+
+        var result = MapException(httpContext, exception);
+        if (RequiresInternalErrorLog(exception) && logger is not null)
+        {
+            // Log exception + TraceId only. Never log JWT tokens or upload body content.
+            logger.LogError(
+                exception,
+                "IKP API internal failure. TraceId={TraceId}",
+                httpContext.TraceIdentifier);
+        }
+
+        return result;
+    }
+
+    private static IResult MapException(HttpContext httpContext, Exception exception) =>
         exception switch
         {
             PackageReceiptNeedsAttentionException needsAttention =>
@@ -84,12 +106,31 @@ public static class IkpProblemDetailsFactory
                     httpContext, StatusCodes.Status413PayloadTooLarge, "Upload too large",
                     IkpPublicErrorCodes.UploadTooLarge),
 
-            OperationCanceledException when httpContext.RequestAborted.IsCancellationRequested =>
-                Results.Empty,
-
             _ =>
                 Problem(
                     httpContext, StatusCodes.Status500InternalServerError, "Internal error",
                     IkpPublicErrorCodes.InternalError)
+        };
+
+    private static bool IsClientCancellation(HttpContext httpContext, Exception exception) =>
+        exception is OperationCanceledException &&
+        httpContext.RequestAborted.IsCancellationRequested;
+
+    /// <summary>
+    /// Client-driven <see cref="OperationCanceledException"/> is filtered by
+    /// <see cref="IsClientCancellation"/> before logging. Any other cancelled operation
+    /// (for example an internal timeout) falls through to the default and must be logged.
+    /// </summary>
+    private static bool RequiresInternalErrorLog(Exception exception) =>
+        exception switch
+        {
+            PackageReceiptNeedsAttentionException => false,
+            PackageReceiptConflictException conflict
+                when conflict.Kind == PackageReceiptConflictKind.IdentityMismatch => false,
+            PackageReceiptConflictException => true,
+            IkpPackageValidationException => false,
+            OrganizationIdResolutionException => false,
+            BadHttpRequestException bad when bad.StatusCode == StatusCodes.Status413PayloadTooLarge => false,
+            _ => true
         };
 }

@@ -15,7 +15,7 @@ public sealed class OrganizationIdResolverTests
         });
 
     [Fact]
-    public void ResolveRequired_returns_guid_from_configured_claim()
+    public void ResolveRequired_returns_guid_from_single_valid_claim()
     {
         var organizationId = Guid.NewGuid();
         var principal = Principal(
@@ -56,27 +56,49 @@ public sealed class OrganizationIdResolverTests
 
     [Theory]
     [InlineData("")]
+    [InlineData("   ")]
     [InlineData("not-a-guid")]
     [InlineData("00000000-0000-0000-0000-000000000000")]
-    public void ResolveRequired_rejects_invalid_guid(string value)
+    public void ResolveRequired_rejects_empty_or_invalid_guid(string value)
     {
         var principal = Principal(new Claim("organization_id", value));
 
         var ex = Assert.Throws<OrganizationIdResolutionException>(
             () => Resolver().ResolveRequired(principal));
-        Assert.Equal(
-            string.IsNullOrWhiteSpace(value)
-                ? OrganizationIdResolutionFailure.ClaimMissing
-                : OrganizationIdResolutionFailure.ClaimInvalid,
-            ex.Failure);
+        Assert.Equal(OrganizationIdResolutionFailure.ClaimInvalid, ex.Failure);
     }
 
     [Fact]
-    public void ResolveRequired_rejects_multiple_claim_values()
+    public void ResolveRequired_rejects_two_identical_claims()
+    {
+        var organizationId = Guid.NewGuid().ToString("D");
+        var principal = Principal(
+            new Claim("organization_id", organizationId),
+            new Claim("organization_id", organizationId));
+
+        var ex = Assert.Throws<OrganizationIdResolutionException>(
+            () => Resolver().ResolveRequired(principal));
+        Assert.Equal(OrganizationIdResolutionFailure.ClaimInvalid, ex.Failure);
+    }
+
+    [Fact]
+    public void ResolveRequired_rejects_two_different_claims()
     {
         var principal = Principal(
             new Claim("organization_id", Guid.NewGuid().ToString("D")),
             new Claim("organization_id", Guid.NewGuid().ToString("D")));
+
+        var ex = Assert.Throws<OrganizationIdResolutionException>(
+            () => Resolver().ResolveRequired(principal));
+        Assert.Equal(OrganizationIdResolutionFailure.ClaimInvalid, ex.Failure);
+    }
+
+    [Fact]
+    public void ResolveRequired_rejects_valid_claim_paired_with_empty_claim()
+    {
+        var principal = Principal(
+            new Claim("organization_id", Guid.NewGuid().ToString("D")),
+            new Claim("organization_id", ""));
 
         var ex = Assert.Throws<OrganizationIdResolutionException>(
             () => Resolver().ResolveRequired(principal));

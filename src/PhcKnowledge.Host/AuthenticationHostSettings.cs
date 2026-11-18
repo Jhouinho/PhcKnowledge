@@ -24,17 +24,23 @@ public sealed class AuthenticationHostSettings
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        var authority = configuration["Authentication:Authority"];
-        if (string.IsNullOrWhiteSpace(authority))
+        var authorityRaw = configuration["Authentication:Authority"];
+        if (string.IsNullOrWhiteSpace(authorityRaw))
             throw new InvalidOperationException("A configuração Authentication:Authority é obrigatória.");
 
         var audience = configuration["Authentication:Audience"];
         if (string.IsNullOrWhiteSpace(audience))
             throw new InvalidOperationException("A configuração Authentication:Audience é obrigatória.");
 
-        var issuer = configuration["Authentication:Issuer"];
-        if (string.IsNullOrWhiteSpace(issuer))
-            issuer = authority;
+        // Authority is used for OIDC metadata discovery; trailing slashes are normalized.
+        var authority = authorityRaw.Trim().TrimEnd('/');
+
+        // Issuer is compared to the JWT iss claim and must keep its exact configured value
+        // (including a trailing slash). When omitted, default to the normalized Authority.
+        var issuerRaw = configuration["Authentication:Issuer"];
+        var issuer = string.IsNullOrWhiteSpace(issuerRaw)
+            ? authority
+            : issuerRaw.Trim();
 
         var claimType = configuration["Authentication:OrganizationClaimType"];
         if (string.IsNullOrWhiteSpace(claimType))
@@ -49,9 +55,9 @@ public sealed class AuthenticationHostSettings
 
         return new AuthenticationHostSettings
         {
-            Authority = authority.Trim().TrimEnd('/'),
+            Authority = authority,
             Audience = audience.Trim(),
-            Issuer = issuer.Trim().TrimEnd('/'),
+            Issuer = issuer,
             OrganizationClaimType = claimType.Trim(),
             RequireHttpsMetadata = requireHttps
         };

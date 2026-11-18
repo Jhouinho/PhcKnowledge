@@ -50,6 +50,19 @@ public sealed class AuthenticationHostSettingsTests
         Assert.Equal("https://tokens.example.test/real-issuer", settings.Issuer);
     }
 
+    [Fact]
+    public void Load_preserves_issuer_trailing_slash_exactly()
+    {
+        var settings = AuthenticationHostSettings.Load(Configuration(new Dictionary<string, string?>
+        {
+            ["Authentication:Authority"] = "https://idp.example.test",
+            ["Authentication:Issuer"] = "https://tokens.example.test/real-issuer/"
+        }));
+
+        Assert.Equal("https://idp.example.test", settings.Authority);
+        Assert.Equal("https://tokens.example.test/real-issuer/", settings.Issuer);
+    }
+
     [Theory]
     [InlineData("Authentication:Authority", null)]
     [InlineData("Authentication:Authority", "")]

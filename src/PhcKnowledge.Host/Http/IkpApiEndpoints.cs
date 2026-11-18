@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 using PhcKnowledge.Import.Ikp;
 using PhcKnowledge.Import.Receipts;
 
@@ -36,12 +38,12 @@ public static class IkpApiEndpoints
         IIkpIngestionGateway ingestion,
         IPackageReceiptAttemptRepository attempts,
         UploadConcurrencyGate concurrencyGate,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
-        var contentType = httpContext.Request.ContentType;
-        if (string.IsNullOrWhiteSpace(contentType) ||
-            !contentType.StartsWith("application/zip", StringComparison.OrdinalIgnoreCase) ||
-            contentType.Contains("multipart/", StringComparison.OrdinalIgnoreCase))
+        var logger = loggerFactory.CreateLogger("PhcKnowledge.Host.Http.IkpApi");
+
+        if (!IsApplicationZipContentType(httpContext.Request.ContentType))
         {
             return IkpProblemDetailsFactory.Problem(
                 httpContext,
@@ -57,7 +59,7 @@ public static class IkpApiEndpoints
         }
         catch (OrganizationIdResolutionException ex)
         {
-            return IkpProblemDetailsFactory.FromException(httpContext, ex);
+            return IkpProblemDetailsFactory.FromException(httpContext, ex, logger);
         }
 
         UploadConcurrencyLease? lease;
@@ -82,36 +84,38 @@ public static class IkpApiEndpoints
 
         try
         {
-            IkpIngestionResult result;
-            try
+            return await ExecuteAsync(httpContext, logger, async () =>
             {
-                result = await ingestion.ReceiveAsync(
-                    httpContext.Request.Body,
-                    organizationId,
-                    cancellationToken);
-            }
-            catch (PackageReceiptPendingException pending)
-            {
-                return await AcceptedPendingAsync(
-                    httpContext, attempts, organizationId, pending.AttemptId, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                return IkpProblemDetailsFactory.FromException(httpContext, ex);
-            }
+                IkpIngestionResult result;
+                try
+                {
+                    result = await ingestion.ReceiveAsync(
+                        httpContext.Request.Body,
+                        organizationId,
+                        cancellationToken);
+                }
+                catch (PackageReceiptPendingException pending)
+                {
+                    return await AcceptedPendingAsync(
+                        httpContext, attempts, organizationId, pending.AttemptId, cancellationToken);
+                }
 
-            var status = await attempts.GetByPackageIdAsync(
-                organizationId, result.Validation.PackageId, cancellationToken);
-            if (status is null)
-            {
-                return IkpProblemDetailsFactory.Problem(
-                    httpContext,
-                    StatusCodes.Status500InternalServerError,
-                    "Internal error",
-                    IkpPublicErrorCodes.InternalError);
-            }
+                var status = await attempts.GetByPackageIdAsync(
+                    organizationId, result.Validation.PackageId, cancellationToken);
+                if (status is null)
+                {
+                    logger.LogError(
+                        "IKP API internal failure after successful ingestion: status row missing. TraceId={TraceId}",
+                        httpContext.TraceIdentifier);
+                    return IkpProblemDetailsFactory.Problem(
+                        httpContext,
+                        StatusCodes.Status500InternalServerError,
+                        "Internal error",
+                        IkpPublicErrorCodes.InternalError);
+                }
 
-            return Results.Json(IkpPublicDtoMapper.ToStatusDto(status), statusCode: StatusCodes.Status200OK);
+                return Results.Json(IkpPublicDtoMapper.ToStatusDto(status), statusCode: StatusCodes.Status200OK);
+            });
         }
         finally
         {
@@ -140,63 +144,85 @@ public static class IkpApiEndpoints
             statusCode: StatusCodes.Status202Accepted);
     }
 
-    private static async Task<IResult> GetAttemptAsync(
+    private static Task<IResult> GetAttemptAsync(
         Guid attemptId,
         HttpContext httpContext,
         OrganizationIdResolver organizationIdResolver,
         IPackageReceiptAttemptRepository attempts,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
-        Guid organizationId;
-        try
+        var logger = loggerFactory.CreateLogger("PhcKnowledge.Host.Http.IkpApi");
+        return ExecuteAsync(httpContext, logger, async () =>
         {
-            organizationId = organizationIdResolver.ResolveRequired(httpContext.User);
-        }
-        catch (OrganizationIdResolutionException ex)
-        {
-            return IkpProblemDetailsFactory.FromException(httpContext, ex);
-        }
+            var organizationId = organizationIdResolver.ResolveRequired(httpContext.User);
+            var status = await attempts.GetAttemptAsync(organizationId, attemptId, cancellationToken);
+            if (status is null)
+            {
+                return IkpProblemDetailsFactory.Problem(
+                    httpContext,
+                    StatusCodes.Status404NotFound,
+                    "Not found",
+                    IkpPublicErrorCodes.NotFound);
+            }
 
-        var status = await attempts.GetAttemptAsync(organizationId, attemptId, cancellationToken);
-        if (status is null)
-        {
-            return IkpProblemDetailsFactory.Problem(
-                httpContext,
-                StatusCodes.Status404NotFound,
-                "Not found",
-                IkpPublicErrorCodes.NotFound);
-        }
-
-        return Results.Json(IkpPublicDtoMapper.ToStatusDto(status));
+            return Results.Json(IkpPublicDtoMapper.ToStatusDto(status));
+        });
     }
 
-    private static async Task<IResult> GetPackageAsync(
+    private static Task<IResult> GetPackageAsync(
         Guid packageId,
         HttpContext httpContext,
         OrganizationIdResolver organizationIdResolver,
         IPackageReceiptAttemptRepository attempts,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
-        Guid organizationId;
+        var logger = loggerFactory.CreateLogger("PhcKnowledge.Host.Http.IkpApi");
+        return ExecuteAsync(httpContext, logger, async () =>
+        {
+            var organizationId = organizationIdResolver.ResolveRequired(httpContext.User);
+            var status = await attempts.GetByPackageIdAsync(organizationId, packageId, cancellationToken);
+            if (status is null)
+            {
+                return IkpProblemDetailsFactory.Problem(
+                    httpContext,
+                    StatusCodes.Status404NotFound,
+                    "Not found",
+                    IkpPublicErrorCodes.NotFound);
+            }
+
+            return Results.Json(IkpPublicDtoMapper.ToStatusDto(status));
+        });
+    }
+
+    private static async Task<IResult> ExecuteAsync(
+        HttpContext httpContext,
+        ILogger logger,
+        Func<Task<IResult>> action)
+    {
         try
         {
-            organizationId = organizationIdResolver.ResolveRequired(httpContext.User);
+            return await action();
         }
-        catch (OrganizationIdResolutionException ex)
+        catch (Exception ex)
         {
-            return IkpProblemDetailsFactory.FromException(httpContext, ex);
+            return IkpProblemDetailsFactory.FromException(httpContext, ex, logger);
         }
+    }
 
-        var status = await attempts.GetByPackageIdAsync(organizationId, packageId, cancellationToken);
-        if (status is null)
-        {
-            return IkpProblemDetailsFactory.Problem(
-                httpContext,
-                StatusCodes.Status404NotFound,
-                "Not found",
-                IkpPublicErrorCodes.NotFound);
-        }
+    /// <summary>
+    /// Accepts media type <c>application/zip</c> (case-insensitive) with optional parameters.
+    /// Rejects other types (including <c>application/zipx</c>), multipart and malformed values.
+    /// </summary>
+    public static bool IsApplicationZipContentType(string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+            return false;
 
-        return Results.Json(IkpPublicDtoMapper.ToStatusDto(status));
+        if (!MediaTypeHeaderValue.TryParse(contentType, out var mediaType))
+            return false;
+
+        return mediaType.MediaType.Equals("application/zip", StringComparison.OrdinalIgnoreCase);
     }
 }
