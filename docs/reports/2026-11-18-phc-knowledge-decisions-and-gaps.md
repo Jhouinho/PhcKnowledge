@@ -29,9 +29,9 @@ Esta matriz separa decisões já registadas, decisões que precisam de confirma�
 
 | ID | Decisão | Opções/questão | Porque bloqueia |
 |---|---|---|---|
-| D-01 | Base relacional central | PostgreSQL ou SQL Server Express? A documentação de stack atual aponta SQL Server; decisões anteriores apontavam PostgreSQL. Confirmar uma única opção. | Modelo físico, migrations, FTS, deployment e operação |
+| D-01 | Base relacional central | **Microsoft SQL Server** — decisão confirmada em 2026-11-18. | Fechada; alinhar documentação e definir baseline mínima de versão/edição. |
 | D-02 | Baseline de versão SQL | Se SQL Server for confirmado, qual a versão mínima e edição suportada? | Compatibilidade e deployment |
-| D-03 | Modelo de domínio 0.2 | Aprovar os documentos/diagramas da branch `architecture/domain-model-0.2-review` ou indicar alterações | Bloqueia implementação de Core |
+| D-03 | Modelo de domínio 0.2 | Aprovar o modelo conceptual 0.2 como referência; manter pendentes os detalhes físicos/operacionais identificados no documento de decisões. | Direção recomendada para aprovação; schema físico ainda não aprovado. |
 | D-04 | Identidade nativa SQL | Incorporar o esquema de identidade da branch `feature/sql-native-object-identities-20261108`? | Afeta matching entre capturas |
 | D-05 | Object Index performance | Integrar a otimização da branch `feature/ikp-object-index-schema-perf` após testes de equivalência? | Desempenho de validação de pacotes |
 | D-06 | Armazenamento de pacotes | Confirmar filesystem on-prem como primeira implementação e abstração para object storage futuro | Deployment, retenção e recuperação |
@@ -41,17 +41,15 @@ Esta matriz separa decisões já registadas, decisões que precisam de confirma�
 
 ### Críticas — antes de avançar para Core
 
-**G-01 — Prova ponta a ponta com captura real**
+**G-01 — Fechar prova ponta a ponta com pacote real existente**
 
-- Exportar uma captura real através do Scanner atual.
-- Validar o pacote no Import independente.
-- Confirmar todos os artefactos, checksums, coverage, capabilities, object index e relações declaradas.
-- Testar arquivo, receipt e repetição idempotente.
-- Não inventar dados nem alterar coletores/SQLite para acomodar resultados antes de validar a captura real.
+- **Concluído em 2026-11-08:** captura real `CSDefault202603`, Object Index IKP 0.1 validado, exportação IKP V4 íntegra, checksums/tamanhos sem falhas, relações REL/DTL interpretadas (921/921) e limitações de coverage registadas.
+- **Por executar:** usar o pacote real já produzido para validar o Import/Host, receipt, arquivo imutável, repetição idempotente e recuperação; depois validar materialização e persistência central.
+- Não pedir nova captura nem alterar collectors/SQLite para acomodar resultados sem evidência.
 
-Critério de fecho: relatório de execução com pacote real, resultados, exceções e limitações.
+Critério de fecho: relatório da execução central com o pacote existente, resultados, exceções e limitações.
 
-**G-02 — Modelo de domínio aprovado**
+**G-02 — Desenho físico e fecho dos detalhes do domínio 0.2**
 
 - Rever Organization, Installation, Environment e localização da base de dados.
 - Rever Package, PackageReceipt, Capture e Observation.
@@ -59,11 +57,11 @@ Critério de fecho: relatório de execução com pacote real, resultados, exceç
 - Definir estados e transições, incluindo captura parcial e associação pendente.
 - Definir constraints, unicidade, chaves e relações.
 
-Critério de fecho: modelo conceptual e físico aprovado, com diagramas coerentes e decisões registadas.
+Critério de fecho: modelo conceptual 0.2 aprovado como referência; cardinalidade/índices de DatabaseLocation, eventos/projeções, permissões/auditoria e execução de reavaliações fechados antes das migrations.
 
-**G-03 — Escolha do motor relacional**
+**G-03 — Baseline SQL Server**
 
-Critério de fecho: decisão explícita, justificação e atualização coerente de documentação e projetos. Não manter dois caminhos de persistência concorrentes sem requisito concreto.
+A escolha de Microsoft SQL Server está confirmada em 2026-11-18. Falta definir versão e edição mínimas suportadas e validar deployment on-prem. Não manter PostgreSQL como caminho concorrente.
 
 **G-04 — Fronteira de materialização**
 
