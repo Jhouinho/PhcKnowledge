@@ -7,6 +7,7 @@ namespace PhcKnowledge.Host;
 
 public sealed class SqlServerSchemaPreflightService(
     ReceiptHostSettings settings,
+    HostReadinessState readiness,
     ILogger<SqlServerSchemaPreflightService> logger) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -69,6 +70,7 @@ public sealed class SqlServerSchemaPreflightService(
             throw new InvalidOperationException(
                 $"Schema de PackageReceipt incompleto. Colunas em falta: {missingColumns}. Aplicar/actualizar as migrations 001 e 002.");
 
+        readiness.MarkSchemaReady();
         logger.LogInformation("SQL Server preflight concluído; tabelas e colunas necessárias de PackageReceipt disponíveis.");
     }
 

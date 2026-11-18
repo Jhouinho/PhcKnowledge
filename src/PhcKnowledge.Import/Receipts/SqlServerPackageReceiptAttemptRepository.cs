@@ -463,7 +463,9 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
                      !string.Equals(receipt.ZipSha256, hash, StringComparison.Ordinal) ||
                      !string.Equals(receipt.StorageKey, archive.StorageKey, StringComparison.Ordinal))
             {
-                throw new PackageReceiptConflictException("O receipt existente diverge da tentativa recuperada.");
+                throw new PackageReceiptConflictException(
+                    "O receipt existente diverge da tentativa recuperada.",
+                    PackageReceiptConflictKind.InternalInconsistency);
             }
 
             const string update = """
@@ -626,7 +628,9 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
             attempt.Validation.PackageId != validation.PackageId ||
             !string.Equals(attempt.Validation.ZipSha256, validation.ZipSha256, StringComparison.Ordinal) ||
             !string.Equals(attempt.StorageKey, storageKey, StringComparison.Ordinal))
-            throw new PackageReceiptConflictException("Já existe uma tentativa para o PackageId ou SHA-256 com conteúdo diferente.");
+            throw new PackageReceiptConflictException(
+                "Já existe uma tentativa para o PackageId ou SHA-256 com conteúdo diferente.",
+                PackageReceiptConflictKind.IdentityMismatch);
     }
 
     private static string CreateValidationSummary(IkpPackageValidationResult validation) =>
