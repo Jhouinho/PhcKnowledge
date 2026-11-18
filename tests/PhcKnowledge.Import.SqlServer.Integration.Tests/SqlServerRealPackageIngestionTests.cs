@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using PhcKnowledge.Import.Ikp;
@@ -326,9 +325,14 @@ public sealed class SqlServerRealPackageIngestionTests
         }
         finally
         {
-            await CleanupAsync(connectionString, organizationId);
-            if (Directory.Exists(root))
-                Directory.Delete(root, recursive: true);
+            try
+            {
+                await CleanupAsync(connectionString, organizationId);
+            }
+            finally
+            {
+                DeleteTemporaryDirectory(root);
+            }
         }
     }
 
