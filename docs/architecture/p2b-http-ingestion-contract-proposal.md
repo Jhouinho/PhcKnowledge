@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Fase | P2.B |
-| Estado | **Proposta documental — aprovação final pendente** |
+| Estado | **Aprovada para implementação** |
 | Baseline de referência | `6e20d98c495651fbada41267f087c280fd639103` |
 | Branch de referência | `main` |
 | Data | 2026-11-18 |
@@ -11,7 +11,7 @@
 
 Este documento consolida as decisões de arquitetura e o contrato HTTP proposto para P2.B. Regista as escolhas já confirmadas e identifica os pontos ainda por fechar. Não altera nem substitui os contratos IKP 0.1, o processo de ingestão/recovery existente ou os contratos de domínio.
 
-**P2.B não está aprovada para implementação.** A aprovação final deste documento — incluindo a resolução dos pontos em aberto — é uma condição prévia para criar branch de implementação ou alterar código.
+**P2.B está formalmente aprovada para implementação.** As decisões e os limites deste contrato constituem a referência vinculativa para a implementação na branch `feature/p2b-http-ingestion-api`.
 
 ## 1. Objetivo
 
@@ -291,15 +291,9 @@ Ficam explicitamente excluídos:
 
 ## 14. Critério de aprovação e próximo passo
 
-P2.B só fica pronta para implementação quando:
+A implementação P2.B está aprovada, condicionada ao respeito pelos quatro princípios arquiteturais, pelo contrato de endpoints, DTOs, estados e erros, pelos testes de aceitação e pelas exclusões aqui definidos.
 
-1. os quatro princípios arquiteturais confirmados nesta proposta forem preservados;
-2. os pontos da secção 10 estiverem decididos ou explicitamente adiados com justificação e impacto;
-3. o contrato de endpoints, DTOs, estados e erros estiver fechado;
-4. os testes de aceitação e as exclusões forem aceites;
-5. o utilizador der aprovação final explícita.
-
-Até essa aprovação, este documento é apenas uma proposta de âmbito. Não autoriza criação de branch de implementação, alterações ao código, migrations, configuração de produção ou integração com um Identity Provider.
+A aprovação não autoriza alterações ao formato IKP 0.1, migrations existentes, integração do Scanner ou funcionalidades fora do âmbito desta fase. Qualquer necessidade adicional deve ser identificada e submetida a aprovação separada.
 
 
 ## 15. Fecho técnico dos pontos anteriormente em aberto
@@ -405,6 +399,6 @@ Com estas decisões:
 - os dez pontos anteriormente abertos ficam tecnicamente resolvidos ao nível do contrato;
 - a escolha do IdP concreto, Authority, Audience, certificados/chaves, proxies, origins browser e capacidade de disco permanecem parâmetros de deployment, não lacunas do desenho;
 - a semântica HTTP evita alterações ao serviço de ingestão apenas para distinguir primeira submissão de repetição;
-- a implementação continua sujeita a aprovação final explícita.
+- a implementação está formalmente aprovada nos limites definidos neste contrato.
 
 A revisão foi feita contra o código disponível na baseline indicada, em particular `IkpPackageIngestionService`, `IPackageReceiptAttemptRepository`, `SqlServerPackageReceiptAttemptRepository`, `PackageReceiptAttempt`, `PackageIngestionStatus`, `ReceiptHostSettings` e `PhcKnowledge.Host/Program.cs`. Não foram feitas alterações de código nesta revisão.
