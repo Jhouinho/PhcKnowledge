@@ -29,6 +29,7 @@ public interface IPackageReceiptAttemptRepository
         CancellationToken cancellationToken = default);
 
     Task<PackageReceipt?> GetCompletedReceiptAsync(
+        Guid organizationId,
         Guid attemptId,
         CancellationToken cancellationToken = default);
 

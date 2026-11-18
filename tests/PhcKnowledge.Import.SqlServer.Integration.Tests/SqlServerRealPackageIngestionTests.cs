@@ -304,7 +304,7 @@ public sealed class SqlServerRealPackageIngestionTests
             var processed = await recovery.ProcessDueAsync(batchSize: 10);
             Assert.Equal(1, processed);
 
-            var receipt = await restartedRepository.GetCompletedReceiptAsync(registration.Attempt.AttemptId);
+            var receipt = await restartedRepository.GetCompletedReceiptAsync(organizationId, registration.Attempt.AttemptId);
             Assert.NotNull(receipt);
             Assert.Equal(validation.PackageId, receipt!.PackageId);
             Assert.Equal(validation.CaptureId, receipt.CaptureId);

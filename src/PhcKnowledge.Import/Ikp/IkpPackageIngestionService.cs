@@ -89,7 +89,7 @@ public sealed class IkpPackageIngestionService
                             "A tentativa está concluída, mas o objecto imutável não existe no arquivo.");
                     var archived = new ArchivedPackage(registration.Attempt.StorageKey, true);
                     var existingReceipt = await _attemptRepository.GetCompletedReceiptAsync(
-                        registration.Attempt.AttemptId, cancellationToken);
+                        organizationId!.Value, registration.Attempt.AttemptId, cancellationToken);
                     if (existingReceipt is null)
                         throw new PackageReceiptConflictException(
                             "A tentativa está marcada como concluída, mas o receipt correspondente não existe.");
