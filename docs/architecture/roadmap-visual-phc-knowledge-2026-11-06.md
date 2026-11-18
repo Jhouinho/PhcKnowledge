@@ -1,7 +1,7 @@
 # Roadmap visual do PHC Knowledge — visão, fases e estado atual
 
-**Data de referência:** 2026-11-17  
-**Estado:** roadmap revisto em 2026-11-17; Scanner/IKP e primeira fatia Import já implementados. API, SQL real, reconciliação e materialização continuam por concluir.  
+**Data de referência:** 2026-11-18  
+**Estado:** Scanner/IKP, ingestão/recovery, API HTTP IKP e backend Identity/Portal implementados; materialização do domínio, associação a instalações, análise prévia do ZIP e UI continuam por construir. A PR #15 foi integrada na main (`6c619bfc`).  
 **Nota:** as percentagens não são estimadas; os estados indicam maturidade qualitativa.
 
 ## 1. Objetivo do produto
@@ -51,10 +51,14 @@ flowchart TB
     end
 
     subgraph P2["FASE 2 — Plataforma central"]
-      C1["Registo de instalações"]
-      C2["Import service<br/>Validator, arquivo imutável e receipt SQL"]
-      C3["Armazenamento de capturas<br/>Histórico imutável"]
+      C1["Import / recovery<br/>Validator, arquivo, receipt e workers"]
+      C2["API HTTP IKP<br/>Upload e consulta org-scoped"]
+      C3["Identity / Portal backend<br/>Cookie, JWT, roles e gestão de utilizadores"]
+      C4["Análise prévia e confirmação<br/>Ainda por implementar"]
+      C5["Instalações e contexto<br/>Customer / Installation / Environment"]
       C1 --> C2 --> C3
+      C3 --> C4
+      C3 --> C5
     end
 
     subgraph P3["FASE 3 — Evolução e conhecimento"]
@@ -87,8 +91,9 @@ flowchart TB
     class B1,B2,B3,B4 done
     class B5 done
     class B6,B7 validation
-    class C1,C3,D1,D2,D3,D4,D5,E1,E2,E3,E4 pending
-    class C2 progress
+    class C1,C2,C3 done
+    class C4,C5,D1,D2,D3,D4,E1,E2,E3,E4 pending
+    class D5 pending
 ```
 
 > O diagrama é sequencial para comunicar dependências, mas algumas atividades podem decorrer em paralelo. A análise relacional já existente no Scanner é uma capacidade reaproveitável; não significa que a plataforma central esteja implementada.
@@ -113,7 +118,7 @@ Limites conhecidos:
 - a cobertura atual tem diferenças semânticas entre operações e tipos de recolha;
 - alguns collectors filtram registos sem conteúdo antes de os emitir;
 - a cobertura atual não permite concluir remoções com segurança em todos os casos;
-- o exportador IKP 0.1 já existe e está integrado na CLI; a validação end-to-end do ZIP produzido a partir de captura real continua por confirmar.
+- o exportador IKP 0.1 já existe e está integrado na CLI; o pacote real CSDefault202603 já foi exercitado no harness de receção/arquivo/recovery; a captura cobre 8/21 kinds e não valida estabilidade de identidade entre capturas.
 
 ### Fase 1 — Captura fiável e pacote normalizado
 
@@ -170,37 +175,53 @@ Em 2026-11-11 foi executado um teste A/B com o mesmo pacote real `CSDefault20260
 
 **Decisão técnica:** remover exclusivamente `uniqueItems: true` do array raiz `objects`. Manter `uniqueItems: true` em `definition.artifactIds`, que é uma lista pequena e cuja unicidade continua a ser relevante. Não alterar outras regras do schema, o contrato IKP 0.1, o código do Scanner, SQLite, collectors ou a lógica de identidade nesta intervenção.
 
-**Estado:** decisão sustentada por teste A/B; a alteração ao schema ainda não foi aplicada nem validada no repositório. O teste A/B confirma o comportamento do schema com o pacote usado, mas não substitui a validação end-to-end final do ZIP exportado.
+**Estado: concluído em 2026-11-18.** A regra foi removida apenas do array raiz `objects`; mantém-se a unicidade de `definition.artifactIds` no schema e a validação ordinal de `sourceObjectId` no validador C#. O harness com o ZIP real confirmou receção e recovery em tempos compatíveis (ver relatório do harness).
 
-#### Próximos passos da Fase 1
+#### Estado e próximos passos da Fase 1 — atualização 2026-11-18
 
-1. Fazer backup e remover apenas `uniqueItems: true` do array principal `objects` em `docs/architecture/schemas/ikp-0.1/object-index.schema.json`; manter a regra em `definition.artifactIds`.
-2. Confirmar no código que `ValidateObjectIndex` continua a rejeitar `sourceObjectId` duplicados através do `HashSet`.
-3. Executar `dotnet clean PhcKnowledge.sln`, `dotnet test PhcKnowledge.sln` e `dotnet build PhcKnowledge.sln`; confirmar também que `artifactIds` duplicados continuam a ser rejeitados.
-4. Revalidar `CSDefault202603-ikp-validation.zip`, registar tempos e confirmar aceitação. Depois, executar a validação end-to-end do ZIP efetivamente produzido por `scan-ikp` / `export-ikp`, inspeccionando os cinco documentos, payloads, checksums e digest lógico.
-5. Confirmar categorias/artefactos efetivamente exportados e compatibilidade entre manifesto, capabilities, coverage e Object Index.
-6. Manter por validar os kinds não presentes na captura real (13/21) e a estabilidade de identidade entre capturas.
-7. Não alterar SQLite/collectors sem evidência concreta de lacuna.
+Concluído desde a revisão anterior:
+- Remoção localizada de `uniqueItems: true` do array raiz `objects`; unicidade de `sourceObjectId` preservada no validador C# e de `artifactIds` no schema.
+- Harness local opt-in com o ZIP IKP real `CSDefault202603`: receção, idempotência, arquivo imutável e recovery após interrupção simulada, com tempos medidos e registados em [real-ikp-receipt-integration-harness-2026-11-18.md](real-ikp-receipt-integration-harness-2026-11-18.md).
 
-#### Fase 1 — estado resumido
+Continua por validar:
+- Os 13 kinds que não surgem na captura real (a captura cobre 8/21).
+- Estabilidade de identidade lógica entre capturas distintas.
+- Validação real exaustiva de categorias/artefactos e todos os cenários de compatibilidade do exportador.
+- Validador independente end-to-end como verificação adicional; o harness real atual valida o percurso do Import com o ZIP real, não substitui todas as verificações externas.
+
+Não alterar SQLite/collectors sem evidência concreta de lacuna.
+
+#### Fase 1 — estado resumido (2026-11-18)
 
 - **Concluído:** P0 CaptureId/capabilities/coverage.
-- **Implementado:** P1.B Object Index, identidade, fingerprints e estados individuais; 21 kinds cobertos sinteticamente.
-- **Validado com captura real:** projeção para 8/21 kinds presentes na `CSDefault202603`, com hashes/tamanhos de artefactos verificados.
+- **Implementado e testado sinteticamente:** P1.B Object Index, identidade, fingerprints e estados individuais; 21 kinds cobertos sinteticamente.
+- **Exercitado com captura real:** 8/21 kinds presentes na `CSDefault202603`; 16.618 objetos e 52 artefactos no pacote real usado pelo harness.
 - **Implementado:** exportador IKP 0.1 e comandos CLI `scan-ikp` / `export-ikp`.
-- **Pendente imediato:** aplicar a correção localizada de `uniqueItems` no schema e executar testes/build; concluir validação end-to-end do ZIP exportado com validador independente.
-- **Pendente adicional:** kinds não observados na captura real; identidade entre capturas.
+- **Concluído:** correção de desempenho de `objects.uniqueItems` e validação do percurso real de receção/arquivo/idempotência/recovery.
+- **Pendente:** kinds não observados na captura real, estabilidade de identidade entre capturas e validação independente adicional.
 
 ### Fase 2 — Plataforma central
 
-**Estado: parcial — Import service implementado; HTTP, SQL Server real e materialização pendentes**
+**Estado: backend de ingestão, HTTP e Identity/Portal implementado; fluxo de utilização e domínio materializado ainda incompletos.**
 
-O núcleo `PhcKnowledge.Import` já contém validator, serviço de ingestão, arquivo imutável e repositório SQL de receipts, com testes sobre fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado). A implementação atual não demonstra API HTTP/autenticação nem execução contra SQL Server real. Depois, e em etapas separadas, construir:
-- registo e gestão de instalações;
-- fronteira HTTP/autenticação sobre a receção já existente;
-- robustez de ingestão (SQL Server real, reconciliação arquivo/receipt, idempotência e conflitos);
-- armazenamento de capturas materializadas e respetivos artefactos;
-- consulta do inventário importado.
+Implementado no código integrado na `main`:
+- Host único `WebApplication` / Kestrel com API e workers internos de recovery, cleanup e monitorização.
+- Pipeline IKP de validação, receção, arquivo imutável content-addressed, receipts/tentativas org-scoped e recuperação.
+- API HTTP IKP: `POST /api/v1/ikp/packages`, `GET /api/v1/ikp/attempts/{attemptId}` e `GET /api/v1/ikp/packages/{packageId}`; JWT Bearer e scopes quando ativados.
+- Organização canónica e ASP.NET Identity com `Administrator` e `Collaborator`.
+- Portal backend com cookie, login/logout, sessão, antiforgery, validação de SecurityStamp e API administrativa de utilizadores.
+- CLI `PhcKnowledge.Install` para scripts SQL, migrations Identity, organização canónica, roles e bootstrap do primeiro administrador.
+
+Validação registada:
+- Harness local opt-in com ZIP IKP real `CSDefault202603`, incluindo receção, idempotência, arquivo e recovery; ver relatório específico.
+- GitHub Actions na branch da PR #15: .NET workflow #253 e SQL Server integration workflow #39 concluídos com sucesso. A execução SQL descobriu 64 testes: 62 aprovados e 2 ignorados por dependerem do ZIP real, não disponibilizado em CI.
+- A PR #15 foi integrada em 2026-11-18; merge commit `6c619bfc`.
+
+Ainda não implementado:
+- UI React / experiência de navegação do Portal.
+- Análise prévia do pacote, staging de análise e confirmação explícita antes de importar.
+- Gestão de Customers, Installations e Environments e associação/correção de contexto da captura.
+- Materialização de Capture, Observation, artefactos e REL/DTL em entidades próprias; pesquisa do inventário materializado.
 
 A plataforma deverá consumir IKP; não deverá ligar-se diretamente às bases de dados dos clientes nem executar o Scanner em runtime.
 
@@ -239,13 +260,15 @@ A IA não deverá inventar factos nem substituir a proveniência. Deve investiga
 | 1 | P0 — CaptureId, capabilities e coverage | **Concluído.** Contratos e testes de captura/cobertura existentes. |
 | 2 | P1.B — Object Index | **Implementado.** 21 kinds cobertos sinteticamente; captura real validou 8/21 kinds e 49 artefactos (tamanho/hash). |
 | 3 | Exportador IKP 0.1 | **Implementado no Scanner.** `IkpPackageExporter`, `scan-ikp` e `export-ikp`. |
-| 4 | Correção de desempenho do schema IKP | **Decisão tomada; alteração pendente.** Remover `uniqueItems` apenas de `objects`; manter unicidade de `sourceObjectId` no validador C# e de `artifactIds` no schema. Repetir testes e medição. |
-| 5 | Validação end-to-end de IKP real | **Pendente.** Gerar pacote da captura default existente e validar com schemas/validador independente. |
-| 6 | Receive / Validate / Archive | **Implementado como serviço Import.** Endpoint HTTP/autenticação, SQL Server real e reconciliação ainda pendentes. |
-| 7 | Associação, materialização e comparação | Posterior; não faz parte da primeira fatia. |
-| 8 | Histórico, identidade e diff | Comparar capturas sem confundir instalação, objeto observado e entidade lógica; só inferir remoções com cobertura suficiente. |
-| 9 | Dependências, conhecimento e pesquisa | Consultas devolvem objetos, evidências, contexto e anotações rastreáveis. |
-| 10 | Investigação assistida por IA | Respostas fundamentadas em evidências, proveniência e incerteza explícita. |
+| 4 | Desempenho do schema IKP | **Concluído.** Removido `uniqueItems` do array raiz `objects`; unicidade preservada no validador C# e para `artifactIds` no schema. |
+| 5 | Harness de receção IKP real | **Concluído localmente.** ZIP real recebido, arquivado, repetido idempotentemente e recuperado após interrupção simulada. |
+| 6 | Host operacional e recovery | **Implementado.** Workers de preflight, recovery, cleanup e monitorização. |
+| 7 | API HTTP IKP | **Implementada.** Upload raw ZIP e consultas org-scoped, com JWT/scopes opcionais por configuração. |
+| 8 | Identity e Portal backend | **Implementado e integrado na main (PR #15).** Login, sessões, roles, bootstrap e administração de utilizadores. |
+| 9 | Fluxo de upload do Portal | **Por definir/implementar.** Análise prévia, staging, confirmação e associação de contexto. |
+| 10 | Materialização e comparação | **Futuro.** Capture, Observation, REL/DTL, identidade lógica e diff com cobertura suficiente. |
+| 11 | Pesquisa e conhecimento reutilizável | **Futuro.** Consultas com evidências, contexto e anotações rastreáveis. |
+| 12 | Investigação assistida por IA | **Futuro.** Respostas fundamentadas em evidências, proveniência e incerteza explícita. |
 
 ## 5. Critério para não perder o rumo
 
@@ -268,7 +291,7 @@ Cada fase deve produzir uma capacidade verificável:
 - `docs/architecture/p1b-static-consistency-audit-2026-11-06.md` — auditoria estática do object-index.
 - `docs/architecture/p1b-projector-workspace-read-contract-2026-11-06.md` — leitura read-only do workspace.
 
-**Nota de rigor:** este roadmap é uma síntese do estado documental, do código, dos resultados de CI e dos testes comunicados até 2026-11-11. Não representa percentagens de conclusão. O teste A/B de desempenho foi executado com um pacote real e uma cópia temporária do schema; não equivale à validação end-to-end final do ZIP produzido pelo exportador.
+**Nota de rigor:** este roadmap é uma síntese do estado documental, do código, dos resultados de CI e dos testes comunicados até 2026-11-18. Não representa percentagens de conclusão. O teste A/B de desempenho foi executado com um pacote real e uma cópia temporária do schema; não equivale à validação end-to-end final do ZIP produzido pelo exportador.
 
 
 ## 7. Decisão transversal — preparação para RAG
@@ -291,14 +314,18 @@ Esta capacidade pertence ao Scanner, não à plataforma central. Os collectors m
 Detalhe e salvaguardas: [scanner-controlled-change-management-vision-2026-11-07.md](scanner-controlled-change-management-vision-2026-11-07.md).
 
 
-## 9. Estado consolidado — 2026-11-17
+## 9. Estado consolidado — 2026-11-18
 
-A sequência atual é: **Scanner/IKP implementado e captura real examinada → Receive / Validate / Archive implementado como serviço em PhcKnowledge.Import → robustecer SQL/arquivo e desenhar HTTP/autenticação → materializar conhecimento**.
+A sequência atual é: **Scanner/IKP e captura real → receção/arquivo/recovery robustos → API HTTP IKP → Identity/Portal backend → definir experiência do Portal e fluxo de análise/confirmar → materializar conhecimento**.
 
-A primeira fatia inclui IkpPackageValidator, IkpPackageIngestionService, FileSystemImmutablePackageStore, SqlServerPackageReceiptRepository, migration 001_package_ingestion_receipts.sql e testes sobre fixture IKP / ZIP sintético → Validator / Ingestion. Os testes não provam execução SQL Server real, API HTTP/autenticação nem validação end-to-end com o ZIP real CSDefault202603 no serviço Import.
+A PR #15 foi integrada na `main` pelo merge commit `6c619bfc6aa78ba1cd694c48f2d71c71c71aa4b8`. O backend Identity/Portal está implementado: organização canónica, ASP.NET Identity, roles, cookie, login/logout, sessão, antiforgery, SecurityStamp, administração de utilizadores e CLI de bootstrap. A API IKP e os workers operacionais coexistem no mesmo Host.
 
-O arquivo acontece antes da gravação SQL do receipt. Falha SQL posterior pode deixar ficheiro órfão; reconciliação/retry é um bloqueador técnico antes de alargar a ingestão. O modelo de destino separa Package global de PackageReceipt por Organization; a migration atual ainda tem unicidade por Organization.
+O harness local opt-in com o pacote real CSDefault202603 exercitou receção, idempotência, arquivo imutável e recovery. A CI da PR #15 terminou com sucesso nos workflows .NET #253 e SQL Server #39; a suite SQL descobriu 64 testes, 62 aprovados e 2 ignorados porque dependem do ZIP real ausente em CI.
 
-A captura real confirmou 16.618 SourceObjectIds, máximo 54, sem duplicados ordinais, espaços nas extremidades ou valores não-ASCII. O destino proposto é NVARCHAR(256) com comparação ordinal. REL/DTL está num ficheiro físico único com coleções declaredRelations e interpretations; as entidades de domínio permanecem separadas.
+A correção de desempenho do schema removeu `uniqueItems` apenas do array raiz `objects`; a unicidade de `sourceObjectId` permanece validada no C# e `definition.artifactIds` no schema. A captura real contém 8/21 kinds; os 13 restantes e a estabilidade entre capturas continuam por validar.
 
-A base central escolhida é SQL Server Express; versão concreta e adequação operacional continuam por validar. ZIPs originais ficam em arquivo imutável fora da base relacional. SignalR mantém-se na arquitetura.
+A API e o backend de autenticação não equivalem a um Portal utilizável: não existe UI React, análise prévia do ZIP/staging/confirm, nem gestão e associação de Customer/Installation/Environment. O domínio 0.2 (Capture/Observation/REL/DTL/Identity) ainda não está materializado integralmente.
+
+Antes de produção, ficam identificados dois pontos de hardening: persistência e proteção explícitas das chaves Data Protection; e garantia verificável de que chamadas internas de ativação/desativação de administradores não contornam o bloqueio administrativo comum. Estes pontos devem ser tratados como trabalho explícito, sem os confundir com funcionalidades já entregues.
+
+A próxima etapa deve começar por uma conversa de produto sobre a experiência e o fluxo do Portal. Não iniciar a implementação React antes dessa validação. Em paralelo, definir o plano de hardening operacional e de segurança.
