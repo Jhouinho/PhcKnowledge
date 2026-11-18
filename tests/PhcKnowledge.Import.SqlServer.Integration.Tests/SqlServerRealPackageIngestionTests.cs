@@ -172,6 +172,17 @@ public sealed class SqlServerRealPackageIngestionTests
     private static string ArchivePath(string archiveRoot, string storageKey) =>
         Path.Combine(archiveRoot, storageKey.Replace('/', Path.DirectorySeparatorChar));
 
+    private static void DeleteTemporaryDirectory(string path)
+    {
+        if (!Directory.Exists(path))
+            return;
+
+        foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+            File.SetAttributes(file, FileAttributes.Normal);
+
+        Directory.Delete(path, recursive: true);
+    }
+
     [RealCaptureSqlServerFact]
     public async Task Real_capture_is_received_archived_and_repeated_idempotently()
     {
@@ -216,7 +227,7 @@ public sealed class SqlServerRealPackageIngestionTests
             Assert.NotNull(second.Receipt);
             Assert.Equal(first.Receipt.ReceiptId, second.Receipt!.ReceiptId);
             Assert.Equal(first.Archive.StorageKey, second.Archive.StorageKey);
-            Assert.True(second.Archive.AlreadyExists);
+            Assert.True(second.Archive.AlreadyExisted);
 
             var state = await ReadStateAsync(
                 connectionString, organizationId, first.Validation.PackageId);
@@ -230,9 +241,14 @@ public sealed class SqlServerRealPackageIngestionTests
         }
         finally
         {
-            await CleanupAsync(connectionString, organizationId);
-            if (Directory.Exists(root))
-                Directory.Delete(root, recursive: true);
+            try
+            {
+                await CleanupAsync(connectionString, organizationId);
+            }
+            finally
+            {
+                DeleteTemporaryDirectory(root);
+            }
         }
     }
 
@@ -271,7 +287,7 @@ public sealed class SqlServerRealPackageIngestionTests
             // Simulate a process stop after the immutable file is committed but before
             // the SQL transaction creates PackageIngestionReceipts and marks Completed.
             var archived = await store.ArchiveValidatedPackageAsync(stagedPath, validation);
-            Assert.False(archived.AlreadyExists);
+            Assert.False(archived.AlreadyExisted);
             Assert.True(File.Exists(ArchivePath(archive, storageKey)));
 
             var interruptedState = await ReadStateAsync(
