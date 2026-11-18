@@ -258,6 +258,14 @@ public sealed class PackageReceiptRecoveryServiceTests
             Guid attemptId, CancellationToken cancellationToken = default) =>
             Task.FromResult<PackageReceipt?>(null);
 
+        public Task<PackageIngestionStatus?> GetAttemptAsync(
+            Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<PackageIngestionStatus?>(null);
+
+        public Task<PackageIngestionStatus?> GetByPackageIdAsync(
+            Guid organizationId, Guid packageId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<PackageIngestionStatus?>(null);
+
         public Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlySet<string>>(new HashSet<string>([attempt.StagingKey], StringComparer.Ordinal));

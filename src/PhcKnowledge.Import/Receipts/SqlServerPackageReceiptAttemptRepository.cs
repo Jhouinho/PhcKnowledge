@@ -235,6 +235,119 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
             reader.GetInt64(9), reader.GetString(10), new DateTimeOffset(received), reader.GetString(12));
     }
 
+    public Task<PackageIngestionStatus?> GetAttemptAsync(
+        Guid organizationId,
+        Guid attemptId,
+        CancellationToken cancellationToken = default)
+    {
+        if (organizationId == Guid.Empty)
+            throw new ArgumentException("OrganizationId é obrigatório.", nameof(organizationId));
+        if (attemptId == Guid.Empty)
+            throw new ArgumentException("AttemptId é obrigatório.", nameof(attemptId));
+
+        const string sql = """
+            SELECT a.AttemptId, a.OrganizationId, a.PackageId, a.CaptureId, a.Status,
+                   a.ZipSha256, a.ZipByteLength, a.StorageKey, a.AttemptCount,
+                   a.ValidationSummaryJson, a.CreatedAtUtc, a.UpdatedAtUtc, a.CompletedAtUtc,
+                   a.LastErrorCode, r.ReceiptId
+            FROM dbo.PackageReceiptAttempts a
+            LEFT JOIN dbo.PackageIngestionReceipts r
+                ON r.OrganizationId = a.OrganizationId
+               AND r.PackageId = a.PackageId
+               AND r.ZipSha256 = a.ZipSha256
+            WHERE a.OrganizationId = @OrganizationId
+              AND a.AttemptId = @AttemptId;
+            """;
+        return ReadStatusAsync(sql, organizationId, ("@AttemptId", attemptId), cancellationToken);
+    }
+
+    public Task<PackageIngestionStatus?> GetByPackageIdAsync(
+        Guid organizationId,
+        Guid packageId,
+        CancellationToken cancellationToken = default)
+    {
+        if (organizationId == Guid.Empty)
+            throw new ArgumentException("OrganizationId é obrigatório.", nameof(organizationId));
+        if (packageId == Guid.Empty)
+            throw new ArgumentException("PackageId é obrigatório.", nameof(packageId));
+
+        // UX_PackageReceiptAttempts_Organization_Package guarantees at most one row.
+        const string sql = """
+            SELECT a.AttemptId, a.OrganizationId, a.PackageId, a.CaptureId, a.Status,
+                   a.ZipSha256, a.ZipByteLength, a.StorageKey, a.AttemptCount,
+                   a.ValidationSummaryJson, a.CreatedAtUtc, a.UpdatedAtUtc, a.CompletedAtUtc,
+                   a.LastErrorCode, r.ReceiptId
+            FROM dbo.PackageReceiptAttempts a
+            LEFT JOIN dbo.PackageIngestionReceipts r
+                ON r.OrganizationId = a.OrganizationId
+               AND r.PackageId = a.PackageId
+               AND r.ZipSha256 = a.ZipSha256
+            WHERE a.OrganizationId = @OrganizationId
+              AND a.PackageId = @PackageId;
+            """;
+        return ReadStatusAsync(sql, organizationId, ("@PackageId", packageId), cancellationToken);
+    }
+
+    private async Task<PackageIngestionStatus?> ReadStatusAsync(
+        string sql,
+        Guid organizationId,
+        (string Name, Guid Value) identity,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add("@OrganizationId", SqlDbType.UniqueIdentifier).Value = organizationId;
+        command.Parameters.Add(identity.Name, SqlDbType.UniqueIdentifier).Value = identity.Value;
+        await using var reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            return null;
+        return ReadStatus(reader);
+    }
+
+    private static PackageIngestionStatus ReadStatus(SqlDataReader reader)
+    {
+        var (objectCount, artifactCount) = ReadSummaryCounts(reader.GetString(9));
+        return new PackageIngestionStatus(
+            reader.GetGuid(0),
+            reader.GetGuid(1),
+            reader.GetGuid(2),
+            reader.GetGuid(3),
+            reader.GetString(4),
+            reader.GetString(5).Trim(),
+            reader.GetInt64(6),
+            reader.GetString(7),
+            reader.GetInt32(8),
+            objectCount,
+            artifactCount,
+            new DateTimeOffset(DateTime.SpecifyKind(reader.GetDateTime(10), DateTimeKind.Utc)),
+            new DateTimeOffset(DateTime.SpecifyKind(reader.GetDateTime(11), DateTimeKind.Utc)),
+            reader.IsDBNull(12)
+                ? null
+                : new DateTimeOffset(DateTime.SpecifyKind(reader.GetDateTime(12), DateTimeKind.Utc)),
+            reader.IsDBNull(14) ? null : reader.GetGuid(14),
+            reader.IsDBNull(13) ? null : reader.GetString(13));
+    }
+
+    private static (int ObjectCount, int ArtifactCount) ReadSummaryCounts(string summaryJson)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(summaryJson);
+            var root = document.RootElement;
+            // CreateValidationSummary serializes anonymous members with PascalCase names.
+            var objectCount = root.TryGetProperty("ObjectCount", out var objects) && objects.TryGetInt32(out var o)
+                ? o : 0;
+            var artifactCount = root.TryGetProperty("ArtifactCount", out var artifacts) && artifacts.TryGetInt32(out var a)
+                ? a : 0;
+            return (objectCount, artifactCount);
+        }
+        catch (JsonException)
+        {
+            return (0, 0);
+        }
+    }
+
     public async Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
         CancellationToken cancellationToken = default)
     {

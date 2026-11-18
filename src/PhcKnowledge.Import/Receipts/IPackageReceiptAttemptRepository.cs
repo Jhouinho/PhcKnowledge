@@ -32,6 +32,23 @@ public interface IPackageReceiptAttemptRepository
         Guid attemptId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Returns the attempt for this organization, or null when missing or owned elsewhere.
+    /// </summary>
+    Task<PackageIngestionStatus?> GetAttemptAsync(
+        Guid organizationId,
+        Guid attemptId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the unique attempt for this organization and package, or null when missing
+    /// or owned elsewhere. Uniqueness is enforced by UX_PackageReceiptAttempts_Organization_Package.
+    /// </summary>
+    Task<PackageIngestionStatus?> GetByPackageIdAsync(
+        Guid organizationId,
+        Guid packageId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
         CancellationToken cancellationToken = default);
 
