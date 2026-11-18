@@ -18,9 +18,9 @@
 
 | Fase | Objetivo | Estado na baseline |
 |---|---|---|
-| R0 | Auditoria e baseline | Em consolidação |
-| R1 | Fechar Scanner e IKP | Parcialmente concluída |
-| R2 | Aprovar modelo de domínio 0.2 | Desenho avançado; aprovação pendente |
+| R0 | Auditoria e baseline | Documentos preparados para revisão |
+| R1 | Fechar Scanner e IKP | Object Index/exportação validados com captura real; falta validação do percurso central Import/Host |
+| R2 | Aprovar modelo de domínio 0.2 | Modelo conceptual recomendado para aprovação; detalhes físicos/operacionais pendentes |
 | R3 | Materializar conhecimento | Por implementar |
 | R4 | API, segurança e plataforma central | Por implementar |
 | R5 | UI e workflows de conhecimento | Por implementar |
@@ -58,24 +58,23 @@ Ordem de trabalho:
 2. rever identidades nativas SQL e decidir integração;
 3. confirmar schema, validador C#, exportador e fixtures em conjunto;
 4. executar build e testes do Scanner e Import;
-5. executar captura real com o Scanner atual;
-6. exportar e validar o IKP real;
-7. testar arquivo, receipt, repetição idempotente e recuperação;
-8. registar limitações por tipo de objeto e operation coverage.
+5. reutilizar a captura real `CSDefault202603` já produzida em 2026-11-08;
+6. usar o pacote IKP V4 existente para validar Import/Host, arquivo, receipt, repetição idempotente e recuperação;
+7. registar limitações por tipo de objeto e operation coverage já observadas.
 
 Critérios de conclusão:
 - build e testes relevantes verdes;
-- pacote real aceite pelo validador;
-- checksums e contagens reconciliados;
-- identidade e proveniência verificadas;
+- pacote real aceite pelo validador (já verificado em 2026-11-08);
+- checksums e contagens reconciliados (já verificado no pacote V4);
+- identidade e proveniência verificadas (Object Index P1.B);
 - falhas/estados parciais documentados;
 - nenhuma alteração ao modelo SQLite/coletores feita apenas para fazer passar o teste sem decisão explícita.
 
-Dependências: acesso ao ambiente Scanner e base PHC representativa.
+Dependências: acesso ao pacote IKP V4 já produzido e ambiente Import/Host configurado. Não é necessária nova captura para repetir a validação do Object Index/exportação.
 
 ## R2 — Aprovar modelo de domínio 0.2
 
-**Objetivo:** fechar os conceitos e relações antes de criar persistência de domínio.
+**Objetivo:** aprovar o modelo conceptual 0.2 e fechar os detalhes necessários antes de criar persistência de domínio.
 
 Entidades/conceitos a consolidar:
 - Organization;
@@ -107,7 +106,8 @@ Critérios de conclusão:
 - dicionário de entidades/campos;
 - constraints e índices definidos;
 - decisões de identidade e proveniência documentadas;
-- escolha da base relacional central confirmada;
+- escolha da base relacional central confirmada: Microsoft SQL Server;
+- detalhes físicos/operacionais fechados (DatabaseLocation, eventos/projeções, permissões/auditoria, reavaliações);
 - modelo físico pronto para migrations.
 
 Dependências: R1 e decisão D-01 do registo de decisões.
@@ -244,12 +244,12 @@ Critérios de conclusão:
 
 A sequência imediata deve ser:
 
-1. validar e aprovar os três documentos R0;
-2. fechar D-01 (PostgreSQL vs SQL Server);
-3. rever as branches de modelo de domínio, identidade SQL e otimização Object Index;
-4. executar a validação Scanner → IKP → Import com captura real;
-5. aprovar o modelo de domínio 0.2;
-6. só então iniciar R3, a materialização.
+1. rever e aprovar os documentos R0;
+2. atualizar e consolidar a decisão Microsoft SQL Server;
+3. aprovar o modelo conceptual 0.2, mantendo explícitos os pontos reservados ao desenho físico;
+4. rever as branches de identidade SQL e otimização Object Index, preservando alterações úteis;
+5. executar Import/Host e arquivo com o pacote real já existente;
+6. fechar o desenho físico SQL Server e iniciar R3, a materialização, com esse pacote.
 
 **Não iniciar já:** chatbot, embeddings, RAG, Change Studio, UI extensa ou novas funcionalidades de recolha sem uma lacuna demonstrada.
 
