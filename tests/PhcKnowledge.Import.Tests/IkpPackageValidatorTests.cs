@@ -1,4 +1,8 @@
 using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using PhcKnowledge.Import.Ikp;
 using PhcKnowledge.Import.Receipts;
 using PhcKnowledge.Import.Storage;
@@ -9,6 +13,53 @@ public sealed class IkpPackageValidatorTests
 {
     private static string FixtureDirectory => Path.Combine(AppContext.BaseDirectory, "Fixtures", "minimal-valid");
     private static string SchemaDirectory => Path.Combine(AppContext.BaseDirectory, "Schemas");
+
+    [Fact]
+    public async Task Duplicate_sourceObjectId_is_rejected_by_csharp_uniqueness_check()
+    {
+        await using var package = CreateMutatedFixtureZip(root =>
+        {
+            var objectIndexPath = Path.Combine(root, "object-index.json");
+            var node = JsonNode.Parse(File.ReadAllText(objectIndexPath))!
+                .AsObject();
+            var objects = node["objects"]!.AsArray();
+            var duplicate = JsonNode.Parse(objects[0]!.ToJsonString())!;
+            objects.Add(duplicate);
+            File.WriteAllText(objectIndexPath, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            RebuildChecksums(root);
+        });
+
+        var validator = new IkpPackageValidator(SchemaDirectory);
+        var ex = await Assert.ThrowsAsync<IkpPackageValidationException>(
+            () => validator.ValidateAsync(package));
+
+        Assert.Contains("sourceObjectId duplicado", ex.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("Schema inválido", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Duplicate_definition_artifactIds_are_rejected_by_json_schema()
+    {
+        await using var package = CreateMutatedFixtureZip(root =>
+        {
+            var objectIndexPath = Path.Combine(root, "object-index.json");
+            var node = JsonNode.Parse(File.ReadAllText(objectIndexPath))!
+                .AsObject();
+            var definition = node["objects"]![0]!["definition"]!.AsObject();
+            var artifactIds = definition["artifactIds"]!.AsArray();
+            var existing = artifactIds[0]!.GetValue<string>();
+            artifactIds.Add(existing);
+            File.WriteAllText(objectIndexPath, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            // Schema evaluation runs before checksum verification, so checksums need not be rebuilt.
+        });
+
+        var validator = new IkpPackageValidator(SchemaDirectory);
+        var ex = await Assert.ThrowsAsync<IkpPackageValidationException>(
+            () => validator.ValidateAsync(package));
+
+        Assert.Contains("Schema inválido (object-index.json)", ex.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("sourceObjectId duplicado", ex.Message, StringComparison.Ordinal);
+    }
 
     [Fact]
     public async Task Valid_minimal_fixture_is_accepted()
@@ -243,5 +294,100 @@ public sealed class IkpPackageValidatorTests
         }
         output.Position = 0;
         return output;
+    }
+
+    private static MemoryStream CreateMutatedFixtureZip(Action<string> mutate)
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"phc-ikp-fixture-{Guid.NewGuid():N}");
+        try
+        {
+            CopyFixture(FixtureDirectory, root);
+            mutate(root);
+            return ZipDirectory(root);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static void CopyFixture(string source, string destination)
+    {
+        foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+        {
+            if (Path.GetExtension(file).Equals(".md", StringComparison.OrdinalIgnoreCase))
+                continue;
+            var relative = Path.GetRelativePath(source, file);
+            var target = Path.Combine(destination, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(file, target);
+        }
+    }
+
+    private static MemoryStream ZipDirectory(string root)
+    {
+        var output = new MemoryStream();
+        using (var archive = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+            {
+                var relative = Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/');
+                var entry = archive.CreateEntry(relative, CompressionLevel.Optimal);
+                using var target = entry.Open();
+                using var source = File.OpenRead(file);
+                source.CopyTo(target);
+            }
+        }
+
+        output.Position = 0;
+        return output;
+    }
+
+    private static void RebuildChecksums(string root)
+    {
+        var files = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+            .Select(path => new
+            {
+                Path = path,
+                Relative = Path.GetRelativePath(root, path).Replace(Path.DirectorySeparatorChar, '/')
+            })
+            .Where(item => !string.Equals(item.Relative, "checksums.json", StringComparison.Ordinal))
+            .OrderBy(item => item.Relative, StringComparer.Ordinal)
+            .ToArray();
+
+        var entries = new JsonArray();
+        var canonical = new StringBuilder();
+        foreach (var item in files)
+        {
+            var bytes = File.ReadAllBytes(item.Path);
+            var hash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+            entries.Add(new JsonObject
+            {
+                ["path"] = item.Relative,
+                ["byteLength"] = bytes.Length,
+                ["sha256"] = hash
+            });
+            canonical.Append(item.Relative).Append('\n')
+                .Append(bytes.Length).Append('\n')
+                .Append(hash).Append('\n');
+        }
+
+        var digest = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical.ToString())))
+            .ToLowerInvariant();
+        var checksums = new JsonObject
+        {
+            ["schemaVersion"] = "1",
+            ["algorithm"] = "SHA-256",
+            ["files"] = entries,
+            ["logicalContentDigest"] = new JsonObject
+            {
+                ["algorithm"] = "SHA-256",
+                ["value"] = digest
+            }
+        };
+        File.WriteAllText(
+            Path.Combine(root, "checksums.json"),
+            checksums.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
     }
 }

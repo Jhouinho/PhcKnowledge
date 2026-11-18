@@ -160,8 +160,7 @@
           }
         },
         "additionalProperties": true
-      },
-      "uniqueItems": true
+      }
     }
   },
   "additionalProperties": true,

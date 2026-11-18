@@ -189,6 +189,10 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
         var leases = new List<PackageReceiptAttemptLease>();
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
+        // READPAST requires READ COMMITTED or REPEATABLE READ. Pooled sessions may still
+        // be SERIALIZABLE after CompleteAsync(BeginTransaction(Serializable)).
+        // If the SET itself fails, clear the pool so the physical connection is discarded.
+        await SqlConnectionIsolation.EnsureReadCommittedOrClearPoolAsync(connection, cancellationToken);
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add("@BatchSize", SqlDbType.Int).Value = batchSize;
         command.Parameters.Add("@NowUtc", SqlDbType.DateTime2).Value = nowUtc.UtcDateTime;
@@ -270,87 +274,104 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
         ArgumentNullException.ThrowIfNull(archive);
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
-        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(
-            IsolationLevel.Serializable, cancellationToken);
 
-        const string select = """
-            SELECT OrganizationId, PackageId, CaptureId, ContractVersion,
-                   ProducerProductId, ProducerProductVersion, OriginDatabaseName,
-                   ValidationSummaryJson, ValidationJson, ZipSha256, ZipByteLength, StorageKey,
-                   Status, LeaseToken, LeaseUntilUtc,
-                   CASE WHEN LeaseUntilUtc > SYSUTCDATETIME() THEN 1 ELSE 0 END AS LeaseIsValid
-            FROM dbo.PackageReceiptAttempts WITH (UPDLOCK, HOLDLOCK)
-            WHERE AttemptId = @AttemptId;
-            """;
-        await using var selectCommand = new SqlCommand(select, connection, transaction);
-        selectCommand.Parameters.Add("@AttemptId", SqlDbType.UniqueIdentifier).Value = attemptId;
-        Guid organizationId, packageId, captureId;
-        string contractVersion, producerId, producerVersion, summaryJson, hash, storageKey;
-        string? origin;
-        long byteLength;
-        IkpPackageValidationResult validation;
-        await using (var reader = await selectCommand.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken))
+        Exception? operationError = null;
+        try
         {
-            if (!await reader.ReadAsync(cancellationToken))
-                throw new InvalidOperationException("Tentativa de recepção não encontrada.");
-            if (reader.GetString(12) == "Completed")
-                throw new InvalidOperationException("A tentativa já está concluída; não pode ser reclamada novamente.");
-            if (reader.GetString(12) != "PendingArchive" ||
-                reader.IsDBNull(13) || reader.GetGuid(13) != leaseToken ||
-                reader.IsDBNull(14) || reader.GetInt32(15) != 1)
-                throw new InvalidOperationException("A lease da tentativa expirou ou deixou de ser proprietária.");
+            await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(
+                IsolationLevel.Serializable, cancellationToken);
 
-            organizationId = reader.GetGuid(0);
-            packageId = reader.GetGuid(1);
-            captureId = reader.GetGuid(2);
-            contractVersion = reader.GetString(3);
-            producerId = reader.GetString(4);
-            producerVersion = reader.GetString(5);
-            origin = reader.IsDBNull(6) ? null : reader.GetString(6);
-            summaryJson = reader.GetString(7);
-            validation = JsonSerializer.Deserialize<IkpPackageValidationResult>(reader.GetString(8), JsonOptions)
-                ?? throw new InvalidOperationException("ValidationJson inválido na tentativa.");
-            hash = reader.GetString(9).Trim();
-            byteLength = reader.GetInt64(10);
-            storageKey = reader.GetString(11);
+            const string select = """
+                SELECT OrganizationId, PackageId, CaptureId, ContractVersion,
+                       ProducerProductId, ProducerProductVersion, OriginDatabaseName,
+                       ValidationSummaryJson, ValidationJson, ZipSha256, ZipByteLength, StorageKey,
+                       Status, LeaseToken, LeaseUntilUtc,
+                       CASE WHEN LeaseUntilUtc > SYSUTCDATETIME() THEN 1 ELSE 0 END AS LeaseIsValid
+                FROM dbo.PackageReceiptAttempts WITH (UPDLOCK, HOLDLOCK)
+                WHERE AttemptId = @AttemptId;
+                """;
+            await using var selectCommand = new SqlCommand(select, connection, transaction);
+            selectCommand.Parameters.Add("@AttemptId", SqlDbType.UniqueIdentifier).Value = attemptId;
+            Guid organizationId, packageId, captureId;
+            string contractVersion, producerId, producerVersion, summaryJson, hash, storageKey;
+            string? origin;
+            long byteLength;
+            IkpPackageValidationResult validation;
+            await using (var reader = await selectCommand.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken))
+            {
+                if (!await reader.ReadAsync(cancellationToken))
+                    throw new InvalidOperationException("Tentativa de recepção não encontrada.");
+                if (reader.GetString(12) == "Completed")
+                    throw new InvalidOperationException("A tentativa já está concluída; não pode ser reclamada novamente.");
+                if (reader.GetString(12) != "PendingArchive" ||
+                    reader.IsDBNull(13) || reader.GetGuid(13) != leaseToken ||
+                    reader.IsDBNull(14) || reader.GetInt32(15) != 1)
+                    throw new InvalidOperationException("A lease da tentativa expirou ou deixou de ser proprietária.");
+
+                organizationId = reader.GetGuid(0);
+                packageId = reader.GetGuid(1);
+                captureId = reader.GetGuid(2);
+                contractVersion = reader.GetString(3);
+                producerId = reader.GetString(4);
+                producerVersion = reader.GetString(5);
+                origin = reader.IsDBNull(6) ? null : reader.GetString(6);
+                summaryJson = reader.GetString(7);
+                validation = JsonSerializer.Deserialize<IkpPackageValidationResult>(reader.GetString(8), JsonOptions)
+                    ?? throw new InvalidOperationException("ValidationJson inválido na tentativa.");
+                hash = reader.GetString(9).Trim();
+                byteLength = reader.GetInt64(10);
+                storageKey = reader.GetString(11);
+            }
+
+            if (!string.Equals(storageKey, archive.StorageKey, StringComparison.Ordinal))
+                throw new InvalidOperationException("StorageKey do arquivo não corresponde à tentativa.");
+
+            var receipt = await FindReceiptAsync(connection, transaction, organizationId, packageId, hash, cancellationToken);
+            var alreadyRegistered = receipt is not null;
+            if (receipt is null)
+            {
+                receipt = new PackageReceipt(Guid.NewGuid(), organizationId, packageId, captureId,
+                    contractVersion, producerId, producerVersion, origin, hash, byteLength,
+                    archive.StorageKey, DateTimeOffset.UtcNow, summaryJson);
+                await InsertReceiptAsync(connection, transaction, receipt, cancellationToken);
+            }
+            else if (receipt.PackageId != packageId ||
+                     !string.Equals(receipt.ZipSha256, hash, StringComparison.Ordinal) ||
+                     !string.Equals(receipt.StorageKey, archive.StorageKey, StringComparison.Ordinal))
+            {
+                throw new PackageReceiptConflictException("O receipt existente diverge da tentativa recuperada.");
+            }
+
+            const string update = """
+                UPDATE dbo.PackageReceiptAttempts
+                   SET Status = 'Completed', CompletedAtUtc = SYSUTCDATETIME(),
+                       LeaseToken = NULL, LeaseUntilUtc = NULL,
+                       LastErrorCode = NULL, LastErrorMessage = NULL,
+                       UpdatedAtUtc = SYSUTCDATETIME()
+                 WHERE AttemptId = @AttemptId AND Status = 'PendingArchive'
+                   AND LeaseToken = @LeaseToken AND LeaseUntilUtc > SYSUTCDATETIME();
+                """;
+            await using var updateCommand = new SqlCommand(update, connection, transaction);
+            updateCommand.Parameters.Add("@AttemptId", SqlDbType.UniqueIdentifier).Value = attemptId;
+            updateCommand.Parameters.Add("@LeaseToken", SqlDbType.UniqueIdentifier).Value = leaseToken;
+            if (await updateCommand.ExecuteNonQueryAsync(cancellationToken) != 1)
+                throw new InvalidOperationException("A lease expirou antes de concluir a tentativa.");
+
+            await transaction.CommitAsync(cancellationToken);
+            return new PackageReceiptRegistration(receipt, alreadyRegistered);
         }
-
-        if (!string.Equals(storageKey, archive.StorageKey, StringComparison.Ordinal))
-            throw new InvalidOperationException("StorageKey do arquivo não corresponde à tentativa.");
-
-        var receipt = await FindReceiptAsync(connection, transaction, organizationId, packageId, hash, cancellationToken);
-        var alreadyRegistered = receipt is not null;
-        if (receipt is null)
+        catch (Exception ex)
         {
-            receipt = new PackageReceipt(Guid.NewGuid(), organizationId, packageId, captureId,
-                contractVersion, producerId, producerVersion, origin, hash, byteLength,
-                archive.StorageKey, DateTimeOffset.UtcNow, summaryJson);
-            await InsertReceiptAsync(connection, transaction, receipt, cancellationToken);
+            operationError = ex;
+            throw;
         }
-        else if (receipt.PackageId != packageId ||
-                 !string.Equals(receipt.ZipSha256, hash, StringComparison.Ordinal) ||
-                 !string.Equals(receipt.StorageKey, archive.StorageKey, StringComparison.Ordinal))
+        finally
         {
-            throw new PackageReceiptConflictException("O receipt existente diverge da tentativa recuperada.");
+            // Transaction is disposed before this finally (await using). Restore only after
+            // commit/rollback; on restore failure ClearPool so SERIALIZABLE cannot leak.
+            await SqlConnectionIsolation.RestoreReadCommittedOrClearPoolAsync(
+                connection, operationError, CancellationToken.None);
         }
-
-        const string update = """
-            UPDATE dbo.PackageReceiptAttempts
-               SET Status = 'Completed', CompletedAtUtc = SYSUTCDATETIME(),
-                   LeaseToken = NULL, LeaseUntilUtc = NULL,
-                   LastErrorCode = NULL, LastErrorMessage = NULL,
-                   UpdatedAtUtc = SYSUTCDATETIME()
-             WHERE AttemptId = @AttemptId AND Status = 'PendingArchive'
-               AND LeaseToken = @LeaseToken AND LeaseUntilUtc > SYSUTCDATETIME();
-            """;
-        await using var updateCommand = new SqlCommand(update, connection, transaction);
-        updateCommand.Parameters.Add("@AttemptId", SqlDbType.UniqueIdentifier).Value = attemptId;
-        updateCommand.Parameters.Add("@LeaseToken", SqlDbType.UniqueIdentifier).Value = leaseToken;
-        if (await updateCommand.ExecuteNonQueryAsync(cancellationToken) != 1)
-            throw new InvalidOperationException("A lease expirou antes de concluir a tentativa.");
-
-        await transaction.CommitAsync(cancellationToken);
-        return new PackageReceiptRegistration(receipt, alreadyRegistered);
     }
 
     public Task<bool> ScheduleRetryAsync(
