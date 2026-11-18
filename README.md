@@ -54,19 +54,31 @@ dotnet run --project PhcKnowledgeScanner/src/PhcKnowledgeScanner.Cli -- test-con
 
 Também se mantém a solução específica do Scanner em `PhcKnowledgeScanner/PhcKnowledgeScanner.sln` para desenvolvimento isolado do componente.
 
-## Estado da plataforma — 2026-11-17
+## Estado da plataforma — 2026-11-18
 
-A solução já contém uma primeira fatia funcional do núcleo PHC Knowledge, em src/PhcKnowledge.Import: validação de pacotes IKP, serviço de ingestão, arquivo imutável por SHA-256 e persistência de receipts no SQL Server. Existem testes unitários e de integração sobre fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado).
+A base de ingestão e o backend de acesso à plataforma estão implementados na branch `main`. A PR #15 foi integrada em 2026-11-18 pelo merge commit `6c619bfc`.
 
-**Implementado no código:** IkpPackageValidator, IkpPackageIngestionService, FileSystemImmutablePackageStore, SqlServerPackageReceiptRepository e migration 001_package_ingestion_receipts.sql. Os testes usam fixture IKP / ZIP sintético → Validator / Ingestion; não demonstram API HTTP/autenticação nem integração SQL Server real.
+**Implementado no núcleo central:**
+- Validação IKP 0.1, receção por serviço, arquivo imutável global content-addressed por SHA-256 e receipts/tentativas SQL org-scoped.
+- Recovery de tentativas, limpeza de staging, monitorização operacional e preflight do schema no Host.
+- API HTTP IKP: upload raw ZIP e consulta org-scoped de tentativas/pacotes, protegida por JWT Bearer e scopes quando ativada.
+- Organização canónica e ASP.NET Identity com roles `Administrator` e `Collaborator`.
+- Portal backend: login/logout, sessão, antiforgery, validação contínua de SecurityStamp e API administrativa de utilizadores.
+- CLI `PhcKnowledge.Install` para scripts SQL, migrations Identity, organização, roles e bootstrap do primeiro administrador.
 
-**Limite importante:** o serviço arquiva o ZIP antes de persistir o receipt. Uma falha SQL posterior pode deixar um ficheiro arquivado sem receipt; reconciliação/retry é evolução necessária. O arquivo é global e content-addressed; os receipts são isolados por organização.
+**Validação registada:**
+- Harness local opt-in com o pacote real `CSDefault202603`: receção, idempotência, arquivo e recuperação após interrupção simulada, com resultados e tempos em [Harness IKP real](docs/architecture/real-ikp-receipt-integration-harness-2026-11-18.md).
+- GitHub Actions no commit da PR #15: workflow .NET #253 e workflow SQL Server integration #39 concluídos com sucesso.
+- No workflow SQL Server: 64 testes descobertos, 62 aprovados e 2 ignorados por dependerem do ZIP real, que não é disponibilizado em CI.
 
-O modelo de destino 0.2 está em [Modelo de domínio 0.2](docs/architecture/knowledge-domain-model-0.2.md). Distingue:
-- **Implementado:** receção por serviço, validação, arquivo imutável e receipt SQL.
-- **Parcial — apenas no ZIP:** capabilities, coverage, issues, artefactos e REL/DTL ainda não são materializados em tabelas próprias.
-- **Futuro:** API HTTP/autenticação, associação a instalação/ambiente, materialização de Observations, resolução de identidade, comparação de capturas e publicação de conhecimento.
+**Limites atuais — não confundir backend com produto completo:**
+- Ainda não existe UI React do Portal. A experiência e navegação serão discutidas antes de iniciar a implementação.
+- A análise prévia do ZIP, staging de análise e confirmação explícita de importação ainda não estão implementados.
+- A organização canónica e o isolamento dos receipts existem; gestão de Customers, Installations, Environments e associação/correção de contexto ainda não estão implementadas.
+- Capabilities, coverage, issues, artefactos, Object Index e REL/DTL são validados/preservados no pacote, mas ainda não estão materializados integralmente em entidades próprias do domínio 0.2.
+- Observation, identidade lógica entre capturas, diff, pesquisa contextual e RAG continuam por construir.
+- Antes de produção, falta fechar a persistência/proteção das chaves Data Protection e reforçar a garantia de que chamadas internas ao serviço de ativação não conseguem contornar o bloqueio administrativo.
 
-A captura real CSDefault202603 confirmou 16.618 SourceObjectIds, máximo de 54 caracteres, sem duplicados ordinais nem espaços nas extremidades. O modelo de destino propõe NVARCHAR(256), comparação ordinal e validação explícita. Não existe ainda migration para Observation.
+O modelo de destino 0.2 continua em [Modelo de domínio 0.2](docs/architecture/knowledge-domain-model-0.2.md). O estado faseado, as dependências e os próximos marcos estão no [roadmap visual](docs/architecture/roadmap-visual-phc-knowledge-2026-11-06.md). O fecho da etapa Identity/Portal está registado em [Relatório de fase — Identity e Portal](docs/architecture/phase-report-identity-portal-2026-11-18.md).
 
-A próxima etapa é fechar a reconciliação entre arquivo e receipt, testar a persistência contra SQL Server real e desenhar a fronteira HTTP/autenticação. Não criar migrations globais adicionais antes de fechar esses pontos.
+A próxima decisão de produto é discutir a experiência do Portal antes de iniciar React. Em paralelo, devem ser tratados os pontos de hardening operacional e de segurança identificados; não antecipar materialização nem RAG.

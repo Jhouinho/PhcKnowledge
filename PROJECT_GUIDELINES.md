@@ -138,21 +138,26 @@ No final de cada fase:
 
 Não avançar automaticamente para a fase seguinte sem validação conjunta.
 
-## Estado e próxima etapa — 2026-11-17
+## Estado e próxima etapa — 2026-11-18
 
-A primeira fatia de ingestão já existe no código:
-- IkpPackageValidator: valida estrutura, schemas, checksums e referências do pacote;
-- IkpPackageIngestionService: coordena validação, arquivo e receipt;
-- FileSystemImmutablePackageStore: arquivo content-addressed global por SHA-256, sem overwrite;
-- SqlServerPackageReceiptRepository: receipt por organização no SQL Server;
-- migration 001_package_ingestion_receipts.sql;
-- testes unitários e de integração sobre fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado).
+A PR #15 (fases 1.2 a 1.4.2.E — Identity/Portal backend) foi integrada na `main` em 2026-11-18. Merge commit: `6c619bfc6aa78ba1cd694c48f2d71c71c71aa4b8`.
 
-A implementação não demonstra ainda endpoint HTTP, autenticação/contexto de Organization, execução contra SQL Server real nem reconciliação automática de ficheiros arquivados sem receipt. A ordem actual é arquivo antes de receipt SQL; esta janela de falha deve ser tratada antes de ampliar a ingestão.
+A plataforma central já contém:
+- Pipeline IKP de validação, ingestão, arquivo imutável, receipts/tentativas SQL, recovery, cleanup e monitorização operacional.
+- API HTTP IKP com upload raw ZIP e consultas org-scoped, protegida por JWT Bearer/scopes quando ativada.
+- Organização canónica e ASP.NET Identity com roles Administrator/Collaborator.
+- Portal backend com cookie, login/logout, sessão, antiforgery, SecurityStamp e API de administração de utilizadores.
+- CLI de instalação para scripts SQL, migrations Identity, organização, roles e bootstrap de administrador.
 
-O modelo de destino 0.2 está em [knowledge-domain-model-0.2.md](docs/architecture/knowledge-domain-model-0.2.md). Distinguir sempre:
-- **Implementado:** serviço Receive / Validate / Archive, arquivo imutável e receipt SQL.
-- **Parcial / apenas no ZIP:** capabilities, coverage, issues, artefactos e REL/DTL; não materializados ainda em tabelas próprias.
-- **Futuro:** API HTTP/autenticação, Core Organization/Installation/Environment, materialização de Observations, contexto, identidade, comparação e conhecimento.
+Validação registada:
+- Harness local opt-in com o pacote real CSDefault202603: receção, idempotência, arquivo e recovery, conforme `docs/architecture/real-ikp-receipt-integration-harness-2026-11-18.md`.
+- GitHub Actions no commit da PR #15: .NET workflow #253 e SQL Server integration workflow #39 com sucesso. No workflow SQL: 64 descobertos, 62 aprovados e 2 ignorados por dependerem do ZIP real não disponibilizado em CI.
 
-Não alterar migrations globais antes de fechar os bloqueadores de domínio documentados no modelo 0.2. A próxima etapa é testar SQL Server real e desenhar reconciliação/retry e fronteira HTTP/autenticação.
+Limites atuais:
+- Não existe UI React; discutir a experiência do Portal antes de iniciar implementação.
+- Análise prévia do ZIP, staging de análise e confirmação de importação ainda não implementados.
+- Customer/Installation/Environment e associação/correção do contexto ainda não implementados.
+- Observation, materialização de REL/DTL/artefactos, identidade lógica, diff, pesquisa contextual e RAG continuam futuros.
+- Persistência/proteção de chaves Data Protection e reforço da garantia do bloqueio administrativo são hardening pendente antes de produção.
+
+O roadmap visual é a referência para estados e sequência. Não iniciar a fase seguinte automaticamente: apresentar a proposta e validar com o responsável do projeto. No final de cada etapa, atualizar o roadmap e produzir apenas um relatório conciso de fase, evitando documentação duplicada.
