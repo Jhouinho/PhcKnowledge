@@ -257,6 +257,7 @@ public sealed class SqlServerIngestionReadTests
             await CleanupAsync(connectionString, organizationA, organizationB);
         }
     }
+
     [SqlServerFact]
     public async Task GetCompletedReceiptAsync_is_org_scoped_and_returns_null_for_miss_or_foreign_org()
     {
@@ -296,5 +297,4 @@ public sealed class SqlServerIngestionReadTests
             await CleanupAsync(connectionString, organizationA, organizationB);
         }
     }
-
 }

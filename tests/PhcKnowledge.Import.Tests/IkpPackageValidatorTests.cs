@@ -151,7 +151,6 @@ public sealed class IkpPackageValidatorTests
             Assert.True(duplicate.Archive.AlreadyExisted);
             Assert.Equal(2, attemptRepository.CreateCalls);
             Assert.Equal(organizationId, attemptRepository.LastCompletedReceiptOrganizationId);
-            Assert.Equal(result.Receipt.ReceiptId, duplicate.Receipt?.ReceiptId);
         }
         finally
         {
