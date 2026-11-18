@@ -77,7 +77,8 @@ public sealed class SqlServerIsolationPoolingTests
         foreach (var migration in new[]
         {
             "001_package_ingestion_receipts.sql",
-            "002_package_receipt_attempts.sql"
+            "002_package_receipt_attempts.sql",
+            "003_organizations.sql"
         })
         {
             var path = Path.Combine(AppContext.BaseDirectory, "Migrations", migration);

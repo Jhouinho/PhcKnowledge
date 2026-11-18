@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -525,11 +526,13 @@ public sealed class IkpHttpApiFactory : WebApplicationFactory<Program>
         Directory.CreateDirectory(_archive);
         Directory.CreateDirectory(_staging);
 
-        builder.UseEnvironment("Development");
+        // Testing: Host skips real JwtBearer; this factory registers TestAuthHandler as Bearer.
+        builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Knowledge",
             "Server=(local);Database=PhcKnowledgeHttpTests;Integrated Security=true;TrustServerCertificate=true");
         builder.UseSetting("Storage:ArchiveDirectory", _archive);
         builder.UseSetting("Storage:StagingDirectory", _staging);
+        builder.UseSetting("Authentication:Jwt:Enabled", "true");
         builder.UseSetting("Authentication:Authority", "https://idp.example.test");
         builder.UseSetting("Authentication:Audience", "phcknowledge-ikp-api");
         builder.UseSetting("Authentication:RequireHttpsMetadata", "false");
@@ -556,14 +559,8 @@ public sealed class IkpHttpApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(new UploadHostSettings { MaxConcurrentUploads = 1, MaxUploadBytes = UploadHostSettings.DefaultMaxUploadBytes });
             services.AddSingleton<UploadConcurrencyGate>();
 
-            services.AddAuthentication(TestAuthHandler.Scheme)
+            services.AddAuthentication()
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.Scheme, _ => { });
-            services.PostConfigureAll<AuthenticationOptions>(options =>
-            {
-                options.DefaultAuthenticateScheme = TestAuthHandler.Scheme;
-                options.DefaultChallengeScheme = TestAuthHandler.Scheme;
-                options.DefaultScheme = TestAuthHandler.Scheme;
-            });
         });
     }
 
@@ -599,11 +596,12 @@ public sealed class IkpHttp413KestrelFactory : WebApplicationFactory<Program>
         Directory.CreateDirectory(_archive);
         Directory.CreateDirectory(_staging);
 
-        builder.UseEnvironment("Development");
+        builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Knowledge",
             "Server=(local);Database=PhcKnowledgeHttp413Tests;Integrated Security=true;TrustServerCertificate=true");
         builder.UseSetting("Storage:ArchiveDirectory", _archive);
         builder.UseSetting("Storage:StagingDirectory", _staging);
+        builder.UseSetting("Authentication:Jwt:Enabled", "true");
         builder.UseSetting("Authentication:Authority", "https://idp.example.test");
         builder.UseSetting("Authentication:Audience", "phcknowledge-ikp-api");
         builder.UseSetting("Authentication:RequireHttpsMetadata", "false");
@@ -634,14 +632,8 @@ public sealed class IkpHttp413KestrelFactory : WebApplicationFactory<Program>
             });
             services.AddSingleton<UploadConcurrencyGate>();
 
-            services.AddAuthentication(TestAuthHandler.Scheme)
+            services.AddAuthentication()
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.Scheme, _ => { });
-            services.PostConfigureAll<AuthenticationOptions>(options =>
-            {
-                options.DefaultAuthenticateScheme = TestAuthHandler.Scheme;
-                options.DefaultChallengeScheme = TestAuthHandler.Scheme;
-                options.DefaultScheme = TestAuthHandler.Scheme;
-            });
         });
     }
 
@@ -767,7 +759,8 @@ public sealed class TestAuthHandler(
     ILoggerFactory logger,
     UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
-    public new const string Scheme = "Test";
+    /// <summary>Must match IKP policy authentication schemes (JwtBearer).</summary>
+    public new const string Scheme = JwtBearerDefaults.AuthenticationScheme;
     public const string OrganizationHeader = "X-Test-OrganizationId";
     public const string ScopeHeader = "X-Test-Scope";
     public const string AuthenticatedHeader = "X-Test-Authenticated";

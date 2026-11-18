@@ -9,6 +9,7 @@ public sealed class AuthenticationHostSettingsTests
     {
         var values = new Dictionary<string, string?>
         {
+            ["Authentication:Jwt:Enabled"] = "true",
             ["Authentication:Authority"] = "https://idp.example.test/",
             ["Authentication:Audience"] = "phcknowledge-ikp-api",
             ["Authentication:OrganizationClaimType"] = "organization_id",
@@ -23,6 +24,35 @@ public sealed class AuthenticationHostSettingsTests
     }
 
     [Fact]
+    public void Load_jwt_enabled_absent_defaults_to_false()
+    {
+        var settings = AuthenticationHostSettings.Load(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>())
+            .Build());
+
+        Assert.False(settings.JwtEnabled);
+        Assert.Null(settings.Authority);
+        Assert.Null(settings.Audience);
+        Assert.Null(settings.Issuer);
+    }
+
+    [Fact]
+    public void Load_jwt_disabled_allows_missing_authority_and_audience()
+    {
+        var settings = AuthenticationHostSettings.Load(Configuration(new Dictionary<string, string?>
+        {
+            ["Authentication:Jwt:Enabled"] = "false",
+            ["Authentication:Authority"] = null,
+            ["Authentication:Audience"] = null
+        }));
+
+        Assert.False(settings.JwtEnabled);
+        Assert.Null(settings.Authority);
+        Assert.Null(settings.Audience);
+        Assert.Null(settings.Issuer);
+    }
+
+    [Fact]
     public void Load_uses_defaults_for_optional_values()
     {
         var settings = AuthenticationHostSettings.Load(Configuration(new Dictionary<string, string?>
@@ -31,6 +61,7 @@ public sealed class AuthenticationHostSettingsTests
             ["Authentication:RequireHttpsMetadata"] = null
         }));
 
+        Assert.True(settings.JwtEnabled);
         Assert.Equal("https://idp.example.test", settings.Authority);
         Assert.Equal("https://idp.example.test", settings.Issuer);
         Assert.Equal("phcknowledge-ikp-api", settings.Audience);
@@ -68,10 +99,20 @@ public sealed class AuthenticationHostSettingsTests
     [InlineData("Authentication:Authority", "")]
     [InlineData("Authentication:Audience", null)]
     [InlineData("Authentication:Audience", " ")]
-    public void Load_requires_authority_and_audience(string key, string? value)
+    public void Load_requires_authority_and_audience_when_jwt_enabled(string key, string? value)
     {
         Assert.Throws<InvalidOperationException>(() =>
             AuthenticationHostSettings.Load(Configuration(new Dictionary<string, string?> { [key] = value })));
+    }
+
+    [Fact]
+    public void Load_rejects_invalid_jwt_enabled()
+    {
+        Assert.Throws<InvalidOperationException>(() =>
+            AuthenticationHostSettings.Load(Configuration(new Dictionary<string, string?>
+            {
+                ["Authentication:Jwt:Enabled"] = "yes"
+            })));
     }
 
     [Fact]
