@@ -19,6 +19,7 @@ public static class IkpPublicErrorCodes
     public const string BadRequest = "bad_request";
     public const string UploadCapacityExceeded = "upload_capacity_exceeded";
     public const string InternalError = "internal_error";
+    public const string IkpApiDisabled = "ikp_api_disabled";
 }
 
 public static class IkpProblemDetailsFactory

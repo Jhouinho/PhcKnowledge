@@ -1,9 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.IdentityModel.Tokens;
 using PhcKnowledge.Host;
+using PhcKnowledge.Host.Authentication;
 using PhcKnowledge.Host.Http;
+using PhcKnowledge.Host.Identity;
+using PhcKnowledge.Host.Organizations;
 using PhcKnowledge.Import.Ikp;
 using PhcKnowledge.Import.Receipts;
 using PhcKnowledge.Import.Storage;
@@ -47,6 +47,10 @@ builder.Services.AddSingleton<IIkpIngestionGateway, IkpIngestionGateway>();
 builder.Services.AddSingleton<OrganizationIdResolver>();
 builder.Services.AddSingleton<UploadConcurrencyGate>();
 builder.Services.AddSingleton<IAuthorizationHandler, ScopeAuthorizationHandler>();
+builder.Services.AddSingleton<ICanonicalOrganizationService>(
+    _ => new SqlServerCanonicalOrganizationService(receiptSettings.ConnectionString));
+builder.Services.AddPhcKnowledgeIdentityPersistence(receiptSettings.ConnectionString);
+builder.Services.AddPhcKnowledgeAuthentication(authenticationSettings, builder.Environment);
 builder.Services.AddSingleton<PackageReceiptRecoveryService>(services =>
     new PackageReceiptRecoveryService(
         services.GetRequiredService<IPackageReceiptAttemptRepository>(),
@@ -64,48 +68,13 @@ builder.Services.AddHostedService<PackageReceiptRecoveryWorker>();
 builder.Services.AddHostedService<PackageStagingCleanupWorker>();
 builder.Services.AddHostedService<PackageReceiptOperationsMonitor>();
 
-JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
-
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.Authority = authenticationSettings.Authority;
-        options.Audience = authenticationSettings.Audience;
-        options.RequireHttpsMetadata = authenticationSettings.RequireHttpsMetadata;
-        options.MapInboundClaims = false;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = authenticationSettings.Issuer,
-            ValidateAudience = true,
-            ValidAudience = authenticationSettings.Audience,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            NameClaimType = "sub",
-            RoleClaimType = "role"
-        };
-    });
-
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy(
-        IkpAuthorizationPolicies.Upload,
-        policy => policy
-            .RequireAuthenticatedUser()
-            .AddRequirements(new ScopeAuthorizationRequirement(AuthenticationHostSettings.UploadScope)));
-    options.AddPolicy(
-        IkpAuthorizationPolicies.Read,
-        policy => policy
-            .RequireAuthenticatedUser()
-            .AddRequirements(new ScopeAuthorizationRequirement(AuthenticationHostSettings.ReadScope)));
-});
-
 var app = builder.Build();
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapIkpApi();
+app.UseAntiforgery();
+app.MapIkpApi(jwtEnabled: authenticationSettings.JwtEnabled);
+app.MapPortalApi(app.Environment);
 
 await app.RunAsync();
 

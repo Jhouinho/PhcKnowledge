@@ -11,17 +11,30 @@ public static class IkpApiEndpoints
     public const string AttemptPath = "/api/v1/ikp/attempts/{attemptId:guid}";
     public const string PackageByIdPath = "/api/v1/ikp/packages/{packageId:guid}";
 
-    public static IEndpointRouteBuilder MapIkpApi(this IEndpointRouteBuilder endpoints)
+    public static IEndpointRouteBuilder MapIkpApi(
+        this IEndpointRouteBuilder endpoints,
+        bool jwtEnabled = true)
     {
-        endpoints.MapPost(PackagesPath, UploadPackageAsync)
-            .RequireAuthorization(IkpAuthorizationPolicies.Upload)
-            .DisableAntiforgery();
+        if (jwtEnabled)
+        {
+            endpoints.MapPost(PackagesPath, UploadPackageAsync)
+                .RequireAuthorization(IkpAuthorizationPolicies.Upload)
+                .DisableAntiforgery();
 
-        endpoints.MapGet(AttemptPath, GetAttemptAsync)
-            .RequireAuthorization(IkpAuthorizationPolicies.Read);
+            endpoints.MapGet(AttemptPath, GetAttemptAsync)
+                .RequireAuthorization(IkpAuthorizationPolicies.Read);
 
-        endpoints.MapGet(PackageByIdPath, GetPackageAsync)
-            .RequireAuthorization(IkpAuthorizationPolicies.Read);
+            endpoints.MapGet(PackageByIdPath, GetPackageAsync)
+                .RequireAuthorization(IkpAuthorizationPolicies.Read);
+        }
+        else
+        {
+            // JWT disabled: IKP surface is unavailable (not anonymous). Health stays up.
+            endpoints.MapPost(PackagesPath, IkpApiDisabledAsync)
+                .DisableAntiforgery();
+            endpoints.MapGet(AttemptPath, IkpApiDisabledAsync);
+            endpoints.MapGet(PackageByIdPath, IkpApiDisabledAsync);
+        }
 
         endpoints.MapGet("/health/live", () => Results.Json(new { status = "live" }));
         endpoints.MapGet("/health/ready", (HostReadinessState readiness) =>
@@ -31,6 +44,13 @@ public static class IkpApiEndpoints
 
         return endpoints;
     }
+
+    private static IResult IkpApiDisabledAsync(HttpContext httpContext) =>
+        IkpProblemDetailsFactory.Problem(
+            httpContext,
+            StatusCodes.Status503ServiceUnavailable,
+            "IKP API unavailable",
+            IkpPublicErrorCodes.IkpApiDisabled);
 
     private static async Task<IResult> UploadPackageAsync(
         HttpContext httpContext,

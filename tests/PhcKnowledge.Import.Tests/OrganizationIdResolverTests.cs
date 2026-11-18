@@ -8,6 +8,7 @@ public sealed class OrganizationIdResolverTests
     private static OrganizationIdResolver Resolver(string claimType = "organization_id") =>
         new(new AuthenticationHostSettings
         {
+            JwtEnabled = true,
             Authority = "https://idp.example.test",
             Issuer = "https://idp.example.test",
             Audience = "api",
