@@ -255,7 +255,7 @@ public sealed class PackageReceiptRecoveryServiceTests
                 }, Guid.Parse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"))]);
 
         public Task<PackageReceipt?> GetCompletedReceiptAsync(
-            Guid attemptId, CancellationToken cancellationToken = default) =>
+            Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default) =>
             Task.FromResult<PackageReceipt?>(null);
 
         public Task<PackageIngestionStatus?> GetAttemptAsync(

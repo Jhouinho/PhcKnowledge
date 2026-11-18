@@ -223,7 +223,7 @@ public sealed class SqlServerReceiptAttemptTests
                 new ArchivedPackage(attempt.StorageKey, false));
 
             Assert.Equal(attempt.Validation.PackageId, receipt.Receipt.PackageId);
-            Assert.NotNull(await repository.GetCompletedReceiptAsync(attempt.AttemptId));
+            Assert.NotNull(await repository.GetCompletedReceiptAsync(organizationId, attempt.AttemptId));
         }
         finally { await CleanupAsync(connectionString, organizationId); }
     }

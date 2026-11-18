@@ -150,6 +150,7 @@ public sealed class IkpPackageValidatorTests
             Assert.Equal(result.Receipt.ReceiptId, duplicate.Receipt?.ReceiptId);
             Assert.True(duplicate.Archive.AlreadyExisted);
             Assert.Equal(2, attemptRepository.CreateCalls);
+            Assert.Equal(organizationId, attemptRepository.LastCompletedReceiptOrganizationId);
         }
         finally
         {
@@ -189,6 +190,7 @@ public sealed class IkpPackageValidatorTests
         private PackageReceipt? _receipt;
         public int CreateCalls { get; private set; }
         public Guid? OrganizationId => _attempt?.OrganizationId;
+        public Guid? LastCompletedReceiptOrganizationId { get; private set; }
 
         public Task<PackageReceiptAttemptRegistration> CreateOrGetPendingAsync(
             Guid organizationId, IkpPackageValidationResult validation, string storageKey,
@@ -220,8 +222,12 @@ public sealed class IkpPackageValidatorTests
             Task.FromResult<IReadOnlyList<PackageReceiptAttemptLease>>(Array.Empty<PackageReceiptAttemptLease>());
 
         public Task<PackageReceipt?> GetCompletedReceiptAsync(
-            Guid attemptId, CancellationToken cancellationToken = default) =>
-            Task.FromResult(_attempt is { Status: "Completed" } completed && completed.AttemptId == attemptId ? _receipt : null);
+            Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default)
+        {
+            LastCompletedReceiptOrganizationId = organizationId;
+            return Task.FromResult(_attempt is { Status: "Completed" } completed &&
+                completed.OrganizationId == organizationId && completed.AttemptId == attemptId ? _receipt : null);
+        }
 
         public Task<PackageIngestionStatus?> GetAttemptAsync(
             Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default)

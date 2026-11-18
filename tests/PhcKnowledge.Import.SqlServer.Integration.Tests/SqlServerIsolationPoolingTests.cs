@@ -432,7 +432,7 @@ public sealed class SqlServerIsolationPoolingTests
             var processed = await recovery.ProcessDueAsync(batchSize: 10);
             Assert.Equal(1, processed);
 
-            var receipt = await repository.GetCompletedReceiptAsync(registration.Attempt.AttemptId);
+            var receipt = await repository.GetCompletedReceiptAsync(organizationId, registration.Attempt.AttemptId);
             Assert.NotNull(receipt);
             Assert.Equal(validation.PackageId, receipt!.PackageId);
             Assert.Equal(ReadCommittedLevel, await OpenAndReadIsolationAsync(connectionString));

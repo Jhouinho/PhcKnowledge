@@ -257,4 +257,44 @@ public sealed class SqlServerIngestionReadTests
             await CleanupAsync(connectionString, organizationA, organizationB);
         }
     }
+
+    [SqlServerFact]
+    public async Task GetCompletedReceiptAsync_is_org_scoped_and_returns_null_for_miss_or_foreign_org()
+    {
+        var connectionString = await SetupAsync();
+        var organizationA = Guid.NewGuid();
+        var organizationB = Guid.NewGuid();
+        try
+        {
+            var repository = new SqlServerPackageReceiptAttemptRepository(connectionString);
+            var validation = NewValidation();
+            var attempt = (await repository.CreateOrGetPendingAsync(
+                organizationA, validation, $"sha256/{validation.ZipSha256}.zip",
+                $"staging/{Guid.NewGuid():N}.tmp")).Attempt;
+
+            var lease = await repository.ClaimByIdAsync(
+                attempt.AttemptId, TimeSpan.FromMinutes(5), DateTimeOffset.UtcNow.AddSeconds(2));
+            Assert.NotNull(lease);
+            var completed = await repository.CompleteAsync(
+                attempt.AttemptId, lease!.LeaseToken, new ArchivedPackage(attempt.StorageKey, false));
+
+            var own = await repository.GetCompletedReceiptAsync(organizationA, attempt.AttemptId);
+            Assert.NotNull(own);
+            Assert.Equal(completed.Receipt.ReceiptId, own!.ReceiptId);
+            Assert.Equal(organizationA, own.OrganizationId);
+            Assert.Equal(validation.PackageId, own.PackageId);
+
+            Assert.Null(await repository.GetCompletedReceiptAsync(organizationB, attempt.AttemptId));
+            Assert.Null(await repository.GetCompletedReceiptAsync(organizationA, Guid.NewGuid()));
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => repository.GetCompletedReceiptAsync(Guid.Empty, attempt.AttemptId));
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => repository.GetCompletedReceiptAsync(organizationA, Guid.Empty));
+        }
+        finally
+        {
+            await CleanupAsync(connectionString, organizationA, organizationB);
+        }
+    }
 }
