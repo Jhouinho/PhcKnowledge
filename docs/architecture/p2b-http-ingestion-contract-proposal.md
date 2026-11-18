@@ -158,20 +158,22 @@ Mensagens de validação podem conter paths ou outros detalhes internos. A front
 
 A tabela seguinte é uma proposta de mapeamento. A correspondência exata entre resultados, estados e exceções atuais do serviço tem de ser validada no código antes da implementação.
 
-| Situação | Código proposto | Observações |
+| Situação | Código | Observações |
 |---|---:|---|
 | Submissão concluída, nova ou idempotente | `200 OK` | O serviço atual não transporta para o resultado HTTP a informação necessária para distinguir com segurança uma tentativa nova de uma já existente. |
 | Pacote aceite, mas ainda pendente | `202 Accepted` | Incluir `AttemptId`, estado público e `statusUrl`. |
-| Request estruturalmente inválido | `400 Bad Request` | Sem detalhes internos. |
 | Token ausente, inválido ou expirado | `401 Unauthorized` | Tratado pelo middleware de autenticação. |
-| Token sem scope necessário | `403 Forbidden` | Tratado pela autorização. |
+| Token autenticado sem scope necessário, ou sem claim de organização válido | `403 Forbidden` | Scope insuficiente; claim de organização ausente, vazio, duplicado ou não GUID. |
 | Tentativa/pacote inexistente ou de outra organização | `404 Not Found` | Não revelar a existência noutra organização. |
 | PackageId/SHA incompatíveis ou tentativa em `NeedsAttention` | `409 Conflict` | Devolver código público estável e, quando exista, `AttemptId`; nunca a mensagem interna. |
-| Inconsistência interna entre tentativa, receipt e arquivo | `500 Internal Server Error` | Não a apresentar como conflito do cliente; requer diagnóstico interno. |
-| Request acima do limite | `413 Payload Too Large` | Inclui rejeição no limite do servidor. |
-| Content-Type não suportado | `415 Unsupported Media Type` | Esperado `application/zip`. |
+| Request acima do limite | `413 Payload Too Large` | Inclui rejeição no limite do Kestrel (`MaxRequestBodySize`). |
+| Content-Type não suportado | `415 Unsupported Media Type` | Esperado `application/zip` (sem multipart). |
 | ZIP/pacote IKP inválido | `422 Unprocessable Entity` | Resposta pública sem ValidationSummaryJson ou paths. |
+| Capacidade de upload esgotada | `503 Service Unavailable` | Admissão limitada; resposta com `Retry-After`. |
+| Inconsistência interna entre tentativa, receipt e arquivo | `500 Internal Server Error` | Não a apresentar como conflito do cliente; requer diagnóstico interno. |
 | Erro interno inesperado | `500 Internal Server Error` | Detalhes apenas em logs internos protegidos. |
+
+A implementação não emite explicitamente `400 Bad Request` para estes endpoints: IDs de rota inválidos são rejeitados pelo constraint `:guid` do routing (tipicamente `404`); Content-Type inválido mapeia para `415`; pacote IKP inválido mapeia para `422`.
 
 Mapeamento confirmado pelo fluxo atual de `IkpPackageIngestionService`:
 - `PackageReceiptPendingException` → `202 Accepted`; a tentativa foi registada e aguarda recovery ou não conseguiu obter lease/processamento imediato.
@@ -212,13 +214,13 @@ O limite do request body do Kestrel, o limite configurável do serviço de uploa
 
 A revisão técnica propõe fechar os detalhes de implementação da seguinte forma. A seleção do fornecedor concreto de identidade e os valores específicos do ambiente de deployment não são decisões de arquitetura da aplicação e serão fornecidos na configuração de cada instalação.
 
-1. **Identity Provider:** manter integração agnóstica ao fornecedor, baseada em JWT Bearer e metadata OIDC/JWKS. Authority/Issuer e Audience são configuração obrigatória por ambiente; não fixar um fornecedor nem valores no código.
+1. **Identity Provider:** manter integração agnóstica ao fornecedor, baseada em JWT Bearer e metadata OIDC/JWKS. `Authentication:Authority` (metadados), `Authentication:Issuer` (claim `iss`; default = Authority) e `Authentication:Audience` são configuração por ambiente; não fixar um fornecedor nem valores no código.
 2. **Claim de organização:** usar `organization_id` como nome convencional por defeito, mantendo `OrganizationClaimType` configurável. O valor tem de ser um GUID não vazio. Não aceitar fallback para outro claim nem organização default.
 3. **Scopes:** exigir os scopes OAuth2 `ikp.upload` e `ikp.read`, lidos do claim `scope` (string separada por espaços), com validação explícita. Configurar a validação JWT sem mapeamentos implícitos de claims que alterem os nomes esperados.
 4. **Mapeamento de estados:** adotar a tabela da secção 8 e os casos concretos aí descritos: `PendingArchive` → 202; `NeedsAttention` → 409; conflito de identidade do pacote → 409; inconsistência interna → 500; pacote inválido → 422; limite de request → 413.
 5. **Idempotência:** adotar a semântica detalhada na secção 15. Submissões concluídas devolvem 200; pendentes devolvem 202; colisões parciais PackageId/SHA devolvem 409.
 6. **Erros públicos:** usar catálogo HTTP estável próprio, sem expor `LastErrorCode`, `LastErrorMessage`, ValidationSummaryJson, paths ou exceções. Formato recomendado: Problem Details com `code`, `traceId` e `attemptId` opcional.
-7. **Health/readiness:** disponibilizar `GET /health/live` e `GET /health/ready`, com respostas mínimas sem detalhes de infraestrutura.
+7. **Health/readiness:** disponibilizar `GET /health/live` (processo vivo) e `GET /health/ready` (preflight de schema bem-sucedido no arranque), com respostas mínimas sem detalhes de infraestrutura nem probe contínuo de SQL/disco.
 8. **TLS e deployment:** assumir TLS terminado num reverse proxy confiável como configuração preferencial. Kestrel só confia em proxies explicitamente configurados; se não existir proxy, o próprio Kestrel termina TLS.
 9. **Recursos temporários:** começar com uma submissão concorrente por processo, configurável. Aplicar admissão limitada, monitorização de espaço livre e quotas/reservas configuradas no deployment. O staging e o diretório temporário usado pelo validador têm de ser contabilizados em conjunto.
 10. **CORS:** desativado por defeito. Só ativar origins explícitas se um cliente browser vier a consumir diretamente a API.
@@ -302,11 +304,14 @@ Esta secção regista a revisão do código da baseline e as decisões recomenda
 
 ### 15.1 Identity Provider e validação JWT
 
-A aplicação não deve ficar acoplada a um fornecedor específico. A configuração obrigatória por ambiente será:
-- `Authentication:Authority` — issuer/authority do IdP;
-- `Authentication:Audience` — audience destinada à API;
+A aplicação não deve ficar acoplada a um fornecedor específico. A configuração por ambiente será:
+- `Authentication:Authority` — URL de metadados OIDC/JWKS do IdP (origem da configuração de validação);
+- `Authentication:Issuer` — valor esperado do claim `iss` no JWT; independente de Authority; quando omitido, assume o valor de Authority;
+- `Authentication:Audience` — audience destinada à API (obrigatório);
 - `Authentication:OrganizationClaimType` — por defeito `organization_id`;
-- configuração de HTTPS metadata/JWKS conforme o ambiente.
+- configuração de HTTPS metadata/JWKS conforme o ambiente (`RequireHttpsMetadata`).
+
+Authority identifica de onde se obtêm os metadados OIDC; Issuer é o valor validado no token. Em muitos IdPs coincidem; noutros o `iss` diverge da URL de metadata, pelo que a configuração os separa.
 
 O middleware valida assinatura, issuer, audience e validade temporal. A aplicação não emite tokens e não guarda client secrets de consumidores. A escolha do IdP e o registo dos clients pertencem ao deployment/operador.
 
@@ -317,7 +322,7 @@ O middleware valida assinatura, issuer, audience e validade temporal. A aplicaç
 - Scopes: `ikp.upload` e `ikp.read`.
 - Interpretar o claim OAuth2 `scope` como lista delimitada por espaços; validar o scope exigido em cada endpoint.
 - A validação deve usar os nomes de claims esperados sem inbound claim mapping implícito.
-- Falta ou invalidade do claim de organização deve impedir o acesso aos endpoints de negócio; nunca usar organização default.
+- Token autenticado sem claim de organização válido (ausente, vazio, duplicado ou não GUID) → `403 Forbidden`; nunca usar organização default.
 
 ### 15.3 Mapeamento dos estados reais
 
@@ -353,25 +358,28 @@ A chave lógica de idempotência é, portanto, a combinação consistente de org
 
 ### 15.5 Catálogo de erros públicos
 
-Usar respostas Problem Details com códigos públicos estáveis, por exemplo:
-- `invalid_package`;
-- `upload_too_large`;
-- `package_conflict`;
-- `ingestion_pending`;
-- `ingestion_needs_attention`;
-- `not_found`;
-- `unauthorized`;
-- `forbidden`;
-- `internal_error`.
+Usar respostas Problem Details com códigos públicos estáveis efetivamente emitidos pela API:
+- `invalid_package` — pacote IKP inválido (`422`);
+- `upload_too_large` — corpo acima do limite (`413`);
+- `package_conflict` — conflito de identidade PackageId/SHA (`409`);
+- `ingestion_needs_attention` — tentativa em `NeedsAttention` (`409`);
+- `not_found` — tentativa/pacote inexistente ou de outra organização (`404`);
+- `unauthorized` — resolução de organização sem principal autenticado (`401`);
+- `forbidden` — scope insuficiente ou claim de organização inválido (`403`);
+- `unsupported_media_type` — Content-Type diferente de `application/zip` ou multipart (`415`);
+- `upload_capacity_exceeded` — capacidade de upload esgotada (`503`);
+- `internal_error` — inconsistência interna ou erro inesperado (`500`).
+
+O código `ingestion_pending` permanece reservado no catálogo interno da API, mas a pendência bem-sucedida é comunicada como `202 Accepted` com DTO/`statusUrl`, não como Problem Details. Não existe emissão explícita de um código público `bad_request` nestes endpoints.
 
 O payload pode incluir `status`, `title`, `code`, `traceId` e `attemptId` quando aplicável. Não incluir `LastErrorCode`, `LastErrorMessage`, ValidationSummaryJson, paths, SQL details ou texto de exceções. Os códigos acima são da API e não espelham os códigos internos do receipt.
 
 ### 15.6 Health e readiness
 
-- `GET /health/live`: indica apenas que o processo HTTP está vivo.
-- `GET /health/ready`: indica que a aplicação completou o preflight de schema e consegue aceder às dependências essenciais e aos diretórios configurados.
+- `GET /health/live`: indica apenas que o processo HTTP está vivo (liveness). Não depende do estado do schema nem da disponibilidade SQL.
+- `GET /health/ready`: indica que o preflight de schema no arranque terminou com sucesso. Não realiza monitorização contínua da disponibilidade SQL nem do espaço em disco após o preflight.
 - Respostas não autenticadas, pequenas e sem connection strings, paths, nomes de servidor/base de dados ou detalhes de exceções.
-- Falha de readiness deve retirar a instância do tráfego; liveness não deve falhar apenas porque uma dependência temporária está indisponível.
+- Falha de readiness (preflight sem sucesso) deve retirar a instância do tráfego; liveness não deve falhar apenas porque uma dependência temporária está indisponível.
 
 ### 15.7 TLS, proxy e CORS
 
@@ -383,7 +391,7 @@ O payload pode incluir `status`, `title`, `code`, `traceId` e `attemptId` quando
 ### 15.8 Concorrência e disco temporário
 
 - Limite inicial recomendado: uma submissão concorrente por instância, configurável por `Upload:MaxConcurrentUploads`.
-- Usar admissão limitada antes de iniciar staging/validação; quando o limite estiver ocupado, responder 429 ou 503 com `Retry-After`, sem acumular requests ilimitados.
+- Usar admissão limitada antes de iniciar staging/validação; quando o limite estiver ocupado, a implementação responde `503 Service Unavailable` com `Retry-After`, sem acumular requests ilimitados.
 - O orçamento de disco tem de considerar simultaneamente o ZIP staged (até 250 MiB) e a expansão temporária do validador (até 500 MiB) por upload ativo, mais margem operacional.
 - Configurar o diretório temporário do processo de forma explícita e monitorizar o mesmo volume que contém staging/temporários.
 - Definir reserva mínima de espaço livre e alertas no deployment; não codificar uma quota universal em GB sem conhecer o volume e a capacidade do ambiente.

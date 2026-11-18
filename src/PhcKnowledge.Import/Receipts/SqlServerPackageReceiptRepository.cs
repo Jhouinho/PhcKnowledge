@@ -131,7 +131,8 @@ public sealed class SqlServerPackageReceiptRepository : IPackageReceiptRepositor
             !string.Equals(existing.StorageKey, archive.StorageKey, StringComparison.Ordinal))
         {
             throw new PackageReceiptConflictException(
-                "Já existe um registo desta organização para o PackageId ou SHA-256 com conteúdo diferente.");
+                "Já existe um registo desta organização para o PackageId ou SHA-256 com conteúdo diferente.",
+                PackageReceiptConflictKind.IdentityMismatch);
         }
     }
 
