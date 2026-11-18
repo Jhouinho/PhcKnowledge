@@ -43,36 +43,53 @@ public sealed class SqlServerPackageReceiptRepository : IPackageReceiptRepositor
 
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
-        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(
-            IsolationLevel.Serializable, cancellationToken);
 
-        var existing = await FindExistingAsync(
-            connection, transaction, organizationId, validation.PackageId,
-            validation.ZipSha256, cancellationToken);
-
-        if (existing is not null)
-        {
-            EnsureSamePackage(existing, validation, archive);
-            await transaction.CommitAsync(cancellationToken);
-            return new PackageReceiptRegistration(existing, true);
-        }
-
-        var receipt = CreateReceipt(organizationId, validation, archive);
+        Exception? operationError = null;
         try
         {
-            await InsertAsync(connection, transaction, receipt, cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            return new PackageReceiptRegistration(receipt, false);
+            await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(
+                IsolationLevel.Serializable, cancellationToken);
+
+            var existing = await FindExistingAsync(
+                connection, transaction, organizationId, validation.PackageId,
+                validation.ZipSha256, cancellationToken);
+
+            if (existing is not null)
+            {
+                EnsureSamePackage(existing, validation, archive);
+                await transaction.CommitAsync(cancellationToken);
+                return new PackageReceiptRegistration(existing, true);
+            }
+
+            var receipt = CreateReceipt(organizationId, validation, archive);
+            try
+            {
+                await InsertAsync(connection, transaction, receipt, cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                return new PackageReceiptRegistration(receipt, false);
+            }
+            catch (SqlException ex) when (ex.Number is 2601 or 2627)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                var concurrent = await FindExistingOutsideTransactionAsync(
+                    organizationId, validation.PackageId, validation.ZipSha256, cancellationToken);
+                if (concurrent is null)
+                    throw;
+                EnsureSamePackage(concurrent, validation, archive);
+                return new PackageReceiptRegistration(concurrent, true);
+            }
         }
-        catch (SqlException ex) when (ex.Number is 2601 or 2627)
+        catch (Exception ex)
         {
-            await transaction.RollbackAsync(cancellationToken);
-            var concurrent = await FindExistingOutsideTransactionAsync(
-                organizationId, validation.PackageId, validation.ZipSha256, cancellationToken);
-            if (concurrent is null)
-                throw;
-            EnsureSamePackage(concurrent, validation, archive);
-            return new PackageReceiptRegistration(concurrent, true);
+            operationError = ex;
+            throw;
+        }
+        finally
+        {
+            // Transaction is disposed before this finally (await using). Restore only after
+            // commit/rollback; on restore failure ClearPool so SERIALIZABLE cannot leak.
+            await SqlConnectionIsolation.RestoreReadCommittedOrClearPoolAsync(
+                connection, operationError, CancellationToken.None);
         }
     }
 
