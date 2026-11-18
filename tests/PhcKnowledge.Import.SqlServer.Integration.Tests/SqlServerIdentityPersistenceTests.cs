@@ -110,7 +110,7 @@ public sealed class SqlServerIdentityPersistenceTests
         return (cs, sp, org);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task ApplicationUser_persists_with_guid_key_and_canonical_organization()
     {
         var (cs, sp, org) = await SetupAsync();
@@ -155,7 +155,7 @@ public sealed class SqlServerIdentityPersistenceTests
         Assert.Equal(1, (int)(await fk.ExecuteScalarAsync() ?? -1));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task UpdateAsync_allows_profile_changes_without_changing_organization()
     {
         var (_, sp, org) = await SetupAsync();
@@ -184,7 +184,7 @@ public sealed class SqlServerIdentityPersistenceTests
         Assert.Equal("david@example.com", again.Email);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task UpdateAsync_rejects_organization_id_change()
     {
         var (_, sp, org) = await SetupAsync();
@@ -213,7 +213,7 @@ public sealed class SqlServerIdentityPersistenceTests
         Assert.Equal(org.OrganizationId, persisted!.OrganizationId);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task CreateAsync_rejects_guid_empty_organization()
     {
         var (_, sp, _) = await SetupAsync();
@@ -238,7 +238,7 @@ public sealed class SqlServerIdentityPersistenceTests
         Assert.Contains(create.Errors, e => e.Code == "OrganizationIdRequired");
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Rejects_user_with_nonexistent_organization_id()
     {
         var (_, sp, _) = await SetupAsync();
@@ -264,7 +264,7 @@ public sealed class SqlServerIdentityPersistenceTests
         Assert.Contains(create.Errors, e => e.Code == "OrganizationIdNotCanonical");
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task IsActive_and_security_stamp_persist_together_on_deactivation()
     {
         var (cs, sp, _) = await SetupAsync();
@@ -295,7 +295,7 @@ public sealed class SqlServerIdentityPersistenceTests
         Assert.NotEqual(stampBefore, reader.GetString(1));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task SetActiveAsync_noop_keeps_security_stamp_when_already_desired()
     {
         var (_, sp, _) = await SetupAsync();
@@ -318,7 +318,7 @@ public sealed class SqlServerIdentityPersistenceTests
         Assert.Equal(stampBefore, loaded.SecurityStamp);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task SetActiveAsync_rolls_back_when_update_fails()
     {
         var (cs, sp, _) = await SetupAsync(forceDeactivateFailure: true);
@@ -356,7 +356,7 @@ public sealed class SqlServerIdentityPersistenceTests
         Assert.Equal(stampBefore, reader.GetString(1));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Role_seeder_preserves_ids_on_rerun()
     {
         var (_, sp, _) = await SetupAsync();
@@ -377,7 +377,7 @@ public sealed class SqlServerIdentityPersistenceTests
         Assert.Equal(first, second);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Role_seeder_concurrent_executions_create_roles_once()
     {
         var cs = RequireConnectionString();
@@ -413,7 +413,7 @@ public sealed class SqlServerIdentityPersistenceTests
         Assert.Contains(all, r => r.Name == ApplicationRoles.Collaborator);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Migration_reuses_existing_organizations_table_without_recreate()
     {
         var (cs, sp, org) = await SetupAsync();
@@ -452,7 +452,7 @@ public sealed class SqlServerIdentityPersistenceTests
         Assert.Equal(4, (int)(await col.ExecuteScalarAsync() ?? -1));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Db_fk_rejects_organization_that_bypasses_validator()
     {
         var (cs, sp, _) = await SetupAsync();

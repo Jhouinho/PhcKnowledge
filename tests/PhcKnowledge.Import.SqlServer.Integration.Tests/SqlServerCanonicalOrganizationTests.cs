@@ -87,7 +87,7 @@ public sealed class SqlServerCanonicalOrganizationTests
         return connectionString;
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task EnsureCanonical_creates_organization_once()
     {
         var cs = await SetupAsync();
@@ -108,7 +108,7 @@ public sealed class SqlServerCanonicalOrganizationTests
         Assert.Equal(1, (int)(await count.ExecuteScalarAsync() ?? -1));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task EnsureCanonical_concurrent_calls_create_single_row()
     {
         var cs = await SetupAsync();
@@ -130,7 +130,7 @@ public sealed class SqlServerCanonicalOrganizationTests
         Assert.Equal(1, (int)(await count.ExecuteScalarAsync() ?? -1));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task TryGetCanonical_detects_inconsistent_multiple_canonical_rows()
     {
         var cs = await SetupAsync();
@@ -180,7 +180,7 @@ public sealed class SqlServerCanonicalOrganizationTests
         }
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Receipt_attempts_remain_usable_alongside_organizations()
     {
         var cs = await SetupAsync();

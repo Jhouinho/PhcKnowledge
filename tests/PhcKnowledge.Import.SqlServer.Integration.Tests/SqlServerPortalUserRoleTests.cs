@@ -19,7 +19,7 @@ public sealed class SqlServerPortalUserRoleTests
 {
     private const string StrongPassword = "Str0ng!Passw0rd";
 
-    [Fact]
+    [SqlServerFact]
     public async Task SetRole_rotates_stamp_and_invalidates_previous_cookie_principal()
     {
         var cs = await PrepareEmptyAsync();
@@ -50,7 +50,7 @@ public sealed class SqlServerPortalUserRoleTests
             CreatePrincipal(user.Id, reloaded.SecurityStamp!)));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task SetRole_idempotent_keeps_security_stamp()
     {
         var cs = await PrepareEmptyAsync();
@@ -71,7 +71,7 @@ public sealed class SqlServerPortalUserRoleTests
         Assert.Equal(stamp, after!.SecurityStamp);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Last_active_administrator_cannot_be_demoted_but_second_can()
     {
         var cs = await PrepareEmptyAsync();
@@ -93,7 +93,7 @@ public sealed class SqlServerPortalUserRoleTests
         Assert.Equal(PortalUserAdministrationError.LastActiveAdministrator, ex.Error);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Concurrent_demotions_leave_exactly_one_active_administrator()
     {
         var cs = await PrepareEmptyAsync();
@@ -125,7 +125,7 @@ public sealed class SqlServerPortalUserRoleTests
         Assert.Single(admins, u => u.IsActive);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Stamp_rotation_failure_rolls_back_role_mutation()
     {
         var cs = await PrepareEmptyAsync();

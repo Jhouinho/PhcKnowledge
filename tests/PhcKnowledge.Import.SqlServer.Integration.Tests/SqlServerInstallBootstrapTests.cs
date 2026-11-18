@@ -29,7 +29,7 @@ public sealed class SqlServerInstallBootstrapTests
         return value;
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Ensure_organization_is_idempotent_and_preserves_guid()
     {
         var cs = await PrepareEmptyAsync();
@@ -43,7 +43,7 @@ public sealed class SqlServerInstallBootstrapTests
         Assert.Equal("Install Org A", second.Name);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Ensure_roles_is_idempotent_and_preserves_ids()
     {
         var cs = await PrepareEmptyAsync();
@@ -63,7 +63,7 @@ public sealed class SqlServerInstallBootstrapTests
         Assert.Equal(collabId, (await roles.FindByNameAsync(ApplicationRoles.Collaborator))!.Id);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Bootstrap_admin_creates_active_administrator_on_canonical_org()
     {
         var cs = await PrepareEmptyAsync();
@@ -83,7 +83,7 @@ public sealed class SqlServerInstallBootstrapTests
         Assert.True(await users.IsInRoleAsync(user, ApplicationRoles.Administrator));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Bootstrap_admin_rejects_when_administrator_already_exists()
     {
         var cs = await PrepareEmptyAsync();
@@ -102,7 +102,7 @@ public sealed class SqlServerInstallBootstrapTests
         Assert.Null(await users.FindByEmailAsync("second-admin@example.com"));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Bootstrap_admin_rejects_duplicate_email_without_creating_admin_role_user()
     {
         var cs = await PrepareEmptyAsync();
@@ -122,7 +122,7 @@ public sealed class SqlServerInstallBootstrapTests
         Assert.False(await users.IsInRoleAsync(existing, ApplicationRoles.Administrator));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Invalid_password_does_not_create_user()
     {
         var cs = await PrepareEmptyAsync();
@@ -138,7 +138,7 @@ public sealed class SqlServerInstallBootstrapTests
         Assert.Null(await users.FindByEmailAsync("weak@example.com"));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Role_assignment_failure_does_not_leave_partial_user()
     {
         var cs = await PrepareEmptyAsync();
@@ -154,7 +154,7 @@ public sealed class SqlServerInstallBootstrapTests
         Assert.Null(await users.FindByEmailAsync("partial@example.com"));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Concurrent_bootstrap_creates_exactly_one_administrator()
     {
         var cs = await PrepareEmptyAsync();
@@ -176,7 +176,7 @@ public sealed class SqlServerInstallBootstrapTests
         Assert.Single(admins);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Bootstrap_logs_do_not_contain_password()
     {
         var cs = await PrepareEmptyAsync();

@@ -18,7 +18,7 @@ public sealed class SqlServerPortalUserActivationAdminTests
 {
     private const string StrongPassword = "Str0ng!Passw0rd";
 
-    [Fact]
+    [SqlServerFact]
     public async Task Deactivate_invalidates_cookie_and_reactivation_allows_new_principal_only()
     {
         var cs = await PrepareEmptyAsync();
@@ -55,7 +55,7 @@ public sealed class SqlServerPortalUserActivationAdminTests
             CreatePrincipal(user.Id, afterOn!.SecurityStamp!)));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Idempotent_activate_keeps_stamp_last_admin_cannot_deactivate()
     {
         var cs = await PrepareEmptyAsync();
@@ -80,7 +80,7 @@ public sealed class SqlServerPortalUserActivationAdminTests
         Assert.True((await users.FindByIdAsync(only.User.UserId.ToString("D")))!.IsActive);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Second_active_administrator_can_be_deactivated()
     {
         var cs = await PrepareEmptyAsync();
@@ -99,7 +99,7 @@ public sealed class SqlServerPortalUserActivationAdminTests
         Assert.True((await admin.GetAsync(first.User.UserId))!.IsActive);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Concurrent_deactivate_and_demote_leave_one_active_administrator()
     {
         var cs = await PrepareEmptyAsync();
@@ -131,7 +131,7 @@ public sealed class SqlServerPortalUserActivationAdminTests
         Assert.Single(admins, u => u.IsActive);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Activation_failure_rolls_back_is_active()
     {
         var cs = await PrepareEmptyAsync();

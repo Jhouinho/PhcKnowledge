@@ -28,7 +28,7 @@ public sealed class SqlServerPortalSessionValidationTests
         return value;
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Session_becomes_invalid_after_sql_deactivation_and_stamp_rotation()
     {
         var connectionString = RequireConnectionString();
@@ -86,7 +86,7 @@ public sealed class SqlServerPortalSessionValidationTests
         Assert.True(await validator.IsSessionValidAsync(CreatePrincipal(user.Id, reloaded!.SecurityStamp!)));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Projected_lookup_reads_current_sql_row_without_full_graph()
     {
         var connectionString = RequireConnectionString();

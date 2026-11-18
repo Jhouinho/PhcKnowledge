@@ -15,7 +15,7 @@ public sealed class SqlServerPortalUserAdministrationTests
 {
     private const string StrongPassword = "Str0ng!Passw0rd";
 
-    [Fact]
+    [SqlServerFact]
     public async Task Create_and_list_are_scoped_to_canonical_organization()
     {
         var cs = await PrepareEmptyAsync();
@@ -42,7 +42,7 @@ public sealed class SqlServerPortalUserAdministrationTests
         Assert.Equal("SQL Collab", detail!.DisplayName);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Create_rejects_duplicate_email_on_sql()
     {
         var cs = await PrepareEmptyAsync();

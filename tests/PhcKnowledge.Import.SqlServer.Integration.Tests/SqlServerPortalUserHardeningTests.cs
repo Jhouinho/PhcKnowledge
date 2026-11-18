@@ -17,7 +17,7 @@ public sealed class SqlServerPortalUserHardeningTests
 {
     private const string StrongPassword = "Str0ng!Passw0rd";
 
-    [Fact]
+    [SqlServerFact]
     public async Task Create_role_assignment_failure_rolls_back_without_residual_user()
     {
         var cs = await PrepareEmptyAsync();
@@ -35,7 +35,7 @@ public sealed class SqlServerPortalUserHardeningTests
         Assert.Null(await users.FindByEmailAsync("orphan@example.com"));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Concurrent_create_admin_and_demote_preserve_active_administrator()
     {
         var cs = await PrepareEmptyAsync();
@@ -94,7 +94,7 @@ public sealed class SqlServerPortalUserHardeningTests
         Assert.True(admins.Count(u => u.IsActive) >= 1);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Concurrent_bootstrap_and_create_leave_at_least_one_active_admin()
     {
         var cs = await PrepareEmptyAsync();
@@ -141,7 +141,7 @@ public sealed class SqlServerPortalUserHardeningTests
         Assert.True(await counter.CountAsync(org!.OrganizationId) >= 1);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Concurrent_bootstrap_and_deactivate_keep_active_administrator_invariant()
     {
         var cs = await PrepareEmptyAsync();
@@ -202,7 +202,7 @@ public sealed class SqlServerPortalUserHardeningTests
             .FindByEmailAsync("should-reject@example.com"));
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Direct_UserActivationService_cannot_deactivate_last_administrator()
     {
         var cs = await PrepareEmptyAsync();
@@ -225,7 +225,7 @@ public sealed class SqlServerPortalUserHardeningTests
         Assert.True(loaded!.IsActive);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task Bootstrap_role_failure_rolls_back_without_residual_user()
     {
         var cs = await PrepareEmptyAsync();
