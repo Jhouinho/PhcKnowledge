@@ -122,7 +122,7 @@ Limites conhecidos:
 
 ### Fase 1 — Captura fiável e pacote normalizado
 
-**Estado: Object Index implementado; projeção validada com captura real; exportador IKP 0.1 implementado; validação end-to-end do ZIP real pendente**
+**Estado: Object Index e exportador IKP 0.1 implementados; correção de desempenho aplicada; pacote real exercitado no percurso de receção/arquivo/recovery. A validação real cobre apenas os kinds presentes na captura.**
 
 **Atualização de implementação — 2026-11-07**
 
@@ -147,7 +147,7 @@ A validação sintética cobre os 21 kinds. Em 2026-11-08, a projeção foi tamb
 
 Não foram alterados schema SQLite, collectors ou queries PHC/SQL nesta etapa.
 
-#### P1.C / IKP — exportador implementado; validação real do pacote pendente
+#### P1.C / IKP — exportador implementado; pacote real exercitado pelo harness Import
 
 Investigação registada em [`p1b-ikp-package-export-readiness-investigation-2026-11-07.md`](p1b-ikp-package-export-readiness-investigation-2026-11-07.md).
 
@@ -164,7 +164,7 @@ O validador de referência também verifica referências cruzadas, paths seguros
 
 Limitação identificada: o workspace atual não persiste timestamps reais de início/fim, ScanMode, ScannerVersion nem um origin descriptor estruturado. O exportador não pode inventar esses valores nem inferi-los de `created_at_utc` ou do label da instalação. Para a primeira versão, o manifesto completo terá de estar disponível em memória no momento da exportação.
 
-#### P1.C.1 — Desempenho da validação do Object Index: causa isolada; correção pendente
+#### P1.C.1 — Desempenho da validação do Object Index: causa isolada; correção aplicada e validada
 
 Em 2026-11-11 foi executado um teste A/B com o mesmo pacote real `CSDefault202603-ikp-validation.zip`, usando JsonSchema.Net 7.3.1:
 
