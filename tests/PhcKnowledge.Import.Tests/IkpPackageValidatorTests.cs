@@ -223,6 +223,26 @@ public sealed class IkpPackageValidatorTests
             Guid attemptId, CancellationToken cancellationToken = default) =>
             Task.FromResult(_attempt is { Status: "Completed" } completed && completed.AttemptId == attemptId ? _receipt : null);
 
+        public Task<PackageIngestionStatus?> GetAttemptAsync(
+            Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default)
+        {
+            if (_attempt is null ||
+                _attempt.OrganizationId != organizationId ||
+                _attempt.AttemptId != attemptId)
+                return Task.FromResult<PackageIngestionStatus?>(null);
+            return Task.FromResult<PackageIngestionStatus?>(ToStatus(_attempt, _receipt?.ReceiptId));
+        }
+
+        public Task<PackageIngestionStatus?> GetByPackageIdAsync(
+            Guid organizationId, Guid packageId, CancellationToken cancellationToken = default)
+        {
+            if (_attempt is null ||
+                _attempt.OrganizationId != organizationId ||
+                _attempt.Validation.PackageId != packageId)
+                return Task.FromResult<PackageIngestionStatus?>(null);
+            return Task.FromResult<PackageIngestionStatus?>(ToStatus(_attempt, _receipt?.ReceiptId));
+        }
+
         public Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(
             CancellationToken cancellationToken = default)
         {
@@ -231,6 +251,13 @@ public sealed class IkpPackageValidatorTests
                 keys.Add(_attempt.StagingKey);
             return Task.FromResult<IReadOnlySet<string>>(keys);
         }
+
+        private static PackageIngestionStatus ToStatus(PackageReceiptAttempt attempt, Guid? receiptId) =>
+            new(attempt.AttemptId, attempt.OrganizationId, attempt.Validation.PackageId,
+                attempt.Validation.CaptureId, attempt.Status, attempt.Validation.ZipSha256,
+                attempt.Validation.ZipByteLength, attempt.StorageKey, attempt.AttemptCount,
+                attempt.Validation.ObjectCount, attempt.Validation.ArtifactCount,
+                attempt.CreatedAtUtc, attempt.UpdatedAtUtc, null, receiptId, attempt.LastErrorCode);
 
         public Task<bool> RenewLeaseAsync(Guid attemptId, Guid leaseToken,
             DateTimeOffset leaseUntilUtc, CancellationToken cancellationToken = default)
