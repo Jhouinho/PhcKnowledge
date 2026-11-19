@@ -52,6 +52,26 @@ public sealed class IkpJwtDisabledApiTests : IClassFixture<IkpJwtDisabledApiFact
     }
 
     [Fact]
+    public async Task Ikp_get_package_analysis_returns_503_when_jwt_disabled_without_auth()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync($"/api/v1/ikp/packages/{Guid.NewGuid():D}/analysis");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        await AssertDisabledProblemAsync(response);
+    }
+
+    [Fact]
+    public async Task Ikp_post_package_analysis_returns_503_when_jwt_disabled_without_auth()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.PostAsync($"/api/v1/ikp/packages/{Guid.NewGuid():D}/analysis", null);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        await AssertDisabledProblemAsync(response);
+    }
+
+    [Fact]
     public async Task Health_live_remains_available_when_jwt_disabled()
     {
         var client = _factory.CreateClient();

@@ -54,7 +54,19 @@ public sealed class SqlServerSchemaPreflightService(
               (N'PackageReceiptAttempts', N'LastErrorMessage'),
               (N'PackageReceiptAttempts', N'CreatedAtUtc'),
               (N'PackageReceiptAttempts', N'UpdatedAtUtc'),
-              (N'PackageReceiptAttempts', N'CompletedAtUtc');
+              (N'PackageReceiptAttempts', N'CompletedAtUtc'),
+              (N'PackageImportAnalyses', N'AnalysisId'),
+              (N'PackageImportAnalyses', N'OrganizationId'),
+              (N'PackageImportAnalyses', N'ReceiptId'),
+              (N'PackageImportAnalyses', N'PackageId'),
+              (N'PackageImportAnalyses', N'CaptureId'),
+              (N'PackageImportAnalyses', N'ZipSha256'),
+              (N'PackageImportAnalyses', N'AnalysisSchemaVersion'),
+              (N'PackageImportAnalyses', N'AnalysisJson'),
+              (N'PackageImportAnalyses', N'ReadinessStatus'),
+              (N'PackageImportAnalyses', N'SemanticFingerprint'),
+              (N'PackageImportAnalyses', N'AnalyzedAtUtc'),
+              (N'PackageImportAnalyses', N'CreatedAtUtc');
 
             SELECT STRING_AGG(
                 CONVERT(nvarchar(max), CONCAT(required.TableName, N'.', required.ColumnName)), N', ')
@@ -68,10 +80,10 @@ public sealed class SqlServerSchemaPreflightService(
         var missingColumns = await command.ExecuteScalarAsync(cancellationToken) as string;
         if (!string.IsNullOrWhiteSpace(missingColumns))
             throw new InvalidOperationException(
-                $"Schema de PackageReceipt incompleto. Colunas em falta: {missingColumns}. Aplicar/actualizar as migrations 001 e 002.");
+                $"Schema de PackageReceipt/análise incompleto. Colunas em falta: {missingColumns}. Aplicar/actualizar as migrations 001–004.");
 
         readiness.MarkSchemaReady();
-        logger.LogInformation("SQL Server preflight concluído; tabelas e colunas necessárias de PackageReceipt disponíveis.");
+        logger.LogInformation("SQL Server preflight concluído; tabelas PackageReceipt e PackageImportAnalyses disponíveis.");
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

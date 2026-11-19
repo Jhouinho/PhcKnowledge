@@ -89,6 +89,69 @@ public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore, IR
         long expectedByteLength,
         CancellationToken cancellationToken = default)
     {
+        var path = ResolveArchivedPath(storageKey, expectedSha256, expectedByteLength);
+        if (!File.Exists(path)) return false;
+
+        await EnsureSameContentAsync(path, expectedSha256, expectedByteLength, cancellationToken);
+        return true;
+    }
+
+    public async Task<Stream> OpenArchivedPackageReadAsync(
+        string storageKey,
+        string expectedSha256,
+        long expectedByteLength,
+        CancellationToken cancellationToken = default)
+    {
+        var path = ResolveArchivedPath(storageKey, expectedSha256, expectedByteLength);
+        if (!File.Exists(path))
+            throw new FileNotFoundException("Pacote arquivado não encontrado.", path);
+
+        var stream = new FileStream(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            81920,
+            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        try
+        {
+            using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            var buffer = new byte[81920];
+            long total = 0;
+            while (true)
+            {
+                var read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken);
+                if (read == 0) break;
+                total += read;
+                hasher.AppendData(buffer, 0, read);
+            }
+
+            var hash = Convert.ToHexString(hasher.GetHashAndReset()).ToLowerInvariant();
+            if (total != expectedByteLength ||
+                !string.Equals(hash, expectedSha256, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "Colisão ou corrupção no arquivo content-addressed; o ficheiro existente não foi substituído.");
+            }
+
+            if (!stream.CanSeek)
+                throw new InvalidOperationException("O stream do arquivo tem de permitir reposicionamento.");
+
+            stream.Position = 0;
+            return stream;
+        }
+        catch
+        {
+            await stream.DisposeAsync();
+            throw;
+        }
+    }
+
+    private string ResolveArchivedPath(
+        string storageKey,
+        string expectedSha256,
+        long expectedByteLength)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(storageKey);
         if (Path.IsPathRooted(storageKey) || storageKey.Contains('\\') ||
             storageKey.Split('/').Any(part => part is "" or "." or ".."))
@@ -108,10 +171,7 @@ public sealed class FileSystemImmutablePackageStore : IImmutablePackageStore, IR
         if (!path.StartsWith(rootPrefix, OperatingSystem.IsWindows()
                 ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
             throw new ArgumentException("StorageKey fora do arquivo.", nameof(storageKey));
-        if (!File.Exists(path)) return false;
-
-        await EnsureSameContentAsync(path, expectedSha256, expectedByteLength, cancellationToken);
-        return true;
+        return path;
     }
 
     private static async Task EnsureSameContentAsync(

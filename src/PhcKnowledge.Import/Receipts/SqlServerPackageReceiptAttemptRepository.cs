@@ -239,6 +239,47 @@ public sealed class SqlServerPackageReceiptAttemptRepository : IPackageReceiptAt
         await using var reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
             return null;
+        return ReadReceipt(reader);
+    }
+
+    public async Task<PackageReceipt?> GetCompletedReceiptByPackageIdAsync(
+        Guid organizationId,
+        Guid packageId,
+        CancellationToken cancellationToken = default)
+    {
+        if (organizationId == Guid.Empty)
+            throw new ArgumentException("OrganizationId é obrigatório.", nameof(organizationId));
+        if (packageId == Guid.Empty)
+            throw new ArgumentException("PackageId é obrigatório.", nameof(packageId));
+
+        const string sql = """
+            SELECT r.ReceiptId, r.OrganizationId, r.PackageId, r.CaptureId,
+                   r.ContractVersion, r.ProducerProductId, r.ProducerProductVersion,
+                   r.OriginDatabaseName, r.ZipSha256, r.ZipByteLength, r.StorageKey,
+                   r.ReceivedAtUtc, r.ValidationSummaryJson
+            FROM dbo.PackageReceiptAttempts a
+            INNER JOIN dbo.PackageIngestionReceipts r
+                ON r.OrganizationId = a.OrganizationId
+               AND r.OrganizationId = @OrganizationId
+               AND r.PackageId = a.PackageId
+               AND r.ZipSha256 = a.ZipSha256
+            WHERE a.OrganizationId = @OrganizationId
+              AND a.PackageId = @PackageId
+              AND a.Status = 'Completed';
+            """;
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add("@OrganizationId", SqlDbType.UniqueIdentifier).Value = organizationId;
+        command.Parameters.Add("@PackageId", SqlDbType.UniqueIdentifier).Value = packageId;
+        await using var reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            return null;
+        return ReadReceipt(reader);
+    }
+
+    private static PackageReceipt ReadReceipt(SqlDataReader reader)
+    {
         var received = DateTime.SpecifyKind(reader.GetDateTime(11), DateTimeKind.Utc);
         return new PackageReceipt(reader.GetGuid(0), reader.GetGuid(1), reader.GetGuid(2),
             reader.GetGuid(3), reader.GetString(4), reader.GetString(5), reader.GetString(6),

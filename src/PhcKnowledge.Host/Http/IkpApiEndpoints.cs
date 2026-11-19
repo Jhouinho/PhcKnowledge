@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using PhcKnowledge.Import.Ikp;
+using PhcKnowledge.Import.Ikp.Analysis;
 using PhcKnowledge.Import.Receipts;
 
 namespace PhcKnowledge.Host.Http;
@@ -10,6 +11,7 @@ public static class IkpApiEndpoints
     public const string PackagesPath = "/api/v1/ikp/packages";
     public const string AttemptPath = "/api/v1/ikp/attempts/{attemptId:guid}";
     public const string PackageByIdPath = "/api/v1/ikp/packages/{packageId:guid}";
+    public const string PackageAnalysisPath = "/api/v1/ikp/packages/{packageId:guid}/analysis";
 
     public static IEndpointRouteBuilder MapIkpApi(
         this IEndpointRouteBuilder endpoints,
@@ -26,6 +28,13 @@ public static class IkpApiEndpoints
 
             endpoints.MapGet(PackageByIdPath, GetPackageAsync)
                 .RequireAuthorization(IkpAuthorizationPolicies.Read);
+
+            endpoints.MapGet(PackageAnalysisPath, GetPackageAnalysisAsync)
+                .RequireAuthorization(IkpAuthorizationPolicies.Read);
+
+            endpoints.MapPost(PackageAnalysisPath, ExecutePackageAnalysisAsync)
+                .RequireAuthorization(IkpAuthorizationPolicies.Read)
+                .DisableAntiforgery();
         }
         else
         {
@@ -34,6 +43,9 @@ public static class IkpApiEndpoints
                 .DisableAntiforgery();
             endpoints.MapGet(AttemptPath, IkpApiDisabledAsync);
             endpoints.MapGet(PackageByIdPath, IkpApiDisabledAsync);
+            endpoints.MapGet(PackageAnalysisPath, IkpApiDisabledAsync);
+            endpoints.MapPost(PackageAnalysisPath, IkpApiDisabledAsync)
+                .DisableAntiforgery();
         }
 
         endpoints.MapGet("/health/live", () => Results.Json(new { status = "live" }));
@@ -213,6 +225,42 @@ public static class IkpApiEndpoints
             }
 
             return Results.Json(IkpPublicDtoMapper.ToStatusDto(status));
+        });
+    }
+
+    private static Task<IResult> GetPackageAnalysisAsync(
+        Guid packageId,
+        HttpContext httpContext,
+        OrganizationIdResolver organizationIdResolver,
+        IkpPackageAnalysisService analysisService,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
+    {
+        var logger = loggerFactory.CreateLogger("PhcKnowledge.Host.Http.IkpApi");
+        return ExecuteAsync(httpContext, logger, async () =>
+        {
+            var organizationId = organizationIdResolver.ResolveRequired(httpContext.User);
+            var analysis = await analysisService.GetPersistedAsync(
+                organizationId, packageId, cancellationToken);
+            return Results.Json(IkpPublicDtoMapper.ToAnalysisDto(analysis));
+        });
+    }
+
+    private static Task<IResult> ExecutePackageAnalysisAsync(
+        Guid packageId,
+        HttpContext httpContext,
+        OrganizationIdResolver organizationIdResolver,
+        IkpPackageAnalysisService analysisService,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
+    {
+        var logger = loggerFactory.CreateLogger("PhcKnowledge.Host.Http.IkpApi");
+        return ExecuteAsync(httpContext, logger, async () =>
+        {
+            var organizationId = organizationIdResolver.ResolveRequired(httpContext.User);
+            var analysis = await analysisService.ExecuteAsync(
+                organizationId, packageId, cancellationToken);
+            return Results.Json(IkpPublicDtoMapper.ToAnalysisDto(analysis));
         });
     }
 

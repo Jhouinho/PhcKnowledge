@@ -23,14 +23,14 @@ return await root.Parse(args).InvokeAsync();
 
 static Command BuildApplySqlScripts(Option<string?> configOption)
 {
-    var cmd = new Command("apply-sql-scripts", "Aplica scripts SQL 001–003 (pré-requisito de schema).");
+    var cmd = new Command("apply-sql-scripts", "Aplica scripts SQL 001–004 (pré-requisito de schema).");
     cmd.Options.Add(configOption);
     cmd.SetAction(async (parseResult, ct) =>
     {
         await using var sp = CreateServices(parseResult.GetValue(configOption));
         var applicator = sp.GetRequiredService<SqlScriptApplicator>();
         await applicator.ApplyAsync(ct);
-        Console.WriteLine("Scripts SQL 001–003 aplicados.");
+        Console.WriteLine("Scripts SQL 001–004 aplicados.");
     });
     return cmd;
 }

@@ -258,6 +258,10 @@ public sealed class PackageReceiptRecoveryServiceTests
             Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default) =>
             Task.FromResult<PackageReceipt?>(null);
 
+        public Task<PackageReceipt?> GetCompletedReceiptByPackageIdAsync(
+            Guid organizationId, Guid packageId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<PackageReceipt?>(null);
+
         public Task<PackageIngestionStatus?> GetAttemptAsync(
             Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default) =>
             Task.FromResult<PackageIngestionStatus?>(null);
@@ -335,5 +339,12 @@ public sealed class PackageReceiptRecoveryServiceTests
             VerifyCalls++;
             return Task.FromResult(ArchiveExists);
         }
+
+        public Task<Stream> OpenArchivedPackageReadAsync(
+            string storageKey,
+            string expectedSha256,
+            long expectedByteLength,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException("OpenArchivedPackageReadAsync não é usado nestes testes.");
     }
 }
