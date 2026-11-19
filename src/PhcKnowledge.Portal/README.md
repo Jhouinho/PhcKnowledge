@@ -19,7 +19,7 @@ O primeiro `npm install` gera o `package-lock.json`. O lockfile deve ser incluí
 
 ## Desenvolvimento
 
-Com o Host ASP.NET Core em execução, iniciar o Vite:
+Para pré-visualizar o shell, o Host não é necessário. O Host só tem de estar em execução quando começar a ser usada a API através do proxy. Iniciar o Vite:
 
 ```powershell
 npm run dev
