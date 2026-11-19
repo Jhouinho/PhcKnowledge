@@ -3,11 +3,11 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-19 |
-| Branch | `feature/ikp-package-analysis-a` |
+| Branch de origem | `feature/ikp-package-analysis-a` |
 | Âmbito A | Reopen + Reader + Analysis — **fechado** |
 | Âmbito B | Persistência e auditoria de `PackageImportAnalysis` — **implementado e tecnicamente validado** |
-| Migrations | `004_package_import_analyses.sql` (nova; 001–003 intactas); incluída no Install e no helper de bootstrap |
-| Publicação Git | Working tree sem commit/push/PR à data deste fecho documental |
+| Migrations | `004_package_import_analyses.sql` (após 001–003); incluída no Install e no helper de bootstrap |
+| Publicação Git | **Integrado na `main`** — PR #19 (`PHC Knowledge — IKP Package Analysis (Increments A+B)`); merge `98a0b200cf99098bc37eddf754c3d0bb360ca309` |
 
 > Este relatório fecha os Incrementos **A e B**. Separação mantida: receção/receipt ≠ análise ≠ confirmação ≠ materialização. O Incremento C (confirmação explícita) tem desenho aprovado em documento separado e **não** está implementado.
 
@@ -74,7 +74,7 @@ O relatório de 2026-11-17 ainda descrevia “API HTTP não demonstradas”. Ess
 
 ## Parte 2 — Incremento B (persistência da análise)
 
-**Estado:** implementado na working tree; validação unitária, HTTP e SQL Server de teste concluídas (ver §3). Sem commit/push/PR à data deste documento.
+**Estado:** implementado e integrado na `main` (PR #19); validação unitária, HTTP e SQL Server de teste concluídas (ver §3 e §6).
 
 ### 2.1 Objetivo
 
@@ -193,9 +193,9 @@ Confirmação de importação (Incremento C — desenho em `increment-c-package-
 
 ---
 
-## 3. Evidências de validação (execuções já realizadas)
+## 3. Evidências de validação (antes da publicação)
 
-Estas contagens referem-se a execuções **anteriores** à consolidação documental final; **não** foram reexecutadas nesta atualização de documentos.
+Estas contagens referem-se a execuções **anteriores** à publicação Git; preservadas como histórico.
 
 | Suite / evidência | Resultado |
 |---|---|
@@ -205,23 +205,46 @@ Estas contagens referem-se a execuções **anteriores** à consolidação docume
 | Migration 004 | Aplicada e reaplicada com sucesso (`IF OBJECT_ID … IS NULL`) na BD `PhcKnowledgeReceiptTests` |
 | `git diff --check` (validações anteriores / auditoria) | **exit 0** |
 
-Base de dados de teste: exclusivamente `PhcKnowledgeReceiptTests`.
+Base de dados de teste: exclusivamente `PhcKnowledgeReceiptTests`. Sem aplicação de migrations em produção.
 
 ---
 
-## 4. Limitações de cobertura (trabalho futuro — não falhas atuais)
+## 4. Limitações de cobertura (trabalho futuro — não falhas dos testes já executados)
 
-1. Não foi forçado um deadlock SQL **1205** num teste de integração real (existe teste unitário da política de retry).
-2. Não existe ainda teste SQL que invoque o `SqlScriptApplicator` do Install (o bootstrap aplica 004 via helper espelhado).
-3. Não foi validada a recuperação da análise após recriação do Host/serviço.
+1. Não foi forçado um deadlock SQL Server **1205** num teste de integração real (existe teste unitário da política de retry).
+2. Não foi executada a instalação E2E através do `SqlScriptApplicator` do Install (o bootstrap aplica 004 via helper espelhado).
+3. Não foi validada a recuperação/rearranque do Host após recriação do serviço.
+4. A suite SQL Server de integração **completa** não foi executada na estabilização pós-merge; apenas as suites relevantes A+B (análise + bootstrap).
 
 Não afirmar que estes cenários foram testados.
+
+Avisos NuGet observados no build Release (trabalho pendente, fora desta fase):
+- Pacote `System.Security.Cryptography.Pkcs` **9.0.4**;
+- Avisos **NU1902** / **NU1903**;
+- Avaliação e eventual atualização ficam como follow-up, sem impacto nos resultados dos testes já aprovados.
 
 ---
 
 ## 5. Próximos passos
 
-1. Publicação Git (commit/PR) dos Incrementos A+B — **aguarda autorização**.
-2. Incremento C — confirmação explícita: desenho em `docs/architecture/increment-c-package-import-analysis-confirmation-design-2026-11-19.md`; **não implementado**.
+1. ~~Publicação Git (commit/PR) dos Incrementos A+B~~ — **concluído** (PR #19 na `main`).
+2. Incremento C — confirmação explícita: desenho em `increment-c-package-import-analysis-confirmation-design-2026-11-19.md`; **não implementado** (documento local untracked; fora da `main`).
 3. Melhorias de cobertura listadas no §4, quando priorizadas.
 4. Opt-in ZIP real + SQL + HTTP em conjunto permanece desejável, sem fixtures de cliente no repo.
+
+---
+
+## 6. Estado final pós-merge (estabilização 2026-11-19)
+
+| Item | Resultado |
+|---|---|
+| PR | **#19** — `PHC Knowledge — IKP Package Analysis (Increments A+B)` |
+| Merge commit | `98a0b200cf99098bc37eddf754c3d0bb360ca309` |
+| Branch integrada | `main` |
+| Build Release | **sucesso**, **0 erros** |
+| `PhcKnowledge.Import.Tests` | **224 passed** |
+| SQL relevantes | **12 passed** (`SqlServerPackageImportAnalysisTests` 3 + `SqlServerInstallBootstrapTests` 9) |
+| Migration 004 | Presente na instalação na ordem **001 → 002 → 003 → 004**; Host preflight cobre `PackageImportAnalyses` |
+| Migrations em produção | **Não** aplicadas nesta estabilização |
+
+Build e testes desta secção foram executados na estabilização pós-merge; **não** foram reexecutados nesta atualização documental.

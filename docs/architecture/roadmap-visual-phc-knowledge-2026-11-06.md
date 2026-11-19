@@ -1,7 +1,7 @@
 # Roadmap visual do PHC Knowledge — visão, fases e estado atual
 
 **Data de referência:** 2026-11-19
-**Estado:** Scanner/IKP, ingestão/recovery, API HTTP IKP, Identity/Portal backend e análise IKP (Incrementos A+B) implementados e tecnicamente validados (incluindo SQL Server de teste) na branch `feature/ikp-package-analysis-a` (ainda sem publicação Git); materialização do domínio, confirmação explícita (Incremento C — desenho aprovado, não implementado), associação a instalações e UI continuam por construir. A PR #15 permanece integrada na main (`6c619bfc`).
+**Estado:** Scanner/IKP, ingestão/recovery, API HTTP IKP, Identity/Portal backend e análise IKP (Incrementos A+B) concluídos e integrados na `main` via PR #19 (`PHC Knowledge — IKP Package Analysis (Increments A+B)`, merge `98a0b200cf99098bc37eddf754c3d0bb360ca309`); materialização do domínio, confirmação explícita (Incremento C — desenho aprovado, não implementado), associação a instalações e UI continuam por construir. A PR #15 permanece integrada na main (`6c619bfc`).
 **Nota:** as percentagens não são estimadas; os estados indicam maturidade qualitativa.
 
 ## 1. Objetivo do produto
@@ -203,7 +203,7 @@ Não alterar SQLite/collectors sem evidência concreta de lacuna.
 
 ### Fase 2 — Plataforma central
 
-**Estado: backend de ingestão, HTTP e Identity/Portal implementado; análise IKP A+B implementada e tecnicamente validada (unitária, HTTP e SQL Server de teste) na branch de trabalho; confirmação (C), contexto de instalação, UI e materialização ainda incompletos.**
+**Estado: backend de ingestão, HTTP e Identity/Portal implementado; análise IKP A+B concluída e integrada na `main` (PR #19); confirmação (C), contexto de instalação, UI e materialização ainda incompletos.**
 
 Implementado no código integrado na `main`:
 - Host único `WebApplication` / Kestrel com API e workers internos de recovery, cleanup e monitorização.
@@ -212,27 +212,24 @@ Implementado no código integrado na `main`:
 - Organização canónica e ASP.NET Identity com `Administrator` e `Collaborator`.
 - Portal backend com cookie, login/logout, sessão, antiforgery, validação de SecurityStamp e API administrativa de utilizadores.
 - CLI `PhcKnowledge.Install` para scripts SQL, migrations Identity, organização canónica, roles e bootstrap do primeiro administrador.
-
-Implementado e tecnicamente validado na branch `feature/ikp-package-analysis-a` (A+B; ainda sem commit/push/PR):
 - **Incremento A:** reopen do ZIP imutável com re-verificação SHA-256/comprimento; `IkpPackageInspectionEngine` partilhado entre Validator e Reader; `PackageImportAnalysis` com Object Index, artefactos, REL/DTL, readiness (`Ready` / `ReadyWithWarnings` / `Blocked`); validação com captura real CSDefault202603 via harness efémero (sem dados de clientes no repositório).
-- **Incremento B:** persistência append-only em `dbo.PackageImportAnalyses` (migration 004); chave canónica `(OrganizationId, PackageId, ZipSha256, AnalysisSchemaVersion)`; POST executa/reutiliza e GET só lê; `AnalysisSchemaVersion` `0.2` (independente de `ContractVersion`); `SemanticFingerprint` / `SemanticEquals` com projeção semântica explícita (excluem `ReceiptId` e `AnalyzedAtUtc`, mantidos no JSON de auditoria); `ReceiptId` como proveniência first-writer (fora da chave única); isolamento por organização; retry limitado SQL 1205; migration 004 no Install e no Host preflight; helper `EnsureSqlScriptsAsync` com migrations 001–004.
+- **Incremento B:** persistência append-only em `dbo.PackageImportAnalyses` (migration 004, após 001–003); chave canónica `(OrganizationId, PackageId, ZipSha256, AnalysisSchemaVersion)`; POST executa/reutiliza e GET só lê; `AnalysisSchemaVersion` `0.2` (independente de `ContractVersion`); `SemanticFingerprint` / `SemanticEquals` com projeção semântica explícita (excluem `ReceiptId` e `AnalyzedAtUtc`, mantidos no JSON de auditoria); `ReceiptId` como proveniência first-writer (fora da chave única); isolamento por organização; retry limitado SQL 1205; migration 004 no Install e no Host preflight; helper `EnsureSqlScriptsAsync` com migrations 001–004.
 - Endpoints: `POST|GET /api/v1/ikp/packages/{packageId}/analysis` com política `IkpRead`.
 
-Validação registada (execuções já realizadas; não reexecutadas na consolidação documental):
-- Harness local opt-in com ZIP IKP real `CSDefault202603`, incluindo receção, idempotência, arquivo e recovery; ver relatório específico.
-- Análise A validada com o mesmo ZIP real (ReadyWithWarnings) sem persistir fixtures de cliente.
-- `PhcKnowledge.Import.Tests`: **224 passed**.
-- Testes SQL de análise (`SqlServerPackageImportAnalysisTests`): **3/3**, em **duas** execuções (`PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING` → `PhcKnowledgeReceiptTests`).
-- `SqlServerInstallBootstrapTests` (helper 001–004): **9/9**, em **duas** execuções.
-- Migration 004 aplicada e reaplicada com sucesso.
-- `git diff --check`: exit 0 (validações anteriores / auditoria).
-- GitHub Actions na branch da PR #15: .NET workflow #253 e SQL Server integration workflow #39 concluídos com sucesso. A execução SQL descobriu 64 testes: 62 aprovados e 2 ignorados por dependerem do ZIP real, não disponibilizado em CI.
-- A PR #15 foi integrada em 2026-11-18; merge commit `6c619bfc`.
+Publicação e validação pós-merge (PR #19):
+- PR #19 — `PHC Knowledge — IKP Package Analysis (Increments A+B)`; merge commit `98a0b200cf99098bc37eddf754c3d0bb360ca309`.
+- Build Release da solução: sucesso, zero erros (estabilização pós-merge).
+- `PhcKnowledge.Import.Tests`: **224 passed** (inclui HTTP de Package Analysis).
+- Testes SQL relevantes: **12 passed** — `SqlServerPackageImportAnalysisTests` **3**; `SqlServerInstallBootstrapTests` **9**.
+- Migration 004 na sequência de instalação 001 → 002 → 003 → 004; sem aplicação de migrations em produção nesta estabilização.
+- Harness local opt-in com ZIP IKP real `CSDefault202603` (receção/arquivo/recovery e análise A ReadyWithWarnings); ver relatório de fase.
+- Evidências anteriores à publicação: SQL análise 3/3×2 e bootstrap 9/9×2; GitHub Actions da PR #15 (.NET #253, SQL #39). A PR #15 permanece na main (`6c619bfc`).
 
-Melhorias futuras de cobertura (não falhas atuais da funcionalidade A+B):
+Melhorias futuras de cobertura (não falhas dos testes já executados):
 - Forçar deadlock SQL 1205 num teste de integração real (existe teste unitário da política de retry).
-- Teste SQL que invoque o `SqlScriptApplicator` do Install (o bootstrap aplica 004 via helper espelhado).
-- Validação de recuperação da análise após recriação do Host/serviço.
+- Execução E2E da instalação através do `SqlScriptApplicator` do Install (o bootstrap aplica 004 via helper espelhado).
+- Validação de recuperação da análise após recriação/rearranque do Host/serviço.
+- Suite SQL Server de integração completa (só as suites relevantes A+B foram reexecutadas na estabilização).
 
 Ainda não implementado:
 - UI React / experiência de navegação do Portal.
@@ -283,7 +280,7 @@ A IA não deverá inventar factos nem substituir a proveniência. Deve investiga
 | 6 | Host operacional e recovery | **Implementado.** Workers de preflight, recovery, cleanup e monitorização. |
 | 7 | API HTTP IKP | **Implementada.** Upload raw ZIP e consultas org-scoped, com JWT/scopes opcionais por configuração. |
 | 8 | Identity e Portal backend | **Implementado e integrado na main (PR #15).** Login, sessões, roles, bootstrap e administração de utilizadores. |
-| 9 | Análise IKP (Incrementos A+B) | **Implementado e tecnicamente validado** na branch `feature/ikp-package-analysis-a` (sem publicação Git). Reopen/Reader/análise + persistência POST/GET; migration 004 no Install/preflight/bootstrap; evidências Import 224, SQL análise 3/3×2, bootstrap 9/9×2. |
+| 9 | Análise IKP (Incrementos A+B) | **Concluído e integrado na `main` (PR #19, merge `98a0b20…`).** Reopen/Reader/análise + persistência POST/GET; migration 004 após 001–003 no Install/preflight/bootstrap; build Release OK; Import 224; SQL relevantes 12 (3+9). |
 | 10 | Incremento C — confirmação explícita | **Desenho aprovado; não implementado.** Documento: `increment-c-package-import-analysis-confirmation-design-2026-11-19.md`. Implementação aguarda autorização. |
 | 11 | Associação de contexto | **Futuro.** CaptureContextAssignment / Customer/Installation/Environment; distinto de confirmação e de materialização. |
 | 12 | Materialização e comparação | **Futuro.** Capture, Observation, REL/DTL, identidade lógica e diff com cobertura suficiente. |
@@ -311,7 +308,7 @@ Cada fase deve produzir uma capacidade verificável:
 - `docs/architecture/p1b-static-consistency-audit-2026-11-06.md` — auditoria estática do object-index.
 - `docs/architecture/p1b-projector-workspace-read-contract-2026-11-06.md` — leitura read-only do workspace.
 
-**Nota de rigor:** este roadmap é uma síntese do estado documental, do código, dos resultados de CI e dos testes comunicados até 2026-11-19. Não representa percentagens de conclusão. O teste A/B de desempenho do schema IKP foi executado com um pacote real e uma cópia temporária do schema; não equivale à validação end-to-end final do ZIP produzido pelo exportador. A+B estão implementados e tecnicamente validados (incluindo SQL Server de teste no âmbito descrito); isso **não** equivale a publicação Git nem à implementação do Incremento C. Melhorias de cobertura (deadlock 1205 real, SqlScriptApplicator do Install, recuperação pós-recriação do Host) permanecem trabalho futuro.
+**Nota de rigor:** este roadmap é uma síntese do estado documental, do código, dos resultados de CI e dos testes comunicados até 2026-11-19. Não representa percentagens de conclusão. O teste A/B de desempenho do schema IKP foi executado com um pacote real e uma cópia temporária do schema; não equivale à validação end-to-end final do ZIP produzido pelo exportador. A+B estão na `main` (PR #19); isso **não** equivale à implementação do Incremento C nem à cobertura completa das melhorias futuras (deadlock 1205 real, E2E `SqlScriptApplicator`, recuperação pós-rearranque do Host, suite SQL completa).
 
 
 ## 7. Decisão transversal — preparação para RAG
@@ -336,12 +333,12 @@ Detalhe e salvaguardas: [scanner-controlled-change-management-vision-2026-11-07.
 
 ## 9. Estado consolidado — 2026-11-19
 
-A sequência atual é: **Scanner/IKP e captura real → receção/arquivo/recovery → API HTTP IKP → Identity/Portal backend → análise IKP A+B (implementada e validada) → confirmação explícita (C, desenho aprovado) → contexto → materializar conhecimento → investigação assistida**.
+A sequência atual é: **Scanner/IKP e captura real → receção/arquivo/recovery → API HTTP IKP → Identity/Portal backend → análise IKP A+B (na `main`, PR #19) → confirmação explícita (C, desenho aprovado) → contexto → materializar conhecimento → investigação assistida**.
 
-A PR #15 permanece na `main` (`6c619bfc…`). Os Incrementos A e B estão na working tree de `feature/ikp-package-analysis-a`, sem commit/push/PR. A análise é uma fotografia auditável da interpretação do pacote; **não** é confirmação nem materialização.
+A PR #15 permanece na `main` (`6c619bfc…`). Os Incrementos A e B estão na `main` via PR #19 (merge `98a0b200cf99098bc37eddf754c3d0bb360ca309`). A análise é uma fotografia auditável da interpretação do pacote; **não** é confirmação nem materialização.
 
-O harness local opt-in com CSDefault202603 cobriu receção/arquivo/recovery e, no Incremento A, reopen/análise com `ReadyWithWarnings`. Evidências A+B já realizadas: `PhcKnowledge.Import.Tests` 224 passed; SQL de análise 3/3 em duas execuções; `SqlServerInstallBootstrapTests` 9/9 em duas execuções; migration 004 aplicada/reaplicada; `git diff --check` exit 0. Detalhe: `phase-report-ikp-package-analysis-a-2026-11-19.md`.
+Estabilização pós-merge: build Release OK (0 erros); `PhcKnowledge.Import.Tests` 224 passed; SQL relevantes 12 passed (3 análise + 9 bootstrap); migration 004 na instalação 001–004. Detalhe: `phase-report-ikp-package-analysis-a-2026-11-19.md`.
 
 A API e o backend de autenticação não equivalem a um Portal utilizável: não existe UI React, confirmação explícita implementada, nem gestão/associação de Customer/Installation/Environment. O domínio 0.2 (Capture/Observation/REL/DTL/Identity Matching) ainda não está materializado.
 
-Antes de produção, mantêm-se hardening de Data Protection e de bloqueios administrativos. Melhorias futuras de cobertura da análise: deadlock 1205 real, teste do `SqlScriptApplicator` do Install, recuperação pós-recriação do Host. O Incremento C (confirmação) tem desenho aprovado e **aguarda autorização de implementação**; não iniciar React nem materialização sem decisão explícita.
+Antes de produção, mantêm-se hardening de Data Protection e de bloqueios administrativos. Melhorias futuras de cobertura da análise: deadlock 1205 real, E2E `SqlScriptApplicator` do Install, recuperação pós-rearranque do Host, suite SQL completa. O Incremento C (confirmação) tem desenho aprovado e **aguarda autorização de implementação**; não iniciar React nem materialização sem decisão explícita.
