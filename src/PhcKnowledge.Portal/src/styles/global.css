@@ -47,7 +47,7 @@ a:focus-visible {
   padding: 70px 8px;
 }
 
-.not-found .eyebrow {
+.not-found-label {
   color: var(--color-steel);
   font-size: 9px;
   letter-spacing: 0.14em;
