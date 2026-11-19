@@ -11,18 +11,19 @@
         FontFamily="{StaticResource UiFont}">
   <Grid>
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="248"/>
+      <ColumnDefinition Width="256"/>
       <ColumnDefinition Width="*"/>
     </Grid.ColumnDefinitions>
 
     <!-- Nav -->
-    <Border Grid.Column="0" Background="#0F1218" BorderBrush="{StaticResource BorderBrushKey}" BorderThickness="0,0,1,0" Padding="18,22">
+    <Border Grid.Column="0" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource BorderBrushKey}" BorderThickness="0,0,1,0" Padding="18,22">
       <DockPanel>
         <StackPanel DockPanel.Dock="Top">
-          <TextBlock Text="PHC" FontFamily="{StaticResource DisplayFont}" FontSize="11" FontWeight="Bold"
-                     Foreground="{StaticResource AccentBrush}"/>
-          <TextBlock Text="Knowledge Scanner" FontFamily="{StaticResource DisplayFont}" FontSize="20" FontWeight="SemiBold"
-                     Foreground="{StaticResource TextBrush}" Margin="0,4,0,20" TextWrapping="Wrap"/>
+          <TextBlock Text="PHC KNOWLEDGE" Style="{StaticResource BrandCaption}"/>
+          <TextBlock Text="Scanner" FontFamily="{StaticResource DisplayFont}" FontSize="22" FontWeight="SemiBold"
+                     Foreground="{StaticResource TextBrush}" Margin="0,6,0,4" TextWrapping="Wrap"/>
+          <TextBlock Text="TECHNICAL CAPTURE" Foreground="{StaticResource MutedBrush}" FontSize="10"
+                     FontWeight="SemiBold" Margin="0,0,0,22"/>
           <Button x:Name="NavConnection" Content="Ligação" Style="{StaticResource NavButtonSelected}" Click="Nav_Click" Tag="connection"/>
           <Button x:Name="NavProgress" Content="Recolha" Style="{StaticResource NavButton}" Click="Nav_Click" Tag="progress"/>
           <Button x:Name="NavDashboard" Content="Dashboard" Style="{StaticResource NavButton}" Click="Nav_Click" Tag="dashboard"/>
@@ -31,10 +32,13 @@
           <Button x:Name="NavAnalysis" Content="Análise" Style="{StaticResource NavButton}" Click="Nav_Click" Tag="analysis"/>
           <Button x:Name="NavExport" Content="Exportação" Style="{StaticResource NavButton}" Click="Nav_Click" Tag="export"/>
         </StackPanel>
-        <Border DockPanel.Dock="Bottom" Background="#14181F" CornerRadius="12" Padding="12" Margin="0,16,0,0"
-                BorderBrush="{StaticResource BorderBrushKey}" BorderThickness="1">
-          <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="11" LineHeight="16"
-                     Text="SQL em leitura. Factos ≠ inferências."/>
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource SidebarFooterCard}" Margin="0,16,0,0">
+          <StackPanel>
+            <TextBlock TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" LineHeight="16"
+                       Text="SQL em leitura. Factos ≠ inferências."/>
+            <TextBlock Margin="0,10,0,0" Foreground="{StaticResource MutedBrush}" FontSize="10"
+                       Text="PHC KNOWLEDGE · SCANNER"/>
+          </StackPanel>
         </Border>
       </DockPanel>
     </Border>
@@ -127,17 +131,25 @@
       <!-- Dashboard -->
       <ScrollViewer x:Name="PageDashboard" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="0,0,12,0">
-          <DockPanel Margin="0,0,0,16">
-            <StackPanel>
+          <DockPanel Margin="0,0,0,16" LastChildFill="True">
+            <Border DockPanel.Dock="Right"
+                    x:Name="BadgeDashStatus"
+                    Style="{StaticResource StatusBadge}"
+                    Background="{StaticResource OkSoftBrush}"
+                    BorderBrush="{StaticResource OkBorderBrush}"
+                    Margin="16,4,0,0">
+              <TextBlock x:Name="TxtDashBadge"
+                         Text="—"
+                         Foreground="{StaticResource OkBrush}"
+                         FontWeight="SemiBold"
+                         FontSize="12"
+                         TextWrapping="NoWrap"/>
+            </Border>
+            <StackPanel VerticalAlignment="Top">
               <TextBlock Style="{StaticResource PageTitle}" Text="Dashboard" Margin="0"/>
               <TextBlock Style="{StaticResource PageSubtitle}" Margin="0,4,0,0"
                          Text="Resumo da última recolha — personalizações e estrutura custom."/>
             </StackPanel>
-            <Border DockPanel.Dock="Right" x:Name="BadgeDashStatus" CornerRadius="999" Padding="14,7"
-                    Background="#1A2A20" BorderBrush="#2F5A40" BorderThickness="1"
-                    VerticalAlignment="Top" Margin="12,0,0,0">
-              <TextBlock x:Name="TxtDashBadge" Text="—" Foreground="#5ECF8E" FontWeight="SemiBold" FontSize="12"/>
-            </Border>
           </DockPanel>
 
           <Border Style="{StaticResource Card}" Margin="0,0,0,14" Padding="18">
@@ -506,7 +518,7 @@
                         <Expander.Header>
                           <DockPanel>
                             <TextBlock Text="{Binding Title}" Foreground="{StaticResource TextBrush}"/>
-                            <Border DockPanel.Dock="Right" Background="#1F2630" CornerRadius="8" Padding="8,2" Margin="8,0,4,0">
+                            <Border DockPanel.Dock="Right" Background="{StaticResource Panel2Brush}" CornerRadius="8" Padding="8,2" Margin="8,0,4,0">
                               <TextBlock Text="{Binding Count}" FontSize="11" Foreground="{StaticResource MutedBrush}"/>
                             </Border>
                           </DockPanel>
@@ -545,7 +557,7 @@
                           ToolTip="Ctrl+F" Margin="0"/>
                 </StackPanel>
               </DockPanel>
-              <Border Background="#0F1218" CornerRadius="10" BorderBrush="{StaticResource BorderBrushKey}" BorderThickness="1"
+              <Border Background="{StaticResource FieldBrush}" CornerRadius="10" BorderBrush="{StaticResource BorderBrushKey}" BorderThickness="1"
                       ClipToBounds="True">
                 <avalonEdit:TextEditor x:Name="CodeEditor"
                                        FontFamily="Cascadia Code, Consolas"
@@ -553,8 +565,8 @@
                                        ShowLineNumbers="True"
                                        IsReadOnly="True"
                                        WordWrap="False"
-                                       Background="#0F1218"
-                                       Foreground="#E8E6E1"
+                                       Background="{StaticResource FieldBrush}"
+                                       Foreground="{StaticResource TextBrush}"
                                        Padding="4"/>
               </Border>
             </DockPanel>

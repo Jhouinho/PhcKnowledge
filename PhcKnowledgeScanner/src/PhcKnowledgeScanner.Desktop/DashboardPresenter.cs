@@ -8,15 +8,17 @@ namespace PhcKnowledgeScanner.Desktop;
 
 internal static class DashboardPresenter
 {
-    private static readonly Brush PanelInner = Brush("#0F1218");
-    private static readonly Brush Accent = Brush("#E8A838");
-    private static readonly Brush AccentSoft = Brush("#B8842A");
+    private static readonly Brush PanelInner = Brush("#101316");
+    private static readonly Brush Accent = Brush("#91A6B1");
+    private static readonly Brush AccentSoft = Brush("#B8C8D0");
     private static readonly Brush Ok = Brush("#5ECF8E");
     private static readonly Brush Warn = Brush("#E8B86D");
     private static readonly Brush Danger = Brush("#E86A6A");
-    private static readonly Brush Muted = Brush("#8B93A7");
-    private static readonly Brush Text = Brush("#F1F3F7");
-    private static readonly Brush BarTrack = Brush("#242B36");
+    private static readonly Brush Muted = Brush("#818E96");
+    private static readonly Brush Text = Brush("#E5EAED");
+    private static readonly Brush BarTrack = Brush("#20282D");
+    private static readonly Brush Border = Brush("#303A40");
+    private static readonly Brush ChartSeries = Brush("#AAB5BB");
 
     private static readonly HashSet<string> PersonalizationKinds = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -62,7 +64,8 @@ internal static class DashboardPresenter
         status.Text = "Ligue-se a uma instalação e execute a recolha para ver o resumo.";
         badge.Text = "Aguardando";
         badge.Foreground = Muted;
-        badgeBorder.Background = Brush("#1E293B");
+        badgeBorder.Background = Brush("#20282D");
+        badgeBorder.BorderBrush = Border;
         kpi.Children.Clear();
         chartActivity.Children.Clear();
         chartPersonalizations.Children.Clear();
@@ -95,10 +98,11 @@ internal static class DashboardPresenter
             $"Scan {summary.ScanId[..Math.Min(8, summary.ScanId.Length)]}… · " +
             $"Estado: {summary.Status} · Criado: {summary.CreatedAtUtc.ToLocalTime():yyyy-MM-dd HH:mm}";
 
-        var (badgeText, badgeFg, badgeBg) = StatusStyle(summary);
+        var (badgeText, badgeFg, badgeBg, badgeBorderBrush) = StatusStyle(summary);
         badge.Text = badgeText;
         badge.Foreground = badgeFg;
         badgeBorder.Background = badgeBg;
+        badgeBorder.BorderBrush = badgeBorderBrush;
 
         var counts = summary.ObjectCounts;
         var total = counts.Values.Sum();
@@ -113,7 +117,7 @@ internal static class DashboardPresenter
         kpi.Children.Add(KpiCard("Objetos", total.ToString("N0"), "Inventário total", Accent));
         kpi.Children.Add(KpiCard("Personalizações", personalizationTotal.ToString("N0"), "Código / config PHC", AccentSoft));
         kpi.Children.Add(KpiCard("Tabelas u_*", tables.ToString("N0"), "Só custom (não PHC standard)", Ok));
-        kpi.Children.Add(KpiCard("Campos u_*", userFields.ToString("N0"), "Colunas de utilizador", Brush("#A78BFA")));
+        kpi.Children.Add(KpiCard("Campos u_*", userFields.ToString("N0"), "Colunas de utilizador", ChartSeries));
         kpi.Children.Add(KpiCard("Eventos + regras", (events + rules).ToString("N0"), $"{events} eventos · {rules} regras", Warn));
         kpi.Children.Add(KpiCard(
             "Avisos / erros",
@@ -371,9 +375,9 @@ internal static class DashboardPresenter
         return new Border
         {
             Background = PanelInner,
-            BorderBrush = Brush("#2A3140"),
+            BorderBrush = Border,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(14),
+            CornerRadius = new CornerRadius(10),
             Padding = new Thickness(16),
             Margin = new Thickness(0, 0, 10, 10),
             Child = content
@@ -387,22 +391,22 @@ internal static class DashboardPresenter
         Margin = new Thickness(0, 8, 0, 0)
     };
 
-    private static (string Text, Brush Fg, Brush Bg) StatusStyle(WorkspaceSummary summary)
+    private static (string Text, Brush Fg, Brush Bg, Brush BorderBrush) StatusStyle(WorkspaceSummary summary)
     {
         if (summary.ErrorCount > 0)
         {
-            return ("Com erros", Danger, Brush("#2A1515"));
+            return ("Com erros", Danger, Brush("#2A1515"), Brush("#5A2F2F"));
         }
 
         if (summary.WarningCount > 0)
         {
-            return ("Com avisos", Warn, Brush("#2A2114"));
+            return ("Com avisos", Warn, Brush("#2A2114"), Brush("#5A4A2F"));
         }
 
         return summary.Status.ToLowerInvariant() switch
         {
-            "analyzed" or "succeeded" or "completed" => ("OK", Ok, Brush("#1A2A20")),
-            _ => (summary.Status, Accent, Brush("#2A2418"))
+            "analyzed" or "succeeded" or "completed" => ("OK", Ok, Brush("#1A2A20"), Brush("#2F5A40")),
+            _ => (summary.Status, Accent, Brush("#1A242A"), Border)
         };
     }
 
