@@ -56,10 +56,15 @@ public sealed class IkpPackageAnalysisTests
             analyses,
             clock: () => clock.Dequeue());
 
-        var first = await service.ExecuteAsync(harness.OrganizationId, harness.PackageId);
-        var second = await service.ExecuteAsync(harness.OrganizationId, harness.PackageId);
-        var persisted = await service.GetPersistedAsync(harness.OrganizationId, harness.PackageId);
+        var firstRow = await service.ExecuteAsync(harness.OrganizationId, harness.PackageId);
+        var secondRow = await service.ExecuteAsync(harness.OrganizationId, harness.PackageId);
+        var persistedRow = await service.GetPersistedAsync(harness.OrganizationId, harness.PackageId);
+        var first = firstRow.ToAnalysis();
+        var second = secondRow.ToAnalysis();
+        var persisted = persistedRow.ToAnalysis();
 
+        Assert.Equal(firstRow.AnalysisId, secondRow.AnalysisId);
+        Assert.Equal(firstRow.AnalysisId, persistedRow.AnalysisId);
         Assert.Equal(MaterializationReadiness.ReadyWithWarnings, first.Readiness.Status);
         Assert.Contains(first.Readiness.Findings, x => x.Code == MaterializationReadinessEvaluator.WarningIssue);
         Assert.Contains(first.Readiness.Findings, x => x.Code == MaterializationReadinessEvaluator.WarningCoverageResult);
@@ -111,8 +116,9 @@ public sealed class IkpPackageAnalysisTests
 
         Assert.Equal(originalReceiptId, executed.ReceiptId);
         Assert.Equal(originalReceiptId, viaGet.ReceiptId);
+        Assert.Equal(executed.AnalysisId, viaGet.AnalysisId);
         Assert.NotEqual(harness.Receipt.ReceiptId, executed.ReceiptId);
-        Assert.True(seeded.SemanticEquals(executed));
+        Assert.True(seeded.SemanticEquals(executed.ToAnalysis()));
     }
 
     [Fact]
@@ -221,7 +227,7 @@ public sealed class IkpPackageAnalysisTests
         var service = new IkpPackageAnalysisService(
             harness.Attempts, harness.Store, new IkpPackageReader(SchemaDirectory),
             new InMemoryPackageImportAnalysisRepository());
-        var analysis = await service.ExecuteAsync(harness.OrganizationId, harness.PackageId);
+        var analysis = (await service.ExecuteAsync(harness.OrganizationId, harness.PackageId)).ToAnalysis();
 
         Assert.Equal(MaterializationReadiness.Blocked, analysis.Readiness.Status);
         Assert.False(analysis.Integrity.ArchiveSha256Verified);

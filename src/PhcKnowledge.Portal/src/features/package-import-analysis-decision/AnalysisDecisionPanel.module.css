@@ -1,0 +1,247 @@
+.panel {
+  display: grid;
+  gap: 28px;
+}
+
+.section {
+  padding: 22px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: linear-gradient(180deg, rgba(32, 40, 45, 0.88), rgba(25, 31, 35, 0.96));
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--color-steel);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.section h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 560;
+  letter-spacing: -0.03em;
+}
+
+.muted,
+.hint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.readiness {
+  margin: 18px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.readiness strong {
+  color: var(--color-steel-bright);
+  font-weight: 560;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin: 0;
+}
+
+.metaGrid dt {
+  margin: 0 0 4px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.metaGrid dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.fullRow {
+  grid-column: 1 / -1;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.badgeUnconfirmed {
+  border: 1px solid rgba(154, 172, 182, 0.28);
+  background: rgba(154, 172, 182, 0.1);
+  color: var(--color-steel-bright);
+}
+
+.badgeConfirmed {
+  border: 1px solid rgba(110, 160, 130, 0.35);
+  background: rgba(40, 90, 60, 0.28);
+  color: #c7e6d2;
+}
+
+.badgeRejected {
+  border: 1px solid rgba(196, 110, 110, 0.35);
+  background: rgba(120, 48, 48, 0.28);
+  color: #f0c7c7;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.primaryButton,
+.dangerButton,
+.ghostButton {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.primaryButton {
+  border: 0;
+  background: linear-gradient(180deg, #c8d5dc, #9eb0ba);
+  color: #152026;
+}
+
+.dangerButton {
+  border: 1px solid rgba(196, 110, 110, 0.45);
+  background: rgba(120, 48, 48, 0.28);
+  color: #f0c7c7;
+}
+
+.ghostButton {
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.primaryButton:disabled,
+.dangerButton:disabled,
+.ghostButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.empty {
+  display: grid;
+  gap: 6px;
+  padding: 22px;
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.empty p {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 14px;
+}
+
+.empty span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.historyList {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historyItem {
+  padding: 16px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  background: rgba(16, 19, 22, 0.35);
+}
+
+.historyEffective {
+  border-color: rgba(145, 166, 177, 0.45);
+  background: rgba(145, 166, 177, 0.08);
+}
+
+.historyTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.sequence {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.effectiveTag {
+  margin-left: auto;
+  color: var(--color-steel-bright);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  resize: vertical;
+}
+
+@media (max-width: 720px) {
+  .metaGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+  }
+
+  .effectiveTag {
+    margin-left: 0;
+  }
+}

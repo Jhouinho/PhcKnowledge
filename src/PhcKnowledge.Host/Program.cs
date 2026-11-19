@@ -44,7 +44,10 @@ builder.Services.AddSingleton(packageReader);
 builder.Services.AddSingleton<IkpPackageAnalysisBuilder>();
 builder.Services.AddSingleton<IPackageImportAnalysisRepository>(
     _ => new SqlServerPackageImportAnalysisRepository(receiptSettings.ConnectionString));
+builder.Services.AddSingleton<IPackageImportAnalysisDecisionRepository>(
+    _ => new SqlServerPackageImportAnalysisDecisionRepository(receiptSettings.ConnectionString));
 builder.Services.AddSingleton<IkpPackageAnalysisService>();
+builder.Services.AddSingleton<PackageImportAnalysisDecisionService>();
 builder.Services.AddSingleton(services =>
     new IkpPackageIngestionService(
         services.GetRequiredService<IkpPackageValidator>(),
