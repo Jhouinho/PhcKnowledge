@@ -1,0 +1,371 @@
+.portal {
+  min-height: 100vh;
+  background: var(--color-canvas);
+}
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  display: flex;
+  width: var(--sidebar-width);
+  flex-direction: column;
+  padding: 25px 18px 17px;
+  border-right: 1px solid var(--color-border-subtle);
+  background: var(--color-sidebar);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 43px;
+  padding: 0 7px;
+}
+
+.brandMark {
+  display: grid;
+  width: 37px;
+  height: 37px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(183, 198, 207, 0.2);
+  border-radius: 11px;
+  background: linear-gradient(145deg, #303a41, #1d252a);
+  color: var(--color-steel-bright);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08), 0 5px 16px rgba(0, 0, 0, 0.18);
+}
+
+.brandText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.brandName {
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.brandCaption {
+  color: var(--color-text-muted);
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+}
+
+.workspace {
+  margin-top: 42px;
+}
+
+.workspaceLabel,
+.navSection {
+  display: block;
+  padding: 0 9px;
+  color: var(--color-text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.workspaceChoice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 11px;
+  padding: 10px 9px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.workspaceGlyph {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 7px;
+  background: #303a40;
+  color: #d8e0e4;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.workspaceName {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspaceChevron {
+  margin-left: auto;
+  color: var(--color-text-muted);
+}
+
+.navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 37px;
+}
+
+.navSection {
+  margin-bottom: 5px;
+}
+
+.navLink {
+  position: relative;
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 11px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  text-decoration: none;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.navLink:hover {
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--color-text-primary);
+}
+
+.navLinkActive {
+  border-color: rgba(159, 180, 192, 0.12);
+  background: rgba(139, 164, 179, 0.105);
+  color: #e1e8eb;
+}
+
+.navLinkActive > svg {
+  color: var(--color-steel-bright);
+}
+
+.activeMarker {
+  position: absolute;
+  top: 10px;
+  right: -1px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--color-steel-bright);
+  opacity: 0;
+}
+
+.navLinkActive .activeMarker {
+  opacity: 1;
+}
+
+.sidebarBottom {
+  margin-top: auto;
+}
+
+.environment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 9px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+}
+
+.environmentDot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #9baf9e;
+  box-shadow: 0 0 0 3px rgba(155, 175, 158, 0.1);
+}
+
+.sidebarFooter {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 17px;
+  padding: 0 8px;
+  color: #69747a;
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+}
+
+.mainColumn {
+  min-height: 100vh;
+  margin-left: var(--sidebar-width);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  height: 66px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 42px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: rgba(16, 19, 22, 0.86);
+  backdrop-filter: blur(18px);
+}
+
+.topbarLeft,
+.topbarRight,
+.breadcrumb,
+.previewLabel {
+  display: flex;
+  align-items: center;
+}
+
+.breadcrumb {
+  gap: 10px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.breadcrumb svg {
+  color: #58636a;
+}
+
+.breadcrumb strong {
+  color: var(--color-text-secondary);
+  font-weight: 550;
+}
+
+.topbarRight {
+  gap: 19px;
+}
+
+.previewLabel {
+  gap: 7px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+}
+
+.previewLabel svg {
+  color: #a6b9ad;
+}
+
+.avatar {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: #252e33;
+  color: #bdc9ce;
+}
+
+.content {
+  width: min(100%, 1320px);
+  margin: 0 auto;
+  padding: 56px 56px 72px;
+}
+
+.mobileMenu,
+.mobileClose,
+.scrim {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    width: 238px;
+  }
+
+  .mainColumn {
+    margin-left: 238px;
+  }
+
+  .topbar {
+    padding: 0 28px;
+  }
+
+  .content {
+    padding: 42px 30px 60px;
+  }
+}
+
+@media (max-width: 680px) {
+  .sidebar {
+    width: min(290px, calc(100vw - 54px));
+    transform: translateX(-102%);
+    transition: transform 180ms ease;
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    display: block;
+    border: 0;
+    background: rgba(0, 0, 0, 0.58);
+  }
+
+  .mainColumn {
+    margin-left: 0;
+  }
+
+  .topbar {
+    height: 60px;
+    padding: 0 19px;
+  }
+
+  .mobileMenu,
+  .mobileClose {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-text-secondary);
+  }
+
+  .mobileMenu {
+    margin-right: 12px;
+  }
+
+  .mobileClose {
+    margin-left: auto;
+  }
+
+  .topbarRight {
+    gap: 11px;
+  }
+
+  .previewLabel {
+    font-size: 0;
+  }
+
+  .previewLabel svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .content {
+    padding: 35px 20px 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .navLink {
+    transition: none;
+  }
+}
