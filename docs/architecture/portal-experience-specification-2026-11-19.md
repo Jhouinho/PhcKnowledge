@@ -259,17 +259,68 @@ Estados vazios devem explicar o que falta e, quando possível, indicar a próxim
 
 ## 7. Primeira entrega visual e funcional
 
-A primeira entrega de UI deve concentrar-se nos percursos que podem ser desenhados e ligados ao backend existente, sem antecipar o domínio ainda não implementado.
+A primeira entrega funcional deve concentrar-se nos percursos suportados pelo backend, sem antecipar o domínio ainda não implementado.
 
-Prioridade:
+Ordem de implementação:
 
-1. Shell do Portal: autenticação, layout, navegação, tema e componentes base.
-2. Início simples e pesquisa global preparada para a API de pesquisa quando existir.
-3. Ecrãs de Capturas/Importações ligados ao estado real da API de receção e consulta de pacotes/tentativas.
-4. Administração de utilizadores ligada às APIs existentes e respeitando roles.
-5. Estados, mensagens, acessibilidade e segurança de sessão.
+1. **Shell do Portal:** estrutura React, integração com o host ASP.NET Core, layout, navegação, tema e componentes base.
+2. **Autenticação:** login, sessão por cookie, logout, antiforgery e proteção de páginas.
+3. **Administração:** gestão real de utilizadores e roles, ligada aos contratos existentes e protegida pela policy Administrator.
+4. **Capturas e importações:** só depois de existir uma API de Portal para listar e consultar recibos/tentativas no contexto da sessão autenticada. A receção iniciada pelo Portal também exige uma operação própria do Portal.
+5. **Início:** ecrã simples, sem indicadores, atividade ou registos fictícios. Só apresentar dados reais e úteis quando as respetivas fontes existirem.
 
-Os ecrãs de detalhe de objeto, relações, clientes/instalações e soluções reutilizáveis devem ser desenhados no sistema visual consolidado, mas só apresentados como funcionalidades ativas quando existir backend e modelo de dados que os suportem.
+Pesquisa global, catálogo de conhecimento e detalhe de objetos não fazem parte do primeiro incremento funcional. Podem permanecer no protótipo como representação da experiência futura, sempre identificados como demonstração.
+
+### 7.1 Contratos de backend confirmados
+
+Os seguintes contratos foram confirmados no código atual do backend e constituem a base de integração inicial.
+
+**Autenticação do Portal**
+- `GET /api/portal/auth/antiforgery`
+- `GET /api/portal/session`
+- `POST /api/portal/auth/login`
+- `POST /api/portal/auth/logout`
+
+A sessão do Portal utiliza autenticação por cookie. As operações de escrita protegidas devem enviar o token antiforgery segundo o contrato do host.
+
+**Administração de utilizadores**
+- `GET /api/portal/admin/users?q=&isActive=&role=&page=&pageSize=`
+- `GET /api/portal/admin/users/{userId}`
+- `POST /api/portal/admin/users`
+- `PUT /api/portal/admin/users/{userId}/role`
+- `POST /api/portal/admin/users/{userId}/activate`
+- `POST /api/portal/admin/users/{userId}/deactivate`
+
+Todos estes endpoints exigem a policy `Administrator`. As operações de escrita têm proteção antiforgery.
+
+O DTO de listagem disponibiliza `UserId`, `Email`, `UserName`, `DisplayName`, `IsActive`, `Roles` e `CreatedAtUtc`. A resposta inclui `Items`, `Page`, `PageSize` e `TotalCount`. A criação recebe `Email`, `DisplayName`, `Role` e `Password`.
+
+Não assumir que existem campos ou operações de último acesso, convite, associação de organização ou recuperação de palavra-passe enquanto não fizerem parte dos contratos.
+
+**Superfície pública de integração IKP**
+- `POST /api/v1/ikp/packages` — receção de pacote, protegida pela policy IKP de upload.
+- `GET /api/v1/ikp/attempts/{attemptId}` — consulta de tentativa, protegida pela policy IKP de leitura.
+- `GET /api/v1/ikp/packages/{packageId}` — consulta de pacote, protegida pela policy IKP de leitura.
+
+A superfície IKP usa JWT Bearer e scopes próprios; não usa a sessão por cookie do Portal. Não existe atualmente um endpoint de listagem de pacotes/recibos.
+
+**Regra de integração:** o browser do Portal não deve gerir tokens JWT IKP nem chamar estes endpoints como se a sessão por cookie lhe desse acesso. Para a área Capturas, deverá ser criada uma API própria do Portal, protegida por autenticação/autorização do Portal e antiforgery nas operações de escrita, que invoque os serviços/repositórios internos existentes. A listagem de recibos/tentativas e a consulta de detalhe devem ser adicionadas sem alterar o contrato público IKP nem duplicar a lógica de receção, validação e arquivo.
+
+O upload iniciado pelo Portal também depende de uma operação autenticada do Portal que invoque internamente o fluxo de ingestão. Até existir, a UI não deve apresentar a receção como ação funcional.
+
+### 7.2 Limites da primeira entrega
+
+Ficam fora do primeiro incremento:
+- pesquisa global e indexação do conhecimento;
+- catálogo, detalhe e relações de objetos PHC;
+- consulta de código e proveniência;
+- staging, análise prévia, confirmação e materialização;
+- gestão completa de clientes, instalações e ambientes;
+- soluções reutilizáveis, curadoria e publicação;
+- comparação entre capturas;
+- pesquisa semântica e RAG.
+
+Estas áreas só devem passar a funcionalidades ativas quando existirem contratos e modelo de domínio que as suportem.
 
 ## 8. Evolução posterior
 
