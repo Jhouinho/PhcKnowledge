@@ -74,6 +74,10 @@ public sealed class ReceiptHostWorkerTests
             Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
+        public Task<PackageReceipt?> GetCompletedReceiptByPackageIdAsync(
+            Guid organizationId, Guid packageId, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
         public Task<PackageIngestionStatus?> GetAttemptAsync(
             Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();

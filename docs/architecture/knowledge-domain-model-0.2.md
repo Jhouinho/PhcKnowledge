@@ -102,18 +102,21 @@ O exportador atual gera novo PackageId por exportação. Reexportar a mesma Capt
 ### 4.4 Estado real da ingestão
 
 **Implementado:**
-- IkpPackageValidator: valida estrutura, schemas, checksums e referências cruzadas.
+- IkpPackageValidator: valida estrutura, schemas, checksums e referências cruzadas (engine partilhado com o Reader).
 - IkpPackageIngestionService: coordena validação, arquivo e receipt.
-- FileSystemImmutablePackageStore: arquivo content-addressed global por SHA-256; não sobrescreve e valida conteúdo existente.
-- SqlServerPackageReceiptRepository: persiste receipts em SQL Server.
+- FileSystemImmutablePackageStore: arquivo content-addressed global por SHA-256; reopen read-only com re-verificação SHA; não sobrescreve.
+- SqlServerPackageReceiptRepository / attempts: persiste receipts em SQL Server.
 - Migration 001_package_ingestion_receipts.sql.
-- Testes unitários e de integração sobre fixture IKP / ZIP sintético → Validator / Ingestion (aceitação do pacote válido, arquivo imutável idempotente, registo de receipt por organização, rejeição de path traversal e payload adulterado).
+- API HTTP IKP (upload + consulta de estado + GET de análise) com OrganizationId a partir do principal autenticado.
+- Incremento A: `IkpPackageReader`, reopen do arquivo, `PackageImportAnalysis`.
+- Incremento B: tabela `dbo.PackageImportAnalyses` (migration 004); POST/GET de análise com persistência, idempotência e `AnalysisSchemaVersion` `0.2`. Ver `phase-report-ikp-package-analysis-a-2026-11-19.md`.
+- Testes unitários/HTTP sobre fixture IKP; validação real CSDefault202603 da análise via harness efémero (fora do repo).
 
 **Limites comprovados:**
 - OrganizationId é exigido quando o serviço usa receipt repository; sem repositório de receipts, o harness pode validar/arquivar sem Organization.
-- API HTTP/autenticação não está demonstrada; OrganizationId deve derivar do contexto autenticado na futura fronteira HTTP.
-- A ordem atual é arquivo ZIP antes da gravação SQL do receipt. Se SQL falhar após arquivo, fica um ZIP sem receipt. É necessário protocolo de reconciliação/retry.
-- Estes testes não demonstram SQL Server real, API HTTP nem receção do ZIP binário real CSDefault202603 pelo serviço.
+- Confirmação e materialização não existem.
+- O percurso SQL receipt real + POST/GET HTTP com o ZIP real CSDefault202603 ainda não foi demonstrado em conjunto nesta máquina sem `PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING`.
+- A ordem de arquivo ZIP antes da gravação SQL do receipt pode deixar um ZIP sem receipt se SQL falhar; reconciliação/retry permanece relevante.
 - ZIP original é preservado permanentemente.
 
 **Estado da migration atual:** índices únicos (OrganizationId, PackageId) e (OrganizationId, ZipSha256). Isto descreve a fatia atual, não o destino global. Não alterar migrations nesta fase.
@@ -141,7 +144,7 @@ No destino:
 6. Resolver IdentityMatch/EntityIdentity após contexto confirmado.
 7. Comparar/atualizar estado por Environment apenas quando contexto e coverage permitirem.
 
-A fatia atual termina no passo de receipt/arquivo. Não afirmar que já materializa conhecimento.
+A fatia de ingestão termina no receipt/arquivo. Os Incrementos A/B acrescentam análise (com auditoria SQL no B). Não afirmar que já materializa conhecimento nem que a importação está confirmada.
 
 ### 6.2 Observation
 

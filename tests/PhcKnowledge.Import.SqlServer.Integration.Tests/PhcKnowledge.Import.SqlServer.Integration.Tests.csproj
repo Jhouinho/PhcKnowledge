@@ -22,5 +22,6 @@
     <Content Include="../../src/PhcKnowledge.Import/Database/001_package_ingestion_receipts.sql" Link="Migrations/001_package_ingestion_receipts.sql" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../src/PhcKnowledge.Import/Database/002_package_receipt_attempts.sql" Link="Migrations/002_package_receipt_attempts.sql" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../src/PhcKnowledge.Import/Database/003_organizations.sql" Link="Migrations/003_organizations.sql" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../src/PhcKnowledge.Import/Database/004_package_import_analyses.sql" Link="Migrations/004_package_import_analyses.sql" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -229,6 +229,17 @@ public sealed class IkpPackageValidatorTests
                 completed.OrganizationId == organizationId && completed.AttemptId == attemptId ? _receipt : null);
         }
 
+        public Task<PackageReceipt?> GetCompletedReceiptByPackageIdAsync(
+            Guid organizationId, Guid packageId, CancellationToken cancellationToken = default)
+        {
+            LastCompletedReceiptOrganizationId = organizationId;
+            return Task.FromResult(_attempt is { Status: "Completed" } completed &&
+                completed.OrganizationId == organizationId &&
+                completed.Validation.PackageId == packageId
+                ? _receipt
+                : null);
+        }
+
         public Task<PackageIngestionStatus?> GetAttemptAsync(
             Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default)
         {

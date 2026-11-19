@@ -5,6 +5,7 @@ using PhcKnowledge.Host.Http;
 using PhcKnowledge.Host.Identity;
 using PhcKnowledge.Host.Organizations;
 using PhcKnowledge.Import.Ikp;
+using PhcKnowledge.Import.Ikp.Analysis;
 using PhcKnowledge.Import.Receipts;
 using PhcKnowledge.Import.Storage;
 
@@ -25,7 +26,9 @@ builder.WebHost.ConfigureKestrel(options =>
 var attemptRepository = new SqlServerPackageReceiptAttemptRepository(receiptSettings.ConnectionString);
 var packageStore = new FileSystemImmutablePackageStore(receiptSettings.ArchiveDirectory);
 var schemaDirectory = Path.Combine(AppContext.BaseDirectory, "Schemas");
-var packageValidator = new IkpPackageValidator(schemaDirectory);
+var packageInspectionEngine = new IkpPackageInspectionEngine(schemaDirectory);
+var packageValidator = new IkpPackageValidator(packageInspectionEngine);
+var packageReader = new IkpPackageReader(packageInspectionEngine);
 
 builder.Services.AddSingleton(receiptSettings);
 builder.Services.AddSingleton(authenticationSettings);
@@ -35,7 +38,13 @@ builder.Services.AddSingleton<IPackageReceiptAttemptRepository>(attemptRepositor
 builder.Services.AddSingleton<IImmutablePackageStore>(packageStore);
 builder.Services.AddSingleton<IRecoverableImmutablePackageStore>(packageStore);
 builder.Services.AddSingleton<IExpectedStorageKeyProvider>(packageStore);
+builder.Services.AddSingleton(packageInspectionEngine);
 builder.Services.AddSingleton(packageValidator);
+builder.Services.AddSingleton(packageReader);
+builder.Services.AddSingleton<IkpPackageAnalysisBuilder>();
+builder.Services.AddSingleton<IPackageImportAnalysisRepository>(
+    _ => new SqlServerPackageImportAnalysisRepository(receiptSettings.ConnectionString));
+builder.Services.AddSingleton<IkpPackageAnalysisService>();
 builder.Services.AddSingleton(services =>
     new IkpPackageIngestionService(
         services.GetRequiredService<IkpPackageValidator>(),

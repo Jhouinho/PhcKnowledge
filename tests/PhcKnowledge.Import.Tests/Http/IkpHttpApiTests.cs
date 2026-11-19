@@ -19,6 +19,7 @@ using Microsoft.Extensions.Options;
 using PhcKnowledge.Host;
 using PhcKnowledge.Host.Http;
 using PhcKnowledge.Import.Ikp;
+using PhcKnowledge.Import.Ikp.Analysis;
 using PhcKnowledge.Import.Receipts;
 using PhcKnowledge.Import.Storage;
 
@@ -472,6 +473,51 @@ public sealed class IkpHttpApiTests : IClassFixture<IkpHttpApiFactory>
         Assert.Equal(0, Volatile.Read(ref ingestionStarted));
     }
 
+    [Fact]
+    public async Task Get_package_analysis_returns_404_when_receipt_missing_or_foreign_org()
+    {
+        var status = _factory.Repo.SeedCompleted(_factory.OrganizationA);
+        var clientA = CreateClient(scopes: "ikp.read");
+        var clientB = CreateClient(organizationId: _factory.OrganizationB, scopes: "ikp.read");
+
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await clientA.GetAsync($"/api/v1/ikp/packages/{Guid.NewGuid():D}/analysis")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await clientB.GetAsync($"/api/v1/ikp/packages/{status.PackageId:D}/analysis")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Get_package_analysis_is_read_only_404_until_post_persists()
+    {
+        var status = _factory.Repo.SeedCompleted(_factory.OrganizationA);
+        var uploadOnly = CreateClient(scopes: "ikp.upload");
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await uploadOnly.GetAsync($"/api/v1/ikp/packages/{status.PackageId:D}/analysis")).StatusCode);
+
+        var client = CreateClient(scopes: "ikp.read");
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await client.GetAsync($"/api/v1/ikp/packages/{status.PackageId:D}/analysis")).StatusCode);
+
+        var post = await client.PostAsync($"/api/v1/ikp/packages/{status.PackageId:D}/analysis", null);
+        Assert.Equal(HttpStatusCode.OK, post.StatusCode);
+        await using var postStream = await post.Content.ReadAsStreamAsync();
+        using var postDoc = await JsonDocument.ParseAsync(postStream);
+        Assert.Equal(status.PackageId.ToString(), postDoc.RootElement.GetProperty("packageId").GetString());
+        Assert.Equal("Blocked", postDoc.RootElement.GetProperty("readiness").GetProperty("status").GetString());
+
+        var get = await client.GetAsync($"/api/v1/ikp/packages/{status.PackageId:D}/analysis");
+        Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+        await using var getStream = await get.Content.ReadAsStreamAsync();
+        using var getDoc = await JsonDocument.ParseAsync(getStream);
+        Assert.Equal(status.ReceiptId!.Value.ToString(), getDoc.RootElement.GetProperty("receiptId").GetString());
+        Assert.False(getDoc.RootElement.TryGetProperty("organizationId", out _));
+        Assert.False(getDoc.RootElement.TryGetProperty("storageKey", out _));
+
+        var postAgain = await client.PostAsync($"/api/v1/ikp/packages/{status.PackageId:D}/analysis", null);
+        Assert.Equal(HttpStatusCode.OK, postAgain.StatusCode);
+        Assert.Equal(1, _factory.Analyses.Count);
+    }
+
     private static IkpIngestionResult CompletedResult(PackageIngestionStatus status)
     {
         var validation = new IkpPackageValidationResult(
@@ -517,6 +563,7 @@ public sealed class IkpHttpApiFactory : WebApplicationFactory<Program>
     public Guid OrganizationB { get; } = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     public ControllableIngestionGateway Gateway { get; } = new();
     public ControllableAttemptRepository Repo { get; } = new();
+    public CountingInMemoryPackageImportAnalysisRepository Analyses { get; } = new();
 
     private readonly string _archive = Path.Combine(Path.GetTempPath(), "ikp-http-tests", Guid.NewGuid().ToString("N"), "archive");
     private readonly string _staging = Path.Combine(Path.GetTempPath(), "ikp-http-tests", Guid.NewGuid().ToString("N"), "staging");
@@ -546,6 +593,8 @@ public sealed class IkpHttpApiFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<IIkpIngestionGateway>();
             services.RemoveAll<IPackageReceiptAttemptRepository>();
+            services.RemoveAll<IPackageImportAnalysisRepository>();
+            services.RemoveAll<IkpPackageAnalysisService>();
             services.RemoveAll<UploadConcurrencyGate>();
             services.RemoveAll<HostReadinessState>();
 
@@ -556,6 +605,8 @@ public sealed class IkpHttpApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IIkpIngestionGateway>(Gateway);
             services.AddSingleton(Repo);
             services.AddSingleton<IPackageReceiptAttemptRepository>(Repo);
+            services.AddSingleton<IPackageImportAnalysisRepository>(Analyses);
+            services.AddSingleton<IkpPackageAnalysisService>();
             services.AddSingleton(new UploadHostSettings { MaxConcurrentUploads = 1, MaxUploadBytes = UploadHostSettings.DefaultMaxUploadBytes });
             services.AddSingleton<UploadConcurrencyGate>();
 
@@ -694,6 +745,29 @@ public sealed class ControllableIngestionGateway : IIkpIngestionGateway
         OnReceive(upload, organizationId, cancellationToken);
 }
 
+public sealed class CountingInMemoryPackageImportAnalysisRepository : IPackageImportAnalysisRepository
+{
+    private readonly InMemoryPackageImportAnalysisRepository _inner = new();
+    public int Count { get; private set; }
+
+    public Task<PersistedPackageImportAnalysis?> GetAsync(
+        Guid organizationId, Guid packageId, string zipSha256, string analysisSchemaVersion,
+        CancellationToken cancellationToken = default) =>
+        _inner.GetAsync(organizationId, packageId, zipSha256, analysisSchemaVersion, cancellationToken);
+
+    public async Task<PersistedPackageImportAnalysis> InsertOrGetExistingAsync(
+        PersistedPackageImportAnalysis analysis, CancellationToken cancellationToken = default)
+    {
+        var existing = await _inner.GetAsync(
+            analysis.OrganizationId, analysis.PackageId, analysis.ZipSha256,
+            analysis.AnalysisSchemaVersion, cancellationToken);
+        var stored = await _inner.InsertOrGetExistingAsync(analysis, cancellationToken);
+        if (existing is null)
+            Count++;
+        return stored;
+    }
+}
+
 public sealed class ControllableAttemptRepository : IPackageReceiptAttemptRepository
 {
     private readonly Dictionary<(Guid Org, Guid Attempt), PackageIngestionStatus> _byAttempt = new();
@@ -747,6 +821,23 @@ public sealed class ControllableAttemptRepository : IPackageReceiptAttemptReposi
     public Task<PackageReceiptAttemptLease?> ClaimByIdAsync(Guid attemptId, TimeSpan leaseDuration, DateTimeOffset nowUtc, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public Task<IReadOnlyList<PackageReceiptAttemptLease>> ClaimDueAsync(int batchSize, TimeSpan leaseDuration, DateTimeOffset nowUtc, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public Task<PackageReceipt?> GetCompletedReceiptAsync(Guid organizationId, Guid attemptId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<PackageReceipt?> GetCompletedReceiptByPackageIdAsync(
+        Guid organizationId, Guid packageId, CancellationToken cancellationToken = default)
+    {
+        if (ReadFault is not null)
+            throw ReadFault;
+        if (!_byPackage.TryGetValue((organizationId, packageId), out var status) ||
+            status.Status != "Completed" ||
+            status.ReceiptId is null)
+        {
+            return Task.FromResult<PackageReceipt?>(null);
+        }
+
+        return Task.FromResult<PackageReceipt?>(new PackageReceipt(
+            status.ReceiptId.Value, status.OrganizationId, status.PackageId, status.CaptureId,
+            "0.1", "test", "1.0", null, status.ZipSha256, status.ZipByteLength, status.StorageKey,
+            status.CompletedAtUtc ?? status.UpdatedAtUtc, "{}"));
+    }
     public Task<IReadOnlySet<string>> GetProtectedStagingKeysAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public Task<bool> RenewLeaseAsync(Guid attemptId, Guid leaseToken, DateTimeOffset leaseUntilUtc, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public Task<PackageReceiptRegistration> CompleteAsync(Guid attemptId, Guid leaseToken, ArchivedPackage archive, CancellationToken cancellationToken = default) => throw new NotSupportedException();

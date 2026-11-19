@@ -34,6 +34,15 @@ public interface IPackageReceiptAttemptRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Returns the completed receipt for this organization and package, or null when
+    /// missing, not completed, or owned elsewhere.
+    /// </summary>
+    Task<PackageReceipt?> GetCompletedReceiptByPackageIdAsync(
+        Guid organizationId,
+        Guid packageId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Returns the attempt for this organization, or null when missing or owned elsewhere.
     /// </summary>
     Task<PackageIngestionStatus?> GetAttemptAsync(

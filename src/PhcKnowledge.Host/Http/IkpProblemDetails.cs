@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using PhcKnowledge.Import.Ikp;
+using PhcKnowledge.Import.Ikp.Analysis;
 using PhcKnowledge.Import.Receipts;
 
 namespace PhcKnowledge.Host.Http;
@@ -102,6 +103,11 @@ public static class IkpProblemDetailsFactory
                     httpContext, StatusCodes.Status403Forbidden, "Forbidden",
                     IkpPublicErrorCodes.Forbidden),
 
+            PackageImportAnalysisNotFoundException =>
+                Problem(
+                    httpContext, StatusCodes.Status404NotFound, "Not found",
+                    IkpPublicErrorCodes.NotFound),
+
             BadHttpRequestException bad when bad.StatusCode == StatusCodes.Status413PayloadTooLarge =>
                 Problem(
                     httpContext, StatusCodes.Status413PayloadTooLarge, "Upload too large",
@@ -131,6 +137,7 @@ public static class IkpProblemDetailsFactory
             PackageReceiptConflictException => true,
             IkpPackageValidationException => false,
             OrganizationIdResolutionException => false,
+            PackageImportAnalysisNotFoundException => false,
             BadHttpRequestException bad when bad.StatusCode == StatusCodes.Status413PayloadTooLarge => false,
             _ => true
         };
