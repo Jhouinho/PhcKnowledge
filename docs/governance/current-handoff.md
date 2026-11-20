@@ -6,8 +6,9 @@
 - Data: 2026-11-20
 - Repositório: Jhouinho/PhcKnowledge
 - Branch: feature/increment-c-package-import-analysis-confirmation
-- HEAD no início desta atualização documental: 9a9df92ff82a98eafa2a5c1ff5134d8226ea7ce5
-- Esta atualização publica um novo commit nesta branch, sem merge para main; confirmar o HEAD remoto após publicação.
+- HEAD no início da atualização documental: 9a9df92ff82a98eafa2a5c1ff5134d8226ea7ce5
+- Commit principal que publicou a baseline e as regras de continuidade: 7d60259e49ddab5c1b304035f3790e7e7b53d5c4.
+- Este handoff foi atualizado após esse commit. Para o HEAD exato mais recente, consultar a referência remota desta branch; não assumir que o commit principal continua a ser o HEAD.
 - Estado local do Cursor: não observado; este handoff descreve apenas o estado GitHub.
 - Testes nesta sessão: nenhum; atualização documental sem build ou execução de código.
 
@@ -35,7 +36,7 @@ Consolidar a fonte de contexto partilhada para que ChatGPT e Cursor iniciem tare
 A auditoria documental/técnica continua em curso. O inventário de 79 documentos foi identificado antes desta atualização. Esta publicação atualiza fontes canónicas e corrige contradições prioritárias; não conclui a classificação individual de todos os documentos e não remove documentação histórica.
 
 ## Próximo passo
-1. Confirmar o commit publicado e consultar o HEAD remoto.
+1. Confirmar o HEAD remoto e manter esta referência de handoff atualizada em cada sessão.
 2. Fechar inventário individual dos documentos restantes, sem apagar históricos.
 3. Rever o ciclo de ZIP temporário e desenhar materialização/eliminação segura.
 4. Definir arquitetura funcional do PHC Standard Catalog.
