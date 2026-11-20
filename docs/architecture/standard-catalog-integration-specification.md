@@ -391,3 +391,86 @@ Esta especificação não aprova:
 - [Especificação IKP 0.1](ikp-0.1-specification.md)
 - [Contrato P1 — identidade e proveniência](p1-identity-provenance-contract.md)
 - [Matriz de compatibilidade Scanner/IKP](ikp-0.1-scanner-compatibility-matrix.md)
+
+
+## 14. Adenda — resultados da auditoria da Fase 0 (2026-11-20)
+
+Esta secção regista evidência adicional da auditoria read-only. Em caso de divergência, prevalece sobre as decisões ainda pendentes da secção 11. Continua a ser uma proposta técnica: não autoriza implementação.
+
+### 14.1 Fonte standard e ciclo de vida do ficheiro
+
+A proveniência da fonte foi confirmada:
+- Base de referência: **CS Default PHC 202603**. O próprio ficheiro começa por selecionar `CSDefault202603`, e esta versão foi também confirmada pelo utilizador.
+- Inventário extraído: **552 triggers**, associadas a **258 tabelas distintas**.
+- Quatro triggers declaram mais do que um evento.
+- A fonte contém os corpos SQL completos usados para criar as triggers. O marcador `WITH ENCRYPTION` presente nas instruções significa que as triggers ficam protegidas/encriptadas quando criadas; não significa que o corpo esteja ausente do ficheiro-fonte.
+
+O ficheiro `docs/sources/triggers phc.sql` é **uma fonte temporária de importação**, não uma dependência operacional nem um artefacto permanente do Portal. O ciclo obrigatório é:
+1. importar as 552 definições e respetivos metadados para o catálogo standard no SQL Server central;
+2. persistir a proveniência, incluindo produto, versão de referência, origem CS Default, hash SHA-256 dos bytes originais e versão do processo de extração;
+3. reconciliar a importação com os 552 objetos esperados, sem duplicados ou perdas;
+4. confirmar que as definições e os metadados podem ser consultados no Portal depois de reiniciar a aplicação, sem ler o ficheiro do GitHub;
+5. só depois remover `docs/sources/triggers phc.sql` da árvore atual do repositório.
+
+A remoção do ficheiro não implica reescrever o histórico Git. A cópia `PhcKnowledgeScanner/triggers phc.sql` é um ficheiro diferente (fonte Frenetikmove, 353 instruções CREATE TRIGGER no conteúdo auditado), não é uma cópia da fonte CS Default e não deve ser removida por esta decisão.
+
+### 14.2 Compatibilidade da capability IKP
+
+A auditoria dos schemas, exporter e leitor/validador confirmou:
+- IKP 0.1 define `capabilityVersion` como string por operação; não exige que todas as operações usem a mesma versão.
+- O exporter exige correspondência exata entre `CapabilityVersion` e `Coverage.CapabilityVersion` para a mesma operação.
+- O leitor/validador preserva a versão declarada e não impõe que seja `1.0`.
+- O Object Index referencia a operação; não exige uma nova versão global do IKP.
+
+**Recomendação:** manter o identificador lógico `sql.server.structure.triggers` e evoluir a sua capabilityVersion:
+- `1.0`: semântica histórica, limitada a triggers em tabelas `u_*`;
+- `2.0`: inventário de triggers DML associadas a tabelas, sem filtro pelo prefixo do nome da tabela, com metadados de parent, eventos, `is_disabled`, `is_instead_of_trigger` e estado da definição.
+
+O schema global mantém-se em **IKP 0.1**. Não é necessária uma nova operação para distinguir estas duas semânticas. A implementação terá, contudo, de deixar de obter a versão de todas as operações exclusivamente de `KnownOperations.Version` e permitir a versão específica desta capability. A coverage deve repetir a versão declarada. O futuro materializador tem de interpretar a versão: uma captura 1.0 nunca pode provar ausência de triggers standard.
+
+Esta opção é preferível a criar uma segunda operação porque preserva a identidade lógica já existente, mantém a semântica histórica identificável e evita duas operações concorrentes para o mesmo inventário. É uma recomendação para aprovação, não uma alteração já implementada.
+
+### 14.3 Identidade e evidência
+
+Não foi identificado um stamp PHC estável aplicável à identidade das triggers SQL. A chave lógica recomendada para matching é:
+- tipo/kind do objeto (`SQL Trigger`);
+- schema da trigger;
+- nome da trigger;
+- schema do objeto pai;
+- nome da tabela pai.
+
+O `object_id` SQL Server pode ser guardado como evidência auxiliar da captura, mas não como identidade permanente. Os eventos, `is_disabled` e `is_instead_of_trigger` são metadados de comparação, não componentes da chave de identidade: uma alteração de eventos deve resultar em divergência de metadados do mesmo objeto, não numa trigger simultaneamente ausente e adicional.
+
+A consulta do Database Schema Snapshot já recolhe os campos estruturais e os eventos, sem filtro `u_*`. Para a primeira fatia, o âmbito deve ser explicitamente restringido a triggers DML cujo objeto pai é uma tabela. O collector IKP atual continua limitado a `u_*`, não recolhe eventos nem `INSTEAD OF`, e não integra o snapshot estrutural.
+
+### 14.4 Estado da definição e comparação
+
+Mantêm-se os quatro estados:
+- `Available`: definição obtida e artefacto íntegro;
+- `Unavailable`: houve tentativa, mas a definição não pôde ser obtida/validada;
+- `NotCollected`: não foi tentada ou estava fora do âmbito;
+- `Empty`: apenas quando a fonte prova que o conteúdo é genuinamente vazio.
+
+`sys.sql_modules.definition IS NULL` não prova, isoladamente, encriptação. Sem diagnóstico adicional fiável, o resultado é `Unavailable`, sem inventar a causa.
+
+O hash SHA-256 da definição original mantém-se exato, calculado sobre os bytes preservados, para integridade e proveniência. Não deve ser alterado por canonicalização. Se for necessária comparação semântica/representacional, deverá existir um fingerprint separado, versionado e calculado por uma política lexical T-SQL testada, preservando strings, identificadores delimitados, operadores e estrutura. A equivalência não pode ser inferida apenas pelo nome ou pela tabela pai. Quando a definição instalada está indisponível, o resultado é `DefinitionUnverifiable`, mesmo que a identidade corresponda.
+
+### 14.5 Limites da validação da fonte
+
+O teste de extração existente confirma 552 instruções, 258 tabelas distintas, eventos e integridade dos excertos SQL face ao texto original. Confirma também a presença de `WITH ENCRYPTION` nas 552 instruções. Esta validação estrutural não substitui revisão funcional humana de cada trigger nem prova, por si só, que a aplicabilidade é idêntica em todas as builds PHC 202603.
+
+A fonte é registada como referência **CS Default 202603**. Não generalizar a sua aplicabilidade a outras versões/builds sem nova evidência e curadoria.
+
+### 14.6 Estado da Fase 0
+
+| Tema | Resultado |
+|---|---|
+| Versão da fonte | Confirmada: CS Default 202603 |
+| Identidade | Proposta: kind + schema/nome da trigger + schema/nome da tabela pai |
+| Capability | Recomendação: operação existente, versão 2.0; IKP mantém 0.1 |
+| Definição indisponível | Contrato fechado com Available / Unavailable / NotCollected / Empty |
+| Fingerprint | SHA-256 original exato; fingerprint de comparação separado e versionado, algoritmo ainda por fixar |
+| Proveniência/curadoria | Fonte temporária; persistir origem/hash/processo e exigir validação humana |
+| Remoção da fonte | Apenas após importação integral, reconciliação e consulta no Portal sem dependência do ficheiro |
+
+Permanecem por aprovar antes da Fase 1: a recomendação de capability 2.0, a chave de matching proposta e a política/algoritmo concreto do fingerprint de comparação. A Fase 1 continua bloqueada até aprovação explícita. Não foram alterados código, schemas, SQLite, migrations ou testes nesta auditoria.
