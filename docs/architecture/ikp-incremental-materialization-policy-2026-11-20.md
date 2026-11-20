@@ -110,3 +110,13 @@ A auditoria do código atual confirmou que:
 O workspace não possui atualmente um purpose/role semântico explícito para este ficheiro e o exporter atribui-lhe `source-definition` por omissão. O desenho futuro deverá introduzir uma classificação explícita e preservar o ficheiro no ZIP; não deve inferir a finalidade apenas a partir do nome/extensão do caminho.
 
 Esta evidência é uma fotografia do código auditado, não uma autorização para alterar o collector ou o contrato nesta etapa.
+
+
+## 9. Outros artefactos que exigem preservação semântica
+
+A auditoria identificou dois casos adicionais no collector PHC:
+
+- **FORMB:** o ficheiro transportado contém `descricao` e `ordem`, que não estão integralmente representadas no Object Index atual. Deve manter-se no ZIP como evidência/configuração descritiva, não ser descartado nem presumido como código executável.
+- **FORMC:** o ficheiro atual contém a expressão `Xexpressao` extraída e formatada de `formc.prop`; o valor original completo de `prop` não é preservado no percurso atual. O desenho deve transportar separadamente o original e a representação derivada, sem confundir os dois.
+
+A classificação final dos roles só pode ser fechada depois de inventariar, por ObjectKind/collector, os dados presentes no Object Index, os bytes originais, as representações derivadas e os metadados adicionais. D-016 exige captura completa; não autoriza descartar informação apenas por parecer descritiva.
