@@ -90,6 +90,33 @@ public sealed class MetadataProjectionResolverTests
         Assert.True(fingerprint.RootElement.GetProperty("isDisabled").GetBoolean());
     }
 
+    [Fact]
+    public void Trigger_Preserves_Matching_Tuple_Events_And_InsteadOf_Metadata()
+    {
+        var record = new TechnicalObjectRecord(
+            "trigger:tuple",
+            ObjectKind.Trigger,
+            "tr_test",
+            "dbo",
+            "table:dbo.FT",
+            "sql.server.structure",
+            null,
+            """{"triggerSchema":"dbo","triggerName":"tr_test","parentSchema":"dbo","parentName":"FT","events":["INSERT","UPDATE"],"isDisabled":false,"isInsteadOf":true}""",
+            DateTimeOffset.UnixEpoch);
+
+        var result = MetadataProjectionResolver.Resolve(record);
+
+        Assert.Null(result.DiagnosticCode);
+        using var metadata = JsonDocument.Parse(result.Metadata.GetRawText());
+        Assert.Equal("dbo", metadata.RootElement.GetProperty("triggerSchema").GetString());
+        Assert.Equal("tr_test", metadata.RootElement.GetProperty("triggerName").GetString());
+        Assert.Equal("dbo", metadata.RootElement.GetProperty("parentSchema").GetString());
+        Assert.Equal("FT", metadata.RootElement.GetProperty("parentName").GetString());
+        Assert.True(metadata.RootElement.GetProperty("isInsteadOf").GetBoolean());
+        Assert.Equal(new[] { "INSERT", "UPDATE" },
+            metadata.RootElement.GetProperty("events").EnumerateArray().Select(x => x.GetString()).ToArray());
+    }
+
     [Theory]
     [InlineData("0", false)]
     [InlineData("1", true)]
