@@ -115,3 +115,15 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 - Achados: FTU+Fx/User fica todo condicionado à existência de dbo.ftu; exceção em `RunOptionalAsync.sourceExistsAsync` não é capturada pelo tratamento por operação; probe de personalizações agrega tabelas core em vez de verificar cada uma; estado de definição/artefactos deve ser lido separadamente da coverage de objetos.
 - Não foram feitas alterações de código nem executados testes/builds ou recolhas reais.
 - Próximo passo: continuar a auditoria da cadeia de exportação dos artefactos; mapear a fonte standard PHC para REL/DTL e avaliar o que as sete operações SQL devem comparar/exportar. Confirmar a proveniência do ZIP real do harness e fechar o round-trip captura real → exporter atual → validador independente antes de alterar collectors ou o contrato IKP.
+
+
+## Atualização — decisão de classificação Scanner / PHC Standard (2026-11-20)
+
+- HEAD remoto imediatamente antes desta atualização: `8fb7c14a139defa0132f6780a77febab188ba891`.
+- Registada a decisão D-015 em `DECISIONS.md`: relações PHC standard em REL/DTL pertencem ao PHC Standard Catalog, como conhecimento comum versionado por aplicabilidade PHC; não são recolhidas integralmente em cada captura.
+- `PROJECT_BASELINE.md` clarifica a separação entre PHC Standard, observações e personalizações, e o papel das sete operações SQL Server como mecanismos de descoberta da estrutura física.
+- `PROJECT_STATUS.md` distingue as 23 operações atualmente declaradas no código da classificação-alvo de 21 operações Scanner (7 SQL Server + 14 personalizações PHC). REL/DTL são comportamento legado a retirar/rever.
+- A matriz de compatibilidade regista a reclassificação, preservando a tabela das 23 operações como evidência do código auditado. O modelo de domínio 0.2 recebeu nota de precedência para a secção REL/DTL histórica.
+- `audit-progress.md` regista a decisão e a pendência de desenhar comparação com PHC Standard e exportação de diferenças locais.
+- Sem alterações de código, schemas IKP, migrations, testes ou capturas. Não foram executados builds/testes.
+- Próximo passo: continuar a auditoria da cadeia de exportação dos artefactos e esclarecer a proveniência do ZIP real do harness; depois desenhar como as operações SQL comparam a estrutura observada com o PHC Standard e como representar apenas diferenças específicas.
