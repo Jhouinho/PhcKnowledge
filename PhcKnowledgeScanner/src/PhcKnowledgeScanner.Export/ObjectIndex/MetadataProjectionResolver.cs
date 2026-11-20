@@ -165,12 +165,30 @@ public static class MetadataProjectionResolver
                     metadata["parentName"] = parentName;
                 }
 
-                Copy(root, "events", metadata);
-                Copy(root, "isInsteadOf", metadata);
-
                 var triggerComplete = Copy(root, "isDisabled", metadata)
                     && Copy(root, "isDisabled", fingerprint)
                     && IsBoolean(root, "isDisabled");
+
+                if (Copy(root, "isInsteadOf", metadata))
+                {
+                    var insteadOfValid = IsBoolean(root, "isInsteadOf");
+                    triggerComplete &= insteadOfValid;
+                    if (insteadOfValid)
+                    {
+                        Copy(root, "isInsteadOf", fingerprint);
+                    }
+                }
+
+                if (Copy(root, "events", metadata))
+                {
+                    var eventsValid = IsStringArray(root, "events");
+                    triggerComplete &= eventsValid;
+                    if (eventsValid)
+                    {
+                        Copy(root, "events", fingerprint);
+                    }
+                }
+
                 return CompleteOrDiagnostic(metadata, fingerprint, triggerComplete);
 
             case ObjectKind.View:
@@ -387,7 +405,8 @@ public static class MetadataProjectionResolver
 
         var qualifiedName = parentObjectId[prefix.Length..];
         var separator = qualifiedName.IndexOf('.');
-        if (separator <= 0 || separator == qualifiedName.Length - 1)
+        if (separator <= 0 || separator == qualifiedName.Length - 1
+            || qualifiedName.LastIndexOf('.') != separator)
         {
             return false;
         }
@@ -411,6 +430,11 @@ public static class MetadataProjectionResolver
         destination[destinationName ?? sourceName] = value.Clone();
         return true;
     }
+
+    private static bool IsStringArray(JsonElement root, string name) =>
+        TryGetProperty(root, name, out var value)
+        && value.ValueKind == JsonValueKind.Array
+        && value.EnumerateArray().All(item => item.ValueKind == JsonValueKind.String);
 
     private static bool IsString(JsonElement root, string name) =>
         TryGetProperty(root, name, out var value)
