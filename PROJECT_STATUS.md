@@ -104,3 +104,11 @@ Antes de iniciar uma tarefa, ler PROJECT_BASELINE.md, DECISIONS.md, este ficheir
 - O ficheiro descritivo de `phc.user_field` mantém-se no ZIP, mas deverá ter papel de evidência/metadados distinto de `source-definition`.
 - Regras e limites publicados em `docs/architecture/ikp-incremental-materialization-policy-2026-11-20.md`.
 - Estado: decisão funcional aprovada; desenho técnico e implementação pendentes. Nenhum código, schema, migration ou teste foi alterado nesta atualização.
+
+
+### Auditoria complementar — role dos artefactos IKP (2026-11-20)
+- O exporter atual atribui `source-definition` a todos os artefactos ligados por `DefinitionArtifactId`, sem alinhar o role com a projeção `definition.status/artifactIds`.
+- O schema do manifesto aceita `role` como string não vazia, sem enum fechado; o inspection engine preserva o valor sem whitelist semântica.
+- O validador garante referências Object Index→manifesto, mas não exige que todos os artefactos do manifesto sejam definições referenciadas no Object Index.
+- A direção aprovada D-016 mantém os artefactos descritivos no ZIP; falta distingui-los semanticamente de definições de código e verificar consumidores downstream.
+- Nenhuma alteração de código/schema/migration/testes e nenhum teste/build executado.
