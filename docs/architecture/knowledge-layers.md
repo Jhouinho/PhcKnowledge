@@ -132,5 +132,5 @@ A fonte original e a sua proveniência devem, contudo, permanecer rastreáveis s
 - Não altera retroativamente o comportamento da captura já analisada.
 - A cobertura real de cada tipo de objeto e as regras atuais de recolha do Scanner continuam a exigir auditoria técnica antes de qualquer implementação.
 
-**Próxima etapa:** auditar e definir a incorporação versionada do conhecimento standard das triggers na estrutura existente do PHC Knowledge; só depois especificar as alterações necessárias à comparação e à recolha. 
+**Especificação técnica:** [Integração do catálogo PHC Standard com o IKP](standard-catalog-integration-specification.md). O documento define a proposta de contrato de evidência, catálogo versionado, materialização, matching, coverage e fases de implementação. Continua pendente de aprovação e não autoriza alterações ao código, IKP, SQLite ou migrations.
 
