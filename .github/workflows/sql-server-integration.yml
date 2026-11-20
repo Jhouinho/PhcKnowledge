@@ -1,5 +1,54 @@
 name: SQL Server integration tests
 
+on:
+  pull_request:
+    paths:
+      - "PhcKnowledge.sln"
+      - "src/PhcKnowledge.Import/**"
+      - "tests/PhcKnowledge.Import.SqlServer.Integration.Tests/**"
+      - "PhcKnowledgeScanner/**"
+      - ".github/workflows/sql-server-integration.yml"
+  push:
+    branches: [main]
+    paths:
+      - "PhcKnowledge.sln"
+      - "src/PhcKnowledge.Import/**"
+      - "tests/PhcKnowledge.Import.SqlServer.Integration.Tests/**"
+      - "PhcKnowledgeScanner/**"
+      - ".github/workflows/sql-server-integration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sql-server-integration:
+    name: SQL Server 2022 — receipt recovery and Scanner triggers
+    runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: ${{ secrets.SQLSERVER_SA_PASSWORD }}
+        ports:
+          - 1433:1433
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.403
+
+      - name: Restore SQL Server integration tests
+        run: dotnet restore tests/PhcKnowledge.Import.SqlServer.Integration.Tests/PhcKnowledge.Import.SqlServer.Integration.Tests.csproj
+
+      - name: Run integration tests against SQL Server 2022
+        run: dotnet test tests/PhcKnowledge.Import.SqlServer.Integration.Tests/PhcKnowledge.Import.SqlServer.Integration.Tests.csproj --no-restore --configuration Release --logger "console;verbosity=normal"
+        env:
+          PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING: "Server=localhost,1433;Database=PhcKnowledgeReceiptTests;User ID=sa;Password=${{ secrets.SQLSERVER_SA_PASSWORD }};Encrypt=True;TrustServerCertificate=True;Connect Timeout=5"
+
       - name: Run Scanner trigger integration tests against SQL Server 2022
         shell: bash
         env:
@@ -29,51 +78,3 @@ name: SQL Server integration tests
 
           dotnet restore PhcKnowledgeScanner/tests/PhcKnowledgeScanner.Tests/PhcKnowledgeScanner.Tests.csproj
           dotnet test PhcKnowledgeScanner/tests/PhcKnowledgeScanner.Tests/PhcKnowledgeScanner.Tests.csproj --no-restore --configuration Release --filter "FullyQualifiedName~SqlServerTriggerIntegrationTests" --logger "console;verbosity=normal"
-
-on:
-  pull_request:
-    paths:
-      - "PhcKnowledge.sln"
-      - "src/PhcKnowledge.Import/**"
-      - "tests/PhcKnowledge.Import.SqlServer.Integration.Tests/**"
-      - "PhcKnowledgeScanner/**"
-      - ".github/workflows/sql-server-integration.yml"
-  push:
-    branches: [main]
-    paths:
-      - "PhcKnowledge.sln"
-      - "src/PhcKnowledge.Import/**"
-      - "tests/PhcKnowledge.Import.SqlServer.Integration.Tests/**"
-      - ".github/workflows/sql-server-integration.yml"
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-jobs:
-  sql-server-integration:
-    name: SQL Server 2022 — receipt recovery
-    runs-on: ubuntu-latest
-    services:
-      sqlserver:
-        image: mcr.microsoft.com/mssql/server:2022-latest
-        env:
-          ACCEPT_EULA: "Y"
-          MSSQL_SA_PASSWORD: "PhcKnowledge_CI_2026!Test"
-        ports:
-          - 1433:1433
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.403
-
-      - name: Restore SQL Server integration tests
-        run: dotnet restore tests/PhcKnowledge.Import.SqlServer.Integration.Tests/PhcKnowledge.Import.SqlServer.Integration.Tests.csproj
-
-      - name: Run integration tests against SQL Server 2022
-        run: dotnet test tests/PhcKnowledge.Import.SqlServer.Integration.Tests/PhcKnowledge.Import.SqlServer.Integration.Tests.csproj --no-restore --configuration Release --logger "console;verbosity=normal"
-        env:
-          PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING: "Server=localhost,1433;Database=PhcKnowledgeReceiptTests;User ID=sa;Password=PhcKnowledge_CI_2026!Test;Encrypt=True;TrustServerCertificate=True;Connect Timeout=5"
