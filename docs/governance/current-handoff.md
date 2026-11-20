@@ -186,3 +186,13 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 - A classificação de artefactos deve distinguir definição original, representação derivada e evidência/configuração descritiva; D-016 exige transportar a captura completa.
 - Evidências e limites registados em `docs/governance/audit-progress.md`. Nenhum código/schema/migration/teste alterado.
 - Próximo passo: completar a matriz de finalidade e conteúdo por ObjectKind/collector, confirmando que cada dado original está representado no Object Index ou num artefacto transportado, antes de fechar os roles IKP.
+
+
+## Atualização — matriz parcial de finalidade dos artefactos (2026-11-20)
+
+- CSSJS transporta `source` e `sourcedefault`; ESCR transporta `expressao`, `cmen` e `cmenhtml`; JSU transporta JavaScript. Estes corpos não estão integralmente no Object Index e devem manter-se como conteúdo-fonte.
+- FORMB é descritivo/configuracional, mas o resolver atual trata `PhcCustomScreen` como definição `Available` por ter artefacto.
+- FORMC contém expressão `Xexpressao` formatada/derivada; o `prop` original não é persistido e o resolver atual também o classifica como `Available`.
+- Conclusão: `DefinitionArtifactId` não significa sempre definição original. A matriz deve separar conteúdo-fonte original, representação derivada e evidência/configuração descritiva.
+- Detalhes registados em `docs/governance/audit-progress.md`; sem alterações de código/schema/testes.
+- Próximo passo: fechar matriz dos restantes collectors e propor semântica de roles e estados de definição por ObjectKind, com testes de contrato antes de qualquer implementação.
