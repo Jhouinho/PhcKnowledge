@@ -150,6 +150,24 @@ public static class MetadataProjectionResolver
                 return CompleteOrDiagnostic(metadata, fingerprint, fkComplete);
 
             case ObjectKind.Trigger:
+                // Preserve the approved matching tuple as descriptive metadata.
+                // Older 1.0 workspaces lack these summary fields, so fall back only
+                // to identity components already present in the capture record.
+                metadata["triggerSchema"] = ReadString(root, "triggerSchema") ?? record.SchemaName;
+                metadata["triggerName"] = ReadString(root, "triggerName") ?? record.Name;
+                if (Copy(root, "parentSchema", metadata) && Copy(root, "parentName", metadata))
+                {
+                    // The 2.0 collector emits the parent tuple explicitly.
+                }
+                else if (TryParseParentTableId(record.ParentObjectId, out var parentSchema, out var parentName))
+                {
+                    metadata["parentSchema"] = parentSchema;
+                    metadata["parentName"] = parentName;
+                }
+
+                Copy(root, "events", metadata);
+                Copy(root, "isInsteadOf", metadata);
+
                 var triggerComplete = Copy(root, "isDisabled", metadata)
                     && Copy(root, "isDisabled", fingerprint)
                     && IsBoolean(root, "isDisabled");
@@ -351,6 +369,32 @@ public static class MetadataProjectionResolver
             default:
                 return false;
         }
+    }
+
+    private static bool TryParseParentTableId(
+        string? parentObjectId,
+        out string schema,
+        out string table)
+    {
+        schema = string.Empty;
+        table = string.Empty;
+        const string prefix = "table:";
+        if (string.IsNullOrWhiteSpace(parentObjectId)
+            || !parentObjectId.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var qualifiedName = parentObjectId[prefix.Length..];
+        var separator = qualifiedName.IndexOf('.');
+        if (separator <= 0 || separator == qualifiedName.Length - 1)
+        {
+            return false;
+        }
+
+        schema = qualifiedName[..separator];
+        table = qualifiedName[(separator + 1)..];
+        return true;
     }
 
     private static bool Copy(
