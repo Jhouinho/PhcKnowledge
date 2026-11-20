@@ -120,3 +120,16 @@ A auditoria identificou dois casos adicionais no collector PHC:
 - **FORMC:** o ficheiro atual contém a expressão `Xexpressao` extraída e formatada de `formc.prop`; o valor original completo de `prop` não é preservado no percurso atual. O desenho deve transportar separadamente o original e a representação derivada, sem confundir os dois.
 
 A classificação final dos roles só pode ser fechada depois de inventariar, por ObjectKind/collector, os dados presentes no Object Index, os bytes originais, as representações derivadas e os metadados adicionais. D-016 exige captura completa; não autoriza descartar informação apenas por parecer descritiva.
+
+
+## 10. Classificação parcial de outros conteúdos
+
+A auditoria confirma que:
+- CSSJS transporta `source` e `sourcedefault`;
+- ESCR transporta `expressao`, `cmen` e `cmenhtml`;
+- JSU transporta o JavaScript;
+- estes corpos não estão integralmente representados no Object Index e devem permanecer como conteúdo-fonte;
+- FORMB é conteúdo descritivo/configuracional, embora o resolver atual o projete como definição `Available`;
+- FORMC é uma representação formatada de `Xexpressao`, não o original integral de `formc.prop`, embora o resolver atual também o projete como `Available`.
+
+A futura materialização e o contrato IKP devem classificar o conteúdo pela sua finalidade real, não apenas pela existência de `DefinitionArtifactId`. A matriz ainda é parcial e não fecha a taxonomia final de roles.
