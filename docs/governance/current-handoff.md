@@ -155,3 +155,14 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 - O artefacto descritivo de `phc.user_field` continua a ser transportado; não deve ser classificado como `source-definition` se apenas representa metadados. O papel específico no schema IKP ainda requer desenho.
 - Nenhum código, schema IKP, migration ou teste foi alterado; não foram executados builds/testes.
 - Próxima etapa: continuar a auditoria da exportação para determinar como o manifesto/schema IKP pode representar artefactos descritivos sem os confundir com definições de código; depois fechar a identidade estável e a comparação por instalação antes de desenhar a implementação.
+
+
+## Atualização — auditoria do role de artefactos IKP (2026-11-20)
+
+- O exporter atual atribui `source-definition` a todos os artefactos referenciados por `TechnicalObjectRecord.DefinitionArtifactId`, sem cruzar essa atribuição com `definition.status` e `definition.artifactIds` projetados no Object Index.
+- Para `phc.user_field`, isto permite transportar o ficheiro descritivo como `source-definition`, apesar de a definição estar como `NotCollected` e sem artifactIds no Object Index.
+- `manifest.schema.json` aceita `role` como string não vazia, sem enum fechado. O inspection engine preserva o role em `IkpInspectedArtifact`, sem whitelist semântica.
+- O validador exige que os artefactos listados em `definition.artifactIds` existam no manifesto, mas não exige que todo o artefacto do manifesto seja referenciado como definição no Object Index.
+- Conclusão: um role separado para evidência/metadados parece estruturalmente possível em IKP 0.1, mas os consumidores downstream e a distinção inequívoca da origem do artefacto ainda têm de ser auditados.
+- Documento atualizado: `docs/governance/audit-progress.md`. Nenhum código, schema, migration ou teste alterado; sem execução de testes/build.
+- Próximo passo: inspecionar `WorkspaceArtifactMetadata`, metadata JSON e associação do collector `phc.user_fields` para determinar como distinguir estes artefactos sem heurísticas frágeis; depois auditar os consumidores downstream do role.
