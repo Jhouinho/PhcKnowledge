@@ -36,6 +36,7 @@ A direção aprovada está em PROJECT_BASELINE.md e DECISIONS.md: ferramenta int
 - As sete operações SQL Server são mecanismos de descoberta da estrutura física (base de dados, tabelas, PK, FK, views, procedures e triggers). Não implicam exportar indiscriminadamente todos os objetos standard. A comparação com PHC Standard e a classificação de diferenças ainda não estão implementadas.
 - A matriz de auditoria encontrou testes de resolução, projeção, parsing, persistência e exportação sintética; não encontrou testes diretos que executem os collectors reais contra SQL Server e validem individualmente as 23 operações.
 - Database Schema Snapshot é funcionalidade auxiliar separada do fluxo normal de captura.
+- Auditoria da exportação: artefactos são ficheiros separados do SQLite; o exporter verifica SHA-256/tamanho e existe round-trip sintético C# + validador Python em CI. Foi encontrada uma divergência para o artefacto descritivo de `phc.user_field`, incluído como `source-definition` apesar de o Object Index o marcar `NotCollected`; decisão pendente. O ZIP real do harness ainda não tem proveniência comprovada face ao exporter atual.
 
 ### PHC Standard Catalog
 - Existe src/PhcKnowledge.StandardCatalog, com parser de batches T-SQL, extração de definições CREATE TRIGGER e testes dedicados.
