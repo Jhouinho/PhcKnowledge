@@ -35,7 +35,7 @@ Consolidar a fonte de contexto partilhada e fechar a primeira classificação in
 - RAG é objetivo futuro; tecnologia por decidir.
 
 ## Auditoria
-A auditoria documental/técnica continua em curso. Foi criado `docs/governance/document-inventory.md`, com classificação individual dos 85 ficheiros Markdown/texto presentes após esta publicação. A classificação define destino de manutenção; não equivale a validação integral de todas as afirmações técnicas. Não foi apagada documentação histórica.
+A auditoria documental/técnica continua em curso. Foi criado `docs/governance/document-inventory.md`, com classificação individual dos 86 ficheiros Markdown/texto presentes após esta publicação. A classificação define destino de manutenção; não equivale a validação integral de todas as afirmações técnicas. Não foi apagada documentação histórica.
 
 ## Próximo passo
 1. Confirmar o HEAD remoto e manter esta referência de handoff atualizada em cada sessão.
@@ -60,3 +60,18 @@ Ler docs/governance/README.md, PROJECT_BASELINE.md, DECISIONS.md, PROJECT_STATUS
 ## Auditoria técnica do ciclo de ZIP — 2026-11-20
 
 A inspeção read-only confirmou que o ZIP é arquivado permanentemente e que `IkpPackageAnalysisService` reabre esse arquivo para calcular a primeira análise. O store não expõe eliminação; o cleanup existente atua apenas sobre staging. `MaterializationReadinessEvaluator` avalia prontidão e não materializa conhecimento. Foi criado `docs/architecture/ikp-temporary-package-lifecycle-gap-2026-11-20.md` com evidências, divergência, riscos e critérios para desenho futuro. Não houve alteração de código nem execução de testes.
+
+
+## Auditoria do contrato de materialização IKP — 2026-11-20
+
+- Branch: `feature/increment-c-package-import-analysis-confirmation`.
+- Commit de referência da inspeção: `b22c6fb1e9f954a14d02cfe5b0c903c956d0cff3`.
+- Documento publicado: `docs/architecture/ikp-materialization-contract-proposal-2026-11-20.md`.
+- A proposta é técnica e **não aprovada**; não altera DECISIONS.md nem converte recomendações em decisões.
+- Confirmada separação entre Receipt, Analysis, Decision e a futura Materialization. Não foi encontrada implementação de materialização no percurso inspecionado.
+- Questões que bloqueiam o desenho final: destino durável dos bytes dos artefactos; transações/batches; política para pacotes Rejected/Blocked; reanálise depois da eliminação; retenção.
+- Não iniciar migrations, materializador ou eliminação do arquivo antes de aprovação explícita.
+- Sem alterações de código e sem testes/build nesta etapa.
+
+### Próxima ação
+Discutir e decidir o destino dos bytes dos artefactos e a política de disposição para pacotes rejeitados/bloqueados. Depois fechar o modelo lógico e os estados; só então preparar implementação e testes de recovery.
