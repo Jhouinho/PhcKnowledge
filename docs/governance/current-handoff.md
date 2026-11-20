@@ -117,6 +117,19 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 - Próximo passo: continuar a auditoria da cadeia de exportação dos artefactos; mapear a fonte standard PHC para REL/DTL e avaliar o que as sete operações SQL devem comparar/exportar. Confirmar a proveniência do ZIP real do harness e fechar o round-trip captura real → exporter atual → validador independente antes de alterar collectors ou o contrato IKP.
 
 
+## Atualização — auditoria da cadeia de artefactos IKP (2026-11-20)
+
+- Workspace Scanner: bytes dos artefactos em ficheiros `artifacts/{collectorId}/{relativePath}`; metadata e referências em SQLite (`artifacts` e `objects.definition_artifact_id`). O exporter verifica SHA-256/tamanho e preserva bytes.
+- Reader lê bytes apenas para artefactos referenciados por objetos; projector determina `definition.status` de forma independente. PHC user fields têm um ficheiro descritivo, mas o resolver marca a definição como `NotCollected` e não inclui esse ID em `definition.artifactIds`.
+- Inconsistência a decidir: `IkpPackageExporter` recolhe todos os IDs de `TechnicalObjectRecord.DefinitionArtifactId` e exporta também o artefacto descritivo de user fields como `source-definition`. O manifesto e os validadores aceitam payload sem referência no Object Index. Não corrigido.
+- `DefinitionStatus.Empty` existe no enum/schema, mas não é emitido pelo resolver. O projector pode marcar artefactos inválidos como `Unavailable`; o exporter, contudo, falha ao tentar exportar a referência sem bytes válidos. Política a clarificar.
+- Há round-trip sintético exporter → validador C# e o workflow `dotnet-scanner.yml` também valida ZIP sintético com o validador Python independente. Configuração verificada; não executada nesta sessão.
+- P1.B documenta 16.618 objetos, 8/21 kinds e 49 artefactos verificados na projeção do workspace real `CSDefault202603`. O ZIP real usado no harness de receipt/ingestion não tem proveniência documentada; não afirmar que veio do exporter atual.
+- Exporter atual ainda inclui REL/DTL no ZIP, comportamento legado que terá de ser alinhado com D-015.
+- Sem alterações de código, schemas, migrations, testes ou capturas; sem builds/testes executados.
+- Próximo passo: decidir tratamento do artefacto descritivo de user fields e obter workspace/ZIP real com proveniência demonstrável para completar o round-trip real.
+
+
 ## Atualização — decisão de classificação Scanner / PHC Standard (2026-11-20)
 - Após o registo desta atualização, a proposta `docs/architecture/ikp-materialization-contract-proposal-2026-11-20.md` recebeu nota de precedência D-015: o payload REL/DTL legado não deve ser materializado automaticamente como personalização de cada instalação.
 - HEAD remoto imediatamente antes desta atualização final do handoff: `d2fab38c0b2a0f7f48dfca93235efb1d68071dfa`.
