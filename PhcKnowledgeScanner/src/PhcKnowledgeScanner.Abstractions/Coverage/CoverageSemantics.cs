@@ -162,6 +162,16 @@ public static class CoverageSemantics
             return Failed(capability, requested, observedCount, issueIds, sourceAvailability, scope);
         }
 
+        // An operation may have returned visible rows without proving that the
+        // caller can see the complete metadata catalog. Keep that distinction in
+        // coverage: zero visible rows are not evidence of an empty source.
+        if (scope is not null
+            && scope.TryGetValue("completeness", out var completeness)
+            && string.Equals(completeness, "unknown", StringComparison.OrdinalIgnoreCase))
+        {
+            return Partial(capability, requested, observedCount, issueIds, scope);
+        }
+
         if (operationIssues.Any(i => i.Severity == CollectionIssueSeverity.Warning))
         {
             return SucceededWithWarnings(
