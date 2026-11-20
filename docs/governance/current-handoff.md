@@ -166,3 +166,14 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 - Conclusão: um role separado para evidência/metadados parece estruturalmente possível em IKP 0.1, mas os consumidores downstream e a distinção inequívoca da origem do artefacto ainda têm de ser auditados.
 - Documento atualizado: `docs/governance/audit-progress.md`. Nenhum código, schema, migration ou teste alterado; sem execução de testes/build.
 - Próximo passo: inspecionar `WorkspaceArtifactMetadata`, metadata JSON e associação do collector `phc.user_fields` para determinar como distinguir estes artefactos sem heurísticas frágeis; depois auditar os consumidores downstream do role.
+
+
+## Atualização — evidência técnica `phc.user_field` (2026-11-20)
+
+- `CollectUserFieldsAsync` recolhe colunas `u_*` a partir de `sys.columns` e cria um ficheiro descritivo `.txt` por campo; a informação também fica estruturada em `SummaryJson`.
+- O artefacto é ligado ao objeto através de `DefinitionArtifactId`. O helper atual atribui metadata genérica `encoding=utf-8` e `format=prg`, sem um purpose/role explícito; não classificar apenas pela extensão ou path.
+- `DefinitionProjectionResolver` marca intencionalmente estes objetos como `NotCollected`; `MetadataProjectionResolver` produz MetadataFingerprint a partir de schema/tabela/coluna/tipo/comprimento/precisão/escala/nulabilidade.
+- `SourceIdentityResolver` gera `sqlserver.column_id` com scope de database + object_id da tabela pai; a materialização deve acrescentar InstallationId ao âmbito de identidade.
+- Conclusão: o ficheiro descritivo continua a ser transportado por D-016, mas não é uma definição de código. A classificação futura deve usar finalidade explícita ou associação inequívoca ao ObjectKind, não heurísticas de nome de ficheiro.
+- Atualizado `docs/governance/audit-progress.md`. Nenhum código/schema/migration/teste alterado.
+- Próximo passo: auditar outros collectors que usam `DefinitionArtifactId` para verificar se há artefactos com semânticas diferentes de source-definition.
