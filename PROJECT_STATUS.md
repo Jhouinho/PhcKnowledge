@@ -56,6 +56,8 @@ Nesta atualização documental não foram executados testes, builds, SQL nem cap
 
 ## 4. Lacunas e riscos conhecidos
 
+A divergência entre ZIP temporário e arquivo permanente está analisada em [ikp-temporary-package-lifecycle-gap-2026-11-20.md](docs/architecture/ikp-temporary-package-lifecycle-gap-2026-11-20.md). A decisão de eliminação só pode ser implementada depois de materialização e verificação persistente; o código atual ainda reabre o ZIP arquivado para calcular uma análise não persistida.
+
 1. Alinhar arquivo atual com o ciclo aprovado de ZIP temporário, garantindo recuperação sem eliminar dados antes da materialização íntegra.
 2. Materializar observações, definições, artefactos e REL/DTL de forma pesquisável, preservando factos e proveniência.
 3. Concluir o modelo e os fluxos de clientes/instalações/ambientes e respetivas permissões.

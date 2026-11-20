@@ -95,3 +95,11 @@ A auditoria permanece em curso. Esta publicação não executou testes nem alter
 - Confirmado no código da branch que existem endpoints/serviços/Portal/testes de decisão do Incremento C; a existência dos ficheiros prova implementação parcial, não conclusão funcional total.
 - Sem alterações de código, sem builds/testes e sem eliminação de documentos.
 - Commit desta etapa: `070e456b06f7054c0764a3f4cac6532150381743`.
+
+
+## Etapa 3 — ciclo de vida do ZIP IKP (2026-11-20)
+
+- Inspeção read-only de `IkpPackageIngestionService`, `PackageReceiptRecoveryService`, `PackageStagingCleanupService`, `FileSystemImmutablePackageStore`, interfaces de storage, `IkpPackageAnalysisService` e `MaterializationReadinessEvaluator`.
+- Confirmado: staging é removido após conclusão do receipt; ZIP é arquivado permanentemente por SHA-256; análise inicial depende de reabrir o ZIP; não existe operação de delete no store; cleanup só elimina staging órfão; readiness não materializa entidades.
+- Criado `docs/architecture/ikp-temporary-package-lifecycle-gap-2026-11-20.md` com o fluxo atual, divergência face à decisão, riscos e critérios mínimos.
+- Nenhum código alterado; nenhum teste/build executado.

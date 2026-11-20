@@ -55,3 +55,8 @@ Ler docs/governance/README.md, PROJECT_BASELINE.md, DECISIONS.md, PROJECT_STATUS
 - `PhcKnowledgeScanner/docs/open-decisions.md` foi identificado como checklist histórica; não assumir que os itens não assinalados continuam abertos.
 - O desenho do Incremento C foi reconciliado com a implementação visível na branch, sem declarar concluída toda a experiência.
 - Nenhum código foi alterado e nenhum teste foi executado nesta etapa.
+
+
+## Auditoria técnica do ciclo de ZIP — 2026-11-20
+
+A inspeção read-only confirmou que o ZIP é arquivado permanentemente e que `IkpPackageAnalysisService` reabre esse arquivo para calcular a primeira análise. O store não expõe eliminação; o cleanup existente atua apenas sobre staging. `MaterializationReadinessEvaluator` avalia prontidão e não materializa conhecimento. Foi criado `docs/architecture/ikp-temporary-package-lifecycle-gap-2026-11-20.md` com evidências, divergência, riscos e critérios para desenho futuro. Não houve alteração de código nem execução de testes.
