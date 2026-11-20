@@ -5,7 +5,7 @@
 - Branch: feature/increment-c-package-import-analysis-confirmation
 - HEAD de referência: 6fdb4060a8fdb2de8aec9080620b91b4c9fa89f5
 - Âmbito: todos os ficheiros versionados com extensão .md, .mdc ou .txt na árvore Git.
-- Total inventariado: 83 ficheiros.
+- Total inventariado: 84 ficheiros.
 - Estado: classificação documental inicial concluída; não equivale a validação integral de cada afirmação técnica nem autoriza apagar ficheiros.
 
 ## Regras de manutenção
@@ -95,6 +95,7 @@
 | `docs/architecture/sql-server-receipt-integration-tests-2026-11-17.md` | Evidência de testes | Preservar; testes SQL de receipts não provam collectors Scanner. |
 | `docs/architecture/technology-and-import-contract-assessment.md` | Avaliação histórica | Preservar como avaliação; baseline atual prevalece em stack, uso e ciclo de ZIP. |
 | `docs/governance/README.md` | Governação | Canónico; ordem de leitura. |
+| `docs/governance/document-inventory.md` | Inventário documental | Matriz individual de 84 ficheiros; atualizar quando a árvore documental mudar. |
 | `docs/governance/audit-progress.md` | Auditoria | Estado de auditoria; atualizar por etapa. |
 | `docs/governance/current-handoff.md` | Handoff | Canónico operacional; atualizar no fecho de cada sessão. |
 | `docs/governance/working-agreement.md` | Acordo | Canónico; preservar protocolo entre ferramentas. |

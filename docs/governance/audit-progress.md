@@ -83,3 +83,15 @@ Correções consolidadas:
 - StandardCatalog contém extração/parsing de triggers; pipeline completa de catálogo ainda não demonstrada.
 
 A auditoria permanece em curso. Esta publicação não executou testes nem alterou código. O inventário individual e qualquer decisão de eliminação/fusão documental continuam pendentes.
+
+
+## Etapa 2 — inventário individual e reconciliação de estado (2026-11-20)
+
+- HEAD de entrada: `6fdb4060a8fdb2de8aec9080620b91b4c9fa89f5`.
+- Inventário inicial: 83 ficheiros Markdown/texto; após criar o próprio inventário, total: 84.
+- Criado `docs/governance/document-inventory.md`, com classe e tratamento recomendado para cada ficheiro.
+- Atualizados avisos de precedência/estado em Scanner PROJECT-STATUS, open-decisions, product-boundaries, P2.B, receipt recovery/host, Incremento C, RAG e roadmap.
+- Corrigido `PhcKnowledgeScanner/samples/README.md` para refletir a estrutura realmente versionada.
+- Confirmado no código da branch que existem endpoints/serviços/Portal/testes de decisão do Incremento C; a existência dos ficheiros prova implementação parcial, não conclusão funcional total.
+- Sem alterações de código, sem builds/testes e sem eliminação de documentos.
+- Commit desta etapa: `070e456b06f7054c0764a3f4cac6532150381743`.

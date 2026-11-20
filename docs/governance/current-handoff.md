@@ -6,7 +6,9 @@
 - Data: 2026-11-20
 - Repositório: Jhouinho/PhcKnowledge
 - Branch: feature/increment-c-package-import-analysis-confirmation
-- HEAD no início da atualização documental: 9a9df92ff82a98eafa2a5c1ff5134d8226ea7ce5
+- HEAD no início da primeira atualização documental: 9a9df92ff82a98eafa2a5c1ff5134d8226ea7ce5
+- Commit da baseline canónica: 7d60259e49ddab5c1b304035f3790e7e7b53d5c4.
+- Commit do inventário e reconciliação documental: 070e456b06f7054c0764a3f4cac6532150381743.
 - Commit principal que publicou a baseline e as regras de continuidade: 7d60259e49ddab5c1b304035f3790e7e7b53d5c4.
 - Este handoff foi atualizado após esse commit. Para o HEAD exato mais recente, consultar a referência remota desta branch; não assumir que o commit principal continua a ser o HEAD.
 - Estado local do Cursor: não observado; este handoff descreve apenas o estado GitHub.
@@ -33,7 +35,7 @@ Consolidar a fonte de contexto partilhada para que ChatGPT e Cursor iniciem tare
 - RAG é objetivo futuro; tecnologia por decidir.
 
 ## Auditoria
-A auditoria documental/técnica continua em curso. O inventário de 79 documentos foi identificado antes desta atualização. Esta publicação atualiza fontes canónicas e corrige contradições prioritárias; não conclui a classificação individual de todos os documentos e não remove documentação histórica.
+A auditoria documental/técnica continua em curso. Foi criado `docs/governance/document-inventory.md`, com classificação individual dos 84 ficheiros Markdown/texto presentes após esta publicação. A classificação define destino de manutenção; não equivale a validação integral de todas as afirmações técnicas. Não foi apagada documentação histórica.
 
 ## Próximo passo
 1. Confirmar o HEAD remoto e manter esta referência de handoff atualizada em cada sessão.
@@ -44,3 +46,12 @@ A auditoria documental/técnica continua em curso. O inventário de 79 documento
 
 ## Instrução para a próxima ferramenta
 Ler docs/governance/README.md, PROJECT_BASELINE.md, DECISIONS.md, PROJECT_STATUS.md e este ficheiro. Confirmar branch/HEAD/estado local antes de tocar no código. Não assumir que alterações locais do Cursor estão no GitHub.
+
+
+## Segunda etapa da auditoria — 2026-11-20
+
+- Inventário de 84 ficheiros concluído e versionado.
+- Dez documentos com contradições prioritárias receberam notas de precedência/estado ou correção do índice de samples.
+- `PhcKnowledgeScanner/docs/open-decisions.md` foi identificado como checklist histórica; não assumir que os itens não assinalados continuam abertos.
+- O desenho do Incremento C foi reconciliado com a implementação visível na branch, sem declarar concluída toda a experiência.
+- Nenhum código foi alterado e nenhum teste foi executado nesta etapa.
