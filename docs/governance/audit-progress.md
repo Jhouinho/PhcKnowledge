@@ -133,3 +133,10 @@ A auditoria permanece em curso. Esta publicação não executou testes nem alter
 - A inspeção de títulos, notas de precedência e referências a tecnologia/estado foi feita sobre os documentos versionados; a classificação individual existe. Isto não equivale ainda a uma validação semântica exaustiva de cada afirmação técnica em todos os 86 ficheiros.
 - Permanecem por concluir: reconciliação técnica dos collectors/mapeamentos IKP e testes por operação; PHC Standard Catalog; estratégia de pesquisa; validação completa da especificação de Portal; fecho do contrato de materialização e política operacional para tentativas `NeedsAttention` sem bytes recuperáveis.
 - Nenhum código, migration, teste ou artefacto de captura foi alterado/executado nesta etapa. Não foram eliminados documentos nem ZIPs.
+
+
+### Ajustes de precedência adicionais
+
+- `PhcKnowledgeScanner/docs/open-decisions.md` já contém nota explícita de que é uma checklist histórica, não um backlog atual; manter as questões não assinaladas sem as reabrir automaticamente.
+- `PhcKnowledgeScanner/docs/decisions/0003-independence.md` foi marcado como histórico: o repositório separado foi substituído pelo monorepo, mantendo-se a autonomia de execução e responsabilidade do Scanner.
+- `docs/architecture/portal-frontend-architecture-spike-2026-11-19.md` recebeu nota de precedência porque descrevia um estado anterior à criação do frontend React.
