@@ -96,3 +96,17 @@ D-016 fecha a regra funcional de captura completa e escrita incremental. Não ap
 Esses pontos continuam sujeitos a desenho técnico e aprovação antes de implementação.
 
 **Estado de implementação:** não implementado. Esta publicação atualiza apenas a documentação; não altera código, schemas, migrations ou testes.
+
+## 8. Evidência técnica atual para campos `u_*`
+
+A auditoria do código atual confirmou que:
+
+- cada campo `u_*` é recolhido de `sys.columns` e recebe um ficheiro descritivo `.txt` no workspace;
+- os mesmos dados principais também são guardados em `SummaryJson` e projetados para o Object Index;
+- o `MetadataFingerprint` cobre schema, tabela, coluna, tipo, comprimento, precisão, escala e nulabilidade;
+- existe `SourceIdentity` baseada em `sqlserver.column_id`, scoped à base de dados e ao `object_id` da tabela pai. Na materialização, deve ser combinada com a identidade da instalação;
+- o resolver classifica corretamente a definição do campo como `NotCollected`, pois o ficheiro é descritivo e não a definição original da coluna.
+
+O workspace não possui atualmente um purpose/role semântico explícito para este ficheiro e o exporter atribui-lhe `source-definition` por omissão. O desenho futuro deverá introduzir uma classificação explícita e preservar o ficheiro no ZIP; não deve inferir a finalidade apenas a partir do nome/extensão do caminho.
+
+Esta evidência é uma fotografia do código auditado, não uma autorização para alterar o collector ou o contrato nesta etapa.
