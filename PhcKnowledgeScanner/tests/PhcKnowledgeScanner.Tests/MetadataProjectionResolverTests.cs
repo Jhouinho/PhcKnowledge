@@ -108,6 +108,7 @@ public sealed class MetadataProjectionResolverTests
 
         Assert.Null(result.DiagnosticCode);
         using var metadata = JsonDocument.Parse(result.Metadata.GetRawText());
+        using var fingerprint = JsonDocument.Parse(result.FingerprintProjection!.Value.GetRawText());
         Assert.Equal("dbo", metadata.RootElement.GetProperty("triggerSchema").GetString());
         Assert.Equal("tr_test", metadata.RootElement.GetProperty("triggerName").GetString());
         Assert.Equal("dbo", metadata.RootElement.GetProperty("parentSchema").GetString());
@@ -115,6 +116,9 @@ public sealed class MetadataProjectionResolverTests
         Assert.True(metadata.RootElement.GetProperty("isInsteadOf").GetBoolean());
         Assert.Equal(new[] { "INSERT", "UPDATE" },
             metadata.RootElement.GetProperty("events").EnumerateArray().Select(x => x.GetString()).ToArray());
+        Assert.True(fingerprint.RootElement.GetProperty("isInsteadOf").GetBoolean());
+        Assert.Equal(new[] { "INSERT", "UPDATE" },
+            fingerprint.RootElement.GetProperty("events").EnumerateArray().Select(x => x.GetString()).ToArray());
     }
 
     [Theory]
