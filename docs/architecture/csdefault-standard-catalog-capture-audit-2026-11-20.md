@@ -102,7 +102,7 @@ As 19 definições PHC transportadas distribuem-se por FORMB (1), FORMC (11), FT
 
 ### REL / DTL
 
-A captura contém 295 registos `REL` e 626 registos `DTL`, num total de 921 relações declaradas. O workspace tem 921 interpretações persistidas. A tabela `relations` de relações derivadas tem zero registos.
+A captura contém 295 registos `REL` e 626 registos `DTL`, num total de 921 relações declaradas. O workspace tem 921 interpretações persistidas. A tabela `relations` de relações derivadas tem zero registos. Todas as 921 interpretações estão em estado `Parsed`: 908 com confiança `High` e 13 com confiança `Medium`. As 13 de confiança média apresentam 15 diagnósticos `NameMismatch`; há ainda 6 diagnósticos `UnqualifiedField` em relações com confiança alta. Os endpoints das 921 relações estão associados a tabelas no inventário.
 
 Por D-015, REL/DTL pertencem ao PHC Standard Catalog, como conhecimento comum versionado, e não ao conjunto de personalizações a recolher integralmente em cada captura futura. Estes dados da CS Default são uma fonte de referência para a primeira construção do catálogo.
 
@@ -152,3 +152,10 @@ O manifesto IKP regista `versionProperty=957` no metadado da base, mas não forn
 - Nenhum código, schema, migration, collector ou teste foi alterado.
 - Não foram executados builds, testes ou consultas à base SQL Server.
 - Não foi publicado qualquer dado de cliente; o relatório regista apenas metadados e contagens da fonte de referência.
+
+
+### Qualidade da interpretação REL/DTL — análise adicional (2026-11-20)
+
+A consulta ao workspace SQLite da captura de 16-11 confirmou que as 921 relações têm estado `Parsed`: 908 com confiança `High` e 13 com confiança `Medium`. As 13 de confiança média têm 15 diagnósticos `NameMismatch` (qualificadores da expressão não coincidem com os nomes declarados); existem ainda 6 diagnósticos `UnqualifiedField` em relações com confiança alta. Não foram encontrados registos de interpretação não analisada.
+
+Os endpoints das 921 relações têm associação a tabelas no inventário. A confiança da interpretação da expressão deve, contudo, continuar separada da resolução dos endpoints. Para o catálogo, preservar sempre: registo REL/DTL original, expressão original, AST/interpretação, versão do parser, confiança e diagnósticos. Não descartar nem reescrever automaticamente as 13 relações de confiança média ou os 6 avisos de campo sem qualificador.
