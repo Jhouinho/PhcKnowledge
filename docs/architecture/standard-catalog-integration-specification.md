@@ -395,7 +395,7 @@ Esta especificação não aprova:
 
 ## 14. Adenda — resultados da auditoria da Fase 0 (2026-11-20)
 
-Esta secção regista evidência adicional da auditoria read-only. Em caso de divergência, prevalece sobre as decisões ainda pendentes da secção 11. Continua a ser uma proposta técnica: não autoriza implementação.
+Esta secção regista evidência adicional da auditoria e as decisões expressamente aprovadas pelo utilizador em 2026-11-20. Em caso de divergência, prevalece sobre o texto histórico das secções anteriores.
 
 ### 14.1 Fonte standard e ciclo de vida do ficheiro
 
@@ -422,17 +422,17 @@ A auditoria dos schemas, exporter e leitor/validador confirmou:
 - O leitor/validador preserva a versão declarada e não impõe que seja `1.0`.
 - O Object Index referencia a operação; não exige uma nova versão global do IKP.
 
-**Recomendação:** manter o identificador lógico `sql.server.structure.triggers` e evoluir a sua capabilityVersion:
+**Decisão aprovada pelo utilizador (2026-11-20):** manter o identificador lógico `sql.server.structure.triggers` e evoluir a sua capabilityVersion:
 - `1.0`: semântica histórica, limitada a triggers em tabelas `u_*`;
 - `2.0`: inventário de triggers DML associadas a tabelas, sem filtro pelo prefixo do nome da tabela, com metadados de parent, eventos, `is_disabled`, `is_instead_of_trigger` e estado da definição.
 
 O schema global mantém-se em **IKP 0.1**. Não é necessária uma nova operação para distinguir estas duas semânticas. A implementação terá, contudo, de deixar de obter a versão de todas as operações exclusivamente de `KnownOperations.Version` e permitir a versão específica desta capability. A coverage deve repetir a versão declarada. O futuro materializador tem de interpretar a versão: uma captura 1.0 nunca pode provar ausência de triggers standard.
 
-Esta opção é preferível a criar uma segunda operação porque preserva a identidade lógica já existente, mantém a semântica histórica identificável e evita duas operações concorrentes para o mesmo inventário. É uma recomendação para aprovação, não uma alteração já implementada.
+Esta opção preserva a identidade lógica já existente, mantém a semântica histórica identificável e evita duas operações concorrentes para o mesmo inventário. A decisão está aprovada; a alteração de código pertence à Fase 1.
 
 ### 14.3 Identidade e evidência
 
-Não foi identificado um stamp PHC estável aplicável à identidade das triggers SQL. A chave lógica recomendada para matching é:
+Não foi identificado um stamp PHC estável aplicável à identidade das triggers SQL. A chave lógica aprovada para matching é:
 - tipo/kind do objeto (`SQL Trigger`);
 - schema da trigger;
 - nome da trigger;
@@ -453,7 +453,7 @@ Mantêm-se os quatro estados:
 
 `sys.sql_modules.definition IS NULL` não prova, isoladamente, encriptação. Sem diagnóstico adicional fiável, o resultado é `Unavailable`, sem inventar a causa.
 
-O hash SHA-256 da definição original mantém-se exato, calculado sobre os bytes preservados, para integridade e proveniência. Não deve ser alterado por canonicalização. Se for necessária comparação semântica/representacional, deverá existir um fingerprint separado, versionado e calculado por uma política lexical T-SQL testada, preservando strings, identificadores delimitados, operadores e estrutura. A equivalência não pode ser inferida apenas pelo nome ou pela tabela pai. Quando a definição instalada está indisponível, o resultado é `DefinitionUnverifiable`, mesmo que a identidade corresponda.
+O hash SHA-256 da definição original mantém-se exato, calculado sobre os bytes preservados, para integridade e proveniência. Não deve ser alterado por canonicalização. **Abordagem aprovada pelo utilizador (2026-11-20):** criar um fingerprint de comparação separado, versionado e calculado por uma política lexical T-SQL testada, preservando strings, identificadores delimitados, operadores e estrutura. A implementação da política lexical concreta e os respetivos testes são trabalho técnico da Fase 1; não se assume equivalência até esses testes demonstrarem os limites suportados. A equivalência nunca pode ser inferida apenas pelo nome ou pela tabela pai. Quando a definição instalada está indisponível, o resultado é `DefinitionUnverifiable`, mesmo que a identidade corresponda.
 
 ### 14.5 Limites da validação da fonte
 
@@ -466,11 +466,11 @@ A fonte é registada como referência **CS Default 202603**. Não generalizar a 
 | Tema | Resultado |
 |---|---|
 | Versão da fonte | Confirmada: CS Default 202603 |
-| Identidade | Proposta: kind + schema/nome da trigger + schema/nome da tabela pai |
-| Capability | Recomendação: operação existente, versão 2.0; IKP mantém 0.1 |
+| Identidade | **Aprovada:** kind + schema/nome da trigger + schema/nome da tabela pai |
+| Capability | **Aprovada:** operação existente, versão 2.0; IKP mantém 0.1 |
 | Definição indisponível | Contrato fechado com Available / Unavailable / NotCollected / Empty |
-| Fingerprint | SHA-256 original exato; fingerprint de comparação separado e versionado, algoritmo ainda por fixar |
+| Fingerprint | **Abordagem aprovada:** SHA-256 original exato + fingerprint de comparação separado e versionado; algoritmo concreto a implementar e testar |
 | Proveniência/curadoria | Fonte temporária; persistir origem/hash/processo e exigir validação humana |
 | Remoção da fonte | Apenas após importação integral, reconciliação e consulta no Portal sem dependência do ficheiro |
 
-Permanecem por aprovar antes da Fase 1: a recomendação de capability 2.0, a chave de matching proposta e a política/algoritmo concreto do fingerprint de comparação. A Fase 1 continua bloqueada até aprovação explícita. Não foram alterados código, schemas, SQLite, migrations ou testes nesta auditoria.
+**Decisões aprovadas pelo utilizador em 2026-11-20:** (1) capability existente `sql.server.structure.triggers` versão 2.0, preservando 1.0 e mantendo IKP 0.1; (2) chave de matching kind + schema/nome da trigger + schema/nome da tabela pai; (3) fingerprints separados, mantendo SHA-256 exato dos bytes originais e adotando fingerprint de comparação versionado com normalização lexical T-SQL testada. A Fase 0 fica encerrada. A Fase 1 — Scanner fica autorizada a avançar, começando pela especificação de implementação e testes do contrato 2.0; a implementação deve respeitar as compatibilidades aqui definidas. A remoção do ficheiro SQL de referência continua condicionada à importação integral, reconciliação e validação no Portal. Esta atualização documental não altera, por si só, código, schemas, SQLite, migrations ou testes.
