@@ -132,7 +132,7 @@ Antes de iniciar uma tarefa, ler PROJECT_BASELINE.md, DECISIONS.md, este ficheir
 - Object Index: 16.618 objetos (8.294 tabelas, 8.268 PK, 36 procedures e 19 objetos PHC de outros tipos); 49 definições disponíveis e 6 indisponíveis.
 - Cobertura estrutural: zero FK, views e triggers; sem inventário de colunas/índices. As tabelas têm metadados básicos; as PK incluem apenas as suas colunas.
 - 30 definições SQL são procedures `dbo.dt_*` de suporte SQL Server; 6 procedures `usp_*` não têm definição disponível. 19 artefactos PHC (FORMB, FORMC, FTU e teclas).
-- REL/DTL: 295 + 626 = 921 factos; 921 interpretações no workspace, mas o pacote IKP de 16-11 não inclui artefacto autónomo de interpretações. O pacote de 10-11 incluía-o; diferença pendente de reconciliação.
+- REL/DTL: 295 + 626 = 921 factos; 921 interpretações no workspace, mas o pacote IKP de 16-11 não inclui artefacto autónomo de interpretações. O pacote de 10-11 incluía-o; diferença pendente de reconciliação. As 921 interpretações estão `Parsed`: 908 High e 13 Medium; existem 15 diagnósticos NameMismatch e 6 UnqualifiedField. Preservar expressão original, interpretação, confiança e diagnósticos.
 - `docs/sources/triggers phc.sql` contém 552 triggers standard; a operação SQL da captura observou zero triggers. Tratar como fontes distintas.
 - O código já tem Database Schema Snapshot separado, com colunas, índices, FK e outros objetos; esse snapshot não está no ZIP de 16-11. Não pedir nova execução sem localizar primeiro eventual ficheiro já enviado.
 - Relatório: `docs/architecture/csdefault-standard-catalog-capture-audit-2026-11-20.md`. Sem alterações de código ou testes.
