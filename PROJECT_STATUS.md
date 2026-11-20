@@ -36,7 +36,7 @@ A direção aprovada está em PROJECT_BASELINE.md e DECISIONS.md: ferramenta int
 - As sete operações SQL Server são mecanismos de descoberta da estrutura física (base de dados, tabelas, PK, FK, views, procedures e triggers). Não implicam exportar indiscriminadamente todos os objetos standard. A comparação com PHC Standard e a classificação de diferenças ainda não estão implementadas.
 - A matriz de auditoria encontrou testes de resolução, projeção, parsing, persistência e exportação sintética; não encontrou testes diretos que executem os collectors reais contra SQL Server e validem individualmente as 23 operações.
 - Database Schema Snapshot é funcionalidade auxiliar separada do fluxo normal de captura.
-- Auditoria da exportação: artefactos são ficheiros separados do SQLite; o exporter verifica SHA-256/tamanho e existe round-trip sintético C# + validador Python em CI. Foi encontrada uma divergência para o artefacto descritivo de `phc.user_field`, incluído como `source-definition` apesar de o Object Index o marcar `NotCollected`; decisão pendente. O ZIP real do harness ainda não tem proveniência comprovada face ao exporter atual.
+- Auditoria da exportação: artefactos são ficheiros separados do SQLite; o exporter verifica SHA-256/tamanho e existe round-trip sintético C# + validador Python em CI. Foi encontrada uma divergência para o artefacto descritivo de `phc.user_field`: deve continuar a ser transportado em todas as capturas, mas não pode ser classificado como `source-definition` quando representa apenas metadados. A decisão funcional D-016 determina captura completa e materialização incremental no destino; falta definir o papel de manifesto/schema para esta evidência. O ZIP real do harness ainda não tem proveniência comprovada face ao exporter atual.
 
 ### PHC Standard Catalog
 - Existe src/PhcKnowledge.StandardCatalog, com parser de batches T-SQL, extração de definições CREATE TRIGGER e testes dedicados.
@@ -81,7 +81,7 @@ A divergência entre ZIP temporário e arquivo permanente está analisada em [ik
 - Não foi identificada no percurso de importação inspecionado uma camada de materialização dos objetos, metadados, artefactos e relações em conhecimento pesquisável.
 - Receipt Completed, Analysis persisted e Decision Confirmed não provam materialização concluída.
 - Criada a proposta não aprovada `docs/architecture/ikp-materialization-contract-proposal-2026-11-20.md`. Define vínculo com a decisão/fingerprint, entidades lógicas, estados separados de materialização e eliminação, critérios de verificação e recovery.
-- Permanecem por decidir destino durável dos bytes dos artefactos, granularidade transacional, política para pacotes rejeitados/blocked, reanálise futura e retenção.
+- Destino dos bytes dos artefactos aprovado para V1: SQL Server `varbinary(max)`, em entidade própria; retenção inicial de Rejected aprovada em 30 dias configuráveis; isolamento físico por OrganizationId + PackageId aprovado. Permanecem por fechar granularidade transacional, tratamento de `NeedsAttention` sem bytes recuperáveis, reanálise após eliminação e retenção dos registos de conhecimento.
 - Nenhuma implementação foi alterada e nenhum teste/build foi executado nesta etapa.
 
 ## 5. Próximos passos recomendados
@@ -95,3 +95,12 @@ A divergência entre ZIP temporário e arquivo permanente está analisada em [ik
 ## 6. Regra de leitura
 
 Antes de iniciar uma tarefa, ler PROJECT_BASELINE.md, DECISIONS.md, este ficheiro e docs/governance/current-handoff.md; depois consultar contratos técnicos relevantes e confirmar o código na branch efetiva.
+
+
+### Decisão D-016 — captura completa e materialização incremental (2026-11-20)
+- O Scanner transporta sempre a captura completa, incluindo artefactos descritivos; não depende de scans anteriores.
+- O PHC Knowledge compara no destino, por instalação: conteúdo idêntico não volta a ser gravado; conteúdo novo é inserido; conteúdo alterado origina nova versão.
+- Cada captura e observação mantém proveniência mesmo quando o conteúdo já existe e não precisa de nova escrita. A ausência numa captura posterior não elimina automaticamente conhecimento anterior.
+- O ficheiro descritivo de `phc.user_field` mantém-se no ZIP, mas deverá ter papel de evidência/metadados distinto de `source-definition`.
+- Regras e limites publicados em `docs/architecture/ikp-incremental-materialization-policy-2026-11-20.md`.
+- Estado: decisão funcional aprovada; desenho técnico e implementação pendentes. Nenhum código, schema, migration ou teste foi alterado nesta atualização.
