@@ -237,3 +237,14 @@ A revisão dos restantes artefactos especiais do collector PHC identificou dois 
 - É necessário desenhar a preservação separada do valor original de `prop` e da expressão extraída/formatada. Não alterar o collector nesta etapa.
 
 **Conclusão:** a classificação de artefactos precisa de distinguir, pelo menos, definição original, representação derivada e evidência/configuração descritiva. A decisão D-016 exige transportar a captura completa; não autoriza eliminar ficheiros que contenham dados que ainda não estejam representados no Object Index. O desenho de roles e a cobertura de dados devem ser fechados por tipo de objeto antes de qualquer alteração.
+
+
+### Extensão da matriz de artefactos — CSSJS, ESCR e definição projetada (2026-11-20)
+
+- **CSSJS:** o artefacto contém os campos originais `source` e `sourcedefault` (quando presentes), mais cabeçalho; o Object Index não contém esses corpos. É conteúdo-fonte Web e deve continuar transportado.
+- **ESCR:** o artefacto preserva os campos originais `expressao`, `cmen` e `cmenhtml` (quando presentes), mais metadados de contexto; o Object Index contém apenas uma parte dos metadados. É evidência de script/conteúdo Web, não apenas metadata.
+- **JSU:** o artefacto contém JavaScript original mais cabeçalho; o Object Index não contém o corpo do script.
+- **FORMB:** o artefacto é descritivo/configuracional, não contém uma definição de código. Apesar disso, o resolver atual trata qualquer objeto `phc.*` com artefacto como `Available`, exceto os kinds explicitamente em `NotCollectedKinds`; logo, `PhcCustomScreen` é atualmente projetado como definição disponível. Esta semântica precisa de revisão.
+- **FORMC:** o artefacto contém uma representação formatada/derivada de `Xexpressao`; o original completo `prop` não é guardado. O resolver atual também o trata como definição disponível. A futura projeção deve distinguir original de derivado.
+
+A matriz já evidencia pelo menos três finalidades diferentes: definição/conteúdo-fonte original, representação derivada e evidência/configuração descritiva. Não assumir que `DefinitionArtifactId` significa sempre definição original. Não alterar o código nesta etapa.
