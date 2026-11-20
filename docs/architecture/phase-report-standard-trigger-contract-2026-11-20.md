@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Data | 2026-11-20 |
-| Estado | Auditoria concluída; decisões técnicas propostas aguardam aprovação |
+| Estado | Fase 0 encerrada; três decisões aprovadas; Fase 1 autorizada |
 | Referência PHC | CS Default 202603 |
 | Documento consolidado | [Integração do catálogo PHC Standard com o IKP](standard-catalog-integration-specification.md) |
 
@@ -18,14 +18,18 @@ A Fase 0 consolidou a evidência necessária para definir a integração das tri
 - A chave de matching proposta é kind + schema/nome da trigger + schema/nome da tabela pai. Eventos e estados são metadados de comparação; `object_id` é apenas evidência local da captura.
 - A indisponibilidade da definição não deve ser confundida com encriptação sem evidência. O hash original mantém-se exato; eventual fingerprint de comparação será separado e versionado.
 
-## Decisões ainda necessárias
+## Decisões registadas e aprovadas
 
-1. Aprovar a evolução da capability existente para versão 2.0.
-2. Aprovar a chave de matching proposta.
-3. Aprovar a política de comparação SQL, depois de definido e testado o algoritmo concreto.
+Em 2026-11-20, o utilizador aprovou expressamente:
+
+1. **Capability:** manter `sql.server.structure.triggers`, preservar `1.0` para o âmbito histórico `u_*` e evoluir para `2.0` para triggers DML em tabelas sem filtro `u_*`, mantendo IKP 0.1.
+2. **Identidade:** kind + schema/nome da trigger + schema/nome da tabela pai. Eventos e estado são metadados de comparação; `object_id` é auxiliar e local à captura.
+3. **Comparação SQL:** manter SHA-256 exato dos bytes originais e criar fingerprint de comparação separado, versionado, baseado em normalização lexical T-SQL testada.
+
+O algoritmo lexical concreto ainda tem de ser especificado, implementado e testado; a aprovação incide sobre a abordagem e os seus princípios de preservação.
 
 ## Reflexão e próximo passo
 
 A auditoria permitiu fechar a compatibilidade estrutural do IKP sem alterar o contrato global 0.1. A principal cautela é preservar a diferença entre inventário antigo limitado a `u_*` e inventário alargado, para que capturas antigas nunca sejam interpretadas como prova de ausência de triggers standard.
 
-O próximo passo é obter aprovação das três decisões acima. Só depois poderá começar a Fase 1 (Scanner). Esta fase não alterou código, schemas, SQLite, migrations ou testes.
+A Fase 0 está encerrada e a Fase 1 (Scanner) está autorizada. O primeiro trabalho da Fase 1 é detalhar o contrato 2.0, os estados/campos exportados, a cobertura e os testes de compatibilidade; depois implementar e validar com uma captura real. A remoção de `docs/sources/triggers phc.sql` continua bloqueada até a importação integral estar persistida e reconciliada no SQL Server do Portal. A atualização documental não alterou código, schemas, SQLite, migrations ou testes.
