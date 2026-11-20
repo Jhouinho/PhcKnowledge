@@ -13,6 +13,7 @@ public static class KnownOperations
     public const string SqlViews = "sql.server.structure.views";
     public const string SqlProcedures = "sql.server.structure.procedures";
     public const string SqlTriggers = "sql.server.structure.triggers";
+    public const string SqlTriggersVersion = "2.0";
 
     // phc.customizations
     public const string PhcBrule = "phc.customizations.brule";
