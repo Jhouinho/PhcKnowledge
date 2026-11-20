@@ -1,5 +1,8 @@
 # IKP — Proposta de contrato de materialização
 
+> **Precedência — decisão D-015 (2026-11-20):** referências nesta proposta à materialização de REL/DTL como conteúdo de cada captura refletem o payload legado atualmente emitido pelo Scanner. As relações PHC standard pertencem ao PHC Standard Catalog, como conhecimento comum versionado por aplicabilidade PHC; não devem ser materializadas repetidamente como observações específicas de cada instalação. O payload REL/DTL legado poderá servir como evidência para comparação futura, mas não deve ser tratado automaticamente como personalização nem promovido a conhecimento standard a partir de uma captura. O mecanismo de deteção e materialização de diferenças locais continua por definir.
+
+
 **Estado:** proposta técnica em atualização; armazenamento de artefactos aprovado para V1; retenção inicial de rejeitados aprovada em 30 dias, configurável.  
 **Data:** 2026-11-20  
 **Branch auditada:** `feature/increment-c-package-import-analysis-confirmation`  
