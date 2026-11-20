@@ -222,3 +222,5 @@ Reconciliar o snapshot estrutural de colunas/índices/FK com os ficheiros já en
 A consulta ao workspace SQLite da captura de 16-11 confirmou que as 921 relações têm estado `Parsed`: 908 com confiança `High` e 13 com confiança `Medium`. As 13 de confiança média têm 15 diagnósticos `NameMismatch` (qualificadores da expressão não coincidem com os nomes declarados); existem ainda 6 diagnósticos `UnqualifiedField` em relações com confiança alta. Não foram encontrados registos de interpretação não analisada.
 
 Os endpoints das 921 relações têm associação a tabelas no inventário. A confiança da interpretação da expressão deve, contudo, continuar separada da resolução dos endpoints. Para o catálogo, preservar sempre: registo REL/DTL original, expressão original, AST/interpretação, versão do parser, confiança e diagnósticos. Não descartar nem reescrever automaticamente as 13 relações de confiança média ou os 6 avisos de campo sem qualificador.
+
+- HEAD remoto após a última consolidação da auditoria e da qualidade REL/DTL (imediatamente antes deste handoff): `48cd08d4310ad29b501ef355b7ab664378d1ae78`.
