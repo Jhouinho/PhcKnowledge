@@ -791,8 +791,8 @@ public sealed class SqlServerStructureCollector : ICollector
         string triggerName,
         string parentSchema,
         string parentName)
-        => $"trigger:{Uri.EscapeDataString(triggerSchema)}.{Uri.EscapeDataString(triggerName)}@"
-            + $"{Uri.EscapeDataString(parentSchema)}.{Uri.EscapeDataString(parentName)}";
+        => "trigger:" + JsonSerializer.Serialize(
+            new[] { triggerSchema, triggerName, parentSchema, parentName });
 
     private static async Task<string> SaveDefinitionAsync(
         ScanContext context,
