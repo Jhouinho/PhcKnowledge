@@ -40,19 +40,26 @@ Observações privadas não se tornam conhecimento global por aparecerem em vár
 
 ### PhcKnowledgeScanner
 - Componente autónomo, versionado neste monorepo, com solução, testes e execução próprios.
-- Executa no ambiente do cliente e consulta a base PHC em modo read-only.
+- Executa no servidor/ambiente do cliente e consulta a base PHC em modo read-only.
 - Recolhe inventário e personalizações dentro das operações e limites documentados.
 - Mantém workspace SQLite local e artefactos locais.
-- Emite pacotes IKP 0.1.
-- Não depende do backend Knowledge em runtime e não mantém a base central.
+- Emite pacotes IKP 0.1 em ZIP.
+- Não envia o ZIP diretamente para o PHC Knowledge, não depende do backend Knowledge em runtime e não mantém a base central.
 
 ### PHC Knowledge
-- Recebe e valida pacotes IKP.
+- Recebe manualmente, através do Portal, os pacotes IKP transferidos pelo operador a partir do ambiente do cliente.
 - Analisa o conteúdo, apresenta evidências e suporta decisões humanas.
 - Materializa no SQL Server central a informação necessária ao modelo de conhecimento, com proveniência.
 - Não executa o Scanner nem acede diretamente ao workspace SQLite.
 
 ## 5. Ciclo de vida do pacote
+
+O percurso operacional aprovado é manual e separado em dois ambientes:
+1. O Scanner é executado no servidor/ambiente do cliente e gera o ZIP IKP.
+2. O operador transfere manualmente esse ZIP para um ambiente a partir do qual consegue aceder ao PHC Knowledge.
+3. O operador autentica-se no Portal e faz o upload manual do ZIP.
+
+Não existe comunicação direta entre o Scanner e o PHC Knowledge, nem o Scanner necessita de credenciais ou conectividade com o servidor central.
 
 O ZIP IKP é um meio temporário de transporte, não o arquivo permanente do conhecimento.
 
