@@ -49,6 +49,46 @@ A proposta abaixo cria esse quarto conceito sem alterar retroativamente o signif
 
 `MaterializationReadinessEvaluator` avalia integridade, compatibilidade, issues e coverage. O nome indica prontidão para materializar, não prova de materialização. Ready significa que a análise não encontrou blockers segundo as regras atuais; não significa que todos os dados tenham sido escritos na base central.
 
+
+### 2.5 Armazenamento real, leitura e recuperação do ZIP — auditoria de código (2026-11-20)
+
+A inspeção de `PhcKnowledge.Import`, `PhcKnowledge.Host` e da migration `002_package_receipt_attempts.sql` confirmou o seguinte percurso:
+
+**Receção e arquivo**
+- `IkpPackageIngestionService` recebe o upload para um ficheiro temporário em `Storage:StagingDirectory`, calcula SHA-256/tamanho e valida o pacote.
+- Antes de arquivar, cria/recupera uma tentativa durável em SQL Server (`PackageReceiptAttempts`), incluindo OrganizationId, PackageId, CaptureId, SHA-256, tamanho, StorageKey e StagingKey.
+- `FileSystemImmutablePackageStore` guarda o ZIP em `Storage:ArchiveDirectory`, numa estrutura content-addressed `sha256/{prefix}/{hash}.ikp.zip`.
+- O arquivo valida novamente o hash e tamanho antes da cópia e depois da cópia temporária. Não substitui um objeto existente; se já existir, volta a verificar a integridade.
+- Após criar o objeto, aplica o atributo de só de leitura. A chave de arquivo é determinística e derivada do SHA-256.
+- A conclusão da tentativa e a criação do Receipt são feitas numa transação SQL Server, com validação de lease. O filesystem e o SQL Server não partilham uma transação distribuída; a recuperação explícita cobre essa fronteira.
+
+**Recuperação operacional**
+- `PackageReceiptRecoveryService` tenta concluir tentativas pendentes usando o staging preservado ou, se este já não existir, verificando se o objeto content-addressed já foi arquivado.
+- As leases são renovadas durante operações longas. Falhas transitórias são reagendadas; falhas permanentes passam a `NeedsAttention`.
+- O host executa o worker de recuperação periodicamente (configuração por omissão: 60 segundos; lease: 300 segundos).
+- `PackageStagingCleanupService` remove apenas ficheiros temporários antigos não referenciados por tentativas `PendingArchive` ou `NeedsAttention`. A retenção por omissão é 24 horas.
+- Esta limpeza não percorre nem elimina o arquivo content-addressed.
+
+**Leitura para análise**
+- `IkpPackageAnalysisService` exige Receipt concluído e usa `IRecoverableImmutablePackageStore.OpenArchivedPackageReadAsync`.
+- A leitura verifica SHA-256 e tamanho no stream e reposiciona-o no início antes de o entregar ao leitor IKP.
+- A análise persistida é reutilizada quando existe uma linha compatível; nessa situação não é necessário reabrir o ZIP. Se ainda não existir análise, o serviço depende do ZIP arquivado para a calcular.
+- O GET da análise lê a análise persistida e não abre o ZIP, mas continua a exigir o Receipt correspondente.
+
+**Ausências confirmadas no âmbito inspecionado**
+- Não foi encontrada operação de eliminação do arquivo content-addressed, serviço de retenção de ZIP arquivados ou worker de expiração de pacotes.
+- Não foi encontrada capacidade de assinalar um ZIP como eliminado/indisponível no Receipt.
+- Não foi encontrada camada de materialização de conhecimento.
+- A migration `002_package_receipt_attempts.sql` afirma expressamente que o ZIP validado permanece imutável e permanente. Esta afirmação já não corresponde à direção aprovada de ZIP temporário e terá de ser corrigida numa futura alteração de contrato/migration, sem reescrever migrations históricas aplicadas.
+
+**Implicações para o desenho**
+1. A recuperação atual resolve falhas da receção (staging → arquivo → Receipt); não resolve falhas da materialização nem a eliminação segura.
+2. O diretório de arquivo é uma dependência operacional separada do SQL Server. Backups/restauros têm de preservar coerência entre a base de dados e o diretório; restaurar apenas um dos lados pode deixar Receipts sem bytes recuperáveis ou bytes órfãos.
+3. A eliminação futura terá de remover o atributo ReadOnly antes de apagar o ficheiro e tratar concorrência com leituras/recuperação. Não basta executar `File.Delete` sem controlo de estado e verificação posterior.
+4. Como a chave de arquivo é derivada do hash, o mesmo ZIP pode ser referenciado por mais do que um contexto lógico dentro do âmbito permitido. A eliminação física tem de verificar referências/partilha antes de apagar o objeto, mesmo que a unicidade atual de Receipt por organização limite alguns casos.
+5. O Receipt é histórico e contém atualmente StorageKey não anulável. A futura disposição do ZIP deve distinguir a chave histórica/proveniência do estado de disponibilidade física; a interface e os serviços não podem apresentar um StorageKey histórico como prova de que o conteúdo ainda existe.
+6. A política de 30 dias para Rejected é distinta da retenção de staging (24 horas) e da futura eliminação pós-materialização Verified. São três políticas diferentes e não devem partilhar o mesmo worker/regra sem estados e critérios explícitos.
+
 ## 3. Separação de conceitos a preservar
 
 | Conceito | O que prova | O que não prova |
@@ -264,4 +304,4 @@ Até aprovação explícita do contrato de materialização e resolução das qu
 - não adicionar eliminação de ZIP;
 - não alterar o significado de Receipt Completed, Analysis ou Decision Confirmed.
 
-**Próxima ação recomendada:** auditar o mecanismo real de armazenamento, leitura e recuperação do ZIP e dos artefactos; depois fechar a granularidade de batches/checkpoints, o modelo lógico e os estados, antes de implementar.
+**Próxima ação recomendada:** fechar o contrato de disponibilidade/eliminação do ZIP (incluindo referências partilhadas, backups e concorrência de leitura) e a granularidade de batches/checkpoints; depois validar o modelo lógico, antes de implementar.
