@@ -152,6 +152,20 @@ O responsável confirmou a separação arquitetural entre PHC Standard e recolha
 - A comparação com o catálogo standard e a exportação de diferenças específicas ainda não estão implementadas. Até lá, não classificar automaticamente objetos desconhecidos como standard ou personalizados.
 - Nenhum código, schema IKP, migration ou teste foi alterado nesta decisão documental.
 
+## Etapa 7 — cadeia de artefactos, exportação IKP e validação (2026-11-20)
+
+- Inspecionados `CollectedArtifact`, `IScanWorkspace`, `WorkspaceArtifactMetadata`, `SqliteScanWorkspace`, collectors SQL/PHC, `ObjectIndexProjectionInputReader`, `DefinitionProjectionResolver`, `ObjectIndexProjector`, `IkpPackageExporter`, `IkpPackageInspectionEngine`, validadores C#/Python, testes e workflows.
+- Confirmado: os bytes dos artefactos ficam em ficheiros sob `workspace/artifacts`; a SQLite guarda metadata e `objects.definition_artifact_id` liga objetos aos artefactos. O exporter preserva os bytes selecionados e verifica tamanho/SHA-256 antes de os incluir.
+- Confirmado: o reader só lê bytes de artefactos referenciados por objetos; o projector resolve estados de definição separadamente da coverage. Database/table/PK/FK e PHC user fields são `NotCollected` para definição. Para user fields, o collector gera um ficheiro descritivo, explicitamente ignorado pelo resolver como definição original.
+- Achado: o exporter seleciona artefactos a partir de todos os `DefinitionArtifactId` dos objetos, pelo que inclui também o ficheiro descritivo de user fields e declara-o `source-definition`, apesar de o Object Index emitir `NotCollected` e lista de artefactos vazia. Os validadores não rejeitam artefactos do manifesto que não estejam referenciados no Object Index. Requer decisão/ajuste de contrato.
+- Achado secundário: `DefinitionStatus.Empty` está declarado, mas o resolver auditado não emite esse estado. A política para referências com bytes ausentes/hash/tamanho divergentes também merece clarificação: o projector consegue representar `Unavailable`, mas o exporter falha quando tenta incluir a referência original.
+- Confirmado: existe round-trip sintético exporter → validador C# em `PhcKnowledge.Ikp.Integration.Tests` e o workflow `dotnet-scanner.yml` também envia um ZIP sintético para o validador Python independente `validate_ikp_zip.py`. A configuração está versionada; não foi executada nesta auditoria.
+- Evidência real: P1.B documenta 16.618 objetos, 8/21 kinds e 49 artefactos validados no workspace `CSDefault202603`, mas não prova ZIP completo gerado pelo exporter atual. O harness de 18-11 valida um ZIP real na receção, sem provar a proveniência de produção.
+- O exporter atual ainda inclui REL/DTL em `payload/relations/declared-relations.json`; comportamento legado em conflito com D-015, sem alteração nesta etapa.
+- Nenhum código, schema IKP, migration, teste ou captura foi alterado/executado nesta etapa.
+- Próximo passo: fechar a semântica do artefacto descritivo `phc.user_field` e a proveniência/round-trip da captura real antes de decidir alterações ao exporter. Depois atualizar contrato e testes, e só então implementar.
+
+
 ## Etapa 6 — auditoria operação a operação do Scanner/IKP (2026-11-20)
 
 - Confirmado no código o catálogo de 23 operações: 7 SQL Server, 14 personalizações PHC e 2 REL/DTL.
