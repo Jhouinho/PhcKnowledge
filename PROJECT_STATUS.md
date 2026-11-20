@@ -5,7 +5,7 @@
 - Revisão: 2026-11-20
 - Repositório: Jhouinho/PhcKnowledge
 - Branch consultada: feature/increment-c-package-import-analysis-confirmation
-- Commit de referência da inspeção técnica: b22c6fb1e9f954a14d02cfe5b0c903c956d0cff3
+- Commit de referência da inspeção técnica desta etapa: e81c10d80c63414080a64cb5c93ab63a3dd47c31
 - Estado local da máquina do utilizador/Cursor: não observado.
 
 ## 1. Arquitetura
@@ -55,7 +55,7 @@ Resultados CI anteriormente observados no commit cbf3f11ff3d46d5e22e8e46cbd482ce
 
 Estes resultados pertencem ao commit indicado, não são uma execução de testes no HEAD 9a9df92ff82a98eafa2a5c1ff5134d8226ea7ce5. Os 76 testes SQL são integração de receipts/recovery do Knowledge; não provam recolha dos collectors Scanner contra uma instalação PHC.
 
-Captura real anteriormente documentada CSDefault202603: 16.618 objetos, 49 definições, 921 factos REL/DTL e 921 interpretações; 8 dos 21 Object Index kinds presentes. É evidência de uma captura concreta, não prova de cobertura total.
+Captura real CSDefault202603 de 16-11 auditada diretamente: 16.618 objetos, 49 definições disponíveis, 6 indisponíveis, 921 factos REL/DTL e 921 interpretações no workspace; 8 tipos de objeto presentes. O pacote não contém colunas, índices, FK, views ou triggers. Ver relatório `docs/architecture/csdefault-standard-catalog-capture-audit-2026-11-20.md`.
 
 Nesta atualização documental não foram executados testes, builds, SQL nem captura real.
 
@@ -125,3 +125,14 @@ Antes de iniciar uma tarefa, ler PROJECT_BASELINE.md, DECISIONS.md, este ficheir
 - FORMB transporta configuração descritiva; o resolver atual classifica `PhcCustomScreen` como definição `Available`, sem distinguir a semântica do conteúdo.
 - FORMC transporta uma representação formatada de `Xexpressao`; o original `formc.prop` não é preservado no percurso atual. O resolver também o classifica como definição `Available`.
 - A matriz de finalidade dos artefactos continua parcial. `DefinitionArtifactId` não pode ser assumido como sinónimo de definição original.
+
+
+### Auditoria da captura CSDefault202603 — 2026-11-20
+- A captura de 16-11 e a cópia de 18-11 são byte a byte iguais; foi analisado o ZIP exterior com o workspace SQLite que lhe pertence.
+- Object Index: 16.618 objetos (8.294 tabelas, 8.268 PK, 36 procedures e 20 objetos PHC de outros tipos); 49 definições disponíveis e 6 indisponíveis.
+- Cobertura estrutural: zero FK, views e triggers; sem inventário de colunas/índices. As tabelas têm metadados básicos; as PK incluem apenas as suas colunas.
+- 30 definições SQL são procedures `dbo.dt_*` de suporte SQL Server; 6 procedures `usp_*` não têm definição disponível. 19 artefactos PHC (FORMB, FORMC, FTU e teclas).
+- REL/DTL: 295 + 626 = 921 factos; 921 interpretações no workspace, mas o pacote IKP de 16-11 não inclui artefacto autónomo de interpretações. O pacote de 10-11 incluía-o; diferença pendente de reconciliação.
+- `docs/sources/triggers phc.sql` contém 552 triggers standard; a operação SQL da captura observou zero triggers. Tratar como fontes distintas.
+- O código já tem Database Schema Snapshot separado, com colunas, índices, FK e outros objetos; esse snapshot não está no ZIP de 16-11. Não pedir nova execução sem localizar primeiro eventual ficheiro já enviado.
+- Relatório: `docs/architecture/csdefault-standard-catalog-capture-audit-2026-11-20.md`. Sem alterações de código ou testes.
