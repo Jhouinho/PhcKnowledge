@@ -93,3 +93,6 @@ Discutir e decidir o destino dos bytes dos artefactos e a política de disposiç
 
 ### Próximo passo
 Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC Standard Catalog; depois fechar o contrato de materialização e o tratamento de `NeedsAttention`. A auditoria documental ainda não está concluída e não deve ser marcada como tal.
+
+
+- Notas de precedência adicionais publicadas: ADR 0003 do Scanner (repo separado substituído pelo monorepo) e spike de arquitetura do frontend (anterior à existência do React). `open-decisions.md` já estava identificado como checklist histórica, não backlog vigente.
