@@ -152,6 +152,17 @@ O responsável confirmou a separação arquitetural entre PHC Standard e recolha
 - A comparação com o catálogo standard e a exportação de diferenças específicas ainda não estão implementadas. Até lá, não classificar automaticamente objetos desconhecidos como standard ou personalizados.
 - Nenhum código, schema IKP, migration ou teste foi alterado nesta decisão documental.
 
+## Etapa 6 — auditoria operação a operação do Scanner/IKP (2026-11-20)
+
+- Confirmado no código o catálogo de 23 operações: 7 SQL Server, 14 personalizações PHC e 2 REL/DTL.
+- Cruzadas as operações declaradas com os três collectors, fontes SQL, estados obrigatórios/opcionais, ObjectOperationResolver, Object Index, exportador IKP e testes existentes.
+- Mapeamento dos 21 kinds do Object Index tem testes sintéticos; `ObjectOperationResolverTests` cobre as variantes e `ObjectIndexProjectorTests` projeta os 21 kinds. Captura real documentada CSDefault202603: 16.618 objetos, apenas 8/21 kinds presentes; não é validação real de todos os kinds.
+- `IkpPackageExporterTests` valida ZIP e contrato com workspace sintético. Existe também harness que validou um ZIP real `CSDefault202603-ikp.zip` na receção/ingestion do Knowledge; a documentação não prova explicitamente que esse ZIP foi produzido pelo `IkpPackageExporter` atual. `ScanEngineTests` cobre semântica de coverage; não foi encontrada suite de integração SQL dos collectors contra PHC real.
+- Lacunas encontradas: (1) operação FTU inclui funções `Fx_*`/`User_*` de `sys.objects`, mas só corre se `dbo.ftu` existir; (2) `RunOptionalAsync` chama `sourceExistsAsync` fora do try/catch por operação; (3) Probe de personalizações agrega presença de três tabelas core e não verifica individualmente as operações core; (4) coverage de objeto não garante definição disponível — exporter reconcilia estado de definição separadamente.
+- Detalhes e tabela completa das 23 operações publicados em `docs/architecture/ikp-0.1-scanner-compatibility-matrix.md`, secção “Auditoria operacional do Scanner — 2026-11-20”.
+- Nenhum código, migration, teste ou captura foi alterado/executado. As lacunas estão registadas como achados; não foram corrigidas nesta etapa.
+- Próxima verificação: analisar a cadeia de exportação dos artefactos e a correspondência entre 23 operações, objetos, definições e conteúdo no ZIP; confirmar a proveniência do ZIP real usado no harness e fechar o round-trip captura real → exporter atual → validador independente.
+
 ## Etapa 7 — cadeia de artefactos, exportação IKP e validação (2026-11-20)
 
 - Inspecionados `CollectedArtifact`, `IScanWorkspace`, `WorkspaceArtifactMetadata`, `SqliteScanWorkspace`, collectors SQL/PHC, `ObjectIndexProjectionInputReader`, `DefinitionProjectionResolver`, `ObjectIndexProjector`, `IkpPackageExporter`, `IkpPackageInspectionEngine`, validadores C#/Python, testes e workflows.
@@ -164,15 +175,3 @@ O responsável confirmou a separação arquitetural entre PHC Standard e recolha
 - O exporter atual ainda inclui REL/DTL em `payload/relations/declared-relations.json`; comportamento legado em conflito com D-015, sem alteração nesta etapa.
 - Nenhum código, schema IKP, migration, teste ou captura foi alterado/executado nesta etapa.
 - Próximo passo: fechar a semântica do artefacto descritivo `phc.user_field` e a proveniência/round-trip da captura real antes de decidir alterações ao exporter. Depois atualizar contrato e testes, e só então implementar.
-
-
-## Etapa 6 — auditoria operação a operação do Scanner/IKP (2026-11-20)
-
-- Confirmado no código o catálogo de 23 operações: 7 SQL Server, 14 personalizações PHC e 2 REL/DTL.
-- Cruzadas as operações declaradas com os três collectors, fontes SQL, estados obrigatórios/opcionais, ObjectOperationResolver, Object Index, exportador IKP e testes existentes.
-- Mapeamento dos 21 kinds do Object Index tem testes sintéticos; `ObjectOperationResolverTests` cobre as variantes e `ObjectIndexProjectorTests` projeta os 21 kinds. Captura real documentada CSDefault202603: 16.618 objetos, apenas 8/21 kinds presentes; não é validação real de todos os kinds.
-- `IkpPackageExporterTests` valida ZIP e contrato com workspace sintético. Existe também harness que validou um ZIP real `CSDefault202603-ikp.zip` na receção/ingestion do Knowledge; a documentação não prova explicitamente que esse ZIP foi produzido pelo `IkpPackageExporter` atual. `ScanEngineTests` cobre semântica de coverage; não foi encontrada suite de integração SQL dos collectors contra PHC real.
-- Lacunas encontradas: (1) operação FTU inclui funções `Fx_*`/`User_*` de `sys.objects`, mas só corre se `dbo.ftu` existir; (2) `RunOptionalAsync` chama `sourceExistsAsync` fora do try/catch por operação; (3) Probe de personalizações agrega presença de três tabelas core e não verifica individualmente as operações core; (4) coverage de objeto não garante definição disponível — exporter reconcilia estado de definição separadamente.
-- Detalhes e tabela completa das 23 operações publicados em `docs/architecture/ikp-0.1-scanner-compatibility-matrix.md`, secção “Auditoria operacional do Scanner — 2026-11-20”.
-- Nenhum código, migration, teste ou captura foi alterado/executado. As lacunas estão registadas como achados; não foram corrigidas nesta etapa.
-- Próxima verificação: analisar a cadeia de exportação dos artefactos e a correspondência entre 23 operações, objetos, definições e conteúdo no ZIP; confirmar a proveniência do ZIP real usado no harness e fechar o round-trip captura real → exporter atual → validador independente.
