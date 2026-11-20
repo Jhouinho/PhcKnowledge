@@ -196,3 +196,20 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 - Conclusão: `DefinitionArtifactId` não significa sempre definição original. A matriz deve separar conteúdo-fonte original, representação derivada e evidência/configuração descritiva.
 - Detalhes registados em `docs/governance/audit-progress.md`; sem alterações de código/schema/testes.
 - Próximo passo: fechar matriz dos restantes collectors e propor semântica de roles e estados de definição por ObjectKind, com testes de contrato antes de qualquer implementação.
+
+
+## Auditoria da captura CSDefault202603 — 2026-11-20
+
+- Captura real de 16-11 localizada na Biblioteca e inspecionada a partir do ZIP exterior; a cópia enviada em 18-11 tem o mesmo SHA-256. Foi usado o `workspace.db` dentro da captura, não o ficheiro isolado mais antigo de 08-11.
+- Proveniência da captura: branch `feature/ikp-0.1-export-validate-integration`, commit Scanner `5e3308182e57486732b659b39664bcec8c0d99ed`; CaptureId `49826eeb-0388-48bb-a495-2031f30a58a4`; PackageId `b0b7e61f-8ea4-4cf0-a57d-99d37ab220ea`.
+- Integridade: 16.618 objetos no SQLite/Object Index, zero IDs duplicados, 52 artefactos de manifesto/payload, 49 artefactos no workspace, zero referências em falta e 56 checksums válidos.
+- Cobertura observada: 8.294 tabelas, 8.268 PK, 36 procedures (30 definições disponíveis), 19 definições PHC e 921 REL/DTL. Zero FK, views e triggers; sem inventário de colunas/índices.
+- 6 procedures sem definição: `usp_Act_Extratos_Bancarios`, `usp_aicfgsales`, `usp_LimparTabelasTemporariasSpid`, `usp_prdmrat`, `usp_RepararUserDboOrfao`, `usp_stinvclc`. As 30 definições presentes são `dbo.dt_*` de suporte SQL Server.
+- O workspace contém 921 interpretações REL/DTL, mas o IKP de 16-11 não inclui um ficheiro separado para elas; o pacote anterior de 10-11 incluía-o. Investigar a diferença antes de decidir o contrato.
+- `docs/sources/triggers phc.sql` contém 552 triggers standard; a consulta de triggers da captura observou zero. São fontes de evidência distintas.
+- A funcionalidade `Database Schema Snapshot` existente no código suporta colunas, índices, FK, views, triggers, procedures, funções, tipos e synonyms, mas não está incluída no ZIP analisado. O snapshot separado ainda não foi localizado entre os ficheiros desta captura.
+- Relatório completo: `docs/architecture/csdefault-standard-catalog-capture-audit-2026-11-20.md`.
+- Nenhum código, schema, migration, collector ou teste foi alterado; sem build/testes/SQL nesta etapa.
+
+### Próxima ação
+Reconciliar o snapshot estrutural de colunas/índices/FK com os ficheiros já enviados; em paralelo, decidir a forma de incorporar REL/DTL e as 552 triggers no catálogo standard versionado. Não pedir nova captura nem alterar collectors antes dessa reconciliação.
