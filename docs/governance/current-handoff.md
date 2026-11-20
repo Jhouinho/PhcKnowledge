@@ -35,7 +35,7 @@ Consolidar a fonte de contexto partilhada e fechar a primeira classificação in
 - RAG é objetivo futuro; tecnologia por decidir.
 
 ## Auditoria
-A auditoria documental/técnica continua em curso. Foi criado `docs/governance/document-inventory.md`, com classificação individual dos 84 ficheiros Markdown/texto presentes após esta publicação. A classificação define destino de manutenção; não equivale a validação integral de todas as afirmações técnicas. Não foi apagada documentação histórica.
+A auditoria documental/técnica continua em curso. Foi criado `docs/governance/document-inventory.md`, com classificação individual dos 85 ficheiros Markdown/texto presentes após esta publicação. A classificação define destino de manutenção; não equivale a validação integral de todas as afirmações técnicas. Não foi apagada documentação histórica.
 
 ## Próximo passo
 1. Confirmar o HEAD remoto e manter esta referência de handoff atualizada em cada sessão.

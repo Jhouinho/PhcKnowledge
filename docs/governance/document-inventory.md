@@ -5,7 +5,7 @@
 - Branch: feature/increment-c-package-import-analysis-confirmation
 - HEAD de referência: 6fdb4060a8fdb2de8aec9080620b91b4c9fa89f5
 - Âmbito: todos os ficheiros versionados com extensão .md, .mdc ou .txt na árvore Git.
-- Total inventariado: 84 ficheiros.
+- Total inventariado: 85 ficheiros.
 - Estado: classificação documental inicial concluída; não equivale a validação integral de cada afirmação técnica nem autoriza apagar ficheiros.
 
 ## Regras de manutenção
@@ -61,6 +61,7 @@
 | `docs/architecture/fixtures/ikp-0.1/minimal-valid/README.md` | Fixture/schema IKP | Contrato técnico; preservar e validar com os validadores. |
 | `docs/architecture/fixtures/ikp-0.1/minimal-valid/VALIDATION.md` | Fixture/schema IKP | Contrato técnico; preservar e validar com os validadores. |
 | `docs/architecture/ikp-0.1-scanner-compatibility-matrix.md` | Matriz compatibilidade | Contrato técnico; atualizar estado conforme evolução real do Scanner/API. |
+| `docs/architecture/ikp-temporary-package-lifecycle-gap-2026-11-20.md` | Auditoria técnica de ciclo de vida | Divergência confirmada entre ZIP temporário aprovado e arquivo permanente implementado; preservar até a materialização ser desenhada e implementada. |
 | `docs/architecture/ikp-0.1-specification.md` | Contrato IKP | Preservar como contrato; separar formato de transporte da política de retenção. |
 | `docs/architecture/ikp-0.1-validation-performance-checklist-2026-11-11.md` | Documento técnico/histórico | Preservar; classificar como contrato, proposta ou fotografia antes de qualquer alteração. |
 | `docs/architecture/increment-c-package-import-analysis-confirmation-design-2026-11-19.md` | Desenho + implementação posterior | Preservar decisões de desenho; atualizar estado de implementação observado na branch. |

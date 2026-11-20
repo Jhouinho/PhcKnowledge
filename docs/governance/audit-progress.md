@@ -103,3 +103,10 @@ A auditoria permanece em curso. Esta publicação não executou testes nem alter
 - Confirmado: staging é removido após conclusão do receipt; ZIP é arquivado permanentemente por SHA-256; análise inicial depende de reabrir o ZIP; não existe operação de delete no store; cleanup só elimina staging órfão; readiness não materializa entidades.
 - Criado `docs/architecture/ikp-temporary-package-lifecycle-gap-2026-11-20.md` com o fluxo atual, divergência face à decisão, riscos e critérios mínimos.
 - Nenhum código alterado; nenhum teste/build executado.
+
+
+## Atualização do inventário após auditoria do ZIP — 2026-11-20
+
+- Criado `docs/architecture/ikp-temporary-package-lifecycle-gap-2026-11-20.md`.
+- Inventário documental atualizado de 84 para 85 ficheiros Markdown/texto.
+- O relatório regista a divergência: arquivo permanente implementado versus ZIP temporário aprovado; análise depende atualmente de reabrir o ZIP; não existe delete no store nem materialização integral.
