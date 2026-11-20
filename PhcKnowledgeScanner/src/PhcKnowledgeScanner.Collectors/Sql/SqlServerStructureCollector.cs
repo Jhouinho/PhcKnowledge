@@ -799,8 +799,14 @@ public sealed class SqlServerStructureCollector : ICollector
         string triggerName,
         string parentSchema,
         string parentName)
-        => $"triggers/{Uri.EscapeDataString(triggerSchema)}.{Uri.EscapeDataString(triggerName)}@"
-            + $"{Uri.EscapeDataString(parentSchema)}.{Uri.EscapeDataString(parentName)}.sql";
+        => $"triggers/trigger-{EncodePathPart(triggerSchema)}-{EncodePathPart(triggerName)}"
+            + $"--{EncodePathPart(parentSchema)}-{EncodePathPart(parentName)}.sql";
+
+    private static string EncodePathPart(string value)
+        => Convert.ToBase64String(Encoding.UTF8.GetBytes(value))
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
 
     private static async Task<string> SaveDefinitionAsync(
         ScanContext context,
