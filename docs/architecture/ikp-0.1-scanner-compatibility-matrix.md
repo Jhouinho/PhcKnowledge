@@ -117,6 +117,41 @@ Na implementação auditada, `KnownOperations` e `ScannerCapabilityCatalog` decl
 4. **Cobertura de origem vs. conteúdo:** a coverage mede operações e contagens; a exportação reconcilia definições sem bytes e marca conteúdo parcial. A presença de um objeto no Object Index não garante que a sua definição de código esteja disponível. Consumidores Knowledge devem respeitar `definition.status`, `artifactIds`, issues e coverage, sem inferir completude pelo número de objetos.
 5. **Validação real incompleta:** a evidência real documentada cobre 8/21 kinds, 49 definições disponíveis e 52 artefactos no ZIP. Existe validação de receção de um ZIP real no harness, mas não está provado documentalmente que foi produzido pelo `IkpPackageExporter` atual. Falta validar o round-trip captura real → exporter atual → validador independente, e verificar o conteúdo/contagens por cada uma das 23 operações.
 
+## Auditoria da cadeia de artefactos e validação — 2026-11-20
+
+### Workspace SQLite e artefactos
+
+- `SqliteScanWorkspace.SaveArtifactAsync` grava os bytes em ficheiros separados sob `artifacts/{collectorId}/{relativePath}`; a tabela SQLite `artifacts` guarda `artifact_id`, collector, caminho, content type, SHA-256, tamanho e metadata JSON. Os bytes não ficam dentro de `workspace.db`.
+- O `ArtifactId` é determinístico por collector e caminho relativo (`{collectorId}/{relativePath}`), não por hash. O método escreve primeiro o ficheiro e depois faz upsert dos metadados SQLite; não existe transação atómica comum entre filesystem e SQLite.
+- Os collectors SQL e PHC usam `SaveArtifactAsync` através dos seus helpers `SaveDefinitionAsync` e guardam o ID devolvido em `TechnicalObjectRecord.DefinitionArtifactId`. A associação do objeto é persistida separadamente em `objects.definition_artifact_id`.
+- `ObjectIndexProjectionInputReader` lê a integridade SQLite, metadata da captura, objetos, issues e inventário de artefactos; lê bytes apenas para IDs referenciados por objetos. Ficheiro em falta produz diagnóstico e snapshot sem bytes. A integridade SQLite, isoladamente, não verifica a integridade dos ficheiros.
+- `DefinitionProjectionResolver` valida unicidade da referência, presença dos bytes, tamanho e SHA-256. Database, table, PK, FK e PHC user fields são `NotCollected` quanto a definição. No caso de `phc.user_field`, o próprio código explica que o ficheiro associado é uma descrição de metadados gerada, não a definição original da coluna. As restantes definições PHC e as definições de views/procedures/triggers podem ser `Available` quando a evidência passa as verificações; ausência ou problemas são representados como `Unavailable`.
+- O enum `DefinitionStatus.Empty` existe, mas o resolver auditado não produz esse estado. Não está demonstrado um caso de exportação que o use.
+
+### Montagem do IKP
+
+- `IkpPackageExporter` valida CaptureId, coverage e integridade SQLite, projeta o Object Index, valida tamanho/hash dos artefactos selecionados e constrói o ZIP sem normalizar o conteúdo original dos ficheiros.
+- O conjunto de artefactos a incluir é atualmente calculado a partir de **todos os `DefinitionArtifactId` dos objetos**, e não dos `definition.artifactIds` emitidos pelo Object Index.
+- **Inconsistência identificada:** o collector de `user_fields` cria um ficheiro descritivo e guarda o respetivo ID no objeto; o resolver classifica explicitamente esse artefacto como não sendo uma definição e emite `NotCollected` com `artifactIds: []`. Apesar disso, o exporter volta a recolher o ID diretamente do objeto e inclui o ficheiro no ZIP como `role: source-definition`. O manifesto lista-o como artefacto e os validadores aceitam-no, porque verificam que os IDs referenciados pelo Object Index existem, mas não exigem que todos os artefactos do manifesto sejam referenciados pelo Object Index. Falta decidir se este ficheiro deve ser excluído do IKP ou representado como artefacto descritivo com papel próprio.
+- Artefactos sem referência a partir de qualquer objeto não são incluídos; o teste `ExportAsync_Writes_Contract_Files_And_Only_Referenced_Artifacts` confirma que um artefacto obsoleto fica fora do ZIP.
+- O exporter gera `payload/diagnostics/issues.json` e, na implementação atual, `payload/relations/declared-relations.json` para REL/DTL. Esta última inclusão continua a ser comportamento legado e está em conflito com a decisão D-015; não foi alterada nesta auditoria.
+- O manifesto enumera os ficheiros payload com tamanho e SHA-256. `checksums.json` cobre os restantes ficheiros de contrato e payload e inclui `logicalContentDigest`. O ZIP é escrito para ficheiro temporário e movido para o destino no fim.
+
+### Validação independente e evidência
+
+- Existe teste de integração sintético `P1_ExportAsync_Produces_Zip_Accepted_By_IkpPackageValidator`: cria workspace SQLite, exporta com `IkpPackageExporter` e valida com `IkpPackageValidator` do projeto Knowledge. Também existem cenários de metadata histórica parcial e adulteração de payload.
+- O workflow `.github/workflows/dotnet-scanner.yml` executa `dotnet test PhcKnowledge.sln`, recolhe um ZIP sintético emitido pelos testes e executa `tools/ikp-validation/validate_ikp_zip.py`, um validador Python separado. Este valida estrutura ZIP, paths, duplicados, links simbólicos, CRC, schemas, checksums, digest lógico e referências cruzadas. A configuração do workflow está confirmada; não foi executada nesta auditoria.
+- A validação sintética exporter → validador C# e exporter → validador Python está, portanto, automatizada no workflow. Não equivale a validar uma captura PHC real.
+- A investigação P1.B documenta projeção do workspace real `CSDefault202603`: 16.618 objetos, 8/21 kinds e 49 artefactos com tamanho/hash confirmados. Documenta também que isso **não** provou um ZIP completo produzido pelo exporter atual.
+- O harness de receção de 18-11 valida um ZIP real `CSDefault202603-ikp.zip` no percurso de ingestão/receipt, mas não identifica a proveniência de produção do ZIP. Não é possível afirmar que foi produzido pelo `IkpPackageExporter` atual.
+
+### Pendências concretas
+
+1. Fechar a semântica dos artefactos descritivos de `phc.user_field`: exclusão do payload ou novo tipo/role explícito, sem os apresentar como definição de código.
+2. Decidir se o estado `Empty` deve ter semântica e regra de emissão ou se deve ser removido de futuras versões do contrato.
+3. Clarificar a política de falha quando o resolver consegue projetar `Unavailable` por bytes/hash/tamanho em falta, mas o exporter falha ao tentar incluir o `DefinitionArtifactId` original. O comportamento atual é fail-closed para artefactos referenciados com bytes inválidos.
+4. Obter o workspace real original ou um ZIP demonstravelmente produzido pelo exporter atual para fechar o round-trip real e executar o validador Python sobre esse pacote.
+
 ### Conclusão desta etapa
 
 O código auditado declara 23 operações, mas a classificação-alvo aprovada passa a 21 após retirar REL/DTL do catálogo de capacidades do Scanner. O mapeamento dos 21 kinds do Object Index tem testes sintéticos; essa contagem de kinds é independente da contagem de operações. A cobertura por operação distingue resultados vazios, ausentes, parciais e falhados. Contudo, não existe evidência de execução real e completa das 23 operações na mesma captura nem de validação end-to-end atual de um ZIP real. As duas primeiras lacunas acima (FTU condicionado por `dbo.ftu` e exceção em `sourceExistsAsync`) merecem correção/decisão antes de considerar a cobertura robusta. Esta auditoria não altera collectors nem o contrato IKP.
