@@ -60,11 +60,19 @@ Factos e interpretações são coleções lógicas separadas. O Knowledge dever�
 
 Não gerar migrations globais novas nesta etapa. Ver [Modelo de domínio 0.2](knowledge-domain-model-0.2.md).
 
-## Auditoria operacional do Scanner — 2026-11-20
+## Reclassificação arquitetural aprovada — 2026-11-20
+
+A auditoria identificou que a contagem de 23 operações descreve o código existente, mas mistura recolha de personalizações com conhecimento PHC standard que deve ser mantido centralmente.
+
+- **REL/DTL:** as duas operações `phc.declared-relations.rel` e `phc.declared-relations.dtl` são comportamento atualmente implementado e documentado abaixo, mas deixam de integrar o catálogo-alvo de capacidades do Scanner. As relações PHC standard pertencem ao PHC Standard Catalog do Knowledge, como referência comum versionada segundo a aplicabilidade da versão/edição PHC. Não devem ser repetidas em cada ZIP.
+- **Diferenças locais:** se uma instalação divergir das relações de referência, o Knowledge poderá registar a diferença como observação específica. O mecanismo para detetar, representar e exportar apenas esses deltas ainda não está definido nem implementado. Não inferir que a simples presença em `REL`/`DTL` numa captura é uma personalização.
+- **Estrutura SQL Server:** as sete operações são mecanismos de descoberta da estrutura física da base de dados (identificação, tabelas, PK, FK, views, procedures e triggers). Continuam relevantes para conhecer a instalação, mas não significam que todos os objetos observados devam ser exportados como customizações. O objetivo é comparar com o PHC Standard Catalog e preservar evidência de diferenças específicas.
+- **Classificação conservadora:** até existir cobertura e regras de comparação suficientes no catálogo standard, objetos não reconhecidos ficam como observações por classificar; não são automaticamente promovidos a standard nem rotulados como personalizados.
+- **Contagem:** o código auditado declara atualmente 23 operações. A classificação-alvo passa conceptualmente a 21 operações Scanner (7 SQL Server + 14 personalizações PHC), sem REL/DTL. Esta alteração é documental/arquitetural; o código, o schema IKP e os testes ainda não foram alterados.
 
 ### Catálogo e execução declarada
 
-O código atual declara 23 operações em `KnownOperations` e `ScannerCapabilityCatalog`: 7 de estrutura SQL Server, 14 de personalizações PHC e 2 de relações declaradas. A declaração é independente do resultado de uma captura. O resultado efetivo é registado por operação em `coverage.json`; uma capability declarada não prova que a origem exista, que a operação tenha sido executada ou que tenha produzido conteúdo.
+Na implementação auditada, `KnownOperations` e `ScannerCapabilityCatalog` declaram 23 operações: 7 de estrutura SQL Server, 14 de personalizações PHC e 2 de relações declaradas. Após a reclassificação arquitetural acima, as duas últimas são comportamento legado a retirar do catálogo-alvo; a direção é 21 operações Scanner. A declaração é independente do resultado de uma captura. O resultado efetivo é registado por operação em `coverage.json`; uma capability declarada não prova que a origem exista, que a operação tenha sido executada ou que tenha produzido conteúdo.
 
 | OperationId | Origem efetivamente consultada | Execução no collector | Projeção IKP |
 |---|---|---|---|
@@ -111,4 +119,4 @@ O código atual declara 23 operações em `KnownOperations` e `ScannerCapability
 
 ### Conclusão desta etapa
 
-O contrato de 23 operações está implementado e o mapeamento dos 21 kinds do Object Index tem testes sintéticos. A cobertura por operação distingue resultados vazios, ausentes, parciais e falhados. Contudo, não existe evidência de execução real e completa das 23 operações na mesma captura nem de validação end-to-end atual de um ZIP real. As duas primeiras lacunas acima (FTU condicionado por `dbo.ftu` e exceção em `sourceExistsAsync`) merecem correção/decisão antes de considerar a cobertura robusta. Esta auditoria não altera collectors nem o contrato IKP.
+O código auditado declara 23 operações, mas a classificação-alvo aprovada passa a 21 após retirar REL/DTL do catálogo de capacidades do Scanner. O mapeamento dos 21 kinds do Object Index tem testes sintéticos; essa contagem de kinds é independente da contagem de operações. A cobertura por operação distingue resultados vazios, ausentes, parciais e falhados. Contudo, não existe evidência de execução real e completa das 23 operações na mesma captura nem de validação end-to-end atual de um ZIP real. As duas primeiras lacunas acima (FTU condicionado por `dbo.ftu` e exceção em `sourceExistsAsync`) merecem correção/decisão antes de considerar a cobertura robusta. Esta auditoria não altera collectors nem o contrato IKP.
