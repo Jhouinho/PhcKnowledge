@@ -10,12 +10,12 @@
 - Commit da baseline canónica: 7d60259e49ddab5c1b304035f3790e7e7b53d5c4.
 - Commit do inventário e reconciliação documental: 070e456b06f7054c0764a3f4cac6532150381743.
 - Commit principal que publicou a baseline e as regras de continuidade: 7d60259e49ddab5c1b304035f3790e7e7b53d5c4.
-- Este handoff foi atualizado após esse commit. Para o HEAD exato mais recente, consultar a referência remota desta branch; não assumir que o commit principal continua a ser o HEAD.
+- O handoff foi atualizado em commits subsequentes; consultar sempre a referência remota desta branch para obter o HEAD exato, pois a própria atualização do handoff cria um novo commit.
 - Estado local do Cursor: não observado; este handoff descreve apenas o estado GitHub.
 - Testes nesta sessão: nenhum; atualização documental sem build ou execução de código.
 
 ## Objetivo desta sessão
-Consolidar a fonte de contexto partilhada para que ChatGPT e Cursor iniciem tarefas com decisões, arquitetura, estado e handoff atualizados.
+Consolidar a fonte de contexto partilhada e fechar a primeira classificação individual do inventário documental para que ChatGPT e Cursor iniciem tarefas com decisões, arquitetura, estado e handoff atualizados.
 
 ## Documentos canónicos publicados nesta atualização
 - PROJECT_BASELINE.md — produto, arquitetura e fronteiras.
