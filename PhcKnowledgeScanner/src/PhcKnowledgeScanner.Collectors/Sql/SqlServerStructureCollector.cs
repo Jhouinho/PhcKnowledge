@@ -115,6 +115,8 @@ public sealed class SqlServerStructureCollector : ICollector
                 {
                     ["parentScope"] = "tables",
                     ["tableNameFilter"] = "none",
+                    ["eventSource"] = "sys.trigger_events",
+                    ["includesInsteadOf"] = "true",
                     ["definitionCapture"] = "attempted"
                 })
             .ConfigureAwait(false);
