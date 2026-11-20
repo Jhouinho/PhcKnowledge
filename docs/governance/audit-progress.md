@@ -248,3 +248,22 @@ A revisão dos restantes artefactos especiais do collector PHC identificou dois 
 - **FORMC:** o artefacto contém uma representação formatada/derivada de `Xexpressao`; o original completo `prop` não é guardado. O resolver atual também o trata como definição disponível. A futura projeção deve distinguir original de derivado.
 
 A matriz já evidencia pelo menos três finalidades diferentes: definição/conteúdo-fonte original, representação derivada e evidência/configuração descritiva. Não assumir que `DefinitionArtifactId` significa sempre definição original. Não alterar o código nesta etapa.
+
+
+## Auditoria da captura real CSDefault202603 — 2026-11-20
+
+A captura de 16-11 foi localizada na Biblioteca e inspecionada diretamente. O ZIP exterior contém o workspace SQLite e a pasta de artefactos. A cópia de 18-11 é byte a byte igual. Proveniência: Scanner commit `5e3308182e57486732b659b39664bcec8c0d99ed`, CaptureId `49826eeb-0388-48bb-a495-2031f30a58a4`, PackageId `b0b7e61f-8ea4-4cf0-a57d-99d37ab220ea`.
+
+- 16.618 objetos: 8.294 tabelas, 8.268 PK, 36 procedures, 11 hidden grids, 6 funções T-SQL PHC, 1 custom screen, 1 hotkey e 1 database.
+- Definições: 49 disponíveis (19 PHC + 30 SQL Server), 6 indisponíveis e 16.563 não recolhidas. Metadata fingerprints: 16.581; definition fingerprints: 49; source identities: 8.307.
+- SQL: zero FK, views e triggers; sem colunas ou índices no Object Index/workspace. As tabelas têm apenas metadados básicos; as PK têm as colunas da chave. Seis procedures `usp_*` não têm definição; as 30 definições presentes são `dbo.dt_*` de suporte SQL Server.
+- PHC: 19 definições (FORMB 1, FORMC 11, FTU 6, teclas 1). REL/DTL: 295 + 626 = 921; 921 interpretações no workspace e zero relações derivadas na tabela `relations`.
+- O pacote IKP de 16-11 não transporta interpretações REL/DTL num ficheiro autónomo, embora o workspace as tenha. O pacote de 10-11 incluía esse ficheiro; registar como diferença pendente de reconciliação.
+- A fonte `docs/sources/triggers phc.sql` contém 552 `CREATE TRIGGER` standard; a operação SQL da captura observou zero. Não misturar estas fontes.
+- O Database Schema Snapshot separado já existe no código e suporta colunas, índices, FK, views, triggers, procedures, funções, parâmetros, tipos e synonyms; não está incluído no ZIP de 16-11.
+- A captura continua a declarar 23 operações (inclui REL/DTL); D-015 define 21 como direção-alvo do Scanner, com REL/DTL no PHC Standard Catalog.
+- Relatório detalhado: `docs/architecture/csdefault-standard-catalog-capture-audit-2026-11-20.md`.
+
+**Conclusão:** a captura é íntegra como inventário observado, mas não é um catálogo físico completo. Não classificar automaticamente tabelas como PHC standard só por estarem na CS Default; usar a baseline versionada e a cobertura comprovada. Não foram alterados código, schemas, migrations ou testes.
+
+Próximo passo: localizar/reconciliar o snapshot estrutural completo já fornecido, rever a diferença de exportação das interpretações REL/DTL e definir a incorporação das 552 triggers no catálogo standard. Não voltar a pedir uma captura antes desta reconciliação.
