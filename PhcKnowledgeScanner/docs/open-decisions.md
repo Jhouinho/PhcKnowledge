@@ -1,54 +1,56 @@
-# Decisıes tÈcnicas pendentes
+> **Nota de √¢mbito ‚Äî 2026-11-20:** esta checklist foi criada na fase inicial do Scanner e n√£o foi reconciliada com todas as decis√µes/implementa√ß√µes posteriores. N√£o √© o registo atual de decis√µes do produto. Consultar `../../DECISIONS.md`, ADRs em `docs/decisions/` e o c√≥digo. Antes de reabrir qualquer ponto, verificar se j√° foi decidido ou implementado. Manter aqui apenas quest√µes espec√≠ficas do Scanner ainda v√°lidas; n√£o assumir que todas as caixas por marcar continuam abertas.
 
-Distinguir de ADRs em `docs/decisions/` (j· tomadas).  
-**Nada disto deve ser implementado como ìcertoî sem validaÁ„o explÌcita.**
+# Decis√µes t√©cnicas pendentes
 
-## LigaÁ„o e autenticaÁ„o SQL
+Distinguir de ADRs em `docs/decisions/` (j√° tomadas).  
+**Nada disto deve ser implementado como ‚Äúcerto‚Äù sem valida√ß√£o expl√≠cita.**
 
-- [ ] Connection string via ficheiro local vs vari·veis de ambiente vs prompt
+## Liga√ß√£o e autentica√ß√£o SQL
+
+- [ ] Connection string via ficheiro local vs vari√°veis de ambiente vs prompt
 - [ ] Windows Auth vs SQL Auth vs ambos
 - [ ] Suporte multi-base / linked servers
 
-## PolÌtica de execuÁ„o
+## Pol√≠tica de execu√ß√£o
 
-- [ ] Continuar apÛs falha de um collector vs fail-fast
+- [ ] Continuar ap√≥s falha de um collector vs fail-fast
 - [ ] Paralelismo entre collectors (risco de carga no SQL)
 - [ ] Limites de timeout por collector / por objeto
 
 ## Artefactos e volume
 
-- [ ] Escrita direta para disco durante a recolha vs buffer em memÛria
-- [ ] Compress„o por ficheiro vs sÛ no ZIP final
-- [ ] PolÌtica para bin·rios / anexos muito grandes (aviso vs exclus„o explÌcita)
+- [ ] Escrita direta para disco durante a recolha vs buffer em mem√≥ria
+- [ ] Compress√£o por ficheiro vs s√≥ no ZIP final
+- [ ] Pol√≠tica para bin√°rios / anexos muito grandes (aviso vs exclus√£o expl√≠cita)
 - [ ] Encoding default para texto XBase/SQL (UTF-8 com BOM? Latin1?)
 
-## Descoberta de vers„o PHC
+## Descoberta de vers√£o PHC
 
-- [ ] Como identificar vers„o/produto (Desktop, Web, XL, Manufactor)
-- [ ] Matriz mÌnima de collectors por vers„o
+- [ ] Como identificar vers√£o/produto (Desktop, Web, XL, Manufactor)
+- [ ] Matriz m√≠nima de collectors por vers√£o
 
-## OrganizaÁ„o de collectors
+## Organiza√ß√£o de collectors
 
-- [ ] Um assembly por ·rea vs pastas num ˙nico `Collectors`
-- [ ] Plugin loading din‚mico (MEF/assemblies externos) vs registo est·tico no CLI
+- [ ] Um assembly por √°rea vs pastas num √∫nico `Collectors`
+- [ ] Plugin loading din√¢mico (MEF/assemblies externos) vs registo est√°tico no CLI
 
 ## CLI / UX
 
 - [ ] `System.CommandLine` vs Spectre.Console vs args manuais
 - [ ] Progress reporting (consola apenas vs ficheiro de log estruturado)
 
-## SeguranÁa e privacidade
+## Seguran√ßa e privacidade
 
-- [ ] RedaÁ„o de segredos em configs exportadas
-- [ ] ClassificaÁ„o de dados sensÌveis no manifesto
-- [ ] RetenÁ„o local de scans
+- [ ] Reda√ß√£o de segredos em configs exportadas
+- [ ] Classifica√ß√£o de dados sens√≠veis no manifesto
+- [ ] Reten√ß√£o local de scans
 
-## RelaÁ„o com conhecimento offline do workspace
+## Rela√ß√£o com conhecimento offline do workspace
 
-- [ ] O Scanner deve ou n„o consumir o pack `.cursor/knowledge` em runtime?
-- [ ] Ou o pack È sÛ referÍncia para desenvolvimento dos collectors?
+- [ ] O Scanner deve ou n√£o consumir o pack `.cursor/knowledge` em runtime?
+- [ ] Ou o pack √© s√≥ refer√™ncia para desenvolvimento dos collectors?
 
 ## Naming / versionamento do pacote ZIP
 
-- [ ] ConvenÁ„o de nome do ficheiro
+- [ ] Conven√ß√£o de nome do ficheiro
 - [ ] Versionamento do schema `manifest.json` (`schemaVersion`)

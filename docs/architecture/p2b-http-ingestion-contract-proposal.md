@@ -1,3 +1,5 @@
+> **Nota de estado — 2026-11-20:** este contrato foi aprovado para implementação e a API HTTP IKP, autenticação e endpoints foram posteriormente implementados na branch atual. As referências à branch `feature/p2b-http-ingestion-api` e à ausência de endpoints descrevem a baseline de 2026-11-18, não o estado atual. Preservar este documento como contrato de âmbito aprovado; confirmar comportamento e configuração no código e em `../../PROJECT_STATUS.md`.
+
 # P2.B — Contrato proposto de âmbito e integração HTTP
 
 | Campo | Valor |

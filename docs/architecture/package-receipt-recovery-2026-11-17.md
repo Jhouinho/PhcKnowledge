@@ -1,3 +1,5 @@
+> **Nota de precedência — 2026-11-20:** relatório de implementação do protocolo de receipts/recovery, com referências de branch/PR históricas. A API HTTP foi adicionada posteriormente; a afirmação de que não existe endpoint HTTP já não descreve a branch atual. A política de ZIP permanente descrita neste relatório também diverge da decisão atual: o ZIP é transporte temporário e deve ser eliminado após materialização e confirmação íntegra. Ver `../../PROJECT_BASELINE.md`, `../../DECISIONS.md` e `../../PROJECT_STATUS.md`. Não alterar o comportamento de arquivo sem plano de migração e recuperação aprovado.
+
 # Protocolo de recuperação de PackageReceipt
 
 > Estado: protocolo implementado na branch `feat/package-receipt-recovery` através da biblioteca `PhcKnowledge.Import` e do Generic Host `PhcKnowledge.Host`. A PR #9 permanece em Draft e ainda não foi integrada na `main`. Não existe ainda endpoint HTTP, autenticação ou upload HTTP.

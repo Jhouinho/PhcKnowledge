@@ -1,3 +1,5 @@
+> **Atualização de implementação — 2026-11-20:** este documento continua a ser a referência de desenho e decisões do Incremento C, mas o estado “não implementado” corresponde à baseline analisada em 2026-11-19. Na branch atual existem componentes de decisão no Host, camada Import, Portal React e testes (incluindo `PortalPackageImportAnalysisDecisionEndpoints`, `PackageImportAnalysisDecisionService`, `AnalysisDecisionPage` e testes SQL/HTTP). Isto comprova implementação de partes do fluxo, não validação de deployment nem conclusão de toda a experiência. Consultar `../../PROJECT_STATUS.md` e confirmar os critérios de aceitação no código/testes.
+
 # Incremento C — Desenho técnico consolidado
 ## Confirmação explícita de `PackageImportAnalysis`
 

@@ -1,3 +1,5 @@
+> **Nota de âmbito — 2026-11-20:** este documento descreve especificamente o Generic Host/serviços de recuperação e limpeza da fase de receipts. A frase “não disponibiliza API HTTP” limita-se ao âmbito daquela fotografia; a API foi posteriormente integrada no Host da plataforma. Não usar este documento isoladamente como descrição do Host atual. Consultar `../../PROJECT_STATUS.md` e o código de `src/PhcKnowledge.Host`.
+
 # Host operacional de PackageReceipt
 
 ## Responsabilidade
