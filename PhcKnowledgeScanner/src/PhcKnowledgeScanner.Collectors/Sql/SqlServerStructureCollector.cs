@@ -726,7 +726,7 @@ public sealed class SqlServerStructureCollector : ICollector
                 {
                     artifactId = await SaveDefinitionAsync(
                         context,
-                        $"triggers/{triggerSchema}.{triggerName}@{parentSchema}.{parentName}.sql",
+                        BuildTriggerArtifactPath(triggerSchema, triggerName, parentSchema, parentName),
                         definition,
                         ct).ConfigureAwait(false);
                 }
@@ -736,7 +736,7 @@ public sealed class SqlServerStructureCollector : ICollector
                         CollectionIssueSeverity.Warning,
                         "sql.trigger.definition_missing",
                         "Definição de trigger indisponível; a causa não é inferida.",
-                        $"{triggerSchema}.{triggerName} ({parentSchema}.{parentName})"));
+                        $"{parentSchema}.{parentName}.{triggerName}"));
                 }
 
                 var summary = JsonSerializer.Serialize(new
@@ -793,6 +793,14 @@ public sealed class SqlServerStructureCollector : ICollector
         string parentName)
         => "trigger:" + JsonSerializer.Serialize(
             new[] { triggerSchema, triggerName, parentSchema, parentName });
+
+    private static string BuildTriggerArtifactPath(
+        string triggerSchema,
+        string triggerName,
+        string parentSchema,
+        string parentName)
+        => $"triggers/{Uri.EscapeDataString(triggerSchema)}.{Uri.EscapeDataString(triggerName)}@"
+            + $"{Uri.EscapeDataString(parentSchema)}.{Uri.EscapeDataString(parentName)}.sql";
 
     private static async Task<string> SaveDefinitionAsync(
         ScanContext context,
