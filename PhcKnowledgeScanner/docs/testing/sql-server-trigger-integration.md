@@ -38,6 +38,10 @@ GO
 
 Não conceder `db_owner`, `db_datareader` ou `VIEW DEFINITION` ao login restrito. A permissão `SELECT` no schema permite testar a visibilidade dos objetos de tabela sem conceder visibilidade global das definições.
 
+## GitHub Actions
+
+O workflow `.github/workflows/sql-server-integration.yml` também executa este teste num SQL Server 2022 efémero. Para esse workflow, configurar o secret de repositório `SQLSERVER_SA_PASSWORD` com uma palavra-passe forte para o utilizador `sa`. O login restrito é criado durante o job com uma palavra-passe aleatória e não é persistido no repositório.
+
 ## Executar
 
 Na raiz do repositório:
