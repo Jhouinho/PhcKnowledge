@@ -19,11 +19,13 @@ A direção aprovada está em PROJECT_BASELINE.md e DECISIONS.md: ferramenta int
 - Identidade/autenticação, organização canónica e políticas de autorização.
 - Portal backend com sessão por cookie, login/logout, antiforgery e administração de utilizadores.
 - Projeto frontend React + TypeScript existe em src/PhcKnowledge.Portal; a existência do projeto não significa que todos os ecrãs/fluxos estejam concluídos.
+- O frontend atual inclui autenticação e consulta/decisão de análise; não inclui ainda o upload manual de ZIP nem a área funcional de gestão de pacotes/capturas.
 - Análise do pacote e decisões humanas do fluxo Incremento C têm implementação nas partes verificadas; materialização integral do conhecimento não está concluída.
 
 ### Ingestão IKP
 - Scanner emite IKP 0.1 com manifesto, capabilities, coverage, Object Index, checksums, artefactos referenciados e factos REL/DTL quando disponíveis.
-- Knowledge possui validação/receção, receipts, tentativas, operações de recovery/cleanup e endpoints HTTP.
+- Knowledge possui validação/receção, receipts, tentativas, operações de recovery/cleanup e endpoints HTTP IKP.
+- O endpoint público de upload IKP usa JWT Bearer e scopes próprios. Não existe ainda uma operação autenticada do Portal (sessão por cookie) que permita ao operador fazer o upload manual pela UI.
 - A implementação atual mantém arquivo de pacotes e a análise pode reabrir o pacote arquivado. Isto diverge da decisão de ZIP temporário; não alterar sem desenhar e validar materialização, recuperação e eliminação.
 - Persistência de receipts e estado de processamento não equivale à materialização integral das observações, definições, relações e artefactos.
 
