@@ -254,7 +254,9 @@ Remoção:
 - Eliminação histórica bloqueada; desativação permitida; eventos append-only.
 - RAG é consumidor futuro da base estruturada, não entidade obrigatória do modelo.
 
-**Estado:** conceptual/futuro.
+**Estado:** conceptual/futuro. A integração inicial do catálogo de triggers PHC Standard está especificada em [standard-catalog-integration-specification.md](standard-catalog-integration-specification.md), ainda sem implementação física ou aprovação de migrations.
+
+A especificação reutiliza estas entidades conceptuais e define a separação entre catálogo standard, versões de definição, conhecimento funcional curado e observações por Capture. Não constitui um schema SQL definitivo.
 
 ## Mapa global de entidades — destino 0.2
 
@@ -325,3 +327,4 @@ O diagrama omite entidades de tentativa, processamento, auditoria e governação
 - [Matriz de compatibilidade](ikp-0.1-scanner-compatibility-matrix.md)
 - [Avaliação de arquitetura e importação](technology-and-import-contract-assessment.md)
 - [Contrato de observação, identidade e linhagem](observation-identity-and-lineage-contract.md)
+- [Especificação de integração do catálogo PHC Standard](standard-catalog-integration-specification.md)
