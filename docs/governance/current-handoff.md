@@ -127,6 +127,7 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 - P1.B documenta 16.618 objetos, 8/21 kinds e 49 artefactos verificados na projeção do workspace real `CSDefault202603`. O ZIP real usado no harness de receipt/ingestion não tem proveniência documentada; não afirmar que veio do exporter atual.
 - Exporter atual ainda inclui REL/DTL no ZIP, comportamento legado que terá de ser alinhado com D-015.
 - Sem alterações de código, schemas, migrations, testes ou capturas; sem builds/testes executados.
+- HEAD remoto antes desta atualização final do handoff: `29125372814ed60f3eeb36bea592c8ed8d4e3f15`.
 - Próximo passo: decidir tratamento do artefacto descritivo de user fields e obter workspace/ZIP real com proveniência demonstrável para completar o round-trip real.
 
 
