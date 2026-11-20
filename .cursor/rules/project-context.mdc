@@ -1,0 +1,40 @@
+---
+description: Regras obrigatórias para preservar contexto e decisões no projeto PHC Knowledge
+alwaysApply: true
+---
+
+# PHC Knowledge — Contexto partilhado
+
+Antes de qualquer análise, planeamento ou implementação:
+
+1. Confirma o repositório, branch e commit HEAD.
+2. Lê este acordo: `docs/governance/working-agreement.md`.
+3. Lê `docs/governance/current-handoff.md`.
+4. Consulta as instruções de projeto aplicáveis e os documentos canónicos referenciados pelo acordo.
+5. Confirma no código o estado real antes de assumir que uma funcionalidade existe.
+
+## Regras
+
+- O repositório é a fonte partilhada de verdade para o estado versionado; não assumes que contém alterações locais ainda não publicadas.
+- Não contradigas decisões aprovadas. Se encontrares conflito entre decisão, documentação e código, apresenta a evidência e não escolhas silenciosamente.
+- Distingue proposta, decisão aprovada, implementação, validação e pendência.
+- Não inventes dados, campos, contratos, testes executados ou resultados.
+- Não alteres arquitetura, stack, contratos ou âmbito por iniciativa própria quando isso contrariar decisões registadas.
+- Não cries documentação redundante. Atualiza a fonte canónica apropriada.
+- Não apagues documentação histórica sem inventário e autorização.
+- Não faças commit, push, merge, rebase ou mudança de branch sem autorização explícita do utilizador.
+
+## Antes de terminar
+
+Atualiza `docs/governance/current-handoff.md` com:
+- data e objetivo da sessão;
+- branch, HEAD e estado Git conhecido;
+- ficheiros alterados;
+- decisões aprovadas e propostas separadamente;
+- testes executados e resultados observados;
+- testes não executados;
+- riscos, bloqueios e perguntas em aberto;
+- alterações locais ainda não publicadas;
+- próximo passo recomendado.
+
+Se não conseguires publicar o handoff, deixa o seu conteúdo explícito na resposta final para que possa ser transferido. Nunca afirmes que o GitHub está atualizado se não verificaste a publicação.
