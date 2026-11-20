@@ -1,10 +1,12 @@
+> Nota de precedência (2026-11-20): este modelo é uma fotografia conceptual datada de 17-11-2026. A baseline e decisões atuais estão em ../../PROJECT_BASELINE.md e ../../DECISIONS.md. Referências a SQL Server Express obrigatório, arquivo permanente de ZIPs e modelo multi-organização estão substituídas. ZIP é transporte temporário e deve ser eliminado apenas após materialização e confirmação íntegra.
+
 # PHC Knowledge — Modelo de domínio 0.2
 
 | Campo | Valor |
 |---|---|
 | Revisão | 2026-11-17 |
 | Estado | Modelo conceptual de destino consolidado; não é schema SQL definitivo |
-| Stack física | SQL Server Express central; arquivo de ZIPs fora da base relacional; SQLite apenas workspace/cache Scanner |
+| Stack física | SQL Server central; arquivo de ZIPs fora da base relacional; SQLite apenas workspace/cache Scanner |
 | Implementação atual | Primeira fatia Receive / Validate / Archive em PhcKnowledge.Import |
 
 Este documento é a referência consolidada do modelo de domínio 0.2. Distingue decisões de domínio, estado físico implementado e capacidades futuras. Não autoriza por si só migrations ou alterações ao contrato IKP.
@@ -14,8 +16,8 @@ Este documento é a referência consolidada do modelo de domínio 0.2. Distingue
 - PHC Knowledge é uma plataforma central de conhecimento técnico PHC, não um clone ERP nem um Digital Twin.
 - O Scanner é autónomo e produz IKP; Knowledge não executa Scanner em runtime nem acede ao SQLite do workspace.
 - SQL Server Express é a base central. SQLite é limitado ao workspace/cache local do Scanner.
-- O ZIP IKP original é preservado de forma imutável e permanente, fora da base relacional.
-- Organização delimita isolamento e permissões; conhecimento PHC standard é central e curado.
+- O ZIP IKP é transporte temporário; após materialização e confirmação de persistência íntegra, o pacote e os temporários devem ser eliminados.
+- Cliente/instalação delimita contexto e permissões; conhecimento PHC Standard é separado, central e curado.
 - Captura, pacote, recepção, observação, identidade lógica e contexto são conceitos distintos.
 - Receber/validar/arquivar não equivale a materializar, associar contexto ou publicar conhecimento.
 - RAG é capacidade futura de consumo, não entidade obrigatória nem motivo para antecipar embeddings/base vetorial.
@@ -79,7 +81,7 @@ Modelo de destino:
 - ZipSha256 identifica os bytes exatos do ZIP e é global.
 - ZipByteLength, StorageKey, produtor/versão e timestamps descrevem o conteúdo recebido.
 - Arquivo content-addressed: sha256/{prefix}/{hash}.ikp.zip.
-- ZIP imutável, read-only e permanente.
+- ZIP protegido contra alteração durante o processamento e retido apenas até confirmação de materialização íntegra.
 
 Invariantes:
 1. Mesmo SHA-256 significa os mesmos bytes; num IKP válido, também o mesmo PackageId do manifesto.
@@ -117,7 +119,7 @@ O exportador atual gera novo PackageId por exportação. Reexportar a mesma Capt
 - Confirmação e materialização não existem.
 - O percurso SQL receipt real + POST/GET HTTP com o ZIP real CSDefault202603 ainda não foi demonstrado em conjunto nesta máquina sem `PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING`.
 - A ordem de arquivo ZIP antes da gravação SQL do receipt pode deixar um ZIP sem receipt se SQL falhar; reconciliação/retry permanece relevante.
-- ZIP original é preservado permanentemente.
+- O ZIP original deve ser eliminado após materialização e confirmação íntegra.
 
 **Estado da migration atual:** índices únicos (OrganizationId, PackageId) e (OrganizationId, ZipSha256). Isto descreve a fatia atual, não o destino global. Não alterar migrations nesta fase.
 
@@ -303,7 +305,7 @@ O diagrama omite entidades de tentativa, processamento, auditoria e governação
 ## 11. Decisões físicas e de evolução
 
 - SQL Server Express central é fonte de verdade relacional.
-- ZIPs originais em arquivo imutável fora da BD.
+- ZIP temporário até confirmação de materialização; não é arquivo permanente.
 - SQL Server guarda metadados, identidade, relações, proveniência e índices, não ZIPs como BLOB.
 - Nenhuma migration global nova até fechar bloqueadores e validar protocolo de ingestão.
 - Não introduzir PostgreSQL, peer sync, modo offline, Discovery/Fusion ou Digital Twin.

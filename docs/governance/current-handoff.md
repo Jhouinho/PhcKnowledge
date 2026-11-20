@@ -1,55 +1,45 @@
 # PHC Knowledge — Handoff atual
 
-> Registo operacional de continuidade. Não substitui a baseline nem o registo canónico de decisões.
+> Registo operacional para continuidade entre ChatGPT, Cursor e outras ferramentas. Ler depois de PROJECT_BASELINE.md, DECISIONS.md e PROJECT_STATUS.md.
 
 ## Estado remoto confirmado
+- Data: 2026-11-20
+- Repositório: Jhouinho/PhcKnowledge
+- Branch: feature/increment-c-package-import-analysis-confirmation
+- HEAD no início desta atualização documental: 9a9df92ff82a98eafa2a5c1ff5134d8226ea7ce5
+- Esta atualização publica um novo commit nesta branch, sem merge para main; confirmar o HEAD remoto após publicação.
+- Estado local do Cursor: não observado; este handoff descreve apenas o estado GitHub.
+- Testes nesta sessão: nenhum; atualização documental sem build ou execução de código.
 
-- **Data:** 2026-11-20
-- **Repositório:** `Jhouinho/PhcKnowledge`
-- **Branch:** `feature/increment-c-package-import-analysis-confirmation`
-- **HEAD anterior à atualização deste handoff:** `170631ea8e17b584ac70cd6b379312570c0c948a`
-- **Estado local do Cursor:** desconhecido; este handoff descreve apenas o estado remoto consultado.
-- **Auditoria documental:** em curso; não concluída.
-- **Baseline canónica consolidada:** ainda não identificada/aprovada.
+## Objetivo desta sessão
+Consolidar a fonte de contexto partilhada para que ChatGPT e Cursor iniciem tarefas com decisões, arquitetura, estado e handoff atualizados.
 
-> O HEAD indicado no handoff anterior (`e2d896ff67f7ef0df903c8a13940da9b826a764d`) não coincide com o HEAD devolvido pela referência remota da branch (`170631ea8e17b584ac70cd6b379312570c0c948a`). Esta atualização corrige o registo a partir da referência remota verificada.
+## Documentos canónicos publicados nesta atualização
+- PROJECT_BASELINE.md — produto, arquitetura e fronteiras.
+- DECISIONS.md — decisões aprovadas, substituídas e questões em aberto.
+- PROJECT_STATUS.md — implementação, evidência, limitações e próximos passos.
+- docs/governance/README.md — índice e ordem de leitura.
+- PROJECT_GUIDELINES.md, .cursor/rules/project-context.mdc e docs/governance/working-agreement.md — alinhados com a leitura obrigatória.
+- README principal, handoff, progresso de auditoria, fontes e documentos técnicos históricos — alinhados com as fontes canónicas.
 
-## Objetivo imediato
+## Decisões vigentes
+- Ferramenta interna da equipa; não produto comercial multiempresa.
+- SQL Server é a base central; PostgreSQL excluído. Edição/versão concreta não fixada.
+- SQLite apenas workspace/cache local do Scanner.
+- Scanner autónomo e read-only perante instalações PHC.
+- ZIP IKP temporário; eliminar apenas após materialização e confirmação íntegra.
+- PHC Standard curado separado das observações e personalizações de clientes.
+- RAG é objetivo futuro; tecnologia por decidir.
 
-Completar a auditoria documental e técnica do PHC Knowledge, comparando documentação, decisões aprovadas, implementação e testes. O inventário final será apresentado ao utilizador antes de qualquer limpeza ou atualização estrutural de documentação.
+## Auditoria
+A auditoria documental/técnica continua em curso. O inventário de 79 documentos foi identificado antes desta atualização. Esta publicação atualiza fontes canónicas e corrige contradições prioritárias; não conclui a classificação individual de todos os documentos e não remove documentação histórica.
 
-## Decisões de produto/arquitetura confirmadas
+## Próximo passo
+1. Confirmar o commit publicado e consultar o HEAD remoto.
+2. Fechar inventário individual dos documentos restantes, sem apagar históricos.
+3. Rever o ciclo de ZIP temporário e desenhar materialização/eliminação segura.
+4. Definir arquitetura funcional do PHC Standard Catalog.
+5. Preparar plano de testes SQL por operação para as 23 operações do Scanner.
 
-- Plataforma de uso interno da equipa, para gerir conhecimento dos clientes acompanhados; não é produto comercial multiempresa.
-- SQL Server é a base de dados central escolhida.
-- O Scanner corre no ambiente do cliente e produz ZIP como meio de transporte.
-- O objetivo aprovado é materializar no SQL Server a informação necessária após importação íntegra e eliminar ZIP/temporários; a implementação atual ainda tem de ser reconciliada com esse objetivo.
-- Scanner integrado no monorepo, mas autónomo em responsabilidade e execução; sem dependência de runtime do Knowledge.
-- RAG é objetivo futuro, sem escolha tecnológica ou implementação antecipada.
-- Preservar proveniência por cliente/instalação/ambiente/base de dados/captura/artefacto, sem assumir equivalências.
-- As regras Desktop/Web acordadas e o estado da sua implementação estão registados em `docs/governance/audit-progress.md`.
-
-## Estado da auditoria
-
-Consultar `docs/governance/audit-progress.md` para constatações intermédias, classificação preliminar e tarefas em falta.
-
-Pontos já sinalizados:
-- O fluxo de análise reabre pacotes arquivados; o cleanup observado não demonstra ainda a política aprovada de ZIP transitório.
-- A análise e as decisões persistem, mas não foi identificada até ao ponto inspecionado a materialização integral dos conteúdos dos artefactos numa base de conhecimento pesquisável.
-- A pesquisa TableSearch observada não equivale a pesquisa global de código.
-- A cobertura de collectors, exportação IKP e classificação Desktop/Web ainda exige verificação.
-- Documentos antigos que afirmam que a integração não existe devem ser avaliados como históricos, não apagados automaticamente.
-- Contratos P1/P1B, schemas, fixtures e ADRs devem ser preservados enquanto não houver prova e validação de substituição.
-
-## Restrições de trabalho durante a auditoria
-
-- Não alterar código ou comportamento.
-- Não apagar nem reescrever documentos técnicos.
-- Não fazer merge, rebase ou mudança de branch.
-- Não declarar testes executados sem evidência.
-- Não assumir que alterações locais do Cursor estão publicadas.
-- Não consolidar baseline canónica antes de terminar a auditoria e obter validação do utilizador.
-
-## Próximo passo seguro
-
-Continuar a inspeção dos collectors e do mapeamento dos artefactos para IKP; depois cruzar testes e documentos restantes. Produzir inventário final dos documentos com classificação e proposta de tratamento. Pedir aprovação antes de qualquer alteração documental adicional.
+## Instrução para a próxima ferramenta
+Ler docs/governance/README.md, PROJECT_BASELINE.md, DECISIONS.md, PROJECT_STATUS.md e este ficheiro. Confirmar branch/HEAD/estado local antes de tocar no código. Não assumir que alterações locais do Cursor estão no GitHub.

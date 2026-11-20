@@ -4,7 +4,7 @@
 **Última atualização:** 2026-11-20  
 **Repositório:** `Jhouinho/PhcKnowledge`  
 **Branch de trabalho:** `feature/increment-c-package-import-analysis-confirmation`  
-**Commit de referência anterior:** `170631ea8e17b584ac70cd6b379312570c0c948a`
+**Commit de referência antes da atualização documental:** `9a9df92ff82a98eafa2a5c1ff5134d8226ea7ce5`
 
 ## Objetivo e limites
 
@@ -61,9 +61,25 @@ Estas constatações são um registo intermédio. A auditoria ainda não conclui
 3. Inspecionar testes de receipts, recovery, análise, decisões, endpoints HTTP e integração SQL Server.
 4. Registar separadamente testes existentes, testes executados e resultados documentados. O teste SQL Server depende de configuração de ambiente; não declarar execução sem confirmação.
 5. Ler e reconciliar os relatórios de fase, documentos de ingestão/recovery, documentação do Portal, roadmap, investigação de cobertura, RAG, P1/P1B, protótipos, README e regras de projeto.
-6. Produzir inventário completo dos 78 ficheiros documentais identificados, com classificação, justificação e destino/referência substituta.
+6. Produzir inventário completo dos 79 ficheiros documentais identificados, com classificação, justificação e destino/referência substituta.
 7. Apresentar a proposta ao utilizador e aguardar aprovação antes de alterar ou remover documentos.
 
 ## Próximo passo
 
 Retomar a inspeção técnica dos collectors e do mapeamento IKP. Não retomar D1/D2 nem iniciar a consolidação da baseline até a auditoria estar concluída e o inventário ser validado.
+
+
+## Atualização de governação — 2026-11-20
+
+O responsável autorizou a atualização documental nesta branch. Foram criadas fontes canónicas PROJECT_BASELINE.md, DECISIONS.md, PROJECT_STATUS.md e docs/governance/README.md; PROJECT_GUIDELINES, README, regras Cursor e handoff foram alinhados.
+
+Correções consolidadas:
+- SQL Server é a base central; PostgreSQL excluído; edição/versão SQL Server não fixada.
+- SQLite limitado ao workspace/cache local do Scanner.
+- Ferramenta interna da equipa, não produto comercial multiempresa.
+- ZIP IKP é transporte temporário; arquivo permanente no código é divergência por resolver.
+- PHC Standard curado separado de observações/personalizações dos clientes.
+- React Portal já existe; documentos que o descrevem como inexistente são históricos.
+- StandardCatalog contém extração/parsing de triggers; pipeline completa de catálogo ainda não demonstrada.
+
+A auditoria permanece em curso. Esta publicação não executou testes nem alterou código. O inventário individual e qualquer decisão de eliminação/fusão documental continuam pendentes.

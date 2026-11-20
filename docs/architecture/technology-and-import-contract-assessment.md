@@ -1,3 +1,5 @@
+> Documento histórico de avaliação (2026-11-06 a 2026-11-17), não normativo. A baseline e decisões em ../../PROJECT_BASELINE.md e ../../DECISIONS.md prevalecem: SQL Server é central, mas Express não é restrição aprovada; PostgreSQL está excluído; ZIP é transporte temporário; plataforma é ferramenta interna da equipa; API e Portal React evoluíram além do estado descrito em várias secções abaixo. Ler o restante como fotografia histórica.
+
 # Avaliação — Arquitetura tecnológica e contrato de importação
 
 | Campo | Valor |
@@ -24,7 +26,7 @@ Legenda:
 
 ## 1. Resumo executivo
 
-**Stack acordada** `[acordado]`: .NET 10 + ASP.NET Core; React + TypeScript; SQL Server Express central; SQLite só auxiliar (workspace/cache/local); SQL Server 2025 Express com Full-Text Search (confirmar variante se versão anterior); tempo real com SignalR; desktop Windows-first via WebView2 da mesma SPA. OpenSearch **fora** desta fase (evolução futura permitida, sem antecipar complexidade).
+**Stack acordada** `[acordado]`: .NET 10 + ASP.NET Core; React + TypeScript; SQL Server central; SQLite só auxiliar (workspace/cache/local); SQL Server 2025 Express com Full-Text Search (confirmar variante se versão anterior); tempo real com SignalR; desktop Windows-first via WebView2 da mesma SPA. OpenSearch **fora** desta fase (evolução futura permitida, sem antecipar complexidade).
 
 **Fronteiras** `[acordado]`: Scanner independente produz pacotes; PHC Knowledge importa e transforma; sem runtime do Scanner na plataforma; sem recuperar Discovery/Fusion do ConsoleApp.
 

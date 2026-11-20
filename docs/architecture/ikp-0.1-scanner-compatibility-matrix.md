@@ -1,3 +1,5 @@
+> Fotografia histórica de 2026-11-17. API HTTP, Identity, Portal backend e frontend React evoluíram depois desta revisão. Consultar ../../PROJECT_STATUS.md para o estado atual. Esta matriz continua útil para compatibilidade Scanner/IKP, mas não é o estado global da plataforma.
+
 # Matriz de compatibilidade — IKP 0.1, Scanner e PHC Knowledge
 
 Data de revisão: 2026-11-17

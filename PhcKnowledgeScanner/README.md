@@ -1,63 +1,31 @@
 # PhcKnowledgeScanner
 
-Componente autónomo de recolha técnica de instalações PHC, incluído no monorepo **PHC Knowledge**.
+Componente autónomo de recolha técnica de instalações PHC, incluído no monorepo PHC Knowledge. Mantém execução e responsabilidades independentes e pode ser instalado/executado sem iniciar a plataforma central.
 
-O Scanner continua a ser uma aplicação independente do ponto de vista funcional e de execução: pode ser instalado e executado sem iniciar a plataforma PHC Knowledge. A sua localização e versionamento, contudo, são neste repositório, em `PhcKnowledgeScanner/`.
-
-> **Estado atual:** Desktop WPF + CLI, collector estrutural SQL, personalizações PHC, relações declaradas (`dbo.rel` / `dbo.dtl`) e Database Schema Snapshot (metadados estruturais versionáveis, com proteção de privacidade).
+> Estado: Desktop WPF + CLI, collectors estruturais SQL e PHC, relações declaradas REL/DTL, workspace SQLite e Database Schema Snapshot.
 
 ## Responsabilidades
-
-- Ligar a uma base de dados PHC em modo read-only.
-- Recolher inventário técnico, definições de personalizações e relações.
-- Preservar conteúdos originais, metadados, proveniência e limitações da recolha.
+- Ligar à base de dados PHC em modo read-only.
+- Recolher inventário técnico, definições de personalizações e relações dentro da cobertura implementada.
+- Preservar conteúdos originais, metadados, proveniência e limitações.
 - Manter workspace local SQLite e artefactos locais.
-- Produzir exportações que evoluirão para o contrato IKP.
+- Produzir pacotes IKP 0.1.
 
-O Scanner **não** mantém o conhecimento central nem executa a importação na plataforma. O PHC Knowledge recebe e valida os pacotes produzidos pelo Scanner. O Scanner não depende do backend, da base de dados PostgreSQL nem do runtime da plataforma.
+O Scanner não mantém o conhecimento central nem executa a importação na plataforma. O PHC Knowledge recebe e processa os pacotes. O Scanner não depende do backend, da base de dados central SQL Server nem do runtime da plataforma.
+
+## Fronteira de armazenamento
+A base central do PHC Knowledge é SQL Server. O SQLite deste componente é exclusivamente workspace/cache local; não é base central nem mecanismo de sincronização.
 
 ## Stack
-
 | Item | Escolha |
-| --- | --- |
+|---|---|
 | Runtime | .NET 10 |
 | UI desktop | WPF nativa Windows |
 | Host headless | CLI |
 | Workspace | SQLite + ficheiros de artefactos |
 | SQL | Microsoft.Data.SqlClient, apenas leitura |
 
-## Projetos
-
-```text
-src/
-  PhcKnowledgeScanner.Abstractions/
-  PhcKnowledgeScanner.Application/
-  PhcKnowledgeScanner.Engine/
-  PhcKnowledgeScanner.Collectors/
-  PhcKnowledgeScanner.Workspace/
-  PhcKnowledgeScanner.Analysis/
-  PhcKnowledgeScanner.Export/
-  PhcKnowledgeScanner.Desktop/
-  PhcKnowledgeScanner.Cli/
-tests/
-  PhcKnowledgeScanner.Engine.Tests/
-  PhcKnowledgeScanner.Tests/
-tools/
-  ValidateRelationalKnowledge/
-```
-
-## Comandos
-
-A partir da raiz do monorepo, consultar o [README principal](../README.md). Para trabalhar isoladamente a partir desta pasta:
-
-```bash
-dotnet build PhcKnowledgeScanner.sln
-dotnet test PhcKnowledgeScanner.sln
-dotnet run --project src/PhcKnowledgeScanner.Desktop
-```
-
 ## Princípios
-
 - SQL apenas leitura.
 - Factos originais, relações derivadas e inferências mantêm-se separados.
 - Sem truncagem silenciosa; limitações e issues devem ser registadas.
@@ -65,7 +33,7 @@ dotnet run --project src/PhcKnowledgeScanner.Desktop
 - Schema Snapshot partilhável contém metadados; definições SQL completas são opcionais e sujeitas a validação de privacidade.
 
 ## Documentação
-
-- [Arquitetura](docs/architecture.md)
-- [Schema Snapshot](docs/database-schema-snapshot.md)
-- [Decisões](docs/decisions/)
+- Arquitetura: docs/architecture.md
+- Schema Snapshot: docs/database-schema-snapshot.md
+- Decisões: docs/decisions/
+- Estratégia de testes: docs/testing-strategy.md

@@ -1,3 +1,5 @@
+> Atualização de governação (2026-11-20): PHC Standard curado pode ser reutilizado; observações e personalizações de clientes permanecem contextualizadas e não são partilhadas automaticamente. A presença numa ou várias instalações não promove automaticamente um objeto a Standard. A baseline em ../../PROJECT_BASELINE.md e as decisões em ../../DECISIONS.md prevalecem sobre formulações históricas deste documento.
+
 # Camadas de conhecimento e proveniência
 
 Fonte consolidada a partir de [`../sources/analisar-base-phc-2026-11.txt`](../sources/analisar-base-phc-2026-11.txt) e dos ADRs do Scanner em `PhcKnowledgeScanner/docs/decisions/`.  
@@ -16,7 +18,7 @@ Não misturar camadas. Cada afirmação deve indicar se é facto recolhido, inte
 | Projeção consultável | `KnowledgeRelation`, `FieldMapping`, vistas derivadas | Não apaga factos; regenerável |
 | Conhecimento humano | Anotações, validações, ligações sugeridas | Não altera factos; sobrevive a novos scans |
 | Histórico de scans | Snapshots imutáveis por recolha | Diff entre versões; sem wipe cego |
-| Conhecimento geral | Assets promovidos (standard / multi-org) | Só por curadoria humana, nunca automática |
+| Conhecimento geral | Assets PHC Standard curados ou conteúdo explicitamente promovido | Só por curadoria humana, nunca automática |
 
 ## Evidências e relações (herança do Scanner)
 
@@ -54,7 +56,7 @@ Comportamento desejado entre scans:
 
 ## Standard vs instalação
 
-- Conhecimento PHC standard: reutilizável entre organizações, após validação.
+- Conhecimento PHC Standard: reutilizável após validação e curadoria explícitas.
 - Conhecimento de instalação / personalização: isolado por organização.
 - Nesta conversa confirmou-se (BD `interh`): `dbo.rel` pode ser 100% catálogo standard (`ADM*`) sem cobrir ligações `u_*`.
 
@@ -68,7 +70,7 @@ Comportamento desejado entre scans:
 
 ## Regras consolidadas adicionais
 
-- A base central agrega conhecimento observado em várias instalações; instalação é dimensão de proveniência e filtro, não limite da pesquisa global.
+- A base central pode alojar observações de várias instalações, mas cada observação mantém contexto e controlo de acesso por cliente/instalação. Não existe partilha automática entre clientes.
 - Distinguir PHC Standard confirmado por referência, conhecimento observado e personalização específica. A presença numa ou várias instalações não promove automaticamente um objeto a standard.
 - Factos REL/DTL declarados e relações derivadas (por exemplo, FK SQL ou interpretações) mantêm-se separados.
 - As dependências funcionais são distintas de relações estruturais e referências textuais; devem conservar tipo de evidência, confiança e proveniência.

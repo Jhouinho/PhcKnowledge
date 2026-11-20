@@ -1,105 +1,66 @@
 # PHC Knowledge — Acordo de continuidade entre ferramentas
 
-**Estado:** regra de trabalho aprovada  
-**Âmbito:** ChatGPT, Cursor e qualquer outra ferramenta usada no desenvolvimento  
-**Fonte partilhada:** este repositório GitHub
+Estado: regra de trabalho aprovada.
+Âmbito: ChatGPT, Cursor e qualquer outra ferramenta usada no desenvolvimento.
+Fonte partilhada: repositório GitHub Jhouinho/PhcKnowledge.
 
 ## 1. Regra fundamental
+Nenhuma ferramenta deve continuar o desenvolvimento exclusivamente com base na memória, histórico de conversas ou contexto local não partilhado. GitHub é a fonte partilhada de verdade para o estado publicado; não representa alterações locais ainda não publicadas.
 
-Nenhuma ferramenta deve continuar o desenvolvimento do PHC Knowledge exclusivamente com base na sua memória, no histórico de conversas ou em contexto local não partilhado.
+## 2. Leitura obrigatória
+No início de cada sessão:
+1. Confirmar repositório, branch, HEAD e estado local.
+2. Consultar instruções aplicáveis, incluindo AGENTS.md e .cursor/rules/.
+3. Ler docs/governance/README.md.
+4. Ler PROJECT_BASELINE.md, DECISIONS.md, PROJECT_STATUS.md e docs/governance/current-handoff.md.
+5. Consultar documentação técnica diretamente relacionada com a tarefa.
+6. Verificar alterações recentes e comparar branch/base quando relevante.
 
-Antes de analisar, planear ou alterar o projeto, deve consultar o estado publicado e relevante do repositório. Antes de terminar uma sessão, deve deixar informação suficiente para a ferramenta seguinte continuar sem reconstruir decisões ou adivinhar o estado do trabalho.
+Se baseline, handoff e código divergirem, identificar a evidência e não escolher silenciosamente uma versão.
 
-O GitHub é a fonte partilhada de verdade para o estado versionado do projeto. Não representa automaticamente alterações locais ainda não publicadas.
+## 3. Estados de evidência
+- Proposta: ainda não aprovada.
+- Decisão aprovada: validada explicitamente pelo responsável.
+- Implementado: existe no código; indicar localização e commit/branch.
+- Validado: indicar testes/comandos e resultados observados.
+- Pendente: não executado ou sem evidência suficiente.
+- Substituído: decisão/documento antigo, com referência à decisão vigente.
 
-## 2. Leitura obrigatória antes de trabalhar
-
-No início de cada sessão ou transição:
-
-1. Confirmar repositório, branch e commit HEAD.
-2. Consultar as instruções de projeto aplicáveis (incluindo `AGENTS.md`, regras em `.cursor/rules/` e instruções equivalentes).
-3. Ler a baseline e as decisões vigentes referenciadas no índice de governação do projeto.
-4. Ler `docs/governance/current-handoff.md`.
-5. Consultar os documentos técnicos diretamente relacionados com a tarefa.
-6. Verificar alterações recentes e, quando relevante, comparar a branch com a base apropriada.
-
-Se a baseline, o handoff e o código divergirem, não escolher silenciosamente uma versão. Registar a divergência, identificar a evidência e pedir validação quando a decisão de produto não estiver clara.
-
-## 3. Registo obrigatório de informação
-
-As ferramentas devem distinguir explicitamente:
-
-- **Decisão proposta:** ainda não aprovada pelo utilizador.
-- **Decisão aprovada:** orientação de produto/arquitetura validada pelo utilizador.
-- **Implementado:** existe no código; indicar localização e commit/branch.
-- **Validado:** indicar testes, comandos e resultados efetivamente observados.
-- **Pendente:** ainda não executado ou sem evidência suficiente.
-- **Substituído:** decisão/documento antigo, com referência à decisão que o substituiu.
-
-Uma proposta não se transforma em decisão por aparecer num documento, prompt, comentário ou implementação. Uma implementação não prova, por si só, que a decisão de produto foi aprovada.
+Uma proposta não se torna decisão por aparecer num documento ou implementação. Implementação não prova, por si só, aprovação de produto.
 
 ## 4. Transição Cursor → GitHub → ChatGPT
+Antes de terminar no Cursor:
+1. Atualizar docs/governance/current-handoff.md.
+2. Registar ficheiros alterados e decisões.
+3. Indicar testes executados e resultados exatos; separar testes não executados.
+4. Registar riscos, questões e alterações locais/commits ainda não publicados.
+5. Publicar apenas segundo a autorização do utilizador.
 
-Antes de terminar uma sessão no Cursor:
-
-1. Atualizar `docs/governance/current-handoff.md`.
-2. Registar o que foi alterado, com caminhos dos ficheiros.
-3. Indicar testes executados e resultado exato; separar testes não executados.
-4. Registar descobertas, decisões propostas/aprovadas, riscos e questões em aberto.
-5. Identificar alterações locais não commitadas, commits locais ainda não publicados e outros estados que o GitHub não consiga ver.
-6. Publicar as alterações apenas segundo o fluxo Git acordado pelo utilizador.
-
-Ao retomar no ChatGPT, consultar o GitHub e o handoff. Se houver trabalho local não publicado, pedir ao utilizador o respetivo resumo/diff ou acesso ao estado local; nunca afirmar que foi consultado quando não foi.
+Ao retomar, consultar GitHub e handoff. Se houver trabalho local não publicado, pedir resumo/diff ou acesso ao estado local; nunca afirmar que foi consultado quando não foi.
 
 ## 5. Transição ChatGPT → Cursor
+Preparar instruções delimitadas com objetivo, âmbito, restrições, critérios de aceitação e documentos canónicos. Exigir confirmação do estado real do código e atualização do handoff no fim.
 
-Quando o ChatGPT preparar trabalho para o Cursor:
+## 6. Disciplina Git
+- Não assumir que a branch ativa é main.
+- Não assumir que o último commit inclui alterações locais.
+- Não fazer commit, push, merge, rebase ou mudança de branch sem autorização explícita.
+- Quando a publicação for autorizada, confirmar HEAD antes da escrita, publicar apenas na branch acordada e usar fast-forward sem force.
+- Não sobrescrever trabalho local/remoto desconhecido.
+- Não apagar documentação histórica sem inventário, justificação e validação.
 
-1. Referenciar decisões e documentos vigentes, em vez de reescrever requisitos de memória.
-2. Dar instruções delimitadas, com objetivo, âmbito, restrições e critérios de aceitação.
-3. Distinguir claramente decisões aprovadas de propostas.
-4. Indicar o que não deve ser alterado.
-5. Pedir ao Cursor que valide o estado real do código antes de implementar.
-6. Exigir atualização do handoff no fim da execução.
+## 7. Conflitos
+Preservar ambas as evidências; identificar diferença temporal, proposta, decisão ou implementação; consultar o responsável quando necessário; atualizar a fonte canónica e o handoff.
 
-## 6. Disciplina de Git e alterações
+## 8. Documentos canónicos
+- PROJECT_BASELINE.md: objetivo, arquitetura e fronteiras.
+- DECISIONS.md: decisões aprovadas, substituídas e questões abertas.
+- PROJECT_STATUS.md: implementação, validação, limitações e próximos passos.
+- docs/governance/current-handoff.md: continuidade da sessão.
+- docs/governance/README.md: índice e ordem de leitura.
+- .cursor/rules/project-context.mdc: instruções obrigatórias do Cursor.
 
-- Não assumir que a branch ativa é `main`; confirmar sempre.
-- Não assumir que o último commit inclui todas as alterações locais.
-- Não fazer commit, push, merge, rebase ou mudança de branch sem autorização explícita do utilizador.
-- Não sobrescrever trabalho local ou remoto desconhecido.
-- Antes de qualquer escrita no GitHub, confirmar branch e estado atual do ficheiro.
-- Uma alteração publicada pelo GitHub é um commit real; não a descrever como mera edição local.
-- Não apagar documentação histórica durante uma consolidação sem inventário, justificação e validação.
+## 9. Manter o repositório utilizável pela ferramenta seguinte
+No fim de cada tarefa, atualizar a fonte canónica afetada e o handoff. Se o utilizador autorizou publicação para essa tarefa, publicar na branch acordada e verificar o HEAD remoto. Se não houver autorização, declarar explicitamente que o estado ficou apenas local e pedir autorização. Não deixar decisões importantes apenas em prompts ou conversas.
 
-## 7. Protocolo para conflitos e perda de contexto
-
-Se duas fontes divergirem:
-
-1. Preservar a evidência de ambas.
-2. Identificar se a diferença é temporal, uma proposta, uma decisão aprovada ou uma implementação.
-3. Consultar o utilizador quando a resolução exigir uma decisão de produto.
-4. Atualizar a fonte canónica e marcar explicitamente a informação substituída.
-5. Propagar a alteração ao handoff e às instruções relevantes.
-
-Nunca reabrir uma decisão aprovada apenas por não estar presente no contexto da sessão. Consultar o registo de decisões primeiro.
-
-## 8. Documentos operacionais
-
-- `docs/governance/current-handoff.md`: estado de continuidade da sessão mais recente.
-- `docs/governance/working-agreement.md`: este protocolo.
-- `.cursor/rules/project-context.mdc`: instruções obrigatórias para o Cursor.
-
-A baseline e o registo canónico de decisões serão identificados/consolidados durante a auditoria documental. Até essa auditoria estar concluída, não inventar caminhos nem presumir que um documento antigo é vigente.
-
-## 9. Critério de conclusão de uma sessão
-
-Uma sessão só fica pronta para transição quando outra ferramenta consegue perceber, sem depender da conversa anterior:
-
-- em que branch e commit se trabalhou;
-- qual era o objetivo;
-- o que mudou;
-- o que foi realmente testado;
-- que decisões foram tomadas ou continuam pendentes;
-- que alterações ainda não estão no GitHub;
-- qual é o próximo passo seguro.
+Uma sessão só fica pronta para transição quando a ferramenta seguinte consegue perceber branch/commit, objetivo, alterações, testes, decisões, pendências, alterações não publicadas e próximo passo.
