@@ -5,7 +5,7 @@
 - Branch: feature/increment-c-package-import-analysis-confirmation
 - HEAD de referência: 6fdb4060a8fdb2de8aec9080620b91b4c9fa89f5
 - Âmbito: todos os ficheiros versionados com extensão .md, .mdc ou .txt na árvore Git.
-- Total inventariado: 85 ficheiros.
+- Total inventariado: 86 ficheiros.
 - Estado: classificação documental inicial concluída; não equivale a validação integral de cada afirmação técnica nem autoriza apagar ficheiros.
 
 ## Regras de manutenção
