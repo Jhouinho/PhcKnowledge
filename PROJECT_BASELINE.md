@@ -76,6 +76,10 @@ Não eliminar o pacote antes da confirmação de persistência. A implementaçã
 
 O conhecimento PHC standard deve ter fontes controladas e separadas das capturas dos clientes. A branch contém uma fonte SQL de triggers standard e o projeto PhcKnowledge.StandardCatalog com extração/parsing de triggers.
 
+As relações declaradas PHC em `REL` e `DTL` pertencem conceptualmente a este catálogo comum: são conhecimento de referência PHC, aplicável às instalações conforme a versão/edição PHC, e não personalizações que o Scanner deva recolher e transportar integralmente em cada captura. A fonte standard deve ser curada e versionada no Knowledge. Se uma instalação divergir da referência, a diferença poderá ser registada como observação específica, mas o mecanismo de comparação e exportação de deltas ainda terá de ser definido.
+
+As sete operações de estrutura SQL Server do Scanner (identificação da base, inventário de tabelas, chaves primárias, foreign keys, views, procedures e triggers) são mecanismos de descoberta da estrutura física da instalação. A sua execução não significa que todo o resultado deva ser duplicado no IKP como personalização. O objetivo é comparar evidência observada com conhecimento standard conhecido e preservar diferenças específicas. Até existir cobertura suficiente do PHC Standard Catalog e regras de classificação, objetos não reconhecidos devem permanecer observações por classificar; não devem ser automaticamente declarados standard nem personalizados.
+
 Isto não demonstra uma pipeline completa de ingestão, classificação, curadoria, versionamento, persistência e publicação. Não inferir que todo o conteúdo da base PHC é standard nem que o Scanner recolhe o dicionário PHC completo.
 
 ## 7. Objetivos e exclusões
