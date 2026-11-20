@@ -132,5 +132,5 @@ A fonte original e a sua proveniência devem, contudo, permanecer rastreáveis s
 - Não altera retroativamente o comportamento da captura já analisada.
 - A cobertura real de cada tipo de objeto e as regras atuais de recolha do Scanner continuam a exigir auditoria técnica antes de qualquer implementação.
 
-**Especificação técnica:** [Integração do catálogo PHC Standard com o IKP](standard-catalog-integration-specification.md). O documento define a proposta de contrato de evidência, catálogo versionado, materialização, matching, coverage e fases de implementação. Continua pendente de aprovação e não autoriza alterações ao código, IKP, SQLite ou migrations.
+**Especificação técnica e decisões aprovadas (2026-11-20):** [Integração do catálogo PHC Standard com o IKP](standard-catalog-integration-specification.md). Foram aprovadas a evolução da capability `sql.server.structure.triggers` para versão 2.0 (preservando a semântica 1.0 e IKP 0.1), a chave de matching baseada em kind/schema/nome da trigger/schema/nome da tabela pai e a abordagem de fingerprints separado original/comparação lexical versionada. A Fase 0 está encerrada e a Fase 1 — Scanner está autorizada. A autorização não antecipa decisões sobre persistência/migrations do catálogo nem permite remover a fonte SQL antes da importação integral, reconciliação e validação no Portal.
 
