@@ -120,3 +120,16 @@ A auditoria permanece em curso. Esta publicação não executou testes nem alter
 - Criado `docs/architecture/ikp-materialization-contract-proposal-2026-11-20.md`, explicitamente proposta não aprovada. Abrange identidade/proveniência, itens e artefactos, estados, idempotência, recovery, verificação e eliminação segura.
 - Questões em aberto: destino durável dos bytes, granularidade de transação, política para Rejected/Blocked, reanálise após eliminação e retenção.
 - Sem alterações de código, migrations ou testes; nenhum ZIP foi eliminado.
+
+
+## Etapa 5 — reconciliação documental e fluxo operacional (2026-11-20)
+
+- Confirmada a branch `feature/increment-c-package-import-analysis-confirmation`; HEAD de entrada desta etapa: `38e53a8f07d12d5fc15d0ae87f6ac4990faedd08`.
+- Verificada a árvore Git completa: 86 ficheiros documentais (`83 .md`, `1 .mdc`, `2 .txt`). O inventário individual já continha 86 entradas, mas o total no cabeçalho dizia 85; corrigido para 86. As referências anteriores a 79/83/84/85 pertencem a fotografias intermédias e não representam a árvore atual.
+- Reconciliados os documentos canónicos com o fluxo operacional confirmado pelo responsável: Scanner executado no servidor do cliente → ZIP criado localmente → transferência manual pelo operador → upload manual no Portal PHC Knowledge. Não existe envio direto Scanner→Knowledge.
+- Confirmado no código que existe `POST /api/v1/ikp/packages`, autenticado por JWT Bearer e scopes IKP. O frontend React atual não tem upload de pacotes nem gestão funcional de capturas; falta a operação/API do Portal autenticada pela sessão do Portal que invoque internamente a ingestão. A especificação do Portal já explicita esta lacuna.
+- Corrigida a especificação do Portal para não afirmar que o ZIP deve permanecer arquivado permanentemente nem limitar a base central a SQL Server Express. A baseline continua a estabelecer SQL Server, edição/versão por decidir, e ZIP temporário.
+- Atualizados `PROJECT_BASELINE.md`, `DECISIONS.md` (D-014), `PROJECT_STATUS.md`, `docs/architecture/portal-experience-specification-2026-11-19.md` e `docs/governance/document-inventory.md`.
+- A inspeção de títulos, notas de precedência e referências a tecnologia/estado foi feita sobre os documentos versionados; a classificação individual existe. Isto não equivale ainda a uma validação semântica exaustiva de cada afirmação técnica em todos os 86 ficheiros.
+- Permanecem por concluir: reconciliação técnica dos collectors/mapeamentos IKP e testes por operação; PHC Standard Catalog; estratégia de pesquisa; validação completa da especificação de Portal; fecho do contrato de materialização e política operacional para tentativas `NeedsAttention` sem bytes recuperáveis.
+- Nenhum código, migration, teste ou artefacto de captura foi alterado/executado nesta etapa. Não foram eliminados documentos nem ZIPs.
