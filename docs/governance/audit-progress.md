@@ -218,3 +218,22 @@ A inspeção do collector, do workspace e dos resolvers confirmou:
 **Conclusão:** existe informação estruturada suficiente para comparar os metadados do campo sem tratar o ficheiro como definição de código. O ficheiro deve continuar a ser transportado por D-016 e associado à observação da captura. O desenho deverá classificar a sua finalidade a partir de evidência explícita do objeto/artefacto (preferencialmente metadata tipada ou associação inequívoca ao `ObjectKind`), nunca apenas pelo nome do caminho. Não se escolhe ainda o mecanismo final nem se altera código.
 
 Próximo passo: verificar se outros collectors reutilizam `DefinitionArtifactId` para conteúdo que não seja definição original e se existe uma classificação por tipo de objeto/artifacto que possa ser generalizada sem heurísticas frágeis.
+
+
+## Atualização — distinção semântica de FORMB e FORMC (2026-11-20)
+
+A revisão dos restantes artefactos especiais do collector PHC identificou dois casos que não devem ser classificados em bloco como `source-definition`:
+
+### FORMB — ecrãs personalizados
+- O collector gera um ficheiro `.txt` com stamp, ecrã, nome, tabela, descrição, defeito, ordem e estado.
+- O `SummaryJson` do objeto guarda apenas source, stamp, ecrã, nome, tabela, defeito e estado; não inclui `descricao` nem `ordem`.
+- O `MetadataProjectionResolver` também não projeta `descricao` nem `ordem`.
+- Portanto, o ficheiro contém informação de configuração/descritiva que não está integralmente representada no Object Index. Deve continuar a ser transportado e não ser tratado como código executável só por estar ligado a `DefinitionArtifactId`.
+
+### FORMC — grelhas/objectos ocultos
+- O collector lê `formc.prop`, extrai `Xexpressao` com `FormcPropParser` e produz uma versão formatada por `FoxProFlattenedCodeFormatter`.
+- O artefacto atual guarda a versão formatada e um cabeçalho descritivo; o `SummaryJson` guarda apenas stamp, ecrã, nome, tag e tvalobj.
+- O valor original completo de `prop` não é persistido no objeto nem num artefacto separado no percurso inspecionado. Assim, o payload atual preserva uma representação derivada, mas não a evidência original integral.
+- É necessário desenhar a preservação separada do valor original de `prop` e da expressão extraída/formatada. Não alterar o collector nesta etapa.
+
+**Conclusão:** a classificação de artefactos precisa de distinguir, pelo menos, definição original, representação derivada e evidência/configuração descritiva. A decisão D-016 exige transportar a captura completa; não autoriza eliminar ficheiros que contenham dados que ainda não estejam representados no Object Index. O desenho de roles e a cobertura de dados devem ser fechados por tipo de objeto antes de qualquer alteração.
