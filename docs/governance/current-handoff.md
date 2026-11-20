@@ -118,6 +118,9 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 
 
 ## Atualização — decisão de classificação Scanner / PHC Standard (2026-11-20)
+- Após o registo desta atualização, a proposta `docs/architecture/ikp-materialization-contract-proposal-2026-11-20.md` recebeu nota de precedência D-015: o payload REL/DTL legado não deve ser materializado automaticamente como personalização de cada instalação.
+- HEAD remoto imediatamente antes desta atualização final do handoff: `d2fab38c0b2a0f7f48dfca93235efb1d68071dfa`.
+
 
 - HEAD remoto imediatamente antes desta atualização: `8fb7c14a139defa0132f6780a77febab188ba891`.
 - Registada a decisão D-015 em `DECISIONS.md`: relações PHC standard em REL/DTL pertencem ao PHC Standard Catalog, como conhecimento comum versionado por aplicabilidade PHC; não são recolhidas integralmente em cada captura.
