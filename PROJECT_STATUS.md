@@ -129,7 +129,7 @@ Antes de iniciar uma tarefa, ler PROJECT_BASELINE.md, DECISIONS.md, este ficheir
 
 ### Auditoria da captura CSDefault202603 — 2026-11-20
 - A captura de 16-11 e a cópia de 18-11 são byte a byte iguais; foi analisado o ZIP exterior com o workspace SQLite que lhe pertence.
-- Object Index: 16.618 objetos (8.294 tabelas, 8.268 PK, 36 procedures e 20 objetos PHC de outros tipos); 49 definições disponíveis e 6 indisponíveis.
+- Object Index: 16.618 objetos (8.294 tabelas, 8.268 PK, 36 procedures e 19 objetos PHC de outros tipos); 49 definições disponíveis e 6 indisponíveis.
 - Cobertura estrutural: zero FK, views e triggers; sem inventário de colunas/índices. As tabelas têm metadados básicos; as PK incluem apenas as suas colunas.
 - 30 definições SQL são procedures `dbo.dt_*` de suporte SQL Server; 6 procedures `usp_*` não têm definição disponível. 19 artefactos PHC (FORMB, FORMC, FTU e teclas).
 - REL/DTL: 295 + 626 = 921 factos; 921 interpretações no workspace, mas o pacote IKP de 16-11 não inclui artefacto autónomo de interpretações. O pacote de 10-11 incluía-o; diferença pendente de reconciliação.
