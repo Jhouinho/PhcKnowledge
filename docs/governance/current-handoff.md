@@ -80,7 +80,7 @@ Discutir e decidir o destino dos bytes dos artefactos e a política de disposiç
 ## Atualização — auditoria documental e fluxo manual IKP (2026-11-20)
 
 - Branch: `feature/increment-c-package-import-analysis-confirmation`.
-- Commit imediatamente anterior a esta atualização do handoff: `27de160f70112142d4a35fffc5e63f5888208ca1`.
+- Commit de referência da auditoria documental nesta sessão: `38e53a8f07d12d5fc15d0ae87f6ac4990faedd08`. As atualizações documentais desta sessão foram publicadas em commits subsequentes; consultar sempre o HEAD remoto da branch para a referência atual.
 - A árvore Git foi verificada: 86 ficheiros documentais (`83 .md`, `1 .mdc`, `2 .txt`). O inventário contém 86 entradas; o total do cabeçalho foi corrigido de 85 para 86.
 - Fluxo operacional confirmado: Scanner corre no servidor do cliente e gera ZIP; o operador transfere manualmente o ZIP para o ambiente com acesso ao PHC Knowledge e faz upload manual através do Portal. Não existe comunicação direta Scanner→Knowledge.
 - D-014 foi registada em `DECISIONS.md`; `PROJECT_BASELINE.md` e especificação do Portal foram alinhados com este fluxo.
