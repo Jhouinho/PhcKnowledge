@@ -177,3 +177,12 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 - Conclusão: o ficheiro descritivo continua a ser transportado por D-016, mas não é uma definição de código. A classificação futura deve usar finalidade explícita ou associação inequívoca ao ObjectKind, não heurísticas de nome de ficheiro.
 - Atualizado `docs/governance/audit-progress.md`. Nenhum código/schema/migration/teste alterado.
 - Próximo passo: auditar outros collectors que usam `DefinitionArtifactId` para verificar se há artefactos com semânticas diferentes de source-definition.
+
+
+## Atualização — auditoria semântica de FORMB/FORMC (2026-11-20)
+
+- FORMB gera um ficheiro descritivo/configuracional com `descricao` e `ordem`, campos que não estão no `SummaryJson` nem na projeção atual de metadados. Não classificar automaticamente como definição de código nem descartar o artefacto.
+- FORMC lê `formc.prop`, extrai `Xexpressao` e guarda apenas a representação formatada no artefacto atual. O valor original completo de `prop` não é persistido no percurso inspecionado. É necessário desenhar preservação separada do original e do derivado.
+- A classificação de artefactos deve distinguir definição original, representação derivada e evidência/configuração descritiva; D-016 exige transportar a captura completa.
+- Evidências e limites registados em `docs/governance/audit-progress.md`. Nenhum código/schema/migration/teste alterado.
+- Próximo passo: completar a matriz de finalidade e conteúdo por ObjectKind/collector, confirmando que cada dado original está representado no Object Index ou num artefacto transportado, antes de fechar os roles IKP.
