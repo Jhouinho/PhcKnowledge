@@ -98,6 +98,14 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 - Notas de precedência adicionais publicadas: ADR 0003 do Scanner (repo separado substituído pelo monorepo) e spike de arquitetura do frontend (anterior à existência do React). `open-decisions.md` já estava identificado como checklist histórica, não backlog vigente.
 
 
+## Atualização — classificação PHC Standard vs Scanner (2026-11-20)
+
+- O responsável confirmou que `REL`/`DTL` não devem ser capacidades do Scanner: as relações PHC standard são conhecimento interno comum, mantido no PHC Standard Catalog e versionado segundo a aplicabilidade PHC.
+- O código auditado continua a declarar 23 operações (7 SQL Server, 14 personalizações PHC, 2 REL/DTL); a classificação-alvo do Scanner passa conceptualmente a 21 operações. As duas operações REL/DTL são comportamento legado a retirar/rever, não uma alteração já implementada.
+- As sete operações SQL Server são descoberta da estrutura física da instalação. Não significam exportar todos os objetos standard em cada ZIP; a comparação com PHC Standard e a exportação de deltas locais continuam por desenhar.
+- Até existir cobertura suficiente do catálogo e regras de comparação, objetos desconhecidos permanecem por classificar; não os rotular automaticamente como standard ou personalizados.
+- Sem alterações de código, IKP, migrations ou testes nesta etapa.
+
 ## Atualização — auditoria Scanner/IKP operação a operação (2026-11-20)
 
 - Commit anterior a esta atualização: `c68d402fcab2d0a45db89f39828d5e7f5da7e3b6`.
@@ -106,4 +114,4 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 - Testes existentes: ScanEngine cobre semântica de coverage; ObjectOperationResolver cobre mapeamentos; ObjectIndexProjector cobre projeção sintética; IkpPackageExporter cobre ZIP sintético. O harness de receção valida um ZIP real CSDefault202603, mas não está comprovado que esse ZIP tenha sido produzido pelo exporter atual. Não foi encontrada suite de integração SQL dos collectors contra PHC real.
 - Achados: FTU+Fx/User fica todo condicionado à existência de dbo.ftu; exceção em `RunOptionalAsync.sourceExistsAsync` não é capturada pelo tratamento por operação; probe de personalizações agrega tabelas core em vez de verificar cada uma; estado de definição/artefactos deve ser lido separadamente da coverage de objetos.
 - Não foram feitas alterações de código nem executados testes/builds ou recolhas reais.
-- Próximo passo: auditar a projeção dos artefactos para o ZIP, confirmar a proveniência do ZIP real do harness e fechar o round-trip captura real → exporter atual → validador independente, sem alterar collectors antes de decisão.
+- Próximo passo: continuar a auditoria da cadeia de exportação dos artefactos; mapear a fonte standard PHC para REL/DTL e avaliar o que as sete operações SQL devem comparar/exportar. Confirmar a proveniência do ZIP real do harness e fechar o round-trip captura real → exporter atual → validador independente antes de alterar collectors ou o contrato IKP.
