@@ -5,7 +5,6 @@ using PhcKnowledgeScanner.Abstractions.Coverage;
 using PhcKnowledgeScanner.Abstractions.Inventory;
 using PhcKnowledgeScanner.Collectors.Sql;
 using PhcKnowledgeScanner.Workspace;
-using Xunit.Sdk;
 
 namespace PhcKnowledgeScanner.Tests;
 
@@ -43,17 +42,17 @@ public sealed class SqlServerTriggerIntegrationTests
         var insteadOfTrigger = $"tr_{suffix}_instead";
         var customTrigger = $"tr_{suffix}_custom";
 
-        await CreateFixtureAsync(
-            adminConnectionString,
-            standardTable,
-            customTable,
-            standardTrigger,
-            disabledTrigger,
-            insteadOfTrigger,
-            customTrigger);
-
         try
         {
+            await CreateFixtureAsync(
+                adminConnectionString,
+                standardTable,
+                customTable,
+                standardTrigger,
+                disabledTrigger,
+                insteadOfTrigger,
+                customTrigger);
+
             var full = await RunCollectorAsync(adminConnectionString, $"integration/full/{suffix}");
             var fullCoverage = Assert.Single(full.Coverages, x => x.OperationId == KnownOperations.SqlTriggers);
 
