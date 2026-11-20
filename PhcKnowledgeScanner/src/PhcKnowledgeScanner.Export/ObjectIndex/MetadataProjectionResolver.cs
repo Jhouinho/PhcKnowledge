@@ -150,38 +150,64 @@ public static class MetadataProjectionResolver
                 return CompleteOrDiagnostic(metadata, fingerprint, fkComplete);
 
             case ObjectKind.Trigger:
-                // Preserve the approved matching tuple as descriptive metadata.
-                // Older 1.0 workspaces lack these summary fields, so fall back only
-                // to identity components already present in the capture record.
-                metadata["triggerSchema"] = ReadString(root, "triggerSchema") ?? record.SchemaName;
-                metadata["triggerName"] = ReadString(root, "triggerName") ?? record.Name;
-                if (Copy(root, "parentSchema", metadata) && Copy(root, "parentName", metadata))
+                // Capability 2.0 carries the complete tuple explicitly. Never parse
+                // its names from a dotted display identifier: SQL identifiers may
+                // themselves contain dots. Legacy 1.0 captures use the old record fields.
+                var hasV2Summary = TryGetProperty(root, "triggerSchema", out _)
+                    || TryGetProperty(root, "triggerName", out _)
+                    || TryGetProperty(root, "parentSchema", out _)
+                    || TryGetProperty(root, "parentName", out _)
+                    || TryGetProperty(root, "events", out _)
+                    || TryGetProperty(root, "isInsteadOf", out _);
+
+                var triggerIdentityComplete = true;
+                var parentTupleComplete = true;
+                if (hasV2Summary)
                 {
-                    // The 2.0 collector emits the parent tuple explicitly.
+                    triggerIdentityComplete =
+                        Copy(root, "triggerSchema", metadata)
+                        && Copy(root, "triggerName", metadata)
+                        && IsString(root, "triggerSchema")
+                        && IsString(root, "triggerName");
+                    parentTupleComplete =
+                        Copy(root, "parentSchema", metadata)
+                        && Copy(root, "parentName", metadata)
+                        && IsString(root, "parentSchema")
+                        && IsString(root, "parentName");
                 }
-                else if (TryParseParentTableId(record.ParentObjectId, out var parentSchema, out var parentName))
+                else
                 {
-                    metadata["parentSchema"] = parentSchema;
-                    metadata["parentName"] = parentName;
+                    metadata["triggerSchema"] = record.SchemaName;
+                    metadata["triggerName"] = record.Name;
+                    if (TryParseParentTableId(record.ParentObjectId, out var parentSchema, out var parentName))
+                    {
+                        metadata["parentSchema"] = parentSchema;
+                        metadata["parentName"] = parentName;
+                    }
+                    else
+                    {
+                        parentTupleComplete = false;
+                    }
                 }
 
-                var triggerComplete = Copy(root, "isDisabled", metadata)
+                var triggerComplete = triggerIdentityComplete
+                    && parentTupleComplete
+                    && Copy(root, "isDisabled", metadata)
                     && Copy(root, "isDisabled", fingerprint)
                     && IsBoolean(root, "isDisabled");
 
-                if (Copy(root, "isInsteadOf", metadata))
+                if (hasV2Summary)
                 {
-                    var insteadOfValid = IsBoolean(root, "isInsteadOf");
+                    var insteadOfValid = Copy(root, "isInsteadOf", metadata)
+                        && IsBoolean(root, "isInsteadOf");
                     triggerComplete &= insteadOfValid;
                     if (insteadOfValid)
                     {
                         Copy(root, "isInsteadOf", fingerprint);
                     }
-                }
 
-                if (Copy(root, "events", metadata))
-                {
-                    var eventsValid = IsStringArray(root, "events");
+                    var eventsValid = Copy(root, "events", metadata)
+                        && IsStringArray(root, "events");
                     triggerComplete &= eventsValid;
                     if (eventsValid)
                     {
