@@ -175,3 +175,14 @@ O responsável confirmou a separação arquitetural entre PHC Standard e recolha
 - O exporter atual ainda inclui REL/DTL em `payload/relations/declared-relations.json`; comportamento legado em conflito com D-015, sem alteração nesta etapa.
 - Nenhum código, schema IKP, migration, teste ou captura foi alterado/executado nesta etapa.
 - Próximo passo: fechar a semântica do artefacto descritivo `phc.user_field` e a proveniência/round-trip da captura real antes de decidir alterações ao exporter. Depois atualizar contrato e testes, e só então implementar.
+
+
+## Atualização — D-016 e continuidade da auditoria (2026-11-20)
+
+- Decisão aprovada: o Scanner transporta sempre a captura completa; não compara com scans anteriores.
+- Durante a materialização, o PHC Knowledge compara o conteúdo com o que já está persistido para a mesma instalação. Conteúdo idêntico não é gravado novamente; conteúdo novo é inserido; conteúdo alterado origina nova versão.
+- Cada captura e a sua observação continuam registadas, mesmo quando reutilizam conteúdo idêntico. A ausência numa captura posterior não significa eliminação.
+- O artefacto descritivo de `phc.user_field` continua no ZIP; deve ser classificado como evidência/metadados, não como `source-definition`, quando não representa definição original.
+- Documento funcional publicado: `docs/architecture/ikp-incremental-materialization-policy-2026-11-20.md`; decisão D-016 publicada em `DECISIONS.md`.
+- Sem alterações de código, schemas IKP, migrations ou testes. Sem builds, testes ou captura real executados.
+- Próximo passo de auditoria: inspecionar o contrato de manifesto/validação para identificar os papéis de artefacto atualmente permitidos e desenhar a representação correta para evidência descritiva. Depois fechar identidade estável e fingerprints por instalação, antes de autorizar implementação.
