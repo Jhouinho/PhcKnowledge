@@ -1,4 +1,4 @@
-> Nota de precedência (2026-11-20): este modelo é uma fotografia conceptual datada de 17-11-2026. A baseline e decisões atuais estão em ../../PROJECT_BASELINE.md e ../../DECISIONS.md. Referências a SQL Server Express obrigatório, arquivo permanente de ZIPs e modelo multi-organização estão substituídas. ZIP é transporte temporário e deve ser eliminado apenas após materialização e confirmação íntegra.
+> Nota de precedência (2026-11-20): este modelo é uma fotografia conceptual datada de 17-11-2026. A baseline e decisões atuais estão em ../../PROJECT_BASELINE.md e ../../DECISIONS.md. Referências a SQL Server Express obrigatório, arquivo permanente de ZIPs e modelo multi-organização estão substituídas. ZIP é transporte temporário e deve ser eliminado apenas após materialização e confirmação íntegra. A secção 7 descreve o comportamento histórico do Scanner ao exportar REL/DTL; a direção atual é manter relações PHC standard no PHC Standard Catalog, não como capacidade repetida do Scanner.
 
 # PHC Knowledge — Modelo de domínio 0.2
 
