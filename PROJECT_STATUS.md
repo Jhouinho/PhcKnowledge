@@ -23,7 +23,7 @@ A direção aprovada está em PROJECT_BASELINE.md e DECISIONS.md: ferramenta int
 - Análise do pacote e decisões humanas do fluxo Incremento C têm implementação nas partes verificadas; materialização integral do conhecimento não está concluída.
 
 ### Ingestão IKP
-- Scanner emite IKP 0.1 com manifesto, capabilities, coverage, Object Index, checksums, artefactos referenciados e factos REL/DTL quando disponíveis.
+- Scanner emite IKP 0.1 com manifesto, capabilities, coverage, Object Index, checksums e artefactos referenciados. A implementação atual também inclui factos REL/DTL; essa inclusão é agora identificada como comportamento legado a retirar/rever, não como direção arquitetural aprovada.
 - Knowledge possui validação/receção, receipts, tentativas, operações de recovery/cleanup e endpoints HTTP IKP.
 - O endpoint público de upload IKP usa JWT Bearer e scopes próprios. Não existe ainda uma operação autenticada do Portal (sessão por cookie) que permita ao operador fazer o upload manual pela UI.
 - A implementação atual mantém arquivo de pacotes e a análise pode reabrir o pacote arquivado. Isto diverge da decisão de ZIP temporário; não alterar sem desenhar e validar materialização, recuperação e eliminação.
@@ -31,7 +31,9 @@ A direção aprovada está em PROJECT_BASELINE.md e DECISIONS.md: ferramenta int
 
 ### Scanner
 - WPF Desktop + CLI, collectors estruturais SQL e PHC, workspace SQLite, análise REL/DTL e exportador IKP.
-- Catálogo declara 23 operações: 7 SQL Server Structure, 14 PHC Customizations e 2 PHC Declared Relations.
+- O código atualmente declara 23 operações: 7 SQL Server Structure, 14 PHC Customizations e 2 PHC Declared Relations. Esta é a fotografia da implementação auditada, não a classificação arquitetural pretendida.
+- Direção aprovada: as duas operações REL/DTL deixam de ser consideradas capacidades de recolha do Scanner; o seu conteúdo standard pertence ao PHC Standard Catalog, comum e versionado por aplicabilidade PHC. O catálogo-alvo do Scanner fica, conceptualmente, com 21 operações (7 de descoberta SQL Server + 14 de recolha de personalizações PHC), sujeito a revisão do que cada operação deve exportar.
+- As sete operações SQL Server são mecanismos de descoberta da estrutura física (base de dados, tabelas, PK, FK, views, procedures e triggers). Não implicam exportar indiscriminadamente todos os objetos standard. A comparação com PHC Standard e a classificação de diferenças ainda não estão implementadas.
 - A matriz de auditoria encontrou testes de resolução, projeção, parsing, persistência e exportação sintética; não encontrou testes diretos que executem os collectors reais contra SQL Server e validem individualmente as 23 operações.
 - Database Schema Snapshot é funcionalidade auxiliar separada do fluxo normal de captura.
 
