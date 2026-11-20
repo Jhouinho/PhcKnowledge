@@ -1,0 +1,69 @@
+# PHC Knowledge — Progresso da auditoria documental
+
+**Estado:** em curso; não é uma baseline aprovada nem uma auditoria concluída.  
+**Última atualização:** 2026-11-20  
+**Repositório:** `Jhouinho/PhcKnowledge`  
+**Branch de trabalho:** `feature/increment-c-package-import-analysis-confirmation`  
+**Commit de referência anterior:** `170631ea8e17b584ac70cd6b379312570c0c948a`
+
+## Objetivo e limites
+
+Verificar a coerência entre decisões de produto/arquitetura, documentação, código e testes; identificar documentos vigentes, desatualizados, históricos, redundantes ou que devam ser preservados como contratos/fixtures.
+
+Durante esta auditoria:
+- não alterar implementação;
+- não apagar nem reescrever documentação técnica;
+- não fazer merge nem mudar de branch;
+- não declarar implementado ou validado sem evidência;
+- apresentar o inventário e a proposta de tratamento antes de qualquer limpeza documental.
+
+## Contexto de produto confirmado pelo utilizador
+
+- A plataforma é uma ferramenta de uso interno da equipa, para gerir e reutilizar conhecimento técnico dos clientes acompanhados; não é um produto comercial multiempresa.
+- O Scanner corre no ambiente do cliente e produz um ZIP que é transportado para o ambiente interno.
+- O ZIP é meio de transporte. O objetivo aprovado é materializar e persistir no SQL Server a informação necessária e eliminar o ZIP/temporários após confirmação de importação íntegra; a implementação atual ainda tem de ser reconciliada com esse objetivo.
+- A base de dados central escolhida é SQL Server.
+- O Scanner está no monorepo, mas mantém responsabilidade e execução autónomas; não deve ser introduzida dependência de runtime entre Scanner e Knowledge.
+- RAG é um objetivo futuro; não selecionar tecnologia nem antecipar implementação nesta fase.
+- Preservar proveniência por cliente, instalação, ambiente/base de dados, captura e artefacto, sem colapsar estes conceitos.
+- O utilizador pretende pesquisa e reutilização dos artefactos/código recolhidos, com contexto de origem, para compreender customizações existentes e planear implementações.
+- As regras de classificação Desktop/Web acordadas incluem Fox/Visual FoxPro e SQL puro como Desktop; C# como Web; HTML/JS/CSS isolados como Web; HTML/JS/CSS encapsulados em Fox como Desktop. A classificação deve ser baseada em evidência e não inferida para a instalação inteira a partir de um único artefacto. A implementação desta classificação ainda deve ser verificada.
+
+## Constatações técnicas já registadas durante a auditoria
+
+1. A branch consultada anteriormente era `feature/increment-c-package-import-analysis-confirmation`, com HEAD `170631ea8e17b584ac70cd6b379312570c0c948a`. O conteúdo do handoff anterior referia `e2d896ff67f7ef0df903c8a13940da9b826a764d`; essa referência não coincide com o HEAD confirmado pela API da branch e deve ser tratada como desatualizada.
+2. A solução contém áreas separadas para Host, Import e Portal, migrations e testes. A existência dos testes não significa que tenham sido executados nesta auditoria.
+3. Foram identificadas migrations para receipts, tentativas, organizações, análises de importação e decisões de análise.
+4. O fluxo de análise consegue reabrir o pacote através de `OpenArchivedPackageReadAsync`; existe arquivo permanente no fluxo atual. O cleanup observado trata staging antigo não protegido por tentativas pendentes. Isto diverge do objetivo de ZIP transitório e requer análise antes de qualquer alteração.
+5. A análise do pacote é persistida em JSON e existem decisões de confirmação/rejeição. Até ao ponto inspecionado, não foi identificada uma camada equivalente que materialize o conteúdo integral dos artefactos numa base de conhecimento pesquisável.
+6. O exportador IKP inclui artefactos de definição referenciados pelos objetos da captura, valida metadata, bytes, tamanho, SHA-256 e ContentType. Não se deve assumir que todos os ficheiros do workspace são exportados.
+7. A pesquisa `TableSearch` observada é centrada em tabelas e critérios como nome/schema/ObjectId; não equivale a pesquisa global sobre o conteúdo dos artefactos de código.
+8. Não foi ainda encontrada evidência suficiente de um classificador Desktop/Web que implemente as regras acordadas.
+9. Os documentos P1/P1B contêm contratos de identidade, proveniência e fingerprints relevantes. Em particular, SourceObjectId é referência dentro da captura, não identidade permanente; DefinitionFingerprint e MetadataFingerprint são distintos; ausência de um artefacto numa captura não prova remoção.
+10. A matriz de compatibilidade Scanner/IKP documenta validação com captura real para uma parte dos tipos mapeados, não para todos.
+11. Foram identificados documentos do Scanner que afirmam que a integração/importação no Knowledge ainda não existe. Devem ser avaliados como registos históricos face ao estado mais recente, sem os apagar nesta fase.
+12. Existem ADRs do Scanner numerados 0001–0014. A orientação preliminar é preservá-los como histórico de decisões do Scanner e reconciliar decisões superadas com evidência atual.
+
+Estas constatações são um registo intermédio. A auditoria ainda não concluiu a inspeção de todos os collectors, mapeamentos IKP, testes e documentos.
+
+## Classificação preliminar — não aprovada como inventário final
+
+- Preservar: especificação IKP, schemas, fixtures/validações, contratos P1/P1B e ADRs, salvo prova de redundância ou substituição explícita.
+- Atualizar após auditoria: handoff, estado do projeto, limites do produto, avaliação tecnológica/importação, decisões em aberto e especificação da experiência do Portal.
+- Marcar como histórico quando descrevem propostas ou fases já ultrapassadas: arquitetura/propostas antigas do Scanner e handoffs de fases concluídas.
+- Rever profundamente antes de tratar como modelo implementado: `knowledge-domain-model-0.2.md`.
+- Não remover documentos antes do inventário final e validação do utilizador.
+
+## Trabalho ainda por concluir
+
+1. Inspecionar collectors, artefactos produzidos e mapeamentos para IKP; distinguir recolha, indexação, referência no pacote e exportação efetiva.
+2. Cruzar os tipos acordados — brule/ebrule, eventos/eeventos, udefs/eudefs, ti/tc, campos físicos u_*, escr, jsu, cssjs, formc, formb, ftu, Fx_*/User_*, rel/dtl — com código e testes, sem presumir cobertura.
+3. Inspecionar testes de receipts, recovery, análise, decisões, endpoints HTTP e integração SQL Server.
+4. Registar separadamente testes existentes, testes executados e resultados documentados. O teste SQL Server depende de configuração de ambiente; não declarar execução sem confirmação.
+5. Ler e reconciliar os relatórios de fase, documentos de ingestão/recovery, documentação do Portal, roadmap, investigação de cobertura, RAG, P1/P1B, protótipos, README e regras de projeto.
+6. Produzir inventário completo dos 78 ficheiros documentais identificados, com classificação, justificação e destino/referência substituta.
+7. Apresentar a proposta ao utilizador e aguardar aprovação antes de alterar ou remover documentos.
+
+## Próximo passo
+
+Retomar a inspeção técnica dos collectors e do mapeamento IKP. Não retomar D1/D2 nem iniciar a consolidação da baseline até a auditoria estar concluída e o inventário ser validado.
