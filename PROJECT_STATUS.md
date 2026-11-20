@@ -63,7 +63,7 @@ Nesta atualização documental não foram executados testes, builds, SQL nem cap
 A divergência entre ZIP temporário e arquivo permanente está analisada em [ikp-temporary-package-lifecycle-gap-2026-11-20.md](docs/architecture/ikp-temporary-package-lifecycle-gap-2026-11-20.md). A decisão de eliminação só pode ser implementada depois de materialização e verificação persistente; o código atual ainda reabre o ZIP arquivado para calcular uma análise não persistida.
 
 1. Alinhar arquivo atual com o ciclo aprovado de ZIP temporário, garantindo recuperação sem eliminar dados antes da materialização íntegra.
-2. Materializar observações, definições, artefactos e REL/DTL de forma pesquisável, preservando factos e proveniência.
+2. Materializar observações, definições e artefactos de forma pesquisável, preservando factos e proveniência; manter relações PHC standard no PHC Standard Catalog, sem as tratar como recolha repetida do Scanner.
 3. Concluir o modelo e os fluxos de clientes/instalações/ambientes e respetivas permissões.
 4. Fechar cobertura de collectors com testes diretos SQL e validação real por operação.
 5. Corrigir semântica de coverage quando tabelas obrigatórias faltam ou probes falham; tratar exceções de sourceExistsAsync.
@@ -88,7 +88,7 @@ A divergência entre ZIP temporário e arquivo permanente está analisada em [ik
 1. Fechar o inventário documental individual e respetivo destino.
 2. Rever tecnicamente o ciclo de vida do ZIP e desenhar a transição para transporte temporário.
 3. Definir a arquitetura funcional do PHC Standard Catalog a partir do extrator existente.
-4. Preparar plano de testes SQL por operação para as 23 operações do Scanner.
+4. Preparar plano de testes SQL por operação para as operações Scanner, depois de fechar a classificação-alvo (21 operações: 7 SQL Server + 14 personalizações PHC; REL/DTL fora do catálogo-alvo).
 5. Atualizar o handoff após cada sessão.
 
 ## 6. Regra de leitura
