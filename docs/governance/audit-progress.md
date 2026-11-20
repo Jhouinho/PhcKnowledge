@@ -201,3 +201,20 @@ Inspeção read-only de `IkpPackageExporter`, `IkpPackageInspectionEngine`, `Ikp
 **Conclusão limitada:** um role específico para evidência/metadados parece compatível estruturalmente com o schema IKP 0.1 atual, mas ainda não foi verificado o comportamento de todos os consumidores downstream nem existe teste dedicado. O exporter atual teria de deixar de aplicar indiscriminadamente `source-definition` e distinguir os artefactos descritivos. Não foi feita qualquer alteração.
 
 Próxima inspeção: determinar que metadados persistidos no workspace permitem distinguir inequivocamente os artefactos descritivos de `phc.user_field` dos artefactos de definição, e verificar a associação exata objeto↔artefacto. Não escolher o novo role nem alterar o schema/código até concluir essa análise.
+
+
+## Atualização — origem e semântica do artefacto `phc.user_field` (2026-11-20)
+
+A inspeção do collector, do workspace e dos resolvers confirmou:
+
+- `CollectUserFieldsAsync` consulta `sys.columns`, `sys.tables`, `sys.schemas` e `sys.types` para colunas `u_*`.
+- Para cada campo, cria um ficheiro descritivo `.txt` em `phc/user_fields/{schema}_{table}_{column}.txt`, associa-o ao objeto por `DefinitionArtifactId` e mantém os mesmos factos estruturados em `SummaryJson`.
+- O helper `SaveDefinitionAsync` é reutilizado e grava metadata genérica (`encoding=utf-8`, `format=prg)); não existe atualmente um campo explícito que identifique a finalidade semântica do artefacto. A extensão `.txt` e o conteúdo não devem ser a única base para classificação.
+- `DefinitionProjectionResolver` trata explicitamente `PhcUserField` como `NotCollected`, porque o ficheiro é descrição de metadados e não definição original da coluna.
+- `MetadataProjectionResolver` produz uma projeção e fingerprint de metadados para o campo com schema, tabela, coluna, tipo, comprimento, precisão, escala e nulabilidade; o prefixo é metadado descritivo, não entra no fingerprint semântico.
+- `SourceIdentityResolver` consegue gerar para `PhcUserField` a identidade `sqlserver.column_id`, com scope baseado no nome da base de dados e no `object_id` da tabela pai. Na materialização, esta identidade terá de ser combinada com a identidade da instalação; não é identidade global entre instalações.
+- O role é atualmente hardcoded como `source-definition` pelo exporter para todos os artefactos referenciados. O workspace não contém ainda um purpose/role explícito para este artefacto.
+
+**Conclusão:** existe informação estruturada suficiente para comparar os metadados do campo sem tratar o ficheiro como definição de código. O ficheiro deve continuar a ser transportado por D-016 e associado à observação da captura. O desenho deverá classificar a sua finalidade a partir de evidência explícita do objeto/artefacto (preferencialmente metadata tipada ou associação inequívoca ao `ObjectKind`), nunca apenas pelo nome do caminho. Não se escolhe ainda o mecanismo final nem se altera código.
+
+Próximo passo: verificar se outros collectors reutilizam `DefinitionArtifactId` para conteúdo que não seja definição original e se existe uma classificação por tipo de objeto/artifacto que possa ser generalizada sem heurísticas frágeis.
