@@ -267,3 +267,10 @@ A captura de 16-11 foi localizada na Biblioteca e inspecionada diretamente. O ZI
 **Conclusão:** a captura é íntegra como inventário observado, mas não é um catálogo físico completo. Não classificar automaticamente tabelas como PHC standard só por estarem na CS Default; usar a baseline versionada e a cobertura comprovada. Não foram alterados código, schemas, migrations ou testes.
 
 Próximo passo: localizar/reconciliar o snapshot estrutural completo já fornecido, rever a diferença de exportação das interpretações REL/DTL e definir a incorporação das 552 triggers no catálogo standard. Não voltar a pedir uma captura antes desta reconciliação.
+
+
+### Qualidade da interpretação REL/DTL — análise adicional (2026-11-20)
+
+A consulta ao workspace SQLite da captura de 16-11 confirmou que as 921 relações têm estado `Parsed`: 908 com confiança `High` e 13 com confiança `Medium`. As 13 de confiança média têm 15 diagnósticos `NameMismatch` (qualificadores da expressão não coincidem com os nomes declarados); existem ainda 6 diagnósticos `UnqualifiedField` em relações com confiança alta. Não foram encontrados registos de interpretação não analisada.
+
+Os endpoints das 921 relações têm associação a tabelas no inventário. A confiança da interpretação da expressão deve, contudo, continuar separada da resolução dos endpoints. Para o catálogo, preservar sempre: registo REL/DTL original, expressão original, AST/interpretação, versão do parser, confiança e diagnósticos. Não descartar nem reescrever automaticamente as 13 relações de confiança média ou os 6 avisos de campo sem qualificador.
