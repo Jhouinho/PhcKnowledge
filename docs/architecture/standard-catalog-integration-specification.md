@@ -44,7 +44,7 @@ Resultado: o percurso IKP atual não transporta evidência de triggers associada
 
 ### 2.2 Percurso estrutural existente
 
-O `DatabaseSchemaSnapshotExtractor`, em `PhcKnowledgeScanner/PhcKnowledgeScanner.Collectors/Sql/SchemaSnapshot/`, já recolhe triggers DML sem o filtro `u_`. A consulta estrutural usa `SchemaCatalogQueries.Triggers` e recolhe:
+O `DatabaseSchemaSnapshotExtractor`, em `PhcKnowledgeScanner/PhcKnowledgeScanner.Collectors/Sql/SchemaSnapshot/`, já recolhe triggers DML sem o filtro `u_`. A consulta estrutural usa `SchemaCatalogQueries.Triggers` e recolhe triggers de objetos SQL (`OBJECT_OR_COLUMN`); a query atual não restringe o parent a tabelas, pelo que também pode abranger outros objetos suportados pelo SQL Server. Para a primeira fatia PHC, o âmbito deve ser explicitamente limitado a tabelas, sem perder a possibilidade de extensão futura. Recolhe:
 
 - schema e nome da trigger;
 - schema e nome do objeto/tabela pai;
@@ -119,7 +119,7 @@ A observação exportada deve permitir reconstruir, no mínimo:
 | ParentSchema | schema da tabela pai | Obrigatório para trigger de tabela |
 | ParentName | `sys.tables.name` | Obrigatório para trigger de tabela |
 | IsDisabled | `sys.triggers.is_disabled` | Booleano |
-| IsInsteadOf | `sys.trigger_events` / metadados de trigger | Booleano, conforme consulta validada |
+| IsInsteadOf | `sys.triggers.is_instead_of_trigger` | Booleano |
 | Events | `sys.trigger_events.type_desc` | Conjunto ordenado e sem duplicados |
 | DefinitionStatus | resultado da leitura de `sys.sql_modules.definition` | Available ou Unavailable; Empty apenas se conteúdo genuinamente vazio |
 | DefinitionArtifactId | artefacto IKP, quando Available | Ausente quando não há bytes |
