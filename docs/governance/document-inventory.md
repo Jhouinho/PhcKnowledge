@@ -96,7 +96,7 @@
 | `docs/architecture/sql-server-receipt-integration-tests-2026-11-17.md` | Evidência de testes | Preservar; testes SQL de receipts não provam collectors Scanner. |
 | `docs/architecture/technology-and-import-contract-assessment.md` | Avaliação histórica | Preservar como avaliação; baseline atual prevalece em stack, uso e ciclo de ZIP. |
 | `docs/governance/README.md` | Governação | Canónico; ordem de leitura. |
-| `docs/governance/document-inventory.md` | Inventário documental | Matriz individual de 84 ficheiros; atualizar quando a árvore documental mudar. |
+| `docs/governance/document-inventory.md` | Inventário documental | Matriz individual de 86 ficheiros; atualizar quando a árvore documental mudar. |
 | `docs/governance/audit-progress.md` | Auditoria | Estado de auditoria; atualizar por etapa. |
 | `docs/governance/current-handoff.md` | Handoff | Canónico operacional; atualizar no fecho de cada sessão. |
 | `docs/governance/working-agreement.md` | Acordo | Canónico; preservar protocolo entre ferramentas. |
@@ -106,6 +106,8 @@
 | `src/PhcKnowledge.Portal/README.md` | Documentação componente | Manter alinhada com frontend React real e comandos existentes. |
 | `tools/ikp-validation/README.md` | Ferramenta validação | Preservar; confirmar comandos e contratos quando alterados. |
 | `tools/ikp-validation/requirements.txt` | Dependências ferramenta | Ficheiro técnico, não documento de arquitetura. |
+
+| `docs/architecture/ikp-materialization-contract-proposal-2026-11-20.md` | Proposta técnica | Preservar como proposta não aprovada; define contrato lógico de materialização, verificação, recovery e eliminação do ZIP. |
 
 ## Resultado desta revisão
 
