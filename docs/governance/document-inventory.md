@@ -33,7 +33,7 @@
 | `PhcKnowledgeScanner/docs/database-schema-snapshot.md` | Especificação Scanner | Preservar; funcionalidade auxiliar separada do fluxo normal. |
 | `PhcKnowledgeScanner/docs/decisions/0001-dotnet-version.md` | ADR Scanner | Decisão técnica individual; preservar; verificar se foi substituída antes de alterar. |
 | `PhcKnowledgeScanner/docs/decisions/0002-project-structure.md` | ADR Scanner | Decisão técnica individual; preservar; verificar se foi substituída antes de alterar. |
-| `PhcKnowledgeScanner/docs/decisions/0003-independence.md` | ADR Scanner | Decisão técnica individual; preservar; verificar se foi substituída antes de alterar. |
+| `PhcKnowledgeScanner/docs/decisions/0003-independence.md` | ADR Scanner histórico | A exigência de repositório separado foi substituída pelo monorepo; a autonomia de execução/responsabilidade mantém-se em D-005. Preservar como histórico. |
 | `PhcKnowledgeScanner/docs/decisions/0004-full-table-inventory.md` | ADR Scanner | Decisão técnica individual; preservar; verificar se foi substituída antes de alterar. |
 | `PhcKnowledgeScanner/docs/decisions/0005-declared-expression-interpretation-v1.md` | ADR Scanner | Decisão técnica individual; preservar; verificar se foi substituída antes de alterar. |
 | `PhcKnowledgeScanner/docs/decisions/0006-declared-expression-interpretation-v1.1.md` | ADR Scanner | Decisão técnica individual; preservar; verificar se foi substituída antes de alterar. |
@@ -85,7 +85,7 @@
 | `docs/architecture/phase-report-ikp-package-analysis-a-2026-11-19.md` | Relatório de fase | Fotografia histórica; preservar sem reescrever retroativamente. |
 | `docs/architecture/phase-report-ingestion-contract-2026-11-17.md` | Relatório de fase | Fotografia histórica; preservar sem reescrever retroativamente. |
 | `docs/architecture/portal-experience-specification-2026-11-19.md` | Especificação Portal | Preservar como especificação; atualizar estado quando implementação divergir. |
-| `docs/architecture/portal-frontend-architecture-spike-2026-11-19.md` | Especificação Portal | Preservar como especificação; atualizar estado quando implementação divergir. |
+| `docs/architecture/portal-frontend-architecture-spike-2026-11-19.md` | Spike histórico Portal | Fotografia anterior à criação do frontend; nota de precedência adicionada. Preservar decisões técnicas ainda válidas e consultar código para estado atual. |
 | `docs/architecture/portal-frontend-readiness-review-2026-11-19.md` | Revisão histórica Portal | Preservar fotografia pré-frontend; aviso de estado atual adicionado. |
 | `docs/architecture/product-boundaries.md` | Fronteiras produto | Atualizar referência ao estado de implementação; manter visão e separação Scanner/Knowledge. |
 | `docs/architecture/rag-readiness-and-knowledge-first-decision-2026-11-06.md` | Decisão estratégica RAG | Preservar princípio; corrigir roadmap e referências tecnológicas ultrapassadas. |
