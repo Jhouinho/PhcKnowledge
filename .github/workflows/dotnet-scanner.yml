@@ -2,7 +2,7 @@ name: .NET — PHC Knowledge
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/increment-c-package-import-analysis-confirmation]
     paths:
       - "PhcKnowledge.sln"
       - "global.json"
