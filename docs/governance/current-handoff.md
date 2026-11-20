@@ -75,3 +75,21 @@ A inspeção read-only confirmou que o ZIP é arquivado permanentemente e que `I
 
 ### Próxima ação
 Discutir e decidir o destino dos bytes dos artefactos e a política de disposição para pacotes rejeitados/bloqueados. Depois fechar o modelo lógico e os estados; só então preparar implementação e testes de recovery.
+
+
+## Atualização — auditoria documental e fluxo manual IKP (2026-11-20)
+
+- Branch: `feature/increment-c-package-import-analysis-confirmation`.
+- Commit imediatamente anterior a esta atualização do handoff: `27de160f70112142d4a35fffc5e63f5888208ca1`.
+- A árvore Git foi verificada: 86 ficheiros documentais (`83 .md`, `1 .mdc`, `2 .txt`). O inventário contém 86 entradas; o total do cabeçalho foi corrigido de 85 para 86.
+- Fluxo operacional confirmado: Scanner corre no servidor do cliente e gera ZIP; o operador transfere manualmente o ZIP para o ambiente com acesso ao PHC Knowledge e faz upload manual através do Portal. Não existe comunicação direta Scanner→Knowledge.
+- D-014 foi registada em `DECISIONS.md`; `PROJECT_BASELINE.md` e especificação do Portal foram alinhados com este fluxo.
+- Código confirmado: `POST /api/v1/ikp/packages` existe como API IKP com JWT Bearer/scopes. A UI React atual não disponibiliza upload manual nem gestão de pacotes/capturas. Falta uma operação Portal autenticada por cookie/antiforgery que invoque internamente a ingestão.
+- `PROJECT_STATUS.md` distingue agora a API IKP existente da funcionalidade de upload no Portal ainda ausente.
+- A especificação do Portal foi corrigida: ZIP temporário até materialização verificada; base central SQL Server sem restringir a Express.
+- Estado de armazenamento/materialização: bytes dos artefactos em SQL Server `varbinary(max)` V1 aprovado; pacotes Rejected com retenção inicial de 30 dias de calendário após decisão, configurável, com preservação por hold; artefacto físico isolado por OrganizationId e PackageId, mesmo para ZIPs com hash igual. O desenho 7.3/7.4 permanece proposta, não implementação.
+- Continua pendente a confirmação do responsável sobre o tratamento de tentativas `NeedsAttention` sem staging nem arquivo recuperável. Não implementar migrations/materializador/eliminação antes do fecho do contrato.
+- Nenhum código, migration ou teste foi alterado/executado nesta etapa; não foram eliminados documentos nem ZIPs.
+
+### Próximo passo
+Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC Standard Catalog; depois fechar o contrato de materialização e o tratamento de `NeedsAttention`. A auditoria documental ainda não está concluída e não deve ser marcada como tal.
