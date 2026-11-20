@@ -257,7 +257,7 @@ O prazo de 30 dias é uma recomendação inicial e **ainda precisa de confirmaç
 
 ## 9. Não iniciar ainda
 
-Até aprovação explícita do contrato e resolução das questões de armazenamento/retensão:
+Até aprovação explícita do contrato de materialização e resolução das questões ainda abertas (incluindo prazo de retenção e granularidade de execução):
 - não criar migrations de materialização;
 - não introduzir entidades ou serviços de materialização;
 - não alterar o arquivo content-addressed;
