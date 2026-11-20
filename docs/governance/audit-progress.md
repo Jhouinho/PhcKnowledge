@@ -142,6 +142,16 @@ A auditoria permanece em curso. Esta publicação não executou testes nem alter
 - `docs/architecture/portal-frontend-architecture-spike-2026-11-19.md` recebeu nota de precedência porque descrevia um estado anterior à criação do frontend React.
 
 
+## Decisão de classificação após a etapa 6 — 2026-11-20
+
+O responsável confirmou a separação arquitetural entre PHC Standard e recolha específica de instalações:
+
+- `REL`/`DTL` não devem ser capacidades do Scanner. As relações PHC standard são conhecimento interno comum, mantido no PHC Standard Catalog e versionado pela respetiva aplicabilidade PHC; não devem ser repetidas em cada captura.
+- As operações `phc.declared-relations.rel` e `phc.declared-relations.dtl` permanecem descritas como comportamento encontrado no código atual, mas passam a ser consideradas legado a retirar/rever. A classificação-alvo do Scanner passa de 23 para 21 operações.
+- As sete operações SQL Server são mecanismos de descoberta da estrutura física da instalação. A sua presença no Scanner não implica exportação integral de todos os objetos como personalizações.
+- A comparação com o catálogo standard e a exportação de diferenças específicas ainda não estão implementadas. Até lá, não classificar automaticamente objetos desconhecidos como standard ou personalizados.
+- Nenhum código, schema IKP, migration ou teste foi alterado nesta decisão documental.
+
 ## Etapa 6 — auditoria operação a operação do Scanner/IKP (2026-11-20)
 
 - Confirmado no código o catálogo de 23 operações: 7 SQL Server, 14 personalizações PHC e 2 REL/DTL.
