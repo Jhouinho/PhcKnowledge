@@ -144,3 +144,14 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 - `audit-progress.md` regista a decisão e a pendência de desenhar comparação com PHC Standard e exportação de diferenças locais.
 - Sem alterações de código, schemas IKP, migrations, testes ou capturas. Não foram executados builds/testes.
 - Próximo passo: continuar a auditoria da cadeia de exportação dos artefactos e esclarecer a proveniência do ZIP real do harness; depois desenhar como as operações SQL comparam a estrutura observada com o PHC Standard e como representar apenas diferenças específicas.
+
+
+## Atualização — captura completa e materialização incremental (2026-11-20)
+
+- O responsável aprovou D-016: o Scanner transporta sempre a captura completa, incluindo artefactos descritivos; não depende de scans anteriores.
+- Na integração no Portal/SQL Server, o PHC Knowledge compara o conteúdo com o que já está persistido para a mesma instalação: conteúdo rigorosamente igual não volta a ser gravado; conteúdo novo é inserido e conteúdo alterado origina nova versão.
+- Cada captura/observação mantém a sua proveniência, mesmo quando reutiliza conteúdo já persistido. A ausência numa captura posterior não elimina automaticamente informação anterior.
+- Foi criado `docs/architecture/ikp-incremental-materialization-policy-2026-11-20.md` com as regras funcionais, limites e testes mínimos.
+- O artefacto descritivo de `phc.user_field` continua a ser transportado; não deve ser classificado como `source-definition` se apenas representa metadados. O papel específico no schema IKP ainda requer desenho.
+- Nenhum código, schema IKP, migration ou teste foi alterado; não foram executados builds/testes.
+- Próxima etapa: continuar a auditoria da exportação para determinar como o manifesto/schema IKP pode representar artefactos descritivos sem os confundir com definições de código; depois fechar a identidade estável e a comparação por instalação antes de desenhar a implementação.
