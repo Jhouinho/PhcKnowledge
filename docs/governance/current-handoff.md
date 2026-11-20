@@ -103,7 +103,7 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 - Commit anterior a esta atualização: `c68d402fcab2d0a45db89f39828d5e7f5da7e3b6`.
 - Catálogo confirmado: 23 operações (7 SQL Server, 14 PHC customizations, 2 REL/DTL). Tabela de fontes, opcionalidade e projeção publicada na matriz de compatibilidade IKP.
 - 21 kinds do Object Index têm mapeamento/testes sintéticos. Captura real documentada CSDefault202603: 16.618 objetos e 8/21 kinds; não valida os restantes kinds.
-- Testes existentes: ScanEngine cobre semântica de coverage; ObjectOperationResolver cobre mapeamentos; ObjectIndexProjector cobre projeção sintética; IkpPackageExporter cobre ZIP sintético. Não foi encontrada suite de integração SQL dos collectors contra PHC real.
+- Testes existentes: ScanEngine cobre semântica de coverage; ObjectOperationResolver cobre mapeamentos; ObjectIndexProjector cobre projeção sintética; IkpPackageExporter cobre ZIP sintético. O harness de receção valida um ZIP real CSDefault202603, mas não está comprovado que esse ZIP tenha sido produzido pelo exporter atual. Não foi encontrada suite de integração SQL dos collectors contra PHC real.
 - Achados: FTU+Fx/User fica todo condicionado à existência de dbo.ftu; exceção em `RunOptionalAsync.sourceExistsAsync` não é capturada pelo tratamento por operação; probe de personalizações agrega tabelas core em vez de verificar cada uma; estado de definição/artefactos deve ser lido separadamente da coverage de objetos.
 - Não foram feitas alterações de código nem executados testes/builds ou recolhas reais.
-- Próximo passo: auditar a projeção dos artefactos para o ZIP e validar a evidência end-to-end de um pacote real, sem alterar collectors antes de decisão.
+- Próximo passo: auditar a projeção dos artefactos para o ZIP, confirmar a proveniência do ZIP real do harness e fechar o round-trip captura real → exporter atual → validador independente, sem alterar collectors antes de decisão.
