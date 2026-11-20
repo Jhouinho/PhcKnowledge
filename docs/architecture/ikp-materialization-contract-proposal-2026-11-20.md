@@ -426,6 +426,141 @@ A migração deve ser idempotente: se for repetida, reconhece destinos novos já
 
 **Estado:** auditoria e sequência de transição documentadas. A implementação da nova chave, a migração de dados/ficheiros, a alteração das APIs internas e os testes continuam por fazer. Não foi alterado código, migration ou arquivo físico nesta etapa.
 
+
+
+## 7.4 Desenho técnico das interfaces e da migration SQL (2026-11-20)
+
+### 7.4.1 Identidade explícita do artefacto
+
+Introduzir um value object interno, conceptualmente:
+
+```csharp
+public sealed record PackageArchiveIdentity(
+    Guid OrganizationId,
+    Guid PackageId,
+    string ZipSha256,
+    long ZipByteLength);
+```
+
+A identidade é construída no servidor a partir do OrganizationId autenticado e dos dados validados do pacote. Não é aceite do cliente como prova de propriedade.
+
+### 7.4.2 Contratos de armazenamento propostos
+
+As interfaces atuais recebem apenas `IkpPackageValidationResult` ou `StorageKey + hash + tamanho`. Isso não transporta a identidade organizacional necessária. O contrato futuro deve exigir identidade explícita em todas as operações:
+
+```csharp
+public interface IExpectedStorageKeyProvider
+{
+    string GetStorageKey(PackageArchiveIdentity identity);
+}
+
+public interface IImmutablePackageStore
+{
+    Task<ArchivedPackage> ArchiveValidatedPackageAsync(
+        string validatedPackagePath,
+        PackageArchiveIdentity identity,
+        string expectedStorageKey,
+        CancellationToken cancellationToken = default);
+}
+
+public interface IRecoverableImmutablePackageStore
+{
+    Task<bool> VerifyArchivedPackageAsync(
+        PackageArchiveIdentity identity,
+        string storageKey,
+        CancellationToken cancellationToken = default);
+
+    Task<Stream> OpenArchivedPackageReadAsync(
+        PackageArchiveIdentity identity,
+        string storageKey,
+        CancellationToken cancellationToken = default);
+}
+```
+
+O contrato é intencionalmente explícito:
+- `GetStorageKey` calcula a chave para a identidade completa;
+- `ArchiveValidatedPackageAsync` recebe a chave já persistida na tentativa, não volta a escolher silenciosamente outro destino;
+- Verify/Open recebem a identidade do Receipt/Attempt e validam que a StorageKey corresponde à organização, pacote e hash;
+- a implementação valida segmentos, GUIDs, hash, tamanho e permanência do caminho dentro da raiz do arquivo;
+- o store não recebe caminhos físicos arbitrários do cliente.
+
+A chave conceptual será:
+
+```text
+organizations/{OrganizationId:N}/packages/{PackageId:N}/{ZipSha256}.ikp.zip
+```
+
+O nome é determinístico, mas a identidade física é por organização e pacote. A existência prévia do destino só é aceite depois de verificar tamanho e SHA-256; nunca se sobrescreve um ficheiro divergente.
+
+### 7.4.3 Alterações necessárias nos serviços
+
+**Receção**
+1. Obter OrganizationId do contexto autenticado.
+2. Validar o ZIP e obter PackageId, SHA-256 e tamanho.
+3. Construir `PackageArchiveIdentity`.
+4. Calcular a nova StorageKey.
+5. Persistir Attempt com OrganizationId, PackageId, hash, tamanho, StorageKey e staging.
+6. Arquivar usando exatamente a StorageKey persistida.
+7. Concluir Attempt e Receipt na transação SQL atual.
+
+**Recuperação**
+- Usar a identidade e StorageKey persistidas no Attempt.
+- Se existir staging, arquivar para a StorageKey persistida, sem recalcular destino.
+- Se não existir staging, verificar o destino dessa mesma StorageKey.
+- Se não existir staging nem arquivo íntegro, manter NeedsAttention.
+- Preservar leases/heartbeat e a conclusão transacional existentes.
+
+**Análise**
+- Construir a identidade a partir do Receipt carregado para a OrganizationId autenticada e PackageId pedido.
+- Abrir o arquivo com identidade + StorageKey do Receipt.
+- Manter verificação de SHA-256 e tamanho no stream devolvido.
+
+**Receção sem repositório durável**
+O modo de harness atualmente permite arquivar sem OrganizationId. Para não manter uma segunda via global que contrarie a regra de domínio, qualquer operação de arquivo deverá passar a exigir uma identidade organizacional explícita, mesmo quando não cria Receipt. Testes/harnesses usam uma organização de teste fixa.
+
+### 7.4.4 Migration SQL proposta
+
+A próxima migration disponível é `004_package_archive_layout_v2.sql` (a migration 003 existente é `003_organizations.sql`). A migration 004 deverá ser aditiva e não reescrever 001/002/003.
+
+Proposta de conteúdo lógico:
+
+1. Adicionar `StorageLayoutVersion SMALLINT NOT NULL` a `PackageReceiptAttempts` e `PackageIngestionReceipts`, com default histórico `1` e CHECK limitado às versões suportadas (1 e 2). Os registos atuais ficam identificados como layout 1; o novo código escreve explicitamente layout 2.
+2. Criar `PackageArchiveMigrationItems`, com uma linha por AttemptId, para registar de forma durável a migração física: OrganizationId, PackageId, SourceStorageKey, TargetStorageKey, ZipSha256, ZipByteLength, estado, timestamps e último erro. AttemptId deve ser único. Estados propostos: `Planned`, `CopyVerified`, `ReferencesUpdated` e `Blocked`.
+3. A tabela de migração funciona como diário/checkpoint operacional; não substitui Attempt nem Receipt e não altera a sua história.
+
+A migration SQL **não copia ficheiros**. A cópia e a verificação SHA-256/tamanho têm de ser executadas por um migrador controlado com acesso ao filesystem. A sequência por pacote é:
+- criar/recuperar o item Planned e persistir a chave de origem/destino;
+- copiar sem apagar o original;
+- verificar o destino;
+- marcar CopyVerified;
+- numa única transação SQL, atualizar StorageKey e StorageLayoutVersion da Attempt e, se existir, do Receipt correspondente, condicionando por AttemptId, OrganizationId, PackageId, hash e tamanho; marcar ReferencesUpdated na mesma transação;
+- confirmar por leitura que Attempt e Receipt têm a mesma chave e versão.
+
+Para tentativas PendingArchive sem Receipt, atualizar a Attempt para a chave/versão 2 depois de confirmar que o staging existe ou que a cópia do arquivo antigo foi verificada. A recuperação passa então a escrever/verificar no destino novo. Para NeedsAttention sem bytes recuperáveis, marcar o item Blocked e não fingir que foi migrado.
+
+### 7.4.5 Regras de consistência e compatibilidade
+
+- Novas receções após o cutover escrevem layout 2.
+- Completed exige Attempt e Receipt com StorageKey e StorageLayoutVersion iguais.
+- PendingArchive/NeedsAttention têm versão e chave explícitas na Attempt; não podem ser reinterpretadas pelo hash.
+- O novo host não deve aceitar layout 1 como destino normal de novas operações.
+- A migração lê explicitamente layout 1 e converte para layout 2; não existe fallback silencioso no fluxo normal.
+- O arquivo antigo permanece intacto até reconciliação completa e período de rollback.
+- O migrador é idempotente: reconhece uma cópia de destino existente apenas após revalidar hash e tamanho.
+- O diário permite retomar após falha entre cópia, verificação e atualização SQL.
+
+### 7.4.6 Condições de cutover
+
+O cutover só pode ocorrer quando:
+1. Todos os Receipts Completed elegíveis têm cópia layout 2 verificada e referências SQL atualizadas.
+2. Todas as tentativas PendingArchive têm staging preservado ou destino layout 2 verificado e StorageKey atualizada.
+3. Todas as NeedsAttention estão classificadas como migradas ou Blocked com diagnóstico e decisão operacional explícita.
+4. Não existem leases ativas nem workers antigos em execução.
+5. A reconciliação SQL/filesystem não encontra referências layout 1 que devam estar ativas.
+6. Os testes de isolamento, recuperação e falhas de migração passam.
+
+**Estado:** desenho de interfaces e migration 004 proposto; ainda não implementado. Não foi criado SQL, código, migrador, teste nem alterado qualquer ficheiro físico nesta etapa.
+
 ## 8. Plano de validação antes de implementar
 
 - Testes de elegibilidade e vínculo de fingerprint/decision.
@@ -448,4 +583,4 @@ Até aprovação explícita do contrato de materialização e resolução das qu
 - não adicionar eliminação de ZIP;
 - não alterar o significado de Receipt Completed, Analysis ou Decision Confirmed.
 
-**Próxima ação recomendada:** fechar a granularidade de batches/checkpoints e rever o plano de transição do arquivo isolado com os cenários de recuperação; só depois preparar a implementação e a migração controlada.
+**Próxima ação recomendada:** validar o desenho das interfaces e da migration 004; depois fechar a política de tratamento de NeedsAttention/Blocked e os critérios de cutover, antes de autorizar implementação.
