@@ -5,7 +5,7 @@
 - Revisão: 2026-11-20
 - Repositório: Jhouinho/PhcKnowledge
 - Branch consultada: feature/increment-c-package-import-analysis-confirmation
-- HEAD consultado antes desta atualização documental: 9a9df92ff82a98eafa2a5c1ff5134d8226ea7ce5
+- Commit de referência da inspeção técnica: b22c6fb1e9f954a14d02cfe5b0c903c956d0cff3
 - Estado local da máquina do utilizador/Cursor: não observado.
 
 ## 1. Arquitetura
@@ -67,6 +67,17 @@ A divergência entre ZIP temporário e arquivo permanente está analisada em [ik
 7. Completar a pipeline PHC Standard Catalog e não classificar automaticamente customizações como standard.
 8. Rever documentação histórica contraditória, sem apagar registos históricos.
 9. RAG continua fora da implementação atual.
+
+
+
+### Materialização IKP — auditoria e proposta (2026-11-20)
+- Confirmada persistência separada de Receipt, PackageImportAnalysis e decisões humanas append-only.
+- A análise é persistida em JSON com ReadinessStatus e SemanticFingerprint; a decisão guarda snapshot do fingerprint e ator resolvido no servidor.
+- Não foi identificada no percurso de importação inspecionado uma camada de materialização dos objetos, metadados, artefactos e relações em conhecimento pesquisável.
+- Receipt Completed, Analysis persisted e Decision Confirmed não provam materialização concluída.
+- Criada a proposta não aprovada `docs/architecture/ikp-materialization-contract-proposal-2026-11-20.md`. Define vínculo com a decisão/fingerprint, entidades lógicas, estados separados de materialização e eliminação, critérios de verificação e recovery.
+- Permanecem por decidir destino durável dos bytes dos artefactos, granularidade transacional, política para pacotes rejeitados/blocked, reanálise futura e retenção.
+- Nenhuma implementação foi alterada e nenhum teste/build foi executado nesta etapa.
 
 ## 5. Próximos passos recomendados
 
