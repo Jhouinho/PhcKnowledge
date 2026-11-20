@@ -112,3 +112,9 @@ Antes de iniciar uma tarefa, ler PROJECT_BASELINE.md, DECISIONS.md, este ficheir
 - O validador garante referências Object Index→manifesto, mas não exige que todos os artefactos do manifesto sejam definições referenciadas no Object Index.
 - A direção aprovada D-016 mantém os artefactos descritivos no ZIP; falta distingui-los semanticamente de definições de código e verificar consumidores downstream.
 - Nenhuma alteração de código/schema/migration/testes e nenhum teste/build executado.
+
+
+### Auditoria semântica adicional — FORMB/FORMC (2026-11-20)
+- FORMB transporta descrição/ordem que não estão integralmente representadas no Object Index; o ficheiro deve ser preservado como evidência/configuração.
+- FORMC transporta atualmente `Xexpressao` extraída e formatada de `formc.prop`; o valor original completo de `prop` não é preservado no percurso inspecionado. É necessário desenhar a preservação separada de original e derivado.
+- A matriz de artefactos IKP ainda não está fechada; não alterar exporters/collectors até distinguir definição original, derivado e evidência descritiva por tipo.
