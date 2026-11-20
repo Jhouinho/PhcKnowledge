@@ -23,6 +23,7 @@
 | D-013 | GitHub é a fonte partilhada de verdade entre ChatGPT e Cursor para o estado publicado. | Aprovada |
 | D-014 | O Scanner gera o ZIP no ambiente do cliente; o operador transfere-o manualmente e faz upload manual através do Portal PHC Knowledge. Não existe envio direto Scanner→Knowledge. | Aprovada |
 | D-015 | As relações PHC standard definidas em REL/DTL pertencem ao PHC Standard Catalog, como conhecimento de referência comum e versionado por aplicabilidade PHC; não são uma capacidade de recolha repetida do Scanner. O Scanner só deverá transportar evidência de desvios específicos da instalação quando esse mecanismo estiver definido. | Aprovada |
+| D-016 | O Scanner transporta sempre a captura completa, incluindo artefactos descritivos. Na materialização, o PHC Knowledge compara o conteúdo com o conhecimento já persistido para a mesma instalação: não volta a gravar conteúdo idêntico; grava conteúdo novo e regista nova versão quando há alterações. Cada captura mantém a sua proveniência, mesmo quando não há nova escrita do conteúdo. | Aprovada |
 
 ## Formulações antigas substituídas ou esclarecidas
 
