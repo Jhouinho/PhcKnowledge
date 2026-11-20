@@ -121,6 +121,32 @@ public sealed class MetadataProjectionResolverTests
             fingerprint.RootElement.GetProperty("events").EnumerateArray().Select(x => x.GetString()).ToArray());
     }
 
+    [Fact]
+    public void Legacy_Trigger_Summary_Still_Projects_Identity_From_Capture_Record()
+    {
+        var record = new TechnicalObjectRecord(
+            "trigger:legacy",
+            ObjectKind.Trigger,
+            "tr_legacy",
+            "dbo",
+            "table:dbo.FT",
+            "sql.server.structure",
+            null,
+            """{"isDisabled":false}""",
+            DateTimeOffset.UnixEpoch);
+
+        var result = MetadataProjectionResolver.Resolve(record);
+
+        Assert.Null(result.DiagnosticCode);
+        using var metadata = JsonDocument.Parse(result.Metadata.GetRawText());
+        Assert.Equal("dbo", metadata.RootElement.GetProperty("triggerSchema").GetString());
+        Assert.Equal("tr_legacy", metadata.RootElement.GetProperty("triggerName").GetString());
+        Assert.Equal("dbo", metadata.RootElement.GetProperty("parentSchema").GetString());
+        Assert.Equal("FT", metadata.RootElement.GetProperty("parentName").GetString());
+        Assert.False(metadata.RootElement.TryGetProperty("events", out _));
+        Assert.False(metadata.RootElement.TryGetProperty("isInsteadOf", out _));
+    }
+
     [Theory]
     [InlineData("0", false)]
     [InlineData("1", true)]
