@@ -1,20 +1,22 @@
-# ADR 0003 — Independência do ConsoleApp / Scanner V1
+> **Nota de precedÃªncia â€” 2026-11-20:** este ADR descreve a decisÃ£o de 2026-10-30 de separar o Scanner V1 do `ConsoleApp` e manter repositÃ³rio prÃ³prio. A direÃ§Ã£o atual mantÃ©m o `PhcKnowledgeScanner` no monorepo `Jhouinho/PhcKnowledge`, mas preserva a sua soluÃ§Ã£o, execuÃ§Ã£o, responsabilidade e ciclo de desenvolvimento autÃ³nomos (D-005 em `../../DECISIONS.md`). A exigÃªncia de repositÃ³rio Git/GitHub separado foi substituÃ­da; o ADR Ã© preservado como registo histÃ³rico, nÃ£o como instruÃ§Ã£o atual.
+
+# ADR 0003 â€” IndependÃªncia do ConsoleApp / Scanner V1
 
 - **Estado:** Aceite
 - **Data:** 2026-10-30
 
 ## Contexto
 
-Existe um Scanner V1 dentro de `ConsoleApp`. O pedido explícito é um projeto e repositório **totalmente independentes**.
+Existe um Scanner V1 dentro de `ConsoleApp`. O pedido explÃ­cito Ã© um projeto e repositÃ³rio **totalmente independentes**.
 
-## Decisão
+## DecisÃ£o
 
-- Pasta irmã: `PhcKnowledgeScanner/` (não dentro de `ConsoleApp/`)
-- Solução, Git e GitHub próprios
-- **Proibidas** project references, partilha de código por link e alterações ao `ConsoleApp` neste âmbito
-- Consulta futura ao V1 apenas como referência documental/técnica, com justificação se algum padrão for reutilizado conscientemente
+- Pasta irmÃ£: `PhcKnowledgeScanner/` (nÃ£o dentro de `ConsoleApp/`)
+- SoluÃ§Ã£o, Git e GitHub prÃ³prios
+- **Proibidas** project references, partilha de cÃ³digo por link e alteraÃ§Ãµes ao `ConsoleApp` neste Ã¢mbito
+- Consulta futura ao V1 apenas como referÃªncia documental/tÃ©cnica, com justificaÃ§Ã£o se algum padrÃ£o for reutilizado conscientemente
 
-## Consequências
+## ConsequÃªncias
 
-- Possível duplicação deliberada de ideias (não de binários)
-- Evolução e versionamento desacoplados
+- PossÃ­vel duplicaÃ§Ã£o deliberada de ideias (nÃ£o de binÃ¡rios)
+- EvoluÃ§Ã£o e versionamento desacoplados
