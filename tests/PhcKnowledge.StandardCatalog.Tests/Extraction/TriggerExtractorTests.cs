@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using PhcKnowledge.StandardCatalog.Extraction;
+using PhcKnowledge.StandardCatalog.Parsing;
 
 namespace PhcKnowledge.StandardCatalog.Tests.Extraction;
 
