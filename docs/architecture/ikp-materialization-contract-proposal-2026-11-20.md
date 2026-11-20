@@ -1,6 +1,6 @@
 # IKP — Proposta de contrato de materialização
 
-**Estado:** proposta técnica em atualização; armazenamento de artefactos aprovado para V1; retenção de rejeitados ainda sujeita a confirmação do prazo.  
+**Estado:** proposta técnica em atualização; armazenamento de artefactos aprovado para V1; retenção inicial de rejeitados aprovada em 30 dias, configurável.  
 **Data:** 2026-11-20  
 **Branch auditada:** `feature/increment-c-package-import-analysis-confirmation`  
 **Commit auditado:** `b22c6fb1e9f954a14d02cfe5b0c903c956d0cff3`  
@@ -240,7 +240,7 @@ Um pacote com decisão humana efetiva `Rejected` nunca será materializado. Prop
 5. Preservar os registos de Receipt, Analysis, Decision e auditoria da eliminação, sem conservar uma referência que sugira que o ZIP continua disponível.
 6. Se for necessária nova análise depois da eliminação, exigir novo pacote/captura; não reconstruir nem fingir acesso aos bytes eliminados.
 
-O prazo de 30 dias é uma recomendação inicial e **ainda precisa de confirmação do utilizador**. A política não autoriza eliminar pacotes sem decisão Rejected, nem resolve ainda a retenção de análises Blocked sem decisão, pacotes pendentes ou duplicados. Esses casos permanecem fora do âmbito desta regra.
+O prazo inicial de 30 dias foi aprovado em 2026-11-20 e deve ser configurável, para poder ser reduzido futuramente sem alteração de código. A alteração de configuração aplica-se segundo uma regra explícita e auditável, sem apagar histórico nem contornar bloqueios de preservação. A política não autoriza eliminar pacotes sem decisão Rejected, nem resolve ainda a retenção de análises Blocked sem decisão, pacotes pendentes ou duplicados. Esses casos permanecem fora do âmbito desta regra.
 
 ## 8. Plano de validação antes de implementar
 
@@ -257,11 +257,11 @@ O prazo de 30 dias é uma recomendação inicial e **ainda precisa de confirmaç
 
 ## 9. Não iniciar ainda
 
-Até aprovação explícita do contrato de materialização e resolução das questões ainda abertas (incluindo prazo de retenção e granularidade de execução):
+Até aprovação explícita do contrato de materialização e resolução das questões ainda abertas (incluindo granularidade de execução):
 - não criar migrations de materialização;
 - não introduzir entidades ou serviços de materialização;
 - não alterar o arquivo content-addressed;
 - não adicionar eliminação de ZIP;
 - não alterar o significado de Receipt Completed, Analysis ou Decision Confirmed.
 
-**Próxima ação recomendada:** confirmar o prazo de retenção proposto para rejeitados; depois fechar a granularidade de batches/checkpoints, o modelo lógico e os estados, antes de implementar.
+**Próxima ação recomendada:** auditar o mecanismo real de armazenamento, leitura e recuperação do ZIP e dos artefactos; depois fechar a granularidade de batches/checkpoints, o modelo lógico e os estados, antes de implementar.
