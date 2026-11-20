@@ -335,6 +335,97 @@ Não alterar migrations históricas já aplicadas. Antes de mudar o armazenament
 
 Esta decisão altera apenas o contrato e a direção futura. Não autoriza ainda alterações de código, migrations, workers ou eliminação de ZIP.
 
+
+
+## 7.3 Auditoria e plano de transição do arquivo físico (2026-11-20)
+
+### 7.3.1 Estado real confirmado no código
+
+A inspeção da implementação e dos testes na branch confirmou:
+
+- `FileSystemImmutablePackageStore.GetStorageKey(validation)` gera atualmente `sha256/{prefix}/{hash}.ikp.zip`; OrganizationId e PackageId não participam da chave.
+- `IExpectedStorageKeyProvider.GetStorageKey` recebe apenas o resultado de validação, pelo que não consegue calcular uma chave isolada por organização.
+- `IkpPackageIngestionService` calcula a StorageKey antes de criar a tentativa SQL durável. A tentativa guarda OrganizationId, PackageId, SHA-256, tamanho, StorageKey e StagingKey.
+- `PackageReceiptRecoveryService` arquiva novamente usando apenas staging + validação. A implementação atual do store volta a calcular a chave global em vez de receber/usar explicitamente a StorageKey persistida na tentativa.
+- A recuperação sem staging verifica o arquivo usando a StorageKey guardada na tentativa.
+- `PackageReceiptAttempts` e `PackageIngestionReceipts` guardam StorageKey em `nvarchar(512)`. A conclusão da tentativa verifica que a chave devolvida pelo arquivo coincide com a chave persistida e grava o Receipt e o estado Completed na mesma transação SQL Server.
+- O serviço de análise abre o ZIP usando a StorageKey do Receipt, SHA-256 e tamanho. Por isso, a nova resolução de caminho também tem de validar a identidade organizacional/do pacote no percurso de leitura.
+- As migrations 001 e 002 têm índices únicos por (OrganizationId, PackageId) e (OrganizationId, SHA-256). Estes índices já isolam a unicidade lógica na base de dados, mas não isolam o caminho físico.
+- Os testes de armazenamento e integração assumem atualmente chaves content-addressed globais e terão de acompanhar o novo contrato.
+
+Não foi encontrada, no âmbito inspecionado, uma rotina de migração dos arquivos existentes nem uma rotina de eliminação do arquivo antigo.
+
+### 7.3.2 Contrato técnico necessário para a nova chave
+
+A nova chave física deve ser determinística para a identidade do pacote e incluir, no mínimo, OrganizationId e PackageId. Exemplo conceptual:
+
+```text
+organizations/{OrganizationId}/packages/{PackageId}/{ZipSha256}.ikp.zip
+```
+
+O formato é ilustrativo; a implementação deve normalizar os GUIDs, validar cada segmento e garantir que o caminho resolvido permanece dentro do diretório raiz.
+
+O SHA-256 permanece no nome como verificação/diagnóstico, mas não é o identificador exclusivo do caminho. Dois pacotes de organizações diferentes terão destinos físicos diferentes, mesmo com o mesmo hash.
+
+A API interna do armazenamento terá de deixar de depender apenas de `IkpPackageValidationResult`:
+- a geração da chave esperada precisa de receber a OrganizationId autenticada e a identidade do pacote;
+- o arquivo deve receber a identidade e/ou a StorageKey esperada já persistida na tentativa, validando que corresponde à OrganizationId, PackageId e SHA-256;
+- a recuperação deve arquivar no destino exato persistido na tentativa, sem recalcular uma chave com regras potencialmente diferentes;
+- Verify/Open devem validar também a identidade organizacional e PackageId, além do SHA-256 e tamanho;
+- a leitura de análise deve fornecer ao store a identidade retirada do Receipt, nunca uma identidade indicada pelo cliente.
+
+A OrganizationId tem de vir do contexto autenticado no percurso de receção. A validação do caminho não pode depender de uma StorageKey arbitrária enviada pelo Portal.
+
+### 7.3.3 Transição dos arquivos já existentes
+
+A transição deve ser uma operação controlada, repetível e sem perda de dados. Sequência proposta:
+
+1. **Preparação e inventário:** identificar todos os Receipts e todas as tentativas, incluindo PendingArchive e NeedsAttention, com OrganizationId, PackageId, SHA-256, tamanho e StorageKey atuais. Identificar também os arquivos físicos existentes e validar a correspondência hash/tamanho.
+2. **Janela de manutenção:** parar a receção e os workers de recuperação/limpeza antigos. Confirmar que não existem operações de arquivo em curso nem leases ativas. Fazer backup consistente da base de dados e do diretório de arquivo/staging.
+3. **Plano de cópia:** para cada identidade distinta (OrganizationId, PackageId), calcular o destino novo. Se vários registos de organizações diferentes apontarem para o mesmo caminho antigo, criar uma cópia física independente para cada destino.
+4. **Cópia sem destruição:** copiar o ficheiro antigo para o destino novo sem mover nem apagar o original. Remover o atributo ReadOnly apenas no destino novo se necessário para a escrita; o original permanece intacto.
+5. **Verificação independente:** calcular SHA-256 e tamanho no destino novo e comparar com os valores persistidos em SQL. Não atualizar referências se qualquer verificação falhar.
+6. **Atualização SQL por pacote:** numa transação SQL Server, atualizar a StorageKey da tentativa e do Receipt correspondente, sempre condicionando a atualização por OrganizationId, PackageId e SHA-256. Verificar que ambos ficam com a mesma nova chave e que nenhuma linha esperada ficou por atualizar.
+7. **Reconciliação global:** confirmar que cada tentativa/Receipt tem um destino novo existente e íntegro; confirmar que os destinos novos são distintos entre organizações; confirmar que não há PendingArchive/NeedsAttention a depender de staging ou de chaves antigas sem tratamento explícito.
+8. **Ativação:** só depois da reconciliação, ativar a versão do host que gera, arquiva, recupera, verifica e lê exclusivamente pelo novo contrato isolado.
+9. **Retenção do arquivo antigo:** manter o arquivo antigo intacto durante um período de observação/rollback definido operacionalmente. A remoção posterior dos caminhos antigos é uma operação separada, depois de confirmar que nenhuma referência SQL ou processo ativo os utiliza e de validar o backup.
+
+A migração deve ser idempotente: se for repetida, reconhece destinos novos já existentes apenas depois de verificar hash e tamanho; não sobrescreve ficheiros divergentes. Uma falha depois da cópia e antes da atualização SQL deixa, no máximo, uma cópia nova órfã e recuperável, nunca perde o original. Uma falha depois da atualização SQL mantém o destino novo já verificado e o original preservado.
+
+### 7.3.4 Tratamento das tentativas incompletas
+
+- **Completed:** migrar a cópia e atualizar em conjunto as StorageKeys da tentativa e do Receipt.
+- **PendingArchive com staging existente:** preservar o staging e migrar a tentativa para o novo destino; a recuperação nova deve continuar a partir da StorageKey persistida.
+- **PendingArchive sem staging, mas com arquivo antigo íntegro:** copiar o arquivo antigo para o destino novo, verificar e só depois concluir/atualizar o estado de forma coerente.
+- **NeedsAttention:** não descartar nem presumir que o arquivo existe. Inventariar individualmente; recuperar se staging/arquivo forem íntegros ou manter em intervenção manual. Não marcar como concluída apenas por ter sido copiada uma chave.
+- **Sem staging e sem arquivo antigo íntegro:** manter NeedsAttention e preservar diagnóstico. Não fabricar um Receipt nem declarar a migração concluída.
+
+### 7.3.5 Regras de segurança e rollback
+
+- Não executar a migração com versões antigas do host ainda a receber ou recuperar pacotes.
+- Não apagar nem mover o arquivo antigo durante a cópia ou atualização SQL.
+- Não fazer fallback silencioso do novo caminho para o caminho global antigo na operação normal depois do cutover; isso esconderia referências não migradas e reintroduziria dependência do arquivo partilhado.
+- Se a reconciliação falhar antes do cutover, manter o host antigo parado e corrigir/repetir a migração; o arquivo antigo continua a ser a fonte recuperável.
+- Se for necessário rollback depois do cutover, parar novamente os workers e reverter as StorageKeys de forma controlada, apenas enquanto o arquivo antigo estiver preservado e validado.
+- Registar contagens de linhas, ficheiros copiados, hashes verificados, falhas, referências atualizadas e resultado final. O relatório de migração deve permitir provar que nenhum Receipt/tentativa ficou sem arquivo íntegro.
+
+### 7.3.6 Testes obrigatórios antes do cutover
+
+1. Mesmo ZIP/hash recebido por duas organizações cria dois caminhos físicos distintos.
+2. Eliminar/expirar o pacote da Organização A não altera nem remove o ficheiro da Organização B.
+3. A mesma tentativa recuperada após reinício escreve no destino persistido, sem recalcular uma chave diferente.
+4. Recuperação com staging presente e recuperação apenas a partir do arquivo antigo.
+5. Cópia repetida para destino novo já existente e íntegro é idempotente.
+6. Destino novo existente com hash/tamanho divergente é rejeitado e nunca sobrescrito.
+7. Falha entre cópia, verificação e atualização SQL é recuperável sem perda do original.
+8. Atualização SQL mantém StorageKey igual em Attempt e Receipt.
+9. Análise abre o ZIP pelo Receipt e valida organização, pacote, hash e tamanho.
+10. Chaves com traversal, OrganizationId ou PackageId trocados são rejeitadas.
+11. Pacotes PendingArchive e NeedsAttention não são ignorados pela migração.
+12. A limpeza de staging continua a proteger tentativas pendentes e não toca no arquivo.
+
+**Estado:** auditoria e sequência de transição documentadas. A implementação da nova chave, a migração de dados/ficheiros, a alteração das APIs internas e os testes continuam por fazer. Não foi alterado código, migration ou arquivo físico nesta etapa.
+
 ## 8. Plano de validação antes de implementar
 
 - Testes de elegibilidade e vínculo de fingerprint/decision.
@@ -357,4 +448,4 @@ Até aprovação explícita do contrato de materialização e resolução das qu
 - não adicionar eliminação de ZIP;
 - não alterar o significado de Receipt Completed, Analysis ou Decision Confirmed.
 
-**Próxima ação recomendada:** fechar a granularidade de batches/checkpoints e o contrato operacional de disponibilidade/eliminação por pacote (incluindo backups, recuperação e concorrência de leitura); depois validar o modelo lógico, antes de implementar.
+**Próxima ação recomendada:** fechar a granularidade de batches/checkpoints e rever o plano de transição do arquivo isolado com os cenários de recuperação; só depois preparar a implementação e a migração controlada.
