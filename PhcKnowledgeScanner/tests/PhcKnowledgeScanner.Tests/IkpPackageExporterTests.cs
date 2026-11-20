@@ -40,6 +40,12 @@ public sealed class IkpPackageExporterTests
                     "sql.server.structure",
                     true),
                 new DeclaredCapability(
+                    "sql.server.structure.triggers",
+                    KnownOperations.SqlTriggers,
+                    KnownOperations.SqlTriggersVersion,
+                    "sql.server.structure",
+                    true),
+                new DeclaredCapability(
                     "phc.declared-relations.rel",
                     KnownOperations.PhcRel,
                     KnownOperations.Version,
@@ -71,6 +77,15 @@ public sealed class IkpPackageExporterTests
                     SourceAvailability.Present,
                     ContentAvailability.Available,
                     1,
+                    Array.Empty<string>()),
+                new OperationCoverage(
+                    KnownOperations.SqlTriggers,
+                    KnownOperations.SqlTriggersVersion,
+                    true,
+                    OperationExecutionResult.Succeeded,
+                    SourceAvailability.Present,
+                    ContentAvailability.Empty,
+                    0,
                     Array.Empty<string>()),
                 new OperationCoverage(
                     KnownOperations.PhcRel,
