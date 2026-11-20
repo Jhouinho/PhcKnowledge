@@ -140,3 +140,15 @@ A auditoria permanece em curso. Esta publicação não executou testes nem alter
 - `PhcKnowledgeScanner/docs/open-decisions.md` já contém nota explícita de que é uma checklist histórica, não um backlog atual; manter as questões não assinaladas sem as reabrir automaticamente.
 - `PhcKnowledgeScanner/docs/decisions/0003-independence.md` foi marcado como histórico: o repositório separado foi substituído pelo monorepo, mantendo-se a autonomia de execução e responsabilidade do Scanner.
 - `docs/architecture/portal-frontend-architecture-spike-2026-11-19.md` recebeu nota de precedência porque descrevia um estado anterior à criação do frontend React.
+
+
+## Etapa 6 — auditoria operação a operação do Scanner/IKP (2026-11-20)
+
+- Confirmado no código o catálogo de 23 operações: 7 SQL Server, 14 personalizações PHC e 2 REL/DTL.
+- Cruzadas as operações declaradas com os três collectors, fontes SQL, estados obrigatórios/opcionais, ObjectOperationResolver, Object Index, exportador IKP e testes existentes.
+- Mapeamento dos 21 kinds do Object Index tem testes sintéticos; `ObjectOperationResolverTests` cobre as variantes e `ObjectIndexProjectorTests` projeta os 21 kinds. Captura real documentada CSDefault202603: 16.618 objetos, apenas 8/21 kinds presentes; não é validação real de todos os kinds.
+- `IkpPackageExporterTests` valida ZIP e contrato com workspace sintético; não prova ZIP end-to-end de captura real. `ScanEngineTests` cobre semântica de coverage; não foi encontrada suite de integração SQL dos collectors contra PHC real.
+- Lacunas encontradas: (1) operação FTU inclui funções `Fx_*`/`User_*` de `sys.objects`, mas só corre se `dbo.ftu` existir; (2) `RunOptionalAsync` chama `sourceExistsAsync` fora do try/catch por operação; (3) Probe de personalizações agrega presença de três tabelas core e não verifica individualmente as operações core; (4) coverage de objeto não garante definição disponível — exporter reconcilia estado de definição separadamente.
+- Detalhes e tabela completa das 23 operações publicados em `docs/architecture/ikp-0.1-scanner-compatibility-matrix.md`, secção “Auditoria operacional do Scanner — 2026-11-20”.
+- Nenhum código, migration, teste ou captura foi alterado/executado. As lacunas estão registadas como achados; não foram corrigidas nesta etapa.
+- Próxima verificação: analisar a cadeia de exportação dos artefactos e a correspondência entre 23 operações, objetos, definições e conteúdo no ZIP; depois confirmar se existe ZIP real validado end-to-end e atualizar a matriz com evidência e limitações.
