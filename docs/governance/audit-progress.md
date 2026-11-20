@@ -186,3 +186,18 @@ O responsável confirmou a separação arquitetural entre PHC Standard e recolha
 - Documento funcional publicado: `docs/architecture/ikp-incremental-materialization-policy-2026-11-20.md`; decisão D-016 publicada em `DECISIONS.md`.
 - Sem alterações de código, schemas IKP, migrations ou testes. Sem builds, testes ou captura real executados.
 - Próximo passo de auditoria: inspecionar o contrato de manifesto/validação para identificar os papéis de artefacto atualmente permitidos e desenhar a representação correta para evidência descritiva. Depois fechar identidade estável e fingerprints por instalação, antes de autorizar implementação.
+
+
+## Atualização — auditoria do papel dos artefactos IKP (2026-11-20)
+
+Inspeção read-only de `IkpPackageExporter`, `IkpPackageInspectionEngine`, `IkpInspectedArtifact`, `manifest.schema.json` e `object-index.schema.json` confirmou:
+
+1. O exporter atribui atualmente o role literal `source-definition` a todos os artefactos obtidos a partir de `TechnicalObjectRecord.DefinitionArtifactId`; não determina o role com base no estado `definition.status` do Object Index.
+2. O Object Index pode marcar `definition.status = NotCollected` e emitir `artifactIds: []`, enquanto o artefacto descritivo continua no manifesto/payload por estar referenciado pelo registo interno do objeto.
+3. O schema do manifesto exige que `role`, quando presente, seja string não vazia; não define enum nem lista fechada de roles.
+4. O inspection engine lê e transporta o role para `IkpInspectedArtifact`, sem validação semântica/whitelist do seu valor.
+5. O validador exige que os payload paths correspondam aos artefactos do manifesto e que os hashes/tamanhos coincidam. Exige também que os IDs indicados por `definition.artifactIds` existam no manifesto, mas não exige o inverso (todos os artefactos do manifesto serem definições referenciadas pelo Object Index).
+
+**Conclusão limitada:** um role específico para evidência/metadados parece compatível estruturalmente com o schema IKP 0.1 atual, mas ainda não foi verificado o comportamento de todos os consumidores downstream nem existe teste dedicado. O exporter atual teria de deixar de aplicar indiscriminadamente `source-definition` e distinguir os artefactos descritivos. Não foi feita qualquer alteração.
+
+Próxima inspeção: determinar que metadados persistidos no workspace permitem distinguir inequivocamente os artefactos descritivos de `phc.user_field` dos artefactos de definição, e verificar a associação exata objeto↔artefacto. Não escolher o novo role nem alterar o schema/código até concluir essa análise.
