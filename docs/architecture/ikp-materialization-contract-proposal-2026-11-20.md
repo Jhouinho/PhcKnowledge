@@ -1,6 +1,6 @@
 # IKP — Proposta de contrato de materialização
 
-**Estado:** proposta técnica para discussão; não aprovada como decisão arquitetural.  
+**Estado:** proposta técnica em atualização; armazenamento de artefactos aprovado para V1; retenção de rejeitados ainda sujeita a confirmação do prazo.  
 **Data:** 2026-11-20  
 **Branch auditada:** `feature/increment-c-package-import-analysis-confirmation`  
 **Commit auditado:** `b22c6fb1e9f954a14d02cfe5b0c903c956d0cff3`  
@@ -204,14 +204,43 @@ A política para pacotes Rejected, análises Blocked, duplicados e períodos de 
 
 ## 7. Questões que continuam em aberto
 
-1. **Destino dos bytes dos artefactos:** SQL Server `varbinary(max)` ou armazenamento de conteúdo durável separado, com metadados/índice no SQL Server?
-2. **Granularidade transacional:** batches e checkpoints ou transação única para subconjuntos? Definir com base no volume real de capturas.
-3. **Política para Rejected/Blocked:** quando e como eliminar ZIP que nunca será materializado?
-4. **Reanálise futura:** após eliminar o ZIP, a análise persistida é a evidência imutável suficiente? Se for necessário reanalisar, será necessária nova captura/pacote ou uma retenção excecional explícita.
-5. **Retenção e auditoria:** durante quanto tempo manter Receipt, Analysis, Decision, itens de materialização e diagnóstico?
-6. **Reversão/correção:** como corrigir uma materialização errada sem apagar a proveniência ou misturar capturas?
+1. **Granularidade transacional:** batches e checkpoints ou transação única para subconjuntos? Definir com base no volume real de capturas.
+2. **Prazo de retenção de rejeitados:** proposta de 30 dias após a decisão efetiva Rejected, ainda sujeita a confirmação explícita.
+3. **Reanálise futura:** após eliminar o ZIP, a análise persistida é a evidência imutável suficiente? Se for necessário reanalisar, será necessária nova captura/pacote ou uma retenção excecional explícita.
+4. **Retenção e auditoria:** durante quanto tempo manter Receipt, Analysis, Decision, itens de materialização e diagnóstico?
+5. **Reversão/correção:** como corrigir uma materialização errada sem apagar a proveniência ou misturar capturas?
 
-Estas questões não devem ser fechadas implicitamente durante a implementação.
+A decisão de armazenamento dos bytes foi fechada para a V1. O prazo de 30 dias é uma recomendação para discussão, não uma decisão já aprovada. As restantes questões não devem ser fechadas implicitamente durante a implementação.
+
+
+## 7.1 Decisão de armazenamento e proposta de retenção de rejeitados (2026-11-20)
+
+### Armazenamento de artefactos — decisão aprovada
+
+Na primeira versão, os bytes originais dos artefactos serão armazenados diretamente em SQL Server, usando `varbinary(max)`. Não será introduzido nesta fase um serviço externo de objetos ou armazenamento de ficheiros.
+
+Os bytes não devem ser colocados nas tabelas de Receipt ou Analysis. O modelo lógico deve manter uma entidade/relação própria para artefactos, com pelo menos:
+- identidade do artefacto e vínculo à organização, Receipt, Package, Capture e Analysis;
+- tipo/categoria e nome original, quando aplicável;
+- conteúdo binário original;
+- tamanho em bytes e SHA-256;
+- data de armazenamento e estado de verificação.
+
+A entidade e os nomes físicos continuam por desenhar. O SHA-256 e o tamanho devem ser verificados após persistência e numa leitura independente. Os bytes originais são imutáveis; transformações ou representações derivadas devem ser identificadas separadamente.
+
+A implementação deverá considerar explicitamente a capacidade da edição de SQL Server escolhida, o limite de tamanho da base de dados, o crescimento acumulado, backups/restauros e alertas de capacidade. `varbinary(max)` é uma escolha de tipo de coluna, não uma garantia de capacidade ilimitada. A evolução futura para armazenamento externo poderá ser considerada sem alterar o contrato funcional, mas não faz parte da V1.
+
+### Pacotes rejeitados — política proposta
+
+Um pacote com decisão humana efetiva `Rejected` nunca será materializado. Propõe-se:
+1. Manter o ZIP durante **30 dias de calendário após a decisão Rejected**, para permitir revisão operacional ou investigação.
+2. No fim do prazo, torná-lo elegível para eliminação automática, desde que não exista bloqueio de retenção.
+3. Suspender a eliminação quando exista incidente, investigação, pedido de suporte/revisão ou obrigação de preservação registada.
+4. Executar a eliminação como operação idempotente e recuperável, registando intenção, resultado, timestamp e confirmação de ausência física.
+5. Preservar os registos de Receipt, Analysis, Decision e auditoria da eliminação, sem conservar uma referência que sugira que o ZIP continua disponível.
+6. Se for necessária nova análise depois da eliminação, exigir novo pacote/captura; não reconstruir nem fingir acesso aos bytes eliminados.
+
+O prazo de 30 dias é uma recomendação inicial e **ainda precisa de confirmação do utilizador**. A política não autoriza eliminar pacotes sem decisão Rejected, nem resolve ainda a retenção de análises Blocked sem decisão, pacotes pendentes ou duplicados. Esses casos permanecem fora do âmbito desta regra.
 
 ## 8. Plano de validação antes de implementar
 
@@ -235,4 +264,4 @@ Até aprovação explícita do contrato e resolução das questões de armazenam
 - não adicionar eliminação de ZIP;
 - não alterar o significado de Receipt Completed, Analysis ou Decision Confirmed.
 
-**Próxima ação recomendada:** decidir primeiro o destino durável dos bytes dos artefactos e a política para pacotes rejeitados; depois fechar o modelo lógico e os estados, antes de implementar.
+**Próxima ação recomendada:** confirmar o prazo de retenção proposto para rejeitados; depois fechar a granularidade de batches/checkpoints, o modelo lógico e os estados, antes de implementar.
