@@ -107,18 +107,21 @@ public sealed class SqlServerStructureCollector : ICollector
                 () => CollectProceduresAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
                 () => objectCount)
             .ConfigureAwait(false);
+        var triggerScope = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["parentScope"] = "tables",
+            ["tableNameFilter"] = "none",
+            ["eventSource"] = "sys.trigger_events",
+            ["includesInsteadOf"] = "true",
+            ["definitionCapture"] = "attempted",
+            ["completeness"] = "unknown",
+            ["metadataVisibility"] = "not_verified"
+        };
         await tracker.RunAsync(
                 caps[KnownOperations.SqlTriggers],
-                () => CollectTriggersAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
+                () => CollectTriggersAsync(connection, context, collectedAt, issues, triggerScope, () => objectCount++, Report, cancellationToken),
                 () => objectCount,
-                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["parentScope"] = "tables",
-                    ["tableNameFilter"] = "none",
-                    ["eventSource"] = "sys.trigger_events",
-                    ["includesInsteadOf"] = "true",
-                    ["definitionCapture"] = "attempted"
-                })
+                triggerScope)
             .ConfigureAwait(false);
 
         foreach (var issue in issues)
@@ -659,12 +662,43 @@ public sealed class SqlServerStructureCollector : ICollector
         ScanContext context,
         DateTimeOffset collectedAt,
         List<CollectionIssue> issues,
+        IDictionary<string, string> coverageScope,
         Action bump,
         Func<string, Task> report,
         CancellationToken ct)
     {
         try
         {
+            var metadataVisibilityVerified = false;
+            try
+            {
+                await using var visibilityCmd = connection.CreateCommand();
+                visibilityCmd.CommandText =
+                    "SELECT HAS_PERMS_BY_NAME(DB_NAME(), N'DATABASE', N'VIEW DEFINITION');";
+                var visibilityResult = await visibilityCmd.ExecuteScalarAsync(ct).ConfigureAwait(false);
+                metadataVisibilityVerified = visibilityResult is not null
+                    && visibilityResult is not DBNull
+                    && Convert.ToInt32(visibilityResult) == 1;
+            }
+            catch (SqlException)
+            {
+                // Failure to inspect permissions must not discard visible trigger rows.
+                // The operation remains explicitly partial in its coverage contract.
+            }
+
+            coverageScope["metadataVisibility"] = metadataVisibilityVerified
+                ? "database_view_definition"
+                : "not_verified";
+            coverageScope["completeness"] = metadataVisibilityVerified ? "verified" : "unknown";
+
+            if (!metadataVisibilityVerified)
+            {
+                issues.Add(new CollectionIssue(
+                    CollectionIssueSeverity.Warning,
+                    "sql.trigger.metadata_visibility_unverified",
+                    "Não foi possível confirmar VIEW DEFINITION ao nível da base de dados; o inventário visível de triggers pode estar incompleto."));
+            }
+
             await using var cmd = connection.CreateCommand();
             cmd.CommandTimeout = 300;
             cmd.CommandText =
