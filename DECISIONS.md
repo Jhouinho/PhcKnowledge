@@ -22,6 +22,7 @@
 | D-012 | Documentação e interface em Português de Portugal (pt-PT). | Aprovada |
 | D-013 | GitHub é a fonte partilhada de verdade entre ChatGPT e Cursor para o estado publicado. | Aprovada |
 | D-014 | O Scanner gera o ZIP no ambiente do cliente; o operador transfere-o manualmente e faz upload manual através do Portal PHC Knowledge. Não existe envio direto Scanner→Knowledge. | Aprovada |
+| D-015 | As relações PHC standard definidas em REL/DTL pertencem ao PHC Standard Catalog, como conhecimento de referência comum e versionado por aplicabilidade PHC; não são uma capacidade de recolha repetida do Scanner. O Scanner só deverá transportar evidência de desvios específicos da instalação quando esse mecanismo estiver definido. | Aprovada |
 
 ## Formulações antigas substituídas ou esclarecidas
 
@@ -40,9 +41,10 @@
 2. Estratégia de pesquisa textual no SQL Server e critérios para eventual motor externo.
 3. Modelo físico final de clientes/instalações/ambientes e respetivas permissões.
 4. Pipeline PHC Standard Catalog: fontes, extração, curadoria, versionamento, persistência e publicação.
-5. Critérios exatos de confirmação de materialização e eliminação segura do ZIP/temporários, incluindo falhas e recuperação.
-6. Cobertura real dos collectors por operação, incluindo testes diretos contra SQL Server PHC.
-7. Sequência e critérios de aceitação para materialização de observações, diff, pesquisa autorizada e RAG.
+5. Critério e mecanismo para comparar a estrutura SQL observada com o catálogo standard, classificar diferenças e exportar apenas evidência específica da instalação sem classificar automaticamente objetos desconhecidos como personalizados.
+6. Critérios exatos de confirmação de materialização e eliminação segura do ZIP/temporários, incluindo falhas e recuperação.
+7. Cobertura real dos collectors por operação, incluindo testes diretos contra SQL Server PHC.
+8. Sequência e critérios de aceitação para materialização de observações, diff, pesquisa autorizada e RAG.
 
 ## Registo de novas decisões
 
