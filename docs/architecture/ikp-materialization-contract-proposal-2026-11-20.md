@@ -2,6 +2,8 @@
 
 > **Precedência — decisão D-015 (2026-11-20):** referências nesta proposta à materialização de REL/DTL como conteúdo de cada captura refletem o payload legado atualmente emitido pelo Scanner. As relações PHC standard pertencem ao PHC Standard Catalog, como conhecimento comum versionado por aplicabilidade PHC; não devem ser materializadas repetidamente como observações específicas de cada instalação. O payload REL/DTL legado poderá servir como evidência para comparação futura, mas não deve ser tratado automaticamente como personalização nem promovido a conhecimento standard a partir de uma captura. O mecanismo de deteção e materialização de diferenças locais continua por definir.
 
+> **Precedência — decisão D-016 (2026-11-20):** o Scanner transporta sempre a captura completa, incluindo artefactos descritivos. A comparação com conhecimento já persistido é feita no destino, por instalação: conteúdo idêntico não é gravado novamente; conteúdo novo é inserido; conteúdo alterado origina nova versão. Cada captura mantém a sua observação/proveniência. Ver `ikp-incremental-materialization-policy-2026-11-20.md`.
+
 
 **Estado:** proposta técnica em atualização; armazenamento de artefactos aprovado para V1; retenção inicial de rejeitados aprovada em 30 dias, configurável.  
 **Data:** 2026-11-20  
@@ -193,12 +195,12 @@ A separação permite que uma falha de filesystem depois da materialização nã
 
 ### 4.5 Execução, atomicidade e recuperação
 
-A materialização deve ser idempotente por MaterializationId e por chave estável de item. Repetir um pedido não pode duplicar objetos, observações ou conteúdo.
+A materialização deve ser idempotente por MaterializationId e por item da captura: repetir o mesmo pedido/captura não pode duplicar escritas nem observações dessa captura. Uma captura posterior, mesmo com conteúdo idêntico, deve criar a sua própria associação de observação/proveniência, mas pode reutilizar o conteúdo já persistido para a mesma instalação sem voltar a gravá-lo.
 
 Para capturas potencialmente grandes, não assumir uma única transação SQL gigantesca. Proposta:
 1. Criar o agregado de materialização e validar os vínculos.
 2. Processar itens em unidades/batches duráveis, cada uma com resultado e contagens persistidas.
-3. Persistir bytes dos artefactos num destino durável e verificável. O destino concreto (SQL Server `varbinary(max)` ou armazenamento de conteúdo associado) continua por decidir; não pode depender do ZIP após a eliminação.
+3. Persistir bytes dos artefactos num destino durável e verificável. Para V1, os bytes originais ficam em SQL Server `varbinary(max)`, numa entidade própria (decisão aprovada em 2026-11-20); não podem depender do ZIP após a eliminação.
 4. Executar uma verificação final que reconcilie o conjunto esperado da análise com o conjunto persistido: itens, artefactos, referências, tamanhos, hashes e proveniência.
 5. Marcar Verified apenas depois de todas as verificações passarem.
 6. Marcar EligibleForDeletion e executar eliminação idempotente do ZIP/temporários.
@@ -587,3 +589,18 @@ Até aprovação explícita do contrato de materialização e resolução das qu
 - não alterar o significado de Receipt Completed, Analysis ou Decision Confirmed.
 
 **Próxima ação recomendada:** validar o desenho das interfaces e da migration 004; depois fechar a política de tratamento de NeedsAttention/Blocked e os critérios de cutover, antes de autorizar implementação.
+
+
+## 10. Precedência D-016 — captura completa e escrita incremental
+
+A regra funcional está aprovada e detalhada em [ikp-incremental-materialization-policy-2026-11-20.md](ikp-incremental-materialization-policy-2026-11-20.md).
+
+Consequências para esta proposta:
+- o ZIP é sempre uma captura completa e não depende do estado de scans anteriores;
+- comparação e idempotência de conteúdo são responsabilidade da materialização no PHC Knowledge, não do Scanner;
+- igualdade é avaliada dentro da mesma instalação, com identidade de origem e fingerprints adequados; hash sozinho não define identidade;
+- cada captura mantém a sua observação/proveniência, mesmo quando o conteúdo persistido é reutilizado;
+- ausência numa captura posterior não apaga automaticamente conteúdo anterior;
+- ficheiros descritivos de `phc.user_field` continuam a ser transportados, mas não podem ser rotulados como `source-definition` quando representam apenas metadados. O role apropriado e a compatibilidade com os validadores IKP ainda têm de ser desenhados.
+
+Esta secção atualiza o contrato funcional; não autoriza implementação, alteração de schema, migration ou testes.
