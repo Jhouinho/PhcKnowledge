@@ -213,3 +213,5 @@ Concluir a reconciliação técnica dos documentos de collectors/IKP e do PHC St
 
 ### Próxima ação
 Reconciliar o snapshot estrutural de colunas/índices/FK com os ficheiros já enviados; em paralelo, decidir a forma de incorporar REL/DTL e as 552 triggers no catálogo standard versionado. Não pedir nova captura nem alterar collectors antes dessa reconciliação.
+
+- HEAD remoto após publicação do relatório, atualização do estado e correção da contagem (imediatamente antes deste registo): `e459f96bb17417c1fe24be17fd0698e1c9755fcd`.
