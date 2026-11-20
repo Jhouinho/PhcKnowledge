@@ -110,3 +110,13 @@ A auditoria permanece em curso. Esta publicação não executou testes nem alter
 - Criado `docs/architecture/ikp-temporary-package-lifecycle-gap-2026-11-20.md`.
 - Inventário documental atualizado de 84 para 85 ficheiros Markdown/texto.
 - O relatório regista a divergência: arquivo permanente implementado versus ZIP temporário aprovado; análise depende atualmente de reabrir o ZIP; não existe delete no store nem materialização integral.
+
+
+## Etapa 4 — contrato de materialização IKP (2026-11-20)
+
+- Confirmado HEAD de entrada da inspeção: `b22c6fb1e9f954a14d02cfe5b0c903c956d0cff3`, branch `feature/increment-c-package-import-analysis-confirmation`.
+- Inspecionados os scripts SQL 001, 002, 004 e 005; modelos Receipt/Attempt/Analysis/Decision; regras e serviço de decisão; readiness evaluator; repositórios SQL Server; endpoints Portal; serviço de análise e package store.
+- Evidência: Receipt, Analysis e Decision são persistidos separadamente; a decisão é append-only e ligada ao SemanticFingerprintSnapshot; não foi identificada materialização do conhecimento no percurso inspecionado.
+- Criado `docs/architecture/ikp-materialization-contract-proposal-2026-11-20.md`, explicitamente proposta não aprovada. Abrange identidade/proveniência, itens e artefactos, estados, idempotência, recovery, verificação e eliminação segura.
+- Questões em aberto: destino durável dos bytes, granularidade de transação, política para Rejected/Blocked, reanálise após eliminação e retenção.
+- Sem alterações de código, migrations ou testes; nenhum ZIP foi eliminado.
