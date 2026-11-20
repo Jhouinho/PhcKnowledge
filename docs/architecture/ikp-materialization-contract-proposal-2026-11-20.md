@@ -227,25 +227,27 @@ Contagens iguais, sem validação de referências e hashes, não são prova sufi
 
 ## 6. Eliminação segura do ZIP
 
-A eliminação deve ser uma fase separada, posterior a Verified. Antes de eliminar:
-- confirmar que a análise está persistida;
-- confirmar materialização Verified;
+A eliminação deve ser uma fase separada, posterior à elegibilidade definida para aquele pacote. Antes de eliminar:
+- confirmar que a análise está persistida, quando aplicável;
+- confirmar materialização Verified, no caso de pacote confirmado;
+- no caso de pacote Rejected, confirmar que terminou o prazo de retenção aprovado;
 - confirmar que não há worker/lease ativo nem recovery pendente que dependa do pacote;
-- confirmar que todos os artefactos necessários têm cópia durável;
+- confirmar que não existe bloqueio de preservação;
 - registar a intenção de eliminação.
 
 Depois de eliminar:
+- remover apenas o artefacto físico pertencente àquele pacote;
 - verificar que o ficheiro não existe;
 - registar Deleted e instante da eliminação;
-- manter Receipt, Analysis, Decision, Materialization e proveniência;
-- não manter StorageKey como se o pacote ainda fosse recuperável.
+- manter Receipt, Analysis, Decision e auditoria/proveniência;
+- preservar a StorageKey como referência histórica, mas expor separadamente que o conteúdo já não está disponível.
 
-A política para pacotes Rejected, análises Blocked, duplicados e períodos de retenção operacional precisa de decisão explícita. A regra aprovada de ZIP temporário não resolve por si só esses casos de exceção.
+A eliminação é sempre delimitada ao pacote e à organização proprietária. Não se consulta nem se altera o ciclo de vida de pacotes de outras organizações para decidir a eliminação. A política de retenção de cada pacote é independente.
 
 ## 7. Questões que continuam em aberto
 
 1. **Granularidade transacional:** batches e checkpoints ou transação única para subconjuntos? Definir com base no volume real de capturas.
-2. **Prazo de retenção de rejeitados:** proposta de 30 dias após a decisão efetiva Rejected, ainda sujeita a confirmação explícita.
+2. **Prazo de retenção de rejeitados:** 30 dias de calendário após a decisão efetiva Rejected, aprovado; configurável para redução futura.
 3. **Reanálise futura:** após eliminar o ZIP, a análise persistida é a evidência imutável suficiente? Se for necessário reanalisar, será necessária nova captura/pacote ou uma retenção excecional explícita.
 4. **Retenção e auditoria:** durante quanto tempo manter Receipt, Analysis, Decision, itens de materialização e diagnóstico?
 5. **Reversão/correção:** como corrigir uma materialização errada sem apagar a proveniência ou misturar capturas?
@@ -305,3 +307,53 @@ Até aprovação explícita do contrato de materialização e resolução das qu
 - não alterar o significado de Receipt Completed, Analysis ou Decision Confirmed.
 
 **Próxima ação recomendada:** fechar o contrato de disponibilidade/eliminação do ZIP (incluindo referências partilhadas, backups e concorrência de leitura) e a granularidade de batches/checkpoints; depois validar o modelo lógico, antes de implementar.
+
+
+## 7.2 Decisão aprovada — propriedade e isolamento físico dos ZIP (2026-11-20)
+
+### Regra de domínio
+
+Um pacote IKP pertence a uma única organização. Não existe pacote partilhado entre organizações. A propriedade é determinada pelo vínculo persistido do pacote/Receipt à respetiva OrganizationId, e não pelo conteúdo binário.
+
+Dois ZIP podem ter exatamente os mesmos bytes e o mesmo SHA-256 sem serem o mesmo pacote. São duas receções independentes, com identidades, Receipts, decisões, retenções, materializações e ciclos de vida próprios.
+
+### Decisão aprovada
+
+**Cada pacote terá um artefacto físico independente, isolado por organização e por pacote.** O arquivo não pode reutilizar o mesmo ficheiro físico entre organizações, mesmo quando o SHA-256 coincide.
+
+A localização física deverá incluir, de forma segura e não ambígua, a identidade da organização e a identidade do pacote/Receipt (ou uma chave física exclusiva derivada dessas identidades). Exemplo conceptual:
+
+```text
+Archive/
+  {OrganizationId}/
+    {PackageId ou ReceiptId}/
+      package.ikp.zip
+```
+
+O formato exato da StorageKey e a escolha entre PackageId e ReceiptId como componente do caminho ficam para o desenho técnico, respeitando unicidade e validação de pertença. Não usar o SHA-256 como identificador exclusivo do caminho físico.
+
+### Papel do SHA-256
+
+O SHA-256 mantém-se obrigatório para:
+- validar que os bytes recebidos e arquivados são os mesmos;
+- verificar integridade em leituras e operações de recuperação;
+- detetar igualdade de conteúdo, se isso for útil para diagnóstico ou otimização futura.
+
+O SHA-256 **não** confere propriedade, não funde pacotes e não autoriza partilha de armazenamento físico. Igualdade de conteúdo não significa identidade de pacote.
+
+### Consequências para retenção e eliminação
+
+- A decisão Rejected da Organização A afeta apenas o ZIP pertencente ao pacote da Organização A.
+- A eliminação desse ZIP não pode remover, invalidar ou bloquear o ZIP da Organização B, mesmo que os hashes sejam iguais.
+- A materialização Verified de um pacote só permite avaliar a eliminação do ZIP desse mesmo pacote.
+- Deixam de ser necessárias contagens globais de referências entre organizações para autorizar a eliminação de um ZIP.
+- Continuam a ser obrigatórios os controlos locais do próprio pacote: leases, leituras concorrentes, recovery pendente, bloqueios de preservação, confirmação de ausência física e registo auditável.
+- A autorização e o caminho de eliminação têm de validar OrganizationId e identidade do pacote no servidor; nunca aceitar um caminho físico arbitrário fornecido pelo cliente.
+
+### Migração do mecanismo atual
+
+O armazenamento atual usa caminhos content-addressed globais `sha256/{prefix}/{hash}.ikp.zip`. Esta implementação não satisfaz a decisão acima e deverá ser substituída por armazenamento isolado por organização/pacote numa alteração futura.
+
+Não alterar migrations históricas já aplicadas. Antes de mudar o armazenamento em código, será necessário definir uma transição segura para pacotes já arquivados: inventariar Receipts e tentativas, copiar/verificar cada pacote para a sua localização isolada, confirmar hashes e tamanhos, atualizar referências de forma recuperável e só depois tratar os ficheiros antigos. Não eliminar nem mover ficheiros existentes nesta etapa documental.
+
+Esta decisão altera apenas o contrato e a direção futura. Não autoriza ainda alterações de código, migrations, workers ou eliminação de ZIP.
