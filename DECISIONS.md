@@ -21,6 +21,7 @@
 | D-011 | RAG é objetivo futuro, depois de existir conhecimento estruturado, curado e pesquisável. | Aprovada como objetivo; tecnologia por decidir |
 | D-012 | Documentação e interface em Português de Portugal (pt-PT). | Aprovada |
 | D-013 | GitHub é a fonte partilhada de verdade entre ChatGPT e Cursor para o estado publicado. | Aprovada |
+| D-014 | O Scanner gera o ZIP no ambiente do cliente; o operador transfere-o manualmente e faz upload manual através do Portal PHC Knowledge. Não existe envio direto Scanner→Knowledge. | Aprovada |
 
 ## Formulações antigas substituídas ou esclarecidas
 
