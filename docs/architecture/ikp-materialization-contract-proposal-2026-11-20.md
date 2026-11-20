@@ -85,7 +85,7 @@ A inspeção de `PhcKnowledge.Import`, `PhcKnowledge.Host` e da migration `002_p
 1. A recuperação atual resolve falhas da receção (staging → arquivo → Receipt); não resolve falhas da materialização nem a eliminação segura.
 2. O diretório de arquivo é uma dependência operacional separada do SQL Server. Backups/restauros têm de preservar coerência entre a base de dados e o diretório; restaurar apenas um dos lados pode deixar Receipts sem bytes recuperáveis ou bytes órfãos.
 3. A eliminação futura terá de remover o atributo ReadOnly antes de apagar o ficheiro e tratar concorrência com leituras/recuperação. Não basta executar `File.Delete` sem controlo de estado e verificação posterior.
-4. **Risco de partilha entre organizações confirmado pelo desenho atual:** a chave content-addressed é global ao diretório de arquivo e não inclui OrganizationId, enquanto os índices únicos de Receipt são apenas por organização. Assim, duas organizações podem ter Receipts distintos para o mesmo SHA-256 e apontar para o mesmo ficheiro físico. Uma rejeição/expiração numa organização nunca pode apagar o blob enquanto outra organização ainda o referencia ou enquanto uma materialização dele não estiver verificada. A eliminação física exige contagem/reconciliação de referências globais, incluindo tentativas pendentes, Receipts e materializações, com proteção contra concorrência.
+4. **Violação de isolamento organizacional identificada:** a chave content-addressed atual é global ao diretório e deriva apenas do SHA-256. Assim, dois pacotes pertencentes a organizações diferentes podem acabar a apontar para o mesmo ficheiro físico. Isto não corresponde ao domínio: cada pacote IKP pertence a uma única organização e não pode ser partilhado nem ter o seu ciclo de vida condicionado por outra organização. A correção aprovada é eliminar a partilha física entre organizações, usando uma localização de arquivo própria por organização e pacote. O SHA-256 continua a validar integridade e a identificar igualdade de conteúdo, mas não determina sozinho a identidade/localização física nem a propriedade do ficheiro.
 5. O Receipt é histórico e contém atualmente StorageKey não anulável. A futura disposição do ZIP deve distinguir a chave histórica/proveniência do estado de disponibilidade física; a interface e os serviços não podem apresentar um StorageKey histórico como prova de que o conteúdo ainda existe.
 6. A política de 30 dias para Rejected é distinta da retenção de staging (24 horas) e da futura eliminação pós-materialização Verified. São três políticas diferentes e não devem partilhar o mesmo worker/regra sem estados e critérios explícitos.
 
@@ -284,29 +284,6 @@ Um pacote com decisão humana efetiva `Rejected` nunca será materializado. Prop
 
 O prazo inicial de 30 dias foi aprovado em 2026-11-20 e deve ser configurável, para poder ser reduzido futuramente sem alteração de código. A alteração de configuração aplica-se segundo uma regra explícita e auditável, sem apagar histórico nem contornar bloqueios de preservação. A política não autoriza eliminar pacotes sem decisão Rejected, nem resolve ainda a retenção de análises Blocked sem decisão, pacotes pendentes ou duplicados. Esses casos permanecem fora do âmbito desta regra.
 
-## 8. Plano de validação antes de implementar
-
-- Testes de elegibilidade e vínculo de fingerprint/decision.
-- Testes de isolamento por OrganizationId.
-- Testes de idempotência em repetição e concorrência.
-- Falha simulada após cada fronteira de batch/transação.
-- Verificação de recuperação depois de reinício do processo.
-- Integridade de bytes, hashes, tamanhos e referências.
-- Teste de leitura integral do conhecimento após eliminação do ZIP.
-- Teste de limpeza repetida e de falha de filesystem.
-- Teste de que ausência numa captura não elimina observações anteriores.
-- Teste de que PHC Standard e observações de instalações permanecem separados.
-
-## 9. Não iniciar ainda
-
-Até aprovação explícita do contrato de materialização e resolução das questões ainda abertas (incluindo granularidade de execução):
-- não criar migrations de materialização;
-- não introduzir entidades ou serviços de materialização;
-- não alterar o arquivo content-addressed;
-- não adicionar eliminação de ZIP;
-- não alterar o significado de Receipt Completed, Analysis ou Decision Confirmed.
-
-**Próxima ação recomendada:** fechar o contrato de disponibilidade/eliminação do ZIP (incluindo referências partilhadas, backups e concorrência de leitura) e a granularidade de batches/checkpoints; depois validar o modelo lógico, antes de implementar.
 
 
 ## 7.2 Decisão aprovada — propriedade e isolamento físico dos ZIP (2026-11-20)
@@ -357,3 +334,27 @@ O armazenamento atual usa caminhos content-addressed globais `sha256/{prefix}/{h
 Não alterar migrations históricas já aplicadas. Antes de mudar o armazenamento em código, será necessário definir uma transição segura para pacotes já arquivados: inventariar Receipts e tentativas, copiar/verificar cada pacote para a sua localização isolada, confirmar hashes e tamanhos, atualizar referências de forma recuperável e só depois tratar os ficheiros antigos. Não eliminar nem mover ficheiros existentes nesta etapa documental.
 
 Esta decisão altera apenas o contrato e a direção futura. Não autoriza ainda alterações de código, migrations, workers ou eliminação de ZIP.
+
+## 8. Plano de validação antes de implementar
+
+- Testes de elegibilidade e vínculo de fingerprint/decision.
+- Testes de isolamento por OrganizationId.
+- Testes de idempotência em repetição e concorrência.
+- Falha simulada após cada fronteira de batch/transação.
+- Verificação de recuperação depois de reinício do processo.
+- Integridade de bytes, hashes, tamanhos e referências.
+- Teste de leitura integral do conhecimento após eliminação do ZIP.
+- Teste de limpeza repetida e de falha de filesystem.
+- Teste de que ausência numa captura não elimina observações anteriores.
+- Teste de que PHC Standard e observações de instalações permanecem separados.
+
+## 9. Não iniciar ainda
+
+Até aprovação explícita do contrato de materialização e resolução das questões ainda abertas (incluindo granularidade de execução):
+- não criar migrations de materialização;
+- não introduzir entidades ou serviços de materialização;
+- não alterar o arquivo content-addressed;
+- não adicionar eliminação de ZIP;
+- não alterar o significado de Receipt Completed, Analysis ou Decision Confirmed.
+
+**Próxima ação recomendada:** fechar a granularidade de batches/checkpoints e o contrato operacional de disponibilidade/eliminação por pacote (incluindo backups, recuperação e concorrência de leitura); depois validar o modelo lógico, antes de implementar.
