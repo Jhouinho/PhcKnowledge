@@ -118,3 +118,10 @@ Antes de iniciar uma tarefa, ler PROJECT_BASELINE.md, DECISIONS.md, este ficheir
 - FORMB transporta descrição/ordem que não estão integralmente representadas no Object Index; o ficheiro deve ser preservado como evidência/configuração.
 - FORMC transporta atualmente `Xexpressao` extraída e formatada de `formc.prop`; o valor original completo de `prop` não é preservado no percurso inspecionado. É necessário desenhar a preservação separada de original e derivado.
 - A matriz de artefactos IKP ainda não está fechada; não alterar exporters/collectors até distinguir definição original, derivado e evidência descritiva por tipo.
+
+
+### Matriz parcial de finalidade dos artefactos (2026-11-20)
+- CSSJS/ESCR/JSU transportam corpos de conteúdo-fonte que não estão integralmente no Object Index.
+- FORMB transporta configuração descritiva; o resolver atual classifica `PhcCustomScreen` como definição `Available`, sem distinguir a semântica do conteúdo.
+- FORMC transporta uma representação formatada de `Xexpressao`; o original `formc.prop` não é preservado no percurso atual. O resolver também o classifica como definição `Available`.
+- A matriz de finalidade dos artefactos continua parcial. `DefinitionArtifactId` não pode ser assumido como sinónimo de definição original.
