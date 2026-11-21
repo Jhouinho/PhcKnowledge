@@ -111,6 +111,8 @@ public sealed class SqlServerStructureCollector : ICollector
         {
             ["parentScope"] = "tables",
             ["tableNameFilter"] = "none",
+            ["dmlViewTriggers"] = "excluded",
+            ["ddlTriggers"] = "excluded",
             ["eventSource"] = "sys.trigger_events",
             ["includesInsteadOf"] = "true",
             ["definitionCapture"] = "attempted",
@@ -669,24 +671,34 @@ public sealed class SqlServerStructureCollector : ICollector
     {
         try
         {
-            var metadataVisibilityVerified = false;
+            var databaseViewDefinitionConfirmed = false;
+            var isSysadmin = false;
             try
             {
                 await using var visibilityCmd = connection.CreateCommand();
                 visibilityCmd.CommandText =
-                    "SELECT HAS_PERMS_BY_NAME(DB_NAME(), N'DATABASE', N'VIEW DEFINITION');";
-                var visibilityResult = await visibilityCmd.ExecuteScalarAsync(ct).ConfigureAwait(false);
-                metadataVisibilityVerified = visibilityResult is not null
-                    && visibilityResult is not DBNull
-                    && Convert.ToInt32(visibilityResult) == 1;
+                    """
+                    SELECT
+                        HAS_PERMS_BY_NAME(DB_NAME(), N'DATABASE', N'VIEW DEFINITION'),
+                        IS_SRVROLEMEMBER(N'sysadmin');
+                    """;
+                await using var visibilityReader = await visibilityCmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                if (await visibilityReader.ReadAsync(ct).ConfigureAwait(false))
+                {
+                    databaseViewDefinitionConfirmed = !visibilityReader.IsDBNull(0)
+                        && Convert.ToInt32(visibilityReader.GetValue(0)) == 1;
+                    isSysadmin = !visibilityReader.IsDBNull(1)
+                        && Convert.ToInt32(visibilityReader.GetValue(1)) == 1;
+                }
             }
             catch (SqlException)
             {
                 // Failure to inspect permissions must not discard visible trigger rows.
-                // The operation remains explicitly partial in its coverage contract.
+                // Completeness remains unknown unless the caller is positively verified as sysadmin.
             }
 
-            coverageScope["metadataVisibility"] = metadataVisibilityVerified
+            var metadataVisibilityVerified = databaseViewDefinitionConfirmed && isSysadmin;
+            coverageScope["metadataVisibility"] = databaseViewDefinitionConfirmed
                 ? "database_view_definition"
                 : "not_verified";
             coverageScope["completeness"] = metadataVisibilityVerified ? "verified" : "unknown";
@@ -695,8 +707,8 @@ public sealed class SqlServerStructureCollector : ICollector
             {
                 issues.Add(new CollectionIssue(
                     CollectionIssueSeverity.Warning,
-                    "sql.trigger.metadata_visibility_unverified",
-                    "Não foi possível confirmar VIEW DEFINITION ao nível da base de dados; o inventário visível de triggers pode estar incompleto."));
+                    "sql.trigger.metadata_completeness_unverified",
+                    "Não é possível provar a visibilidade integral do catálogo de triggers. VIEW DEFINITION ao nível da base de dados não exclui DENY ao nível de objetos; a completude só é confirmada para uma ligação sysadmin."));
             }
 
             await using var cmd = connection.CreateCommand();
