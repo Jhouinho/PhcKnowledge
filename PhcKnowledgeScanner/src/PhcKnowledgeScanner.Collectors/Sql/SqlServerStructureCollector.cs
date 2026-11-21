@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Data.SqlClient;
@@ -847,14 +848,14 @@ public sealed class SqlServerStructureCollector : ICollector
         string triggerName,
         string parentSchema,
         string parentName)
-        => $"triggers/trigger-{EncodePathPart(triggerSchema)}-{EncodePathPart(triggerName)}"
-            + $"--{EncodePathPart(parentSchema)}-{EncodePathPart(parentName)}.sql";
-
-    private static string EncodePathPart(string value)
-        => Convert.ToBase64String(Encoding.UTF8.GetBytes(value))
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
+    {
+        // Keep paths short and deterministic even for four maximum-length SQL identifiers.
+        // JSON array serialization preserves tuple boundaries before hashing.
+        var identity = JsonSerializer.SerializeToUtf8Bytes(
+            new[] { triggerSchema, triggerName, parentSchema, parentName });
+        var digest = Convert.ToHexString(SHA256.HashData(identity)).ToLowerInvariant();
+        return $"triggers/trigger-{digest}.sql";
+    }
 
     private static async Task<string> SaveDefinitionAsync(
         ScanContext context,
