@@ -100,11 +100,11 @@ public sealed class SqlServerTriggerIntegrationTests
 
             // A database-level VIEW DEFINITION grant does not prove complete visibility:
             // an object-level DENY can still hide a table and its DML triggers.
+            restrictedPermissionsChanged = true;
             await ConfigureObjectLevelViewDefinitionDenyAsync(
                 adminConnectionString,
                 restrictedConnectionString,
                 customTable);
-            restrictedPermissionsChanged = true;
 
             var objectDenied = await RunCollectorAsync(
                 restrictedConnectionString,
