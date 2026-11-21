@@ -223,6 +223,27 @@ public sealed class DefinitionProjectionResolverTests
     }
 
     [Fact]
+    public void Empty_Definition_Is_Distinct_From_Unavailable_And_Has_No_Fingerprint()
+    {
+        var record = Create(
+            "trigger:empty",
+            ObjectKind.Trigger,
+            "sql.server.structure",
+            """{"isDisabled":false}""",
+            definitionArtifactId: "empty-artifact",
+            parentObjectId: "table:dbo.FT",
+            name: "tr_empty",
+            schemaName: "dbo");
+        var emptyBytes = Array.Empty<byte>();
+
+        var result = Resolve([record], [Artifact("empty-artifact", emptyBytes)])[record.ObjectId];
+
+        Assert.Equal(DefinitionStatus.Empty, result.Status);
+        Assert.Equal(new[] { "empty-artifact" }, result.ArtifactIds);
+        Assert.False(result.HasFingerprint);
+    }
+
+    [Fact]
     public void Missing_Artifact_Reference_Is_Not_Confused_With_Empty_Definition()
     {
         var record = Create(

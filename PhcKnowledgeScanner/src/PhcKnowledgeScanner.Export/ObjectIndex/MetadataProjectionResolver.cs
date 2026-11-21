@@ -150,9 +150,71 @@ public static class MetadataProjectionResolver
                 return CompleteOrDiagnostic(metadata, fingerprint, fkComplete);
 
             case ObjectKind.Trigger:
-                var triggerComplete = Copy(root, "isDisabled", metadata)
+                // Capability 2.0 carries the complete tuple explicitly. Never parse
+                // its names from a dotted display identifier: SQL identifiers may
+                // themselves contain dots. Legacy 1.0 captures use the old record fields.
+                var hasV2Summary = TryGetProperty(root, "triggerSchema", out _)
+                    || TryGetProperty(root, "triggerName", out _)
+                    || TryGetProperty(root, "parentSchema", out _)
+                    || TryGetProperty(root, "parentName", out _)
+                    || TryGetProperty(root, "events", out _)
+                    || TryGetProperty(root, "isInsteadOf", out _);
+
+                var triggerIdentityComplete = true;
+                var parentTupleComplete = true;
+                if (hasV2Summary)
+                {
+                    triggerIdentityComplete =
+                        Copy(root, "triggerSchema", metadata)
+                        && Copy(root, "triggerName", metadata)
+                        && IsString(root, "triggerSchema")
+                        && IsString(root, "triggerName");
+                    parentTupleComplete =
+                        Copy(root, "parentSchema", metadata)
+                        && Copy(root, "parentName", metadata)
+                        && IsString(root, "parentSchema")
+                        && IsString(root, "parentName");
+                }
+                else
+                {
+                    metadata["triggerSchema"] = record.SchemaName;
+                    metadata["triggerName"] = record.Name;
+                    if (TryParseParentTableId(record.ParentObjectId, out var parentSchema, out var parentName))
+                    {
+                        metadata["parentSchema"] = parentSchema;
+                        metadata["parentName"] = parentName;
+                    }
+                    else
+                    {
+                        parentTupleComplete = false;
+                    }
+                }
+
+                var triggerComplete = triggerIdentityComplete
+                    && parentTupleComplete
+                    && Copy(root, "isDisabled", metadata)
                     && Copy(root, "isDisabled", fingerprint)
                     && IsBoolean(root, "isDisabled");
+
+                if (hasV2Summary)
+                {
+                    var insteadOfValid = Copy(root, "isInsteadOf", metadata)
+                        && IsBoolean(root, "isInsteadOf");
+                    triggerComplete &= insteadOfValid;
+                    if (insteadOfValid)
+                    {
+                        Copy(root, "isInsteadOf", fingerprint);
+                    }
+
+                    var eventsValid = Copy(root, "events", metadata)
+                        && IsStringArray(root, "events");
+                    triggerComplete &= eventsValid;
+                    if (eventsValid)
+                    {
+                        Copy(root, "events", fingerprint);
+                    }
+                }
+
                 return CompleteOrDiagnostic(metadata, fingerprint, triggerComplete);
 
             case ObjectKind.View:
@@ -353,6 +415,33 @@ public static class MetadataProjectionResolver
         }
     }
 
+    private static bool TryParseParentTableId(
+        string? parentObjectId,
+        out string schema,
+        out string table)
+    {
+        schema = string.Empty;
+        table = string.Empty;
+        const string prefix = "table:";
+        if (string.IsNullOrWhiteSpace(parentObjectId)
+            || !parentObjectId.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var qualifiedName = parentObjectId[prefix.Length..];
+        var separator = qualifiedName.IndexOf('.');
+        if (separator <= 0 || separator == qualifiedName.Length - 1
+            || qualifiedName.LastIndexOf('.') != separator)
+        {
+            return false;
+        }
+
+        schema = qualifiedName[..separator];
+        table = qualifiedName[(separator + 1)..];
+        return true;
+    }
+
     private static bool Copy(
         JsonElement source,
         string sourceName,
@@ -367,6 +456,11 @@ public static class MetadataProjectionResolver
         destination[destinationName ?? sourceName] = value.Clone();
         return true;
     }
+
+    private static bool IsStringArray(JsonElement root, string name) =>
+        TryGetProperty(root, name, out var value)
+        && value.ValueKind == JsonValueKind.Array
+        && value.EnumerateArray().All(item => item.ValueKind == JsonValueKind.String);
 
     private static bool IsString(JsonElement root, string name) =>
         TryGetProperty(root, name, out var value)

@@ -82,12 +82,140 @@ public sealed class MetadataProjectionResolverTests
     [Fact]
     public void Trigger_Fingerprints_IsDisabled()
     {
-        var record = Create(ObjectKind.Trigger, "sql.server.structure", """{"isDisabled":true}""");
+        var record = new TechnicalObjectRecord(
+            "trigger:test",
+            ObjectKind.Trigger,
+            "tr_test",
+            "dbo",
+            "table:dbo.FT",
+            "sql.server.structure",
+            null,
+            """{"isDisabled":true}""",
+            DateTimeOffset.UnixEpoch);
 
         var result = MetadataProjectionResolver.Resolve(record);
 
         using var fingerprint = JsonDocument.Parse(result.FingerprintProjection!.Value.GetRawText());
         Assert.True(fingerprint.RootElement.GetProperty("isDisabled").GetBoolean());
+    }
+
+    [Fact]
+    public void Trigger_Preserves_Matching_Tuple_Events_And_InsteadOf_Metadata()
+    {
+        var record = new TechnicalObjectRecord(
+            "trigger:tuple",
+            ObjectKind.Trigger,
+            "tr_test",
+            "dbo",
+            "table:dbo.FT",
+            "sql.server.structure",
+            null,
+            """{"triggerSchema":"dbo","triggerName":"tr_test","parentSchema":"dbo","parentName":"FT","events":["INSERT","UPDATE"],"isDisabled":false,"isInsteadOf":true}""",
+            DateTimeOffset.UnixEpoch);
+
+        var result = MetadataProjectionResolver.Resolve(record);
+
+        Assert.Null(result.DiagnosticCode);
+        using var metadata = JsonDocument.Parse(result.Metadata.GetRawText());
+        using var fingerprint = JsonDocument.Parse(result.FingerprintProjection!.Value.GetRawText());
+        Assert.Equal("dbo", metadata.RootElement.GetProperty("triggerSchema").GetString());
+        Assert.Equal("tr_test", metadata.RootElement.GetProperty("triggerName").GetString());
+        Assert.Equal("dbo", metadata.RootElement.GetProperty("parentSchema").GetString());
+        Assert.Equal("FT", metadata.RootElement.GetProperty("parentName").GetString());
+        Assert.True(metadata.RootElement.GetProperty("isInsteadOf").GetBoolean());
+        Assert.Equal(new[] { "INSERT", "UPDATE" },
+            metadata.RootElement.GetProperty("events").EnumerateArray().Select(x => x.GetString()).ToArray());
+        Assert.True(fingerprint.RootElement.GetProperty("isInsteadOf").GetBoolean());
+        Assert.Equal(new[] { "INSERT", "UPDATE" },
+            fingerprint.RootElement.GetProperty("events").EnumerateArray().Select(x => x.GetString()).ToArray());
+    }
+
+    [Fact]
+    public void Trigger_V2_Uses_Explicit_Tuple_When_Identifiers_Contain_Dots_Or_Unicode()
+    {
+        var record = new TechnicalObjectRecord(
+            "trigger:tuple-with-special-identifiers",
+            ObjectKind.Trigger,
+            "tr.ação",
+            "sch.ema",
+            "table:sch.ema.tab.le",
+            "sql.server.structure",
+            null,
+            """{"triggerSchema":"sch.ema","triggerName":"tr.ação","parentSchema":"sch.ema","parentName":"tab.le","events":["INSERT"],"isDisabled":false,"isInsteadOf":false}""",
+            DateTimeOffset.UnixEpoch);
+
+        var result = MetadataProjectionResolver.Resolve(record);
+
+        Assert.Null(result.DiagnosticCode);
+        using var metadata = JsonDocument.Parse(result.Metadata.GetRawText());
+        Assert.Equal("sch.ema", metadata.RootElement.GetProperty("parentSchema").GetString());
+        Assert.Equal("tab.le", metadata.RootElement.GetProperty("parentName").GetString());
+    }
+
+    [Fact]
+    public void Trigger_V2_With_Only_Half_Of_Parent_Tuple_Does_Not_Fall_Back_To_Dotted_Record_Id()
+    {
+        var record = new TechnicalObjectRecord(
+            "trigger:partial-tuple",
+            ObjectKind.Trigger,
+            "tr_test",
+            "dbo",
+            "table:dbo.FT",
+            "sql.server.structure",
+            null,
+            """{"triggerSchema":"dbo","triggerName":"tr_test","parentSchema":"dbo","events":["INSERT"],"isDisabled":false,"isInsteadOf":false}""",
+            DateTimeOffset.UnixEpoch);
+
+        var result = MetadataProjectionResolver.Resolve(record);
+
+        Assert.Equal("metadata_fingerprint_incomplete", result.DiagnosticCode);
+        Assert.False(result.HasFingerprintProjection);
+    }
+
+    [Fact]
+    public void Legacy_Trigger_With_Dotted_Parent_Name_Is_Not_Guessed()
+    {
+        var record = new TechnicalObjectRecord(
+            "trigger:legacy-dotted",
+            ObjectKind.Trigger,
+            "tr_legacy",
+            "dbo",
+            "table:dbo.FT.HIST",
+            "sql.server.structure",
+            null,
+            """{"isDisabled":false}""",
+            DateTimeOffset.UnixEpoch);
+
+        var result = MetadataProjectionResolver.Resolve(record);
+
+        Assert.Equal("metadata_fingerprint_incomplete", result.DiagnosticCode);
+        Assert.False(result.HasFingerprintProjection);
+    }
+
+    [Fact]
+    public void Legacy_Trigger_Summary_Still_Projects_Identity_From_Capture_Record()
+    {
+        var record = new TechnicalObjectRecord(
+            "trigger:legacy",
+            ObjectKind.Trigger,
+            "tr_legacy",
+            "dbo",
+            "table:dbo.FT",
+            "sql.server.structure",
+            null,
+            """{"isDisabled":false}""",
+            DateTimeOffset.UnixEpoch);
+
+        var result = MetadataProjectionResolver.Resolve(record);
+
+        Assert.Null(result.DiagnosticCode);
+        using var metadata = JsonDocument.Parse(result.Metadata.GetRawText());
+        Assert.Equal("dbo", metadata.RootElement.GetProperty("triggerSchema").GetString());
+        Assert.Equal("tr_legacy", metadata.RootElement.GetProperty("triggerName").GetString());
+        Assert.Equal("dbo", metadata.RootElement.GetProperty("parentSchema").GetString());
+        Assert.Equal("FT", metadata.RootElement.GetProperty("parentName").GetString());
+        Assert.False(metadata.RootElement.TryGetProperty("events", out _));
+        Assert.False(metadata.RootElement.TryGetProperty("isInsteadOf", out _));
     }
 
     [Theory]

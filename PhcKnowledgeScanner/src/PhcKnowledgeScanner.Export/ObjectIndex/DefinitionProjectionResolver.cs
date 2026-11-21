@@ -160,6 +160,11 @@ public static class DefinitionProjectionResolver
                 $"Definition artifact '{artifact.ArtifactId}' does not match its recorded SHA-256.");
         }
 
+        if (artifact.Content.Length == 0)
+        {
+            return DefinitionProjectionResolution.Empty(artifact.ArtifactId);
+        }
+
         return DefinitionProjectionResolution.Available(
             artifact.ArtifactId,
             new DefinitionFingerprintValue("sha256", digest));
@@ -240,6 +245,9 @@ public sealed record DefinitionProjectionResolution(
         string artifactId,
         DefinitionFingerprintValue fingerprint) =>
         new(DefinitionStatus.Available, [artifactId], fingerprint, null, null);
+
+    public static DefinitionProjectionResolution Empty(string artifactId) =>
+        new(DefinitionStatus.Empty, [artifactId], null, null, null);
 
     public static DefinitionProjectionResolution NotCollected(
         string? code = null,

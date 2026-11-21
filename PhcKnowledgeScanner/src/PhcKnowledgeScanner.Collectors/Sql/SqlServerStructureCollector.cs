@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Data.SqlClient;
@@ -107,10 +108,23 @@ public sealed class SqlServerStructureCollector : ICollector
                 () => CollectProceduresAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
                 () => objectCount)
             .ConfigureAwait(false);
+        var triggerScope = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["parentScope"] = "tables",
+            ["tableNameFilter"] = "none",
+            ["dmlViewTriggers"] = "excluded",
+            ["ddlTriggers"] = "excluded",
+            ["eventSource"] = "sys.trigger_events",
+            ["includesInsteadOf"] = "true",
+            ["definitionCapture"] = "attempted",
+            ["completeness"] = "unknown",
+            ["metadataVisibility"] = "not_verified"
+        };
         await tracker.RunAsync(
                 caps[KnownOperations.SqlTriggers],
-                () => CollectTriggersAsync(connection, context, collectedAt, issues, () => objectCount++, Report, cancellationToken),
-                () => objectCount)
+                () => CollectTriggersAsync(connection, context, collectedAt, issues, triggerScope, () => objectCount++, Report, cancellationToken),
+                () => objectCount,
+                triggerScope)
             .ConfigureAwait(false);
 
         foreach (var issue in issues)
@@ -651,60 +665,152 @@ public sealed class SqlServerStructureCollector : ICollector
         ScanContext context,
         DateTimeOffset collectedAt,
         List<CollectionIssue> issues,
+        IDictionary<string, string> coverageScope,
         Action bump,
         Func<string, Task> report,
         CancellationToken ct)
     {
         try
         {
+            var databaseViewDefinitionConfirmed = false;
+            var isSysadmin = false;
+            try
+            {
+                await using var visibilityCmd = connection.CreateCommand();
+                visibilityCmd.CommandText =
+                    """
+                    SELECT
+                        HAS_PERMS_BY_NAME(DB_NAME(), N'DATABASE', N'VIEW DEFINITION'),
+                        IS_SRVROLEMEMBER(N'sysadmin');
+                    """;
+                await using var visibilityReader = await visibilityCmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                if (await visibilityReader.ReadAsync(ct).ConfigureAwait(false))
+                {
+                    databaseViewDefinitionConfirmed = !visibilityReader.IsDBNull(0)
+                        && Convert.ToInt32(visibilityReader.GetValue(0)) == 1;
+                    isSysadmin = !visibilityReader.IsDBNull(1)
+                        && Convert.ToInt32(visibilityReader.GetValue(1)) == 1;
+                }
+            }
+            catch (SqlException)
+            {
+                // Failure to inspect permissions must not discard visible trigger rows.
+                // Completeness remains unknown unless the caller is positively verified as sysadmin.
+            }
+
+            var metadataVisibilityVerified = databaseViewDefinitionConfirmed && isSysadmin;
+            coverageScope["metadataVisibility"] = databaseViewDefinitionConfirmed
+                ? "database_view_definition"
+                : "not_verified";
+            coverageScope["completeness"] = metadataVisibilityVerified ? "verified" : "unknown";
+
+            if (!metadataVisibilityVerified)
+            {
+                issues.Add(new CollectionIssue(
+                    CollectionIssueSeverity.Warning,
+                    "sql.trigger.metadata_completeness_unverified",
+                    "Não é possível provar a visibilidade integral do catálogo de triggers. VIEW DEFINITION ao nível da base de dados não exclui DENY ao nível de objetos; a completude só é confirmada para uma ligação sysadmin."));
+            }
+
             await using var cmd = connection.CreateCommand();
             cmd.CommandTimeout = 300;
             cmd.CommandText =
                 """
-                SELECT s.name, t.name AS table_name, tr.name AS trigger_name, m.definition, tr.is_disabled
+                SELECT
+                    tr.object_id,
+                    tr.parent_id,
+                    ps.name AS parent_schema,
+                    t.name AS parent_name,
+                    COALESCE(OBJECT_SCHEMA_NAME(tr.object_id), ps.name) AS trigger_schema,
+                    tr.name AS trigger_name,
+                    tr.is_disabled,
+                    tr.is_instead_of_trigger,
+                    m.definition,
+                    CASE
+                        WHEN m.definition IS NULL THEN N'Unavailable'
+                        WHEN DATALENGTH(m.definition) = 0 THEN N'Empty'
+                        ELSE N'Available'
+                    END AS definition_status,
+                    STUFF((
+                        SELECT N',' + te.type_desc
+                        FROM sys.trigger_events te
+                        WHERE te.object_id = tr.object_id
+                        ORDER BY te.type_desc
+                        FOR XML PATH(''), TYPE
+                    ).value('.', 'nvarchar(max)'), 1, 1, N'') AS trigger_events
                 FROM sys.triggers tr
                 INNER JOIN sys.tables t ON t.object_id = tr.parent_id
-                INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
+                INNER JOIN sys.schemas ps ON ps.schema_id = t.schema_id
                 LEFT JOIN sys.sql_modules m ON m.object_id = tr.object_id
-                WHERE tr.parent_class_desc = 'OBJECT_OR_COLUMN'
-                  AND t.name LIKE N'u[_]%'
-                ORDER BY s.name, t.name, tr.name;
+                WHERE tr.parent_class_desc = N'OBJECT_OR_COLUMN'
+                ORDER BY ps.name, t.name, trigger_schema, tr.name;
                 """;
+
             var batch = new List<TechnicalObjectRecord>(500);
             await using var reader = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
             var count = 0;
             while (await reader.ReadAsync(ct).ConfigureAwait(false))
             {
                 ct.ThrowIfCancellationRequested();
-                var schema = reader.GetString(0);
-                var table = reader.GetString(1);
-                var name = reader.GetString(2);
-                var definition = reader.IsDBNull(3) ? null : reader.GetString(3);
-                var disabled = reader.GetBoolean(4);
+                var triggerObjectId = reader.GetInt32(0);
+                var parentObjectId = reader.GetInt32(1);
+                var parentSchema = reader.GetString(2);
+                var parentName = reader.GetString(3);
+                var triggerSchema = reader.IsDBNull(4) ? parentSchema : reader.GetString(4);
+                var triggerName = reader.GetString(5);
+                var disabled = reader.GetBoolean(6);
+                var insteadOf = reader.GetBoolean(7);
+                var definition = reader.IsDBNull(8) ? null : reader.GetString(8);
+                var definitionStatus = reader.GetString(9);
+                var events = reader.IsDBNull(10)
+                    ? Array.Empty<string>()
+                    : reader.GetString(10)
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+
                 string? artifactId = null;
                 if (definition is not null)
                 {
                     artifactId = await SaveDefinitionAsync(
-                        context, $"triggers/{schema}.{table}.{name}.sql", definition, ct).ConfigureAwait(false);
+                        context,
+                        BuildTriggerArtifactPath(triggerSchema, triggerName, parentSchema, parentName),
+                        definition,
+                        ct).ConfigureAwait(false);
                 }
                 else
                 {
                     issues.Add(new CollectionIssue(
                         CollectionIssueSeverity.Warning,
                         "sql.trigger.definition_missing",
-                        "Definição de trigger indisponível.",
-                        $"{schema}.{table}.{name}"));
+                        "Definição de trigger indisponível; a causa não é inferida.",
+                        $"{parentSchema}.{parentName}.{triggerName}"));
                 }
 
+                var summary = JsonSerializer.Serialize(new
+                {
+                    sqlObjectId = triggerObjectId,
+                    parentObjectId,
+                    parentSchema,
+                    parentName,
+                    triggerSchema,
+                    triggerName,
+                    events,
+                    isDisabled = disabled,
+                    isInsteadOf = insteadOf,
+                    definitionStatus
+                }, JsonOptions);
+
                 batch.Add(new TechnicalObjectRecord(
-                    $"trigger:{schema}.{table}.{name}",
+                    BuildTriggerObjectId(triggerSchema, triggerName, parentSchema, parentName),
                     ObjectKind.Trigger,
-                    name,
-                    schema,
-                    $"table:{schema}.{table}",
+                    triggerName,
+                    triggerSchema,
+                    $"table:{parentSchema}.{parentName}",
                     CollectorId,
                     artifactId,
-                    JsonSerializer.Serialize(new { isDisabled = disabled }, JsonOptions),
+                    summary,
                     collectedAt));
                 bump();
                 count++;
@@ -712,7 +818,7 @@ public sealed class SqlServerStructureCollector : ICollector
                 {
                     await context.Workspace!.UpsertObjectsAsync(batch, ct).ConfigureAwait(false);
                     batch.Clear();
-                    await report($"Triggers processados: {count}...").ConfigureAwait(false);
+                    await report($"Triggers processadas: {count}...").ConfigureAwait(false);
                 }
             }
 
@@ -721,12 +827,34 @@ public sealed class SqlServerStructureCollector : ICollector
                 await context.Workspace!.UpsertObjectsAsync(batch, ct).ConfigureAwait(false);
             }
 
-            await report($"Triggers: {count}.").ConfigureAwait(false);
+            await report($"Triggers DML associadas a tabelas: {count}.").ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            issues.Add(Issue("sql.triggers", "Não foi possível recolher triggers.", ex));
+            issues.Add(Issue("sql.triggers", "Não foi possível recolher triggers DML associadas a tabelas.", ex));
         }
+    }
+
+    private static string BuildTriggerObjectId(
+        string triggerSchema,
+        string triggerName,
+        string parentSchema,
+        string parentName)
+        => "trigger:" + JsonSerializer.Serialize(
+            new[] { triggerSchema, triggerName, parentSchema, parentName });
+
+    private static string BuildTriggerArtifactPath(
+        string triggerSchema,
+        string triggerName,
+        string parentSchema,
+        string parentName)
+    {
+        // Keep paths short and deterministic even for four maximum-length SQL identifiers.
+        // JSON array serialization preserves tuple boundaries before hashing.
+        var identity = JsonSerializer.SerializeToUtf8Bytes(
+            new[] { triggerSchema, triggerName, parentSchema, parentName });
+        var digest = Convert.ToHexString(SHA256.HashData(identity)).ToLowerInvariant();
+        return $"triggers/trigger-{digest}.sql";
     }
 
     private static async Task<string> SaveDefinitionAsync(
