@@ -1,0 +1,37 @@
+---
+description: Regras obrigatórias para preservar contexto e decisões no projeto PHC Knowledge
+alwaysApply: true
+---
+
+# PHC Knowledge — Contexto partilhado obrigatório
+
+## Antes de qualquer tarefa
+1. Confirma git remote -v, repositório, branch, HEAD e git status.
+2. Lê docs/governance/README.md.
+3. Lê PROJECT_BASELINE.md, DECISIONS.md, PROJECT_STATUS.md e docs/governance/current-handoff.md.
+4. Lê PROJECT_GUIDELINES.md e restantes regras/instruções aplicáveis (AGENTS.md, .cursor/rules/).
+5. Consulta os documentos técnicos diretamente relacionados com a tarefa.
+6. Confirma no código e nos testes o estado real na branch/HEAD atual. Não confies apenas no handoff ou na memória de conversas.
+
+## Regras de decisão e evidência
+- GitHub é a fonte partilhada de verdade para o estado publicado; alterações locais não são publicadas automaticamente.
+- SQL Server é a base central; PostgreSQL está excluído. Edição/versão SQL Server por decidir.
+- SQLite é apenas workspace/cache local do Scanner.
+- Scanner autónomo; Knowledge não o executa em runtime.
+- ZIP IKP é transporte temporário; não remover antes de confirmar materialização íntegra.
+- Separar PHC Standard curado de observações/personalizações de clientes.
+- RAG é futuro; não escolher vector store/embeddings sem decisão.
+- Se decisão, documento e código divergirem, regista evidências e não escolhas silenciosamente.
+- Distingue proposta, decisão aprovada, implementação, validação e pendência.
+- Não inventes dados, campos, contratos, testes ou resultados.
+- Não apagues documentação histórica nem cries duplicados sem justificação e autorização.
+
+## Git e publicação
+- Não mudar de branch, fazer merge/rebase ou publicar código sem autorização explícita.
+- Quando o utilizador autorizar publicação para uma tarefa, trabalhar apenas na branch acordada, verificar o HEAD antes da escrita e usar atualização fast-forward sem force.
+- Sem autorização, declarar que as alterações continuam locais; não afirmar que o GitHub está atualizado.
+- Nunca sobrescrever alterações locais/remotas desconhecidas.
+
+## Antes de terminar qualquer sessão
+Atualiza docs/governance/current-handoff.md com data, objetivo, repositório, branch/HEAD, ficheiros alterados, decisões aprovadas/propostas, testes executados e não executados, riscos, bloqueios, alterações não publicadas e próximo passo.
+Verifica no GitHub que o commit/handoff foi publicado quando a publicação foi autorizada.

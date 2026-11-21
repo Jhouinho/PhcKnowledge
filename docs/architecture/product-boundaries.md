@@ -1,3 +1,5 @@
+> **Nota de estado — 2026-11-20:** a secção “Estado de implementação — 2026-11-10” é uma fotografia histórica e está ultrapassada quanto à existência da plataforma central, API HTTP, análise IKP, Identity/Portal e frontend React. Consultar `../../PROJECT_STATUS.md` para o estado atual e `../../PROJECT_BASELINE.md` / `../../DECISIONS.md` para a direção aprovada. As fronteiras Scanner autónomo versus Knowledge central continuam válidas.
+
 # Fronteiras de produto — Scanner, PHC Knowledge e investigação
 
 Fonte consolidada a partir de [`../sources/analisar-base-phc-2026-11.txt`](../sources/analisar-base-phc-2026-11.txt).  

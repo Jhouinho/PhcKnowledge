@@ -1,163 +1,32 @@
-# PHC Knowledge — Orientações do projeto
+# PHC Knowledge — Orientações para desenvolvimento
 
-Documento central de orientação. Linguagem de documentação: Português de Portugal (pt-PT).
+Documento de entrada para qualquer ferramenta de desenvolvimento. A baseline, decisões e estado canónicos estão separados para evitar duplicação.
 
-## Objetivo
+## Leitura obrigatória
+1. docs/governance/README.md.
+2. PROJECT_BASELINE.md.
+3. DECISIONS.md.
+4. PROJECT_STATUS.md.
+5. docs/governance/current-handoff.md.
+6. Código, testes e documentos técnicos relevantes na branch/HEAD efetivos.
 
-O PHC Knowledge é uma plataforma de conhecimento técnico sobre PHC, destinada a recolher, organizar, relacionar, pesquisar e reutilizar conhecimento.
+## Regras essenciais
+- Produto interno da equipa; SQL Server é a base central. PostgreSQL não faz parte da arquitetura. A edição/versão SQL Server não está fixada.
+- SQLite é apenas workspace/cache local do Scanner.
+- Scanner autónomo; sem dependência de runtime do Knowledge.
+- ZIP IKP é transporte temporário e só pode ser eliminado depois de materialização e confirmação de persistência íntegra.
+- PHC Standard curado é distinto de observações e personalizações de clientes.
+- RAG é objetivo futuro, sem tecnologia antecipada.
+- Confirmar o código antes de afirmar que algo está implementado.
+- Distinguir proposta, decisão aprovada, implementação, validação e pendência.
+- Não inventar resultados de testes, cobertura, dados ou decisões.
+- Preservar documentação histórica; não apagar sem inventário e autorização.
+- Não criar documentação redundante: atualizar primeiro a fonte canónica.
+- Não alterar stack, contratos ou âmbito contra decisões aprovadas.
+- Documentação e UI em pt-PT.
 
-Não é apenas um repositório de ficheiros, uma coleção de código, um clone da aplicação PHC, nem uma simples ferramenta de pesquisa SQL.
+## Testes e validação
+Separar sempre: (1) testes sintéticos/unitários; (2) integração com serviços reais, por exemplo SQL Server; (3) validação com captura real PHC; (4) execução CI, com commit, workflow e resultado. Testes de receipts SQL não provam recolha dos collectors Scanner. Fixtures sintéticas não são capturas reais.
 
-Pretende-se uma base de conhecimento estruturada, com proveniência, evidências, relações, dependências e contexto técnico — integrando conhecimento PHC standard com conhecimento específico de instalações e desenvolvimentos personalizados.
-
-## Decisões de produto
-
-### Utilização
-
-- Interface web (browser).
-- Interface desktop (Windows-first, mesma SPA via WebView2).
-- Instalação **centralizada** num servidor da organização (on-premises na rede local).
-- Clientes ligam ao backend central; sem modo autónomo offline nem knowledge DB local independente.
-- O mesmo modelo funcional pode, no futuro, ser alojado de forma central externa, sem obrigar a redesenho.
-
-### Modelo de utilização
-
-- Plataforma central partilhada por várias organizações.
-- Cada organização terá os seus dados isolados.
-- Um utilizador poderá pertencer a várias organizações.
-- Vários consultores poderão trabalhar simultaneamente sobre a mesma instalação e o **mesmo** conhecimento partilhado no servidor.
-- As alterações e descobertas deverão ficar disponíveis aos restantes utilizadores autorizados (sem sincronização entre bases autónomas).
-
-### Conhecimento
-
-- O conhecimento PHC standard deverá ser reutilizável entre organizações.
-- O conhecimento específico de uma instalação deverá respeitar o isolamento da respetiva organização.
-- Cada informação deverá preservar a sua proveniência.
-- Distinguir factos confirmados, informação recolhida, inferências e conclusões ainda não validadas.
-
-## Arquitetura tecnológica
-
-Decisões consolidadas em [`docs/architecture/technology-and-import-contract-assessment.md`](docs/architecture/technology-and-import-contract-assessment.md) (§4–§5 e §11; revisão de 2026-11-10):
-
-| Área | Decisão |
-| --- | --- |
-| Utilização | Centralizada no servidor da organização; clientes browser/desktop |
-| Backend | .NET 10 + ASP.NET Core |
-| Web | React + TypeScript |
-| Desktop plataforma | Windows-first, mesma SPA via WebView2 (cliente do backend central) |
-| BD central | SQL Server Express (central, incluindo instalação on-premises) |
-| SQLite | Apenas workspace Scanner / cache auxiliar (não substitui SQL Server Express) |
-| Pesquisa inicial | SQL Server 2025 Express inclui Full-Text Search; versão concreta ainda por fixar e validar se for anterior a 2025 |
-| Tempo real | SignalR (mantido na arquitetura; implementação conforme os casos de uso) |
-| Scanner | Componente funcionalmente autónomo, versionado neste monorepo; Knowledge não o executa em runtime |
-| Importação | IKP 0.1 emitido pelo Scanner; primeira fatia Receive / Validate / Archive implementada no projeto Import, sem API HTTP/autenticação demonstradas |
-
-O Scanner já implementa o exportador IKP 0.1 e os comandos CLI `scan-ikp` e `export-ikp`. O núcleo PhcKnowledge.Import já implementa validação, arquivo imutável e persistência de receipts. O contrato deve evoluir sempre com schemas, fixtures e testes. Não ligar o Scanner ao backend em runtime.
-
-## Projetos anteriores
-
-### Incluído neste repositório
-
-- `PhcKnowledgeScanner/` — componente de recolha autónomo, incluído e versionado neste monorepo. Mantém projetos, solução, testes e dependências próprios, mas o repositório canónico de desenvolvimento é `Jhouinho/PhcKnowledge`.
-
-### Ainda externo
-
-- `ConsoleApp` — exploração de conhecimento e componentes associados.
-
-Regras:
-
-- Analisar antes de reutilizar código ou arquitetura do Scanner no núcleo da plataforma.
-- Não recuperar automaticamente mecanismos ou modelos de processamento já abandonados.
-- Preservar conhecimento PHC standard já confirmado; não confundir com personalizações de clientes.
-- Aproveitar apenas o que demonstrar valor real para a nova solução.
-
-## Estrutura do repositório
-
-```text
-PhcKnowledge/
-├── README.md
-├── PhcKnowledge.sln          # solução agregadora na raiz
-├── global.json
-├── PROJECT_GUIDELINES.md
-├── .gitignore
-├── docs/
-│   ├── architecture/   # decisões e princípios consolidados
-│   └── sources/        # fontes brutas (proveniência; não canónicas)
-├── src/
-├── tests/
-├── tools/
-└── PhcKnowledgeScanner/   # componente Scanner autónomo, no mesmo repositório
-```
-
-Não criar pastas adicionais sem justificação.
-
-Documentos de arquitetura relevantes:
-
-- `docs/architecture/product-boundaries.md`
-- `docs/architecture/knowledge-layers.md`
-- `docs/architecture/extract-2026-11-conversation.md`
-- `docs/architecture/technology-and-import-contract-assessment.md` (stack + utilização centralizada)
-- `docs/architecture/ikp-0.1-specification.md` (contrato IKP 0.1 consolidado para revisão técnica)
-- `docs/architecture/observation-identity-and-lineage-contract.md` (contexto arquitetural; semântica normativa em P1 e IKP 0.1)
-- `docs/architecture/ikp-0.1-scanner-compatibility-matrix.md` (lacunas e trabalho necessário no Scanner atual)
-
-
-## Regras de trabalho
-
-### Desenvolvimento controlado
-
-- Não implementar funcionalidades sem uma direção previamente validada.
-- Não assumir decisões arquiteturais que ainda estejam em aberto.
-- Não adicionar tecnologias ou dependências sem justificação.
-- Privilegiar simplicidade, modularidade e capacidade de evolução.
-
-### Aproveitamento de conhecimento anterior
-
-- Analisar antes de reutilizar.
-- Não transportar automaticamente código ou arquitetura antiga.
-- Preservar conhecimento PHC standard já confirmado.
-- Não confundir conhecimento standard com personalizações de clientes.
-
-### Documentação
-
-- Evitar documentação excessiva.
-- Não criar documentos intermédios sem valor efetivo.
-- No final de cada etapa, consolidar num relatório conciso: o que foi feito, implementado, validado, problemas encontrados, estado atual e próximo passo.
-- Evitar múltiplos documentos que descrevam o mesmo assunto.
-
-### Reflexão obrigatória
-
-No final de cada fase:
-
-- Avaliar o estado real do projeto.
-- Identificar o que existe e funciona.
-- Identificar o que falta.
-- Registar o que aprendemos.
-- Avaliar se a arquitetura continua adequada.
-- Discutir o próximo passo com o responsável do projeto.
-
-Não avançar automaticamente para a fase seguinte sem validação conjunta.
-
-## Estado e próxima etapa — 2026-11-18
-
-A PR #15 (fases 1.2 a 1.4.2.E — Identity/Portal backend) foi integrada na `main` em 2026-11-18. Merge commit: `6c619bfc6aa78ba1cd694c48f2d71c71c71aa4b8`.
-
-A plataforma central já contém:
-- Pipeline IKP de validação, ingestão, arquivo imutável, receipts/tentativas SQL, recovery, cleanup e monitorização operacional.
-- API HTTP IKP com upload raw ZIP e consultas org-scoped, protegida por JWT Bearer/scopes quando ativada.
-- Organização canónica e ASP.NET Identity com roles Administrator/Collaborator.
-- Portal backend com cookie, login/logout, sessão, antiforgery, SecurityStamp e API de administração de utilizadores.
-- CLI de instalação para scripts SQL, migrations Identity, organização, roles e bootstrap de administrador.
-
-Validação registada:
-- Harness local opt-in com o pacote real CSDefault202603: receção, idempotência, arquivo e recovery, conforme `docs/architecture/real-ikp-receipt-integration-harness-2026-11-18.md`.
-- GitHub Actions no commit da PR #15: .NET workflow #253 e SQL Server integration workflow #39 com sucesso. No workflow SQL: 64 descobertos, 62 aprovados e 2 ignorados por dependerem do ZIP real não disponibilizado em CI.
-
-Limites atuais:
-- Não existe UI React; discutir a experiência do Portal antes de iniciar implementação.
-- Análise prévia do ZIP, staging de análise e confirmação de importação ainda não implementados.
-- Customer/Installation/Environment e associação/correção do contexto ainda não implementados.
-- Observation, materialização de REL/DTL/artefactos, identidade lógica, diff, pesquisa contextual e RAG continuam futuros.
-- Persistência/proteção de chaves Data Protection e reforço da garantia do bloqueio administrativo são hardening pendente antes de produção.
-
-O roadmap visual é a referência para estados e sequência. Não iniciar a fase seguinte automaticamente: apresentar a proposta e validar com o responsável do projeto. No final de cada etapa, atualizar o roadmap e produzir apenas um relatório conciso de fase, evitando documentação duplicada.
+## Fecho de sessão
+Atualizar docs/governance/current-handoff.md com branch/HEAD, objetivo, ficheiros alterados, decisões, testes executados e não executados, riscos e próximo passo. Se a publicação não estiver autorizada, indicar o que ficou local. Só afirmar que o GitHub está atualizado depois de verificar o commit remoto.

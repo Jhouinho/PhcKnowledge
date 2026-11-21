@@ -6,7 +6,7 @@
 | Estado | Proposta consolidada para validação de produto |
 | Âmbito | Experiência, navegação, ecrãs, comportamentos e prioridades da UI do Portal |
 | Referências visuais | Protótipo Completo, PHC Knowledge Explorer e PHC Knowledge Mockups |
-| Implementação | Não iniciada; este documento não representa funcionalidades já disponíveis |
+| Implementação | Especificação de experiência; frontend parcialmente implementado. O upload manual no Portal e a gestão funcional de pacotes/capturas ainda não estão implementados |
 
 ## 1. Objetivo
 
@@ -202,9 +202,9 @@ Não inventar confiança, origem ou significado que os dados não suportem.
 
 ## 5. Fluxo de importação
 
-O fluxo visual pretendido é:
+O fluxo visual pretendido respeita o transporte manual já definido: o Scanner corre no servidor do cliente, gera o ZIP e o operador transfere-o manualmente para o ambiente com acesso ao PHC Knowledge. O Scanner não envia o pacote diretamente à plataforma.
 
-1. **Receber pacote** — upload do ZIP IKP e criação da tentativa de receção.
+1. **Receber pacote** — o operador autentica-se no Portal e faz upload manual do ZIP IKP; o contexto organizacional é resolvido no servidor, sem confiar num OrganizationId declarado pelo ficheiro ou pelo browser.
 2. **Validar** — verificar estrutura, schemas, checksums e referências cruzadas.
 3. **Analisar** — apresentar conteúdo, capabilities, coverage, artefactos, avisos e problemas.
 4. **Confirmar** — exigir ação explícita do utilizador antes de qualquer materialização/publicação.
@@ -343,8 +343,8 @@ Esta especificação não altera os contratos nem as decisões técnicas existen
 
 - A plataforma é centralizada.
 - O PHC Knowledge recebe pacotes IKP; não executa o Scanner em runtime nem acede ao workspace SQLite.
-- O ZIP original permanece imutável e arquivado fora da base relacional.
-- A base central definida no estado atual do repositório é SQL Server Express; SQLite permanece limitado ao workspace/cache local do Scanner.
+- O ZIP IKP é transporte temporário. A plataforma só o elimina depois de a materialização estar concluída e a persistência íntegra ter sido verificada; até lá, mantém-no disponível para análise e recuperação.
+- A base central é Microsoft SQL Server, com edição/versão por decidir; SQLite permanece limitado ao workspace/cache local do Scanner.
 - A UI deve consumir APIs do backend e respeitar autenticação, autorização, organização e isolamento.
 - Não criar dados de demonstração como se fossem dados reais.
 - Não criar migrations, entidades ou endpoints apenas para fazer coincidir o protótipo com o ecrã.

@@ -1,3 +1,5 @@
+> **Nota de precedência — 2026-11-20:** preservar a decisão estratégica “conhecimento estruturado primeiro, RAG depois”. Referências a SQL Server Express e à primeira fatia Receive / Validate / Archive são fotografias de 2026-11-06 e foram ultrapassadas pela baseline atual e pela implementação posterior. Não escolher tecnologia vetorial/LLM por este documento. Consultar `../../PROJECT_BASELINE.md`, `../../DECISIONS.md` e `../../PROJECT_STATUS.md`.
+
 # Preparação do PHC Knowledge para RAG — decisão arquitetural
 
 **Data:** 2026-11-06  

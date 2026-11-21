@@ -1,3 +1,5 @@
+> Nota de estado (2026-11-20): esta especificação define o contrato IKP 0.1, não a arquitetura de retenção. A baseline atual determina que ZIP é transporte temporário e deve ser eliminado após materialização e confirmação de persistência íntegra. A implementação de arquivo permanente descrita em partes deste documento é fotografia do código anterior e diverge da decisão vigente. Consultar ../../PROJECT_BASELINE.md, ../../DECISIONS.md e ../../PROJECT_STATUS.md.
+
 # IKP 0.1 — Installation Knowledge Package
 
 | Campo | Valor |

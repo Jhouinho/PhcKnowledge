@@ -1,3 +1,5 @@
+> **Nota de precedência — 2026-11-20:** fotografia do Scanner em 2026-11-10. As secções de integração P3 e 9 que dizem que o Knowledge não tem API/projetos ou que a importação ainda não existe estão ultrapassadas pela implementação posterior no monorepo. Para o estado atual da plataforma, consultar `../../PROJECT_STATUS.md`; para o Scanner, confirmar a matriz IKP e o código na branch atual. Não usar este documento como estado global do PHC Knowledge.
+
 # Estado do projeto e próximos passos
 
 **Última atualização:** 2026-11-10  

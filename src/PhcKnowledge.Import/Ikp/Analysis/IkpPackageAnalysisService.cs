@@ -47,8 +47,9 @@ public sealed class IkpPackageAnalysisService
 
     /// <summary>
     /// POST semantics: return compatible persisted analysis or compute, persist, and return.
+    /// The returned row carries the real persisted <see cref="PersistedPackageImportAnalysis.AnalysisId"/>.
     /// </summary>
-    public async Task<PackageImportAnalysis> ExecuteAsync(
+    public async Task<PersistedPackageImportAnalysis> ExecuteAsync(
         Guid organizationId,
         Guid packageId,
         CancellationToken cancellationToken = default)
@@ -64,7 +65,7 @@ public sealed class IkpPackageAnalysisService
         if (existing is not null)
         {
             // Compatible key wins. ReceiptId on the row is first-writer provenance and is not rewritten.
-            return existing.ToAnalysis();
+            return existing;
         }
 
         var computed = await ComputeAsync(receipt, cancellationToken);
@@ -74,14 +75,13 @@ public sealed class IkpPackageAnalysisService
             receipt.ZipByteLength,
             _clock());
         // InsertOrGetExisting may return an earlier winner (incl. different ReceiptId); preserve that row.
-        var stored = await _analyses.InsertOrGetExistingAsync(persisted, cancellationToken);
-        return stored.ToAnalysis();
+        return await _analyses.InsertOrGetExistingAsync(persisted, cancellationToken);
     }
 
     /// <summary>
     /// GET semantics: read-only. Never opens the ZIP or creates rows.
     /// </summary>
-    public async Task<PackageImportAnalysis> GetPersistedAsync(
+    public async Task<PersistedPackageImportAnalysis> GetPersistedAsync(
         Guid organizationId,
         Guid packageId,
         CancellationToken cancellationToken = default)
@@ -95,13 +95,13 @@ public sealed class IkpPackageAnalysisService
             cancellationToken);
         if (existing is null)
             throw new PackageImportAnalysisNotFoundException(organizationId, packageId);
-        return existing.ToAnalysis();
+        return existing;
     }
 
     /// <summary>
     /// Compatibility wrapper used by older call sites; prefer <see cref="ExecuteAsync"/>.
     /// </summary>
-    public Task<PackageImportAnalysis> AnalyzeAsync(
+    public Task<PersistedPackageImportAnalysis> AnalyzeAsync(
         Guid organizationId,
         Guid packageId,
         CancellationToken cancellationToken = default) =>

@@ -1,3 +1,5 @@
+> **Nota de estado — 2026-11-20:** este roadmap é uma fotografia de 2026-11-19, apesar do nome de ficheiro indicar 2026-11-06. A descrição da branch `main`, do estado de confirmação C como não implementado e da UI por construir já não é suficiente para representar a branch atual. O Incremento C tem implementação observável na branch atual; consultar `../../PROJECT_STATUS.md` e validar o código. Preservar o roadmap como registo histórico e não usar as percentagens/estados antigos como estado atual.
+
 # Roadmap visual do PHC Knowledge — visão, fases e estado atual
 
 **Data de referência:** 2026-11-19

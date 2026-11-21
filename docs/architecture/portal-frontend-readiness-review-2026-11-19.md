@@ -1,3 +1,5 @@
+> Fotografia histórica de 2026-11-19, anterior ao início do frontend. O projeto React já existe na branch atual; consultar ../../PROJECT_STATUS.md e src/PhcKnowledge.Portal para o estado atual.
+
 # PHC Knowledge — Revisão de prontidão do Portal para o frontend
 
 | Campo | Valor |

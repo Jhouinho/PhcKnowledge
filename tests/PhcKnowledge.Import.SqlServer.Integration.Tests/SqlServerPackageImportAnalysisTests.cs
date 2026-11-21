@@ -49,7 +49,8 @@ public sealed class SqlServerPackageImportAnalysisTests
                      "001_package_ingestion_receipts.sql",
                      "002_package_receipt_attempts.sql",
                      "003_organizations.sql",
-                     "004_package_import_analyses.sql"
+                     "004_package_import_analyses.sql",
+                     "005_package_import_analysis_decisions.sql"
                  })
         {
             var path = Path.Combine(AppContext.BaseDirectory, "Migrations", migration);
@@ -78,6 +79,8 @@ public sealed class SqlServerPackageImportAnalysisTests
         foreach (var organizationId in organizationIds)
         {
             await using var command = new SqlCommand("""
+                IF OBJECT_ID(N'dbo.PackageImportAnalysisDecisions', N'U') IS NOT NULL
+                    DELETE FROM dbo.PackageImportAnalysisDecisions WHERE OrganizationId = @OrganizationId;
                 DELETE FROM dbo.PackageImportAnalyses WHERE OrganizationId = @OrganizationId;
                 DELETE FROM dbo.PackageIngestionReceipts WHERE OrganizationId = @OrganizationId;
                 DELETE FROM dbo.PackageReceiptAttempts WHERE OrganizationId = @OrganizationId;

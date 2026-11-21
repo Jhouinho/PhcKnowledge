@@ -20,6 +20,19 @@ public sealed class InMemoryPackageImportAnalysisRepository : IPackageImportAnal
         return Task.FromResult(value);
     }
 
+    public Task<PersistedPackageImportAnalysis?> GetByAnalysisIdAsync(
+        Guid organizationId,
+        Guid analysisId,
+        CancellationToken cancellationToken = default)
+    {
+        if (organizationId == Guid.Empty || analysisId == Guid.Empty)
+            return Task.FromResult<PersistedPackageImportAnalysis?>(null);
+
+        var match = _items.Values.FirstOrDefault(x =>
+            x.AnalysisId == analysisId && x.OrganizationId == organizationId);
+        return Task.FromResult(match);
+    }
+
     public Task<PersistedPackageImportAnalysis> InsertOrGetExistingAsync(
         PersistedPackageImportAnalysis analysis,
         CancellationToken cancellationToken = default)

@@ -1,0 +1,138 @@
+# PHC Knowledge — Estado do projeto
+
+> Fotografia do estado versionado. Distinguir implementação, validação observada e trabalho pendente. Esta página não substitui a leitura do código.
+
+- Revisão: 2026-11-20
+- Repositório: Jhouinho/PhcKnowledge
+- Branch consultada: feature/increment-c-package-import-analysis-confirmation
+- Commit de referência da inspeção técnica desta etapa: e81c10d80c63414080a64cb5c93ab63a3dd47c31
+- Estado local da máquina do utilizador/Cursor: não observado.
+
+## 1. Arquitetura
+
+A direção aprovada está em PROJECT_BASELINE.md e DECISIONS.md: ferramenta interna da equipa; SQL Server central (edição por decidir); SQLite apenas workspace/cache Scanner; Scanner autónomo; ZIP temporário; PHC Standard separado de observações de instalações; RAG futuro. PostgreSQL está excluído.
+
+## 2. Implementado no código — evidência da auditoria
+
+### Plataforma e Portal
+- Backend ASP.NET Core e APIs HTTP de ingestão IKP.
+- Identidade/autenticação, organização canónica e políticas de autorização.
+- Portal backend com sessão por cookie, login/logout, antiforgery e administração de utilizadores.
+- Projeto frontend React + TypeScript existe em src/PhcKnowledge.Portal; a existência do projeto não significa que todos os ecrãs/fluxos estejam concluídos.
+- O frontend atual inclui autenticação e consulta/decisão de análise; não inclui ainda o upload manual de ZIP nem a área funcional de gestão de pacotes/capturas.
+- Análise do pacote e decisões humanas do fluxo Incremento C têm implementação nas partes verificadas; materialização integral do conhecimento não está concluída.
+
+### Ingestão IKP
+- Scanner emite IKP 0.1 com manifesto, capabilities, coverage, Object Index, checksums e artefactos referenciados. A implementação atual também inclui factos REL/DTL; essa inclusão é agora identificada como comportamento legado a retirar/rever, não como direção arquitetural aprovada.
+- Knowledge possui validação/receção, receipts, tentativas, operações de recovery/cleanup e endpoints HTTP IKP.
+- O endpoint público de upload IKP usa JWT Bearer e scopes próprios. Não existe ainda uma operação autenticada do Portal (sessão por cookie) que permita ao operador fazer o upload manual pela UI.
+- A implementação atual mantém arquivo de pacotes e a análise pode reabrir o pacote arquivado. Isto diverge da decisão de ZIP temporário; não alterar sem desenhar e validar materialização, recuperação e eliminação.
+- Persistência de receipts e estado de processamento não equivale à materialização integral das observações, definições, relações e artefactos.
+
+### Scanner
+- WPF Desktop + CLI, collectors estruturais SQL e PHC, workspace SQLite, análise REL/DTL e exportador IKP.
+- O código atualmente declara 23 operações: 7 SQL Server Structure, 14 PHC Customizations e 2 PHC Declared Relations. Esta é a fotografia da implementação auditada, não a classificação arquitetural pretendida.
+- Direção aprovada: as duas operações REL/DTL deixam de ser consideradas capacidades de recolha do Scanner; o seu conteúdo standard pertence ao PHC Standard Catalog, comum e versionado por aplicabilidade PHC. O catálogo-alvo do Scanner fica, conceptualmente, com 21 operações (7 de descoberta SQL Server + 14 de recolha de personalizações PHC), sujeito a revisão do que cada operação deve exportar.
+- As sete operações SQL Server são mecanismos de descoberta da estrutura física (base de dados, tabelas, PK, FK, views, procedures e triggers). Não implicam exportar indiscriminadamente todos os objetos standard. A comparação com PHC Standard e a classificação de diferenças ainda não estão implementadas.
+- A matriz de auditoria encontrou testes de resolução, projeção, parsing, persistência e exportação sintética; não encontrou testes diretos que executem os collectors reais contra SQL Server e validem individualmente as 23 operações.
+- Database Schema Snapshot é funcionalidade auxiliar separada do fluxo normal de captura.
+- Auditoria da exportação: artefactos são ficheiros separados do SQLite; o exporter verifica SHA-256/tamanho e existe round-trip sintético C# + validador Python em CI. Foi encontrada uma divergência para o artefacto descritivo de `phc.user_field`: deve continuar a ser transportado em todas as capturas, mas não pode ser classificado como `source-definition` quando representa apenas metadados. A decisão funcional D-016 determina captura completa e materialização incremental no destino; falta definir o papel de manifesto/schema para esta evidência. O ZIP real do harness ainda não tem proveniência comprovada face ao exporter atual.
+
+### PHC Standard Catalog
+- Existe src/PhcKnowledge.StandardCatalog, com parser de batches T-SQL, extração de definições CREATE TRIGGER e testes dedicados.
+- docs/sources/triggers phc.sql está presente na branch e foi indicado pelo responsável como contendo triggers standard PHC.
+- Não está demonstrada uma pipeline completa de ingestão, curadoria, versionamento, persistência e publicação do catálogo standard.
+
+## 3. Validação e testes — evidência histórica
+
+Resultados CI anteriormente observados no commit cbf3f11ff3d46d5e22e8e46cbd482ced9730fe42:
+- PhcKnowledgeScanner.Tests: 268 aprovados.
+- PhcKnowledge.Import.Tests: 32 aprovados.
+- PhcKnowledge.Ikp.Integration.Tests: 3 aprovados.
+- PhcKnowledge.Import.SqlServer.Integration.Tests: 76 aprovados contra SQL Server 2022 / base PhcKnowledgeReceiptTests.
+- Validador Object Index: 21 objetos sintéticos.
+- Validador ZIP: 5 ficheiros de contrato, 4 artefactos, 2 objetos, 4 operações e 8 checksums.
+
+Estes resultados pertencem ao commit indicado, não são uma execução de testes no HEAD 9a9df92ff82a98eafa2a5c1ff5134d8226ea7ce5. Os 76 testes SQL são integração de receipts/recovery do Knowledge; não provam recolha dos collectors Scanner contra uma instalação PHC.
+
+Captura real CSDefault202603 de 16-11 auditada diretamente: 16.618 objetos, 49 definições disponíveis, 6 indisponíveis, 921 factos REL/DTL e 921 interpretações no workspace; 8 tipos de objeto presentes. O pacote não contém colunas, índices, FK, views ou triggers. Ver relatório `docs/architecture/csdefault-standard-catalog-capture-audit-2026-11-20.md`.
+
+Nesta atualização documental não foram executados testes, builds, SQL nem captura real.
+
+## 4. Lacunas e riscos conhecidos
+
+A divergência entre ZIP temporário e arquivo permanente está analisada em [ikp-temporary-package-lifecycle-gap-2026-11-20.md](docs/architecture/ikp-temporary-package-lifecycle-gap-2026-11-20.md). A decisão de eliminação só pode ser implementada depois de materialização e verificação persistente; o código atual ainda reabre o ZIP arquivado para calcular uma análise não persistida.
+
+1. Alinhar arquivo atual com o ciclo aprovado de ZIP temporário, garantindo recuperação sem eliminar dados antes da materialização íntegra.
+2. Materializar observações, definições e artefactos de forma pesquisável, preservando factos e proveniência; manter relações PHC standard no PHC Standard Catalog, sem as tratar como recolha repetida do Scanner.
+3. Concluir o modelo e os fluxos de clientes/instalações/ambientes e respetivas permissões.
+4. Fechar cobertura de collectors com testes diretos SQL e validação real por operação.
+5. Corrigir semântica de coverage quando tabelas obrigatórias faltam ou probes falham; tratar exceções de sourceExistsAsync.
+6. Preservar original e derivado separadamente em FORMC; clarificar semântica dos artefactos FORMB.
+7. Completar a pipeline PHC Standard Catalog e não classificar automaticamente customizações como standard.
+8. Rever documentação histórica contraditória, sem apagar registos históricos.
+9. RAG continua fora da implementação atual.
+
+
+
+### Materialização IKP — auditoria e proposta (2026-11-20)
+- Confirmada persistência separada de Receipt, PackageImportAnalysis e decisões humanas append-only.
+- A análise é persistida em JSON com ReadinessStatus e SemanticFingerprint; a decisão guarda snapshot do fingerprint e ator resolvido no servidor.
+- Não foi identificada no percurso de importação inspecionado uma camada de materialização dos objetos, metadados, artefactos e relações em conhecimento pesquisável.
+- Receipt Completed, Analysis persisted e Decision Confirmed não provam materialização concluída.
+- Criada a proposta não aprovada `docs/architecture/ikp-materialization-contract-proposal-2026-11-20.md`. Define vínculo com a decisão/fingerprint, entidades lógicas, estados separados de materialização e eliminação, critérios de verificação e recovery.
+- Destino dos bytes dos artefactos aprovado para V1: SQL Server `varbinary(max)`, em entidade própria; retenção inicial de Rejected aprovada em 30 dias configuráveis; isolamento físico por OrganizationId + PackageId aprovado. Permanecem por fechar granularidade transacional, tratamento de `NeedsAttention` sem bytes recuperáveis, reanálise após eliminação e retenção dos registos de conhecimento.
+- Nenhuma implementação foi alterada e nenhum teste/build foi executado nesta etapa.
+
+## 5. Próximos passos recomendados
+
+1. Fechar o inventário documental individual e respetivo destino.
+2. Rever tecnicamente o ciclo de vida do ZIP e desenhar a transição para transporte temporário.
+3. Definir a arquitetura funcional do PHC Standard Catalog a partir do extrator existente.
+4. Preparar plano de testes SQL por operação para as operações Scanner, depois de fechar a classificação-alvo (21 operações: 7 SQL Server + 14 personalizações PHC; REL/DTL fora do catálogo-alvo).
+5. Atualizar o handoff após cada sessão.
+
+## 6. Regra de leitura
+
+Antes de iniciar uma tarefa, ler PROJECT_BASELINE.md, DECISIONS.md, este ficheiro e docs/governance/current-handoff.md; depois consultar contratos técnicos relevantes e confirmar o código na branch efetiva.
+
+
+### Decisão D-016 — captura completa e materialização incremental (2026-11-20)
+- O Scanner transporta sempre a captura completa, incluindo artefactos descritivos; não depende de scans anteriores.
+- O PHC Knowledge compara no destino, por instalação: conteúdo idêntico não volta a ser gravado; conteúdo novo é inserido; conteúdo alterado origina nova versão.
+- Cada captura e observação mantém proveniência mesmo quando o conteúdo já existe e não precisa de nova escrita. A ausência numa captura posterior não elimina automaticamente conhecimento anterior.
+- O ficheiro descritivo de `phc.user_field` mantém-se no ZIP, mas deverá ter papel de evidência/metadados distinto de `source-definition`.
+- Regras e limites publicados em `docs/architecture/ikp-incremental-materialization-policy-2026-11-20.md`.
+- Estado: decisão funcional aprovada; desenho técnico e implementação pendentes. Nenhum código, schema, migration ou teste foi alterado nesta atualização.
+
+
+### Auditoria complementar — role dos artefactos IKP (2026-11-20)
+- O exporter atual atribui `source-definition` a todos os artefactos ligados por `DefinitionArtifactId`, sem alinhar o role com a projeção `definition.status/artifactIds`.
+- O schema do manifesto aceita `role` como string não vazia, sem enum fechado; o inspection engine preserva o valor sem whitelist semântica.
+- O validador garante referências Object Index→manifesto, mas não exige que todos os artefactos do manifesto sejam definições referenciadas no Object Index.
+- A direção aprovada D-016 mantém os artefactos descritivos no ZIP; falta distingui-los semanticamente de definições de código e verificar consumidores downstream.
+- Nenhuma alteração de código/schema/migration/testes e nenhum teste/build executado.
+
+
+### Auditoria semântica adicional — FORMB/FORMC (2026-11-20)
+- FORMB transporta descrição/ordem que não estão integralmente representadas no Object Index; o ficheiro deve ser preservado como evidência/configuração.
+- FORMC transporta atualmente `Xexpressao` extraída e formatada de `formc.prop`; o valor original completo de `prop` não é preservado no percurso inspecionado. É necessário desenhar a preservação separada de original e derivado.
+- A matriz de artefactos IKP ainda não está fechada; não alterar exporters/collectors até distinguir definição original, derivado e evidência descritiva por tipo.
+
+
+### Matriz parcial de finalidade dos artefactos (2026-11-20)
+- CSSJS/ESCR/JSU transportam corpos de conteúdo-fonte que não estão integralmente no Object Index.
+- FORMB transporta configuração descritiva; o resolver atual classifica `PhcCustomScreen` como definição `Available`, sem distinguir a semântica do conteúdo.
+- FORMC transporta uma representação formatada de `Xexpressao`; o original `formc.prop` não é preservado no percurso atual. O resolver também o classifica como definição `Available`.
+- A matriz de finalidade dos artefactos continua parcial. `DefinitionArtifactId` não pode ser assumido como sinónimo de definição original.
+
+
+### Auditoria da captura CSDefault202603 — 2026-11-20
+- A captura de 16-11 e a cópia de 18-11 são byte a byte iguais; foi analisado o ZIP exterior com o workspace SQLite que lhe pertence.
+- Object Index: 16.618 objetos (8.294 tabelas, 8.268 PK, 36 procedures e 19 objetos PHC de outros tipos); 49 definições disponíveis e 6 indisponíveis.
+- Cobertura estrutural: zero FK, views e triggers; sem inventário de colunas/índices. As tabelas têm metadados básicos; as PK incluem apenas as suas colunas.
+- 30 definições SQL são procedures `dbo.dt_*` de suporte SQL Server; 6 procedures `usp_*` não têm definição disponível. 19 artefactos PHC (FORMB, FORMC, FTU e teclas).
+- REL/DTL: 295 + 626 = 921 factos; 921 interpretações no workspace, mas o pacote IKP de 16-11 não inclui artefacto autónomo de interpretações. O pacote de 10-11 incluía-o; diferença pendente de reconciliação. As 921 interpretações estão `Parsed`: 908 High e 13 Medium; existem 15 diagnósticos NameMismatch e 6 UnqualifiedField. Preservar expressão original, interpretação, confiança e diagnósticos.
+- `docs/sources/triggers phc.sql` contém 552 triggers standard; a operação SQL da captura observou zero triggers. Tratar como fontes distintas.
+- O código já tem Database Schema Snapshot separado, com colunas, índices, FK e outros objetos; esse snapshot não está no ZIP de 16-11. Não pedir nova execução sem localizar primeiro eventual ficheiro já enviado.
+- Relatório: `docs/architecture/csdefault-standard-catalog-capture-audit-2026-11-20.md`. Sem alterações de código ou testes.

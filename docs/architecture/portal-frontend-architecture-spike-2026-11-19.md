@@ -1,3 +1,5 @@
+> **Nota de estado — 2026-11-20:** este spike foi escrito antes da criação do frontend. O projeto React + TypeScript/Vite já existe em `src/PhcKnowledge.Portal`; consultar `PROJECT_STATUS.md` e o código da branch para o estado atual. Preservar as decisões de integração e organização que continuem compatíveis, mas não reutilizar as afirmações de inexistência do frontend como estado atual.
+
 # PHC Knowledge — EXA-004: arquitetura do frontend do Portal
 
 | Campo | Valor |
