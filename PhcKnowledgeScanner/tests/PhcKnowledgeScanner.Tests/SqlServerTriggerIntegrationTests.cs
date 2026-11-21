@@ -22,8 +22,8 @@ public sealed class SqlServerTriggerIntegrationFactAttribute : FactAttribute
 
 /// <summary>
 /// Integração real com SQL Server. Usa uma base de dados de testes dedicada:
-/// a ligação principal cria/apaga objetos; a ligação restrita deve ter SELECT em dbo,
-/// mas não VIEW DEFINITION ao nível da base de dados.
+/// a ligação principal cria/apaga objetos; a ligação restrita permite testar
+/// visibilidade por SELECT e DENY de VIEW DEFINITION ao nível de um objeto.
 /// </summary>
 public sealed class SqlServerTriggerIntegrationTests
 {
@@ -87,7 +87,7 @@ public sealed class SqlServerTriggerIntegrationTests
             Assert.Equal(ContentAvailability.Partial, restrictedCoverage.ContentAvailability);
             Assert.Equal("unknown", restrictedCoverage.Scope!["completeness"]);
             Assert.Equal("not_verified", restrictedCoverage.Scope["metadataVisibility"]);
-            Assert.Contains(restricted.Issues, x => x.Code == "sql.trigger.metadata_visibility_unverified");
+            Assert.Contains(restricted.Issues, x => x.Code == "sql.trigger.metadata_completeness_unverified");
 
             var restrictedStandard = Assert.Single(restricted.Triggers, x => x.Name == standardTrigger);
             Assert.Null(restrictedStandard.DefinitionArtifactId);
@@ -96,6 +96,29 @@ public sealed class SqlServerTriggerIntegrationTests
                 x.Code == "sql.trigger.definition_missing"
                 && x.ObjectName != null
                 && x.ObjectName.Contains(standardTrigger, StringComparison.OrdinalIgnoreCase));
+
+            // A database-level VIEW DEFINITION grant does not prove complete visibility:
+            // an object-level DENY can still hide a table and its DML triggers.
+            await ConfigureObjectLevelViewDefinitionDenyAsync(
+                adminConnectionString,
+                restrictedConnectionString,
+                customTable);
+
+            var objectDenied = await RunCollectorAsync(
+                restrictedConnectionString,
+                $"integration/object-denied/{suffix}");
+            var objectDeniedCoverage = Assert.Single(
+                objectDenied.Coverages,
+                x => x.OperationId == KnownOperations.SqlTriggers);
+
+            Assert.Equal(OperationExecutionResult.Partial, objectDeniedCoverage.Result);
+            Assert.Equal(ContentAvailability.Partial, objectDeniedCoverage.ContentAvailability);
+            Assert.Equal("unknown", objectDeniedCoverage.Scope!["completeness"]);
+            Assert.Equal("database_view_definition", objectDeniedCoverage.Scope["metadataVisibility"]);
+            Assert.Contains(objectDenied.Issues, x =>
+                x.Code == "sql.trigger.metadata_completeness_unverified");
+            Assert.Contains(objectDenied.Triggers, x => x.Name == standardTrigger);
+            Assert.DoesNotContain(objectDenied.Triggers, x => x.Name == customTrigger);
         }
         finally
         {
@@ -136,6 +159,29 @@ public sealed class SqlServerTriggerIntegrationTests
         }
 
         return new CollectorSnapshot(triggers, result.Coverages, result.Issues, artifactTexts);
+    }
+
+    private static async Task ConfigureObjectLevelViewDefinitionDenyAsync(
+        string adminConnectionString,
+        string restrictedConnectionString,
+        string deniedTable)
+    {
+        string databaseUser;
+        await using (var restricted = new SqlConnection(restrictedConnectionString))
+        {
+            await restricted.OpenAsync();
+            await using var userCommand = restricted.CreateCommand();
+            userCommand.CommandText = "SELECT USER_NAME();";
+            databaseUser = Convert.ToString(await userCommand.ExecuteScalarAsync())
+                ?? throw new InvalidOperationException("Não foi possível identificar o utilizador SQL de teste.");
+        }
+
+        var safeUser = databaseUser.Replace("]", "]]", StringComparison.Ordinal);
+        await using var admin = new SqlConnection(adminConnectionString);
+        await admin.OpenAsync();
+        await ExecuteAsync(admin, $"REVOKE SELECT ON SCHEMA::dbo FROM [{safeUser}];");
+        await ExecuteAsync(admin, $"GRANT VIEW DEFINITION ON DATABASE::[{admin.Database}] TO [{safeUser}];");
+        await ExecuteAsync(admin, $"DENY VIEW DEFINITION ON OBJECT::dbo.[{deniedTable}] TO [{safeUser}];");
     }
 
     private static async Task CreateFixtureAsync(
