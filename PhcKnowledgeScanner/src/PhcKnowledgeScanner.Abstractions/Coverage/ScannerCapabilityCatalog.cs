@@ -18,7 +18,7 @@ public static class ScannerCapabilityCatalog
         Cap(CategorySqlStructure, KnownOperations.SqlForeignKeys, "sql.server.structure", "Chaves estrangeiras."),
         Cap(CategorySqlStructure, KnownOperations.SqlViews, "sql.server.structure", "Views."),
         Cap(CategorySqlStructure, KnownOperations.SqlProcedures, "sql.server.structure", "Procedures."),
-        Cap(CategorySqlStructure, KnownOperations.SqlTriggers, "sql.server.structure", "Triggers DML associadas a tabelas (inventário completo).", KnownOperations.SqlTriggersVersion)
+        Cap(CategorySqlStructure, KnownOperations.SqlTriggers, "sql.server.structure", "Triggers DML associadas a tabelas; exclui triggers DML em views e triggers DDL.", KnownOperations.SqlTriggersVersion)
     ];
 
     public static IReadOnlyList<DeclaredCapability> ForPhcCustomizations { get; } =
