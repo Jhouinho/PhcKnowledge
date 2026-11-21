@@ -10,7 +10,7 @@ Definir a variável:
 
 - `PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING`: connection string da ligação privilegiada.
 
-O teste cria objetos com sufixo aleatório e remove-os no fim. Não guarda credenciais no repositório.
+O teste cria objetos com sufixo aleatório e remove-os no fim. Um cenário adicional cria uma base de dados temporária sem triggers para confirmar que zero resultados, com visibilidade completa, são reportados como `Succeeded` + `Empty`; a base de dados é removida no `finally`. Não guarda credenciais no repositório.
 
 ## Testes de visibilidade e completude
 
@@ -65,7 +65,8 @@ Se uma das duas variáveis não estiver definida, o teste fica explicitamente **
 - Trigger numa tabela `u_*`.
 - Estado disabled.
 - Trigger INSTEAD OF numa tabela.
-- Definição SQL disponível e persistida como artefacto.
+- Definição SQL disponível e persistida como artefacto, com caminho curto `triggers/trigger-{sha256}.sql`; o hash é calculado sobre a serialização inequívoca do tuplo schema/nome da trigger + schema/nome da tabela pai, evitando limites de comprimento e ambiguidades em nomes de ficheiro.
+- Base de dados temporária sem triggers: inventário completo com zero resultados é reportado como `Succeeded` e `ContentAvailability.Empty`, não como falha ou parcial.
 - Login com `SELECT` em `dbo`, sem `VIEW DEFINITION` global: as triggers visíveis são recolhidas, mas a cobertura global permanece parcial.
 - Login com `VIEW DEFINITION` global e `DENY VIEW DEFINITION` numa tabela: a trigger dessa tabela fica oculta e a cobertura permanece parcial.
 - Ligação `sysadmin`: completude do inventário DML de tabelas declarada como verificada.
