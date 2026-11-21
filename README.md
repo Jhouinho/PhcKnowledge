@@ -54,31 +54,42 @@ dotnet run --project PhcKnowledgeScanner/src/PhcKnowledgeScanner.Cli -- test-con
 
 Também se mantém a solução específica do Scanner em `PhcKnowledgeScanner/PhcKnowledgeScanner.sln` para desenvolvimento isolado do componente.
 
-## Estado da plataforma — 2026-11-18
+## Estado da plataforma — 2026-11-21
 
-A base de ingestão e o backend de acesso à plataforma estão implementados na branch `main`. A PR #15 foi integrada em 2026-11-18 pelo merge commit `6c619bfc`.
+A referência de código é a `main`, commit `b8a188175eb6792210e2a242bc237c6747b19f68`. A Trigger Capability 2.0 foi integrada na PR #21 e os workflows associados terminaram com sucesso.
 
-**Implementado no núcleo central:**
-- Validação IKP 0.1, receção por serviço, arquivo imutável global content-addressed por SHA-256 e receipts/tentativas SQL org-scoped.
-- Recovery de tentativas, limpeza de staging, monitorização operacional e preflight do schema no Host.
-- API HTTP IKP: upload raw ZIP e consulta org-scoped de tentativas/pacotes, protegida por JWT Bearer e scopes quando ativada.
-- Organização canónica e ASP.NET Identity com roles `Administrator` e `Collaborator`.
-- Portal backend: login/logout, sessão, antiforgery, validação contínua de SecurityStamp e API administrativa de utilizadores.
-- CLI `PhcKnowledge.Install` para scripts SQL, migrations Identity, organização, roles e bootstrap do primeiro administrador.
+### Decisões actuais
 
-**Validação registada:**
-- Harness local opt-in com o pacote real `CSDefault202603`: receção, idempotência, arquivo e recuperação após interrupção simulada, com resultados e tempos em [Harness IKP real](docs/architecture/real-ikp-receipt-integration-harness-2026-11-18.md).
-- GitHub Actions no commit da PR #15: workflow .NET #253 e workflow SQL Server integration #39 concluídos com sucesso.
-- No workflow SQL Server: 64 testes descobertos, 62 aprovados e 2 ignorados por dependerem do ZIP real, que não é disponibilizado em CI.
+As decisões aprovadas de produto, identidade, captura, transporte e armazenamento estão consolidadas em [Decisões arquitecturais aprovadas](docs/architecture/decisoes-aprovadas-2026-11-21.md). Em síntese:
 
-**Limites atuais — não confundir backend com produto completo:**
-- Ainda não existe UI React do Portal. A experiência e navegação serão discutidas antes de iniciar a implementação.
-- A análise prévia do ZIP, staging de análise e confirmação explícita de importação ainda não estão implementados.
-- A organização canónica e o isolamento dos receipts existem; gestão de Customers, Installations, Environments e associação/correção de contexto ainda não estão implementadas.
-- Capabilities, coverage, issues, artefactos, Object Index e REL/DTL são validados/preservados no pacote, mas ainda não estão materializados integralmente em entidades próprias do domínio 0.2.
-- Observation, identidade lógica entre capturas, diff, pesquisa contextual e RAG continuam por construir.
-- Antes de produção, falta fechar a persistência/proteção das chaves Data Protection e reforçar a garantia de que chamadas internas ao serviço de ativação não conseguem contornar o bloqueio administrativo.
+- Uma única organização (a empresa utilizadora); clientes são contextos técnicos.
+- Cada base de dados PHC registada tem uma instalação e um `InstallationId`; cada instalação tem várias capturas.
+- Base central Microsoft SQL Server; edição/versão por decidir. PostgreSQL está excluído e não se assume Express.
+- O Scanner é autónomo; o pacote é transferido manualmente.
+- D-015: manter a recolha REL/DTL e comparar a evidência da instalação com o catálogo PHC Standard versionado.
+- D-016: captura completa dentro do âmbito declarado; materialização e deduplicação incrementais no Knowledge.
+- ZIP é apenas transporte temporário; depois da materialização verificada, é eliminado.
+- Dados estruturados, histórico e artefactos originais necessários ficam permanentemente no SQL Server.
 
-O modelo de destino 0.2 continua em [Modelo de domínio 0.2](docs/architecture/knowledge-domain-model-0.2.md). O estado faseado, as dependências e os próximos marcos estão no [roadmap visual](docs/architecture/roadmap-visual-phc-knowledge-2026-11-06.md). O fecho da etapa Identity/Portal está registado em [Relatório de fase — Identity e Portal](docs/architecture/phase-report-identity-portal-2026-11-18.md).
+### Estado técnico conhecido
 
-A próxima decisão de produto é discutir a experiência do Portal antes de iniciar React. Em paralelo, devem ser tratados os pontos de hardening operacional e de segurança identificados; não antecipar materialização nem RAG.
+**Existente:**
+- Scanner autónomo e exportador IKP 0.1.
+- Recepção, validação, receipts e recuperação de pacotes.
+- Análise IKP A+B integrada na `main`.
+- Trigger Capability 2.0 integrada na PR #21.
+
+**Por construir ou validar:**
+- Matriz semântica completa dos collectors e ObjectKinds.
+- Materialização persistente de observações, relações e artefactos no modelo de conhecimento.
+- Comparação histórica com regras seguras de cobertura.
+- Catálogo PHC Standard versionado e comparação efectiva.
+- Ciclo final upload → análise → decisão → materialização → verificação → eliminação do ZIP.
+- Pesquisa contextual sobre o conhecimento materializado.
+- Edição/versão concreta do SQL Server.
+
+O arquivo imutável actual de ZIPs é transitório e não representa o destino aprovado. Não o remover antes de existir materialização, verificação e recuperação testadas.
+
+### Próximo passo
+
+Construir a matriz de classificação por collector/ObjectKind, usando primeiro a captura real já disponível. Não alterar collectors, SQLite ou migrations antes de validar as lacunas concretas. O roadmap deve acompanhar a referência de decisões aprovada.

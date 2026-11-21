@@ -1,5 +1,8 @@
 # Fronteiras de produto — Scanner, PHC Knowledge e investigação
 
+
+> **Actualização de decisões — 21-11-2026:** a separação Scanner/Knowledge mantém-se. O modelo actual é uma organização interna, clientes como contextos, uma instalação por base de dados PHC registada e várias capturas por instalação. O ZIP é transporte temporário; o SQL Server central guarda dados e artefactos permanentes. D-015/D-016 e regras completas em [Decisões aprovadas](decisoes-aprovadas-2026-11-21.md).
+
 Fonte consolidada a partir de [`../sources/analisar-base-phc-2026-11.txt`](../sources/analisar-base-phc-2026-11.txt).  
 Estado: orientação de produto aceite. Stack e modelo de utilização centralizado: ver [`technology-and-import-contract-assessment.md`](technology-and-import-contract-assessment.md).
 
@@ -76,3 +79,8 @@ Usados para avaliar arquitetura (não como backlog imediato):
 - **IKP:** contrato, schemas, fixtures, validador e testes existentes. A projeção do Object Index foi validada com uma captura PHC real; o ciclo completo do ZIP do exportador com captura real ainda carece de confirmação.
 - **PHC Knowledge:** a plataforma central ainda não tem projetos próprios em `src/` nem testes em `tests/`. A primeira fatia aprovada para implementação é Receive / Validate / Archive.
 - **Fora da primeira fatia:** associação de instalação, materialização de observações, comparação histórica, dependências funcionais e publicação.
+
+
+## Direcção aprovada — 21-11-2026
+
+O Scanner recolhe uma captura completa dentro do âmbito declarado, sem consultar o histórico do Knowledge, e transporta evidência, conteúdo original disponível, metadados, fingerprints e cobertura. Mantém a recolha de REL/DTL. O Knowledge compara com o catálogo PHC Standard e com o histórico da mesma instalação, materializa incrementalmente e só conclui remoções com cobertura comprovadamente completa. O ZIP é eliminado depois da materialização SQL verificada.

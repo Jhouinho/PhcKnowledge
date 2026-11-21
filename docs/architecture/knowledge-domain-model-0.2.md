@@ -1,10 +1,13 @@
 # PHC Knowledge — Modelo de domínio 0.2
 
+> **Revisão vinculativa — 21-11-2026:** este modelo 0.2 é um desenho anterior e não é autoridade para o modelo Cliente/Instalação/Captura actualmente aprovado. A estrutura Organization → Installation → Environment → DatabaseLocation e a retenção permanente do ZIP descritas em secções posteriores ficam supersedidas. Consultar [Decisões arquitecturais aprovadas](decisoes-aprovadas-2026-11-21.md) antes de qualquer implementação ou migration.
+
+
 | Campo | Valor |
 |---|---|
 | Revisão | 2026-11-17 |
-| Estado | Modelo conceptual de destino consolidado; não é schema SQL definitivo |
-| Stack física | SQL Server Express central; arquivo de ZIPs fora da base relacional; SQLite apenas workspace/cache Scanner |
+| Estado | Modelo conceptual anterior; parcialmente supersedido pelas decisões aprovadas em 2026-11-21; não é schema SQL definitivo |
+| Stack física | Microsoft SQL Server central (edição/versão por decidir); dados e artefactos permanentes no SQL Server; ZIP temporário; SQLite apenas workspace/cache Scanner |
 | Implementação atual | Primeira fatia Receive / Validate / Archive em PhcKnowledge.Import |
 
 Este documento é a referência consolidada do modelo de domínio 0.2. Distingue decisões de domínio, estado físico implementado e capacidades futuras. Não autoriza por si só migrations ou alterações ao contrato IKP.
@@ -13,9 +16,9 @@ Este documento é a referência consolidada do modelo de domínio 0.2. Distingue
 
 - PHC Knowledge é uma plataforma central de conhecimento técnico PHC, não um clone ERP nem um Digital Twin.
 - O Scanner é autónomo e produz IKP; Knowledge não executa Scanner em runtime nem acede ao SQLite do workspace.
-- SQL Server Express é a base central. SQLite é limitado ao workspace/cache local do Scanner.
-- O ZIP IKP original é preservado de forma imutável e permanente, fora da base relacional.
-- Organização delimita isolamento e permissões; conhecimento PHC standard é central e curado.
+- Microsoft SQL Server é a base central; edição/versão por decidir. PostgreSQL está excluído. SQLite é limitado ao workspace/cache local do Scanner.
+- O ZIP IKP é apenas transporte temporário e é eliminado após materialização e verificação. Os dados e artefactos originais necessários são persistidos no SQL Server.
+- Existe uma única organização (a empresa utilizadora); clientes são contextos técnicos, não tenants. O conhecimento PHC Standard é central e curado.
 - Captura, pacote, recepção, observação, identidade lógica e contexto são conceitos distintos.
 - Receber/validar/arquivar não equivale a materializar, associar contexto ou publicar conhecimento.
 - RAG é capacidade futura de consumo, não entidade obrigatória nem motivo para antecipar embeddings/base vetorial.
@@ -31,34 +34,33 @@ Este documento é a referência consolidada do modelo de domínio 0.2. Distingue
 
 ## 3. Core e contexto organizacional
 
-### 3.1 Organização e estrutura
+### 3.1 Cliente, instalação e captura — modelo aprovado
 
-Modelo de destino:
-- Organization 1-N Installation.
-- Installation 1-N Environment.
-- Environment 0..1 DatabaseLocation ativa.
-- DatabaseLocationRevision regista enriquecimentos/correções auditáveis da localização técnica.
-- NameChangeAudit regista alterações de nome dos níveis Core.
+O modelo vinculativo aprovado em 21-11-2026 é:
+
+```
+Cliente 1 ───── N Instalação 1 ───── N Captura
+```
 
 Regras:
-- Organization, Installation e Environment têm IDs próprios; nomes podem mudar sem alterar IDs.
-- Nome de Installation é único dentro de Organization; nome de Environment é único dentro de Installation, case-insensitive e ignorando espaços exteriores na validação. Preservar o texto original introduzido.
-- ServerName pode ser desconhecido e enriquecido/corrigido com revisão auditada.
-- DatabaseName é obrigatório e imutável numa DatabaseLocation; mudar de base de dados encerra a localização anterior e cria outra.
-- Uma única DatabaseLocation ativa por Environment; ValidToUtc IS NULL define a ativa.
-- Desativar Environment encerra a localização ativa na mesma transação; reativar não reabre automaticamente a localização anterior.
-- Desativar Installation exige todos os Environments desativados; desativar Organization exige todas as Installations desativadas. Reativação é explícita por nível.
-- Core é histórico: desativação/encerramento, não eliminação física.
+- Existe uma única organização interna (a empresa utilizadora da plataforma). Os clientes PHC não são organizações/tenants.
+- Cada cliente tem um registo próprio no Knowledge e representa contexto técnico.
+- Cada base de dados PHC registada corresponde a uma instalação própria e recebe o seu próprio `InstallationId`.
+- Cada instalação pode ter várias capturas; cada captura pertence exclusivamente a uma instalação.
+- Uma cópia de uma base de dados recebe uma nova identidade de instalação e mantém uma relação de linhagem com a origem.
+- Mudar de servidor não implica nova instalação se a continuidade da mesma base de dados puder ser confirmada.
+- Ambiente e localização são inicialmente atributos da instalação, não entidades obrigatórias independentes.
+- Alterações de ambiente/localização podem ser registadas historicamente quando forem relevantes.
+- Comparações entre capturas respeitam sempre a identidade da instalação e a cobertura efectiva de cada captura.
+- Nomes, servidor e nome de base de dados são atributos/evidência; não substituem o InstallationId.
 
-**Estado:** Organization existe apenas como requisito no percurso de receipt SQL atual; as entidades Core completas e relações Installation/Environment/DatabaseLocation ainda não estão materializadas.
+**Estado:** decisão de domínio aprovada; entidades e migrations completas ainda por implementar. O OrganizationId existente na recepção representa o contexto global único da plataforma e não deve evoluir para tenancy por cliente.
 
-### 3.2 DatabaseLocation
+### 3.2 Ambiente e localização da instalação
 
-Representa uma localização técnica de uma base de dados num Environment, não a identidade da instalação nem a identidade de origem IKP.
+Ambiente (por exemplo, produção, teste ou desenvolvimento) e localização técnica (servidor/instância/nome de base de dados) são inicialmente atributos da instalação.
 
-Campos conceptuais principais: DatabaseLocationId, EnvironmentId, ServerName nullable, DatabaseName obrigatório, ValidFromUtc, ValidToUtc nullable, CreatedAtUtc e RowVersion.
-
-DatabaseLocationRevision preserva valores anterior/novo, tipo (Enrichment/Correction), actor, data, motivo e evidência. DatabaseName é imutável dentro de uma revisão; mudança cria nova localização.
+Não criar nesta fase uma hierarquia Organization → Installation → Environment → DatabaseLocation nem exigir entidades autónomas para cada localização. A necessidade de histórico é satisfeita por revisões/auditoria dos atributos relevantes, sem alterar automaticamente a identidade da instalação.
 
 ## 4. Captura, pacote e recepção
 
@@ -71,33 +73,26 @@ DatabaseLocationRevision preserva valores anterior/novo, tipo (Enrichment/Correc
 
 **Estado:** CaptureId é emitido no IKP; entidade Capture no Knowledge ainda não está materializada.
 
-### 4.2 Package — identidade global de conteúdo
+### 4.2 Package — envelope temporário de transporte
 
-Modelo de destino:
-- Package representa a identidade global de um pacote IKP válido.
-- PackageId é chave global do pacote, contido em manifest.json.
-- ZipSha256 identifica os bytes exatos do ZIP e é global.
-- ZipByteLength, StorageKey, produtor/versão e timestamps descrevem o conteúdo recebido.
-- Arquivo content-addressed: sha256/{prefix}/{hash}.ikp.zip.
-- ZIP imutável, read-only e permanente.
+**Revisão vinculativa de 21-11-2026:** o ZIP não é uma entidade de conhecimento nem um arquivo permanente.
 
-Invariantes:
-1. Mesmo SHA-256 significa os mesmos bytes; num IKP válido, também o mesmo PackageId do manifesto.
-2. Mesmo PackageId com SHA diferente é conflito global de identidade.
-3. Mesmo PackageId e SHA na mesma Organization é receção idempotente.
-4. Mesmo PackageId e SHA noutra Organization é nova receção organizacional, ligada ao mesmo Package global e ao mesmo arquivo físico.
-5. Mesmo CaptureId com PackageIds diferentes é permitido; uma captura pode ser exportada mais do que uma vez.
-6. PackageId não é CaptureId nem identidade de entidade observada.
+- `PackageId` identifica o pacote de transporte no âmbito do contrato IKP.
+- `ZipSha256` e `ZipByteLength` verificam os bytes recebidos e suportam idempotência/recuperação durante a ingestão.
+- O ZIP pode ser mantido em staging/arquivo transitório enquanto a recepção, análise e materialização não estiverem concluídas.
+- Depois da materialização verificada, os bytes do ZIP são eliminados.
+- O conteúdo original de artefactos que tenha de ser preservado é extraído e armazenado no SQL Server, associado à captura, instalação, objecto e proveniência.
+- A deduplicação de artefactos no SQL Server não elimina a proveniência de cada captura.
 
-O exportador atual gera novo PackageId por exportação. Reexportar a mesma Capture pode produzir PackageIds e bytes diferentes.
+A semântica de PackageId e ZipSha256 não deve ser confundida com identidade de instalação, captura ou objecto técnico.
 
-### 4.3 PackageReceipt — receção por organização
+### 4.3 PackageReceipt — registo da recepção
 
-- PackageReceipt representa uma receção do Package por uma Organization.
-- Cada receipt tem ReceiptId próprio e referencia OrganizationId e PackageId.
-- Guarda resultado/resumo de validação, data de receção e metadados de origem necessários à auditoria.
-- A mesma Package pode ter receipts em várias Organizations sem duplicar o ZIP físico.
-- Idempotência é avaliada no âmbito da Organization + PackageId.
+- PackageReceipt regista a recepção e o resultado da validação do pacote.
+- Como existe uma única organização interna, OrganizationId não representa tenancy por cliente.
+- O receipt não prova que os dados já foram materializados no modelo de conhecimento.
+- O estado de recepção e o estado de materialização são estados distintos.
+- A eliminação do ZIP depende exclusivamente da conclusão e verificação da materialização, não apenas do receipt Completed.
 
 ### 4.4 Estado real da ingestão
 
@@ -117,7 +112,7 @@ O exportador atual gera novo PackageId por exportação. Reexportar a mesma Capt
 - Confirmação e materialização não existem.
 - O percurso SQL receipt real + POST/GET HTTP com o ZIP real CSDefault202603 ainda não foi demonstrado em conjunto nesta máquina sem `PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING`.
 - A ordem de arquivo ZIP antes da gravação SQL do receipt pode deixar um ZIP sem receipt se SQL falhar; reconciliação/retry permanece relevante.
-- ZIP original é preservado permanentemente.
+- O ZIP é retido apenas durante o processamento e eliminado após materialização verificada; a implementação actual ainda mantém arquivo transitório até existir o novo fluxo.
 
 **Estado da migration atual:** índices únicos (OrganizationId, PackageId) e (OrganizationId, ZipSha256). Isto descreve a fatia atual, não o destino global. Não alterar migrations nesta fase.
 
@@ -304,14 +299,16 @@ O diagrama omite entidades de tentativa, processamento, auditoria e governação
 
 ## 11. Decisões físicas e de evolução
 
-- SQL Server Express central é fonte de verdade relacional.
-- ZIPs originais em arquivo imutável fora da BD.
-- SQL Server guarda metadados, identidade, relações, proveniência e índices, não ZIPs como BLOB.
-- Nenhuma migration global nova até fechar bloqueadores e validar protocolo de ingestão.
+- Microsoft SQL Server é a base central de conhecimento; edição/versão por decidir.
+- SQL Server armazena dados estruturados, metadados, histórico e artefactos originais necessários.
+- O ZIP IKP é transporte temporário; não é persistido permanentemente fora da BD.
+- O armazenamento binário dos artefactos originais no SQL Server está aprovado; tipo de coluna, limites e estratégia física ainda carecem de especificação.
+- SQLite permanece apenas no workspace/cache local do Scanner.
+- A materialização tem de ser idempotente e verificável antes de eliminar o ZIP.
+- Não inferir remoções a partir de operações falhadas, não executadas ou de cobertura parcial.
 - Não introduzir PostgreSQL, peer sync, modo offline, Discovery/Fusion ou Digital Twin.
-- Outbox/DomainEvent não são obrigatórios nesta fatia; introduzir apenas com protocolo concreto.
-- PackageReceiptAttempt, PackageValidation detalhada, CaptureMaterialization e tentativas podem ser evolução, não requisitos automáticos da primeira fatia.
-- O modelo é mapa de destino, não lista obrigatória de tabelas para implementar de uma só vez.
+- Outbox/DomainEvent só devem ser introduzidos com protocolo concreto.
+- O modelo é mapa de destino; não é autorização para gerar migrations globais de uma só vez.
 
 ## 12. Próximos bloqueios
 
@@ -328,3 +325,8 @@ O diagrama omite entidades de tentativa, processamento, auditoria e governação
 - [Avaliação de arquitetura e importação](technology-and-import-contract-assessment.md)
 - [Contrato de observação, identidade e linhagem](observation-identity-and-lineage-contract.md)
 - [Especificação de integração do catálogo PHC Standard](standard-catalog-integration-specification.md)
+
+
+## Revisão de decisões — 21-11-2026
+
+O modelo conceptual vigente é Cliente 1 → N Instalações 1 → N Capturas. Cada base de dados PHC registada recebe a sua própria instalação/InstallationId; cada captura pertence a uma única instalação. Cópias de bases de dados recebem nova identidade, ligada por linhagem; mudanças de servidor não criam automaticamente nova identidade se a continuidade for confirmada. Ambiente/localização são inicialmente atributos da instalação. Os detalhes normativos constam em [Decisões arquitecturais aprovadas](decisoes-aprovadas-2026-11-21.md).

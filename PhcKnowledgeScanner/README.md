@@ -1,5 +1,8 @@
 # PhcKnowledgeScanner
 
+
+> **Contrato actual com o PHC Knowledge — 21-11-2026:** o Scanner mantém autonomia e não consulta o histórico central. Produz capturas completas dentro do âmbito declarado, com cobertura explícita, identidade e proveniência. Mantém a recolha REL/DTL. O ZIP é apenas transporte temporário; após materialização verificada, os dados e artefactos originais ficam no SQL Server central e o ZIP é eliminado. Ver [decisões aprovadas](../docs/architecture/decisoes-aprovadas-2026-11-21.md).
+
 Componente autónomo de recolha técnica de instalações PHC, incluído no monorepo **PHC Knowledge**.
 
 O Scanner continua a ser uma aplicação independente do ponto de vista funcional e de execução: pode ser instalado e executado sem iniciar a plataforma PHC Knowledge. A sua localização e versionamento, contudo, são neste repositório, em `PhcKnowledgeScanner/`.
@@ -14,7 +17,7 @@ O Scanner continua a ser uma aplicação independente do ponto de vista funciona
 - Manter workspace local SQLite e artefactos locais.
 - Produzir exportações que evoluirão para o contrato IKP.
 
-O Scanner **não** mantém o conhecimento central nem executa a importação na plataforma. O PHC Knowledge recebe e valida os pacotes produzidos pelo Scanner. O Scanner não depende do backend, da base de dados PostgreSQL nem do runtime da plataforma.
+O Scanner **não** mantém o conhecimento central nem executa a importação na plataforma. O PHC Knowledge recebe e valida os pacotes produzidos pelo Scanner. O Scanner não depende do backend, da base de dados central SQL Server nem do runtime da plataforma.
 
 ## Stack
 

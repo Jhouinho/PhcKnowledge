@@ -1,5 +1,8 @@
 # Matriz de compatibilidade — IKP 0.1, Scanner e PHC Knowledge
 
+
+> **Actualização de decisões — 21-11-2026:** D-015 e D-016 foram aprovadas. O Scanner mantém recolha REL/DTL; cada captura é completa dentro do âmbito declarado; o Knowledge compara e materializa incrementalmente. O ZIP é temporário e os dados/artefactos permanentes ficam no SQL Server. Ver [Decisões arquitecturais aprovadas](decisoes-aprovadas-2026-11-21.md). A matriz actual continua a ser fotografia de compatibilidade, não prova de cobertura integral.
+
 Data de revisão: 2026-11-17
 
 ## Conclusão
@@ -54,3 +57,13 @@ Factos e interpretações são coleções lógicas separadas. O Knowledge dever�
 5. Só depois avançar para materialização de artefactos, Observations, REL/DTL e associação de contexto.
 
 Não gerar migrations globais novas nesta etapa. Ver [Modelo de domínio 0.2](knowledge-domain-model-0.2.md).
+
+
+## Política aprovada de captura e materialização
+
+- O Scanner não consulta o histórico central para seleccionar o que recolhe.
+- A captura cobre integralmente as operações declaradas e reporta sucesso, falha, cobertura e avisos.
+- REL/DTL continuam a ser recolhidos como factos declarados da instalação.
+- O Knowledge compara com o catálogo standard e com o histórico da mesma instalação.
+- Só uma operação bem-sucedida com cobertura completa pode sustentar uma conclusão de remoção.
+- O ZIP é eliminado apenas depois da materialização SQL e verificação de integridade, referências, contagens e proveniência.

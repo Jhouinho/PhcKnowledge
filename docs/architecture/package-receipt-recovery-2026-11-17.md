@@ -1,5 +1,8 @@
 # Protocolo de recuperação de PackageReceipt
 
+
+> **Revisão de arquitectura — 21-11-2026:** o arquivo imutável descrito nesta implementação é uma retenção transitória do ZIP para garantir recuperação durante a recepção/análise. Não é o destino permanente aprovado. O ZIP é eliminado após materialização verificada; os artefactos originais e dados persistentes passam a residir no SQL Server. Não remover o arquivo actual antes de existir substituição testada com retry e recuperação. Ver [Decisões aprovadas](decisoes-aprovadas-2026-11-21.md).
+
 > Estado: protocolo implementado na branch `feat/package-receipt-recovery` através da biblioteca `PhcKnowledge.Import` e do Generic Host `PhcKnowledge.Host`. A PR #9 permanece em Draft e ainda não foi integrada na `main`. Não existe ainda endpoint HTTP, autenticação ou upload HTTP.
 
 ## Objectivo
@@ -85,3 +88,8 @@ Os índices únicos por OrganizationId + PackageId e OrganizationId + ZipSha256 
 7. Limpeza não remove staging de tentativas pendentes.
 8. Corrupção do arquivo nunca é sobrescrita.
 9. Testes de repository/migration são executados contra SQL Server real; testes unitários isolados não substituem esta validação.
+
+
+## Compatibilidade com o ciclo de vida aprovado
+
+O protocolo aqui descrito resolve falhas entre staging e receipt no fluxo actualmente implementado. A arquitectura final acrescenta materialização idempotente e verificação posterior. O estado Completed de PackageReceipt não significa que a materialização esteja concluída. A eliminação do ZIP depende de um estado separado de materialização verificada, incluindo hashes, referências, contagens e proveniência. Até essa capacidade existir, a retenção actual deve manter-se para não perder a única cópia recuperável.

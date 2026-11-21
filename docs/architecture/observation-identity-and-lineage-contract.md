@@ -1,5 +1,8 @@
 # Contrato de observação, identidade e linhagem — consolidação arquitetural
 
+
+> **Revisão de contexto — 21-11-2026:** a semântica técnica de P1 (SourceObjectId, SourceIdentity, CaptureId, fingerprints e cautela com remoções) mantém-se. Qualquer modelo antigo de organização/cliente/ambiente/instalação neste documento fica subordinado ao modelo aprovado em [Decisões arquitecturais aprovadas](decisoes-aprovadas-2026-11-21.md): Cliente → Instalação → Captura, com uma instalação por base de dados PHC registada.
+
 | Campo | Valor |
 |---|---|
 | Data original | 2026-11-06 |

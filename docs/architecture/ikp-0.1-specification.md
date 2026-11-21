@@ -1,5 +1,8 @@
 # IKP 0.1 — Installation Knowledge Package
 
+
+> **Decisão de ciclo de vida — 21-11-2026:** o ZIP IKP é apenas um contentor temporário de transporte. Não é arquivo permanente do Knowledge. Após materialização integral e verificada, o ZIP e o staging são eliminados; se a materialização falhar ou ficar incompleta, o pacote mantém-se disponível para retry. Dados estruturados, histórico e artefactos originais necessários são persistidos no SQL Server central. Ver [Decisões arquitecturais aprovadas](decisoes-aprovadas-2026-11-21.md).
+
 | Campo | Valor |
 |---|---|
 | Data da revisão | 2026-11-17 |
@@ -607,3 +610,14 @@ O emissor IKP está implementado no Scanner e o serviço Receive / Validate / Ar
 A especificação descreve a identidade lógica do pacote, não o schema físico atual do Knowledge. O modelo de destino separa Package global de PackageReceipt por Organization. O arquivo é content-addressed global por SHA-256; o receipt é organizacional. O mesmo SHA-256 implica os mesmos bytes e, num pacote IKP válido, o mesmo PackageId do manifesto. A migration atual não foi alterada e ainda impõe unicidade no âmbito da Organization.
 
 Na captura real examinada, SourceObjectId teve máximo de 54 caracteres (16.618 registos; zero duplicados ordinais, espaços nas extremidades ou valores não-ASCII). O modelo de destino propõe NVARCHAR(256), unicidade por CaptureId e comparação ordinal, com validação de vazio e espaços nas extremidades. Esta proposta não é ainda uma coluna/migration implementada.
+
+
+## Ciclo de vida aprovado do pacote — 21-11-2026
+
+1. Recepção e validação do ZIP em área temporária.
+2. Análise de identidade, proveniência, fingerprints, cobertura, conteúdos e referências.
+3. Materialização no SQL Server dos dados estruturados, histórico e artefactos originais necessários.
+4. Verificação de contagens, hashes, referências, proveniência e capacidade de consulta/recuperação sem o ZIP.
+5. Eliminação do ZIP e ficheiros temporários apenas após verificação bem-sucedida.
+
+A recepção concluída, a análise Ready ou a decisão humana não substituem a verificação da materialização. A ausência de objectos só pode ser interpretada como remoção quando a operação correspondente foi executada com sucesso e cobertura completa. Capturas parciais/falhadas não produzem falsos Removed.

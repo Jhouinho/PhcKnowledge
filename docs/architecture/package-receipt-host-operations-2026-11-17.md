@@ -1,5 +1,8 @@
 # Host operacional de PackageReceipt
 
+
+> **Revisão de ciclo de vida — 21-11-2026:** ArchiveDirectory é actualmente uma retenção transitória dos ZIPs para recuperação do fluxo de recepção. A decisão aprovada determina que o ZIP não é arquivo permanente e deve ser eliminado após materialização verificada. Os artefactos originais e dados permanentes ficam no SQL Server. Manter o arquivo actual até a materialização e recuperação substitutas estarem implementadas e testadas. Ver [Decisões aprovadas](decisoes-aprovadas-2026-11-21.md).
+
 ## Responsabilidade
 
 PhcKnowledge.Host é um Generic Host .NET 10 que executa os serviços de recuperação e limpeza já existentes em PhcKnowledge.Import. Não introduz endpoints HTTP, autenticação, materialização IKP ou novas entidades.
@@ -63,3 +66,8 @@ A integração com email, Teams, PagerDuty ou outro canal não está incluída. 
 ## Limites desta fase
 
 O host executa apenas a recuperação de receipts e a limpeza de staging. Não disponibiliza API HTTP, autenticação, upload, nem processamento/materialização de artefactos IKP.
+
+
+## Estado face à arquitectura aprovada
+
+A configuração persistente de ArchiveDirectory descrita neste documento é necessária para a implementação actual de recuperação de PackageReceipt, mas é transitória. Não representa a arquitectura final de armazenamento. O futuro fluxo deve manter o ZIP apenas até à conclusão da materialização SQL e à verificação independente de integridade, referências, contagens e proveniência. A limpeza do ZIP depende desse estado de materialização verificada; não deve ser ligada apenas ao estado Completed do receipt.
