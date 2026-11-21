@@ -20,6 +20,19 @@ public sealed class ScannerCapabilityCatalogTests
     }
 
     [Fact]
+    public void Sql_Trigger_Capability_Declares_Exact_Dml_Table_Scope()
+    {
+        var triggers = Assert.Single(
+            ScannerCapabilityCatalog.ForSqlServerStructure,
+            x => x.OperationId == KnownOperations.SqlTriggers);
+
+        Assert.Contains("DML", triggers.Description, StringComparison.Ordinal);
+        Assert.Contains("tabelas", triggers.Description, StringComparison.Ordinal);
+        Assert.Contains("views", triggers.Description, StringComparison.Ordinal);
+        Assert.Contains("DDL", triggers.Description, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Unsupported_Operations_Keep_Default_Capability_Version()
     {
         var unsupported = ScannerCapabilityCatalog.Unsupported("future.operation");
