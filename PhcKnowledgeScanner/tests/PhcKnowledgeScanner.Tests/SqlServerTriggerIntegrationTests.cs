@@ -41,6 +41,7 @@ public sealed class SqlServerTriggerIntegrationTests
         var disabledTrigger = $"tr_{suffix}_disabled";
         var insteadOfTrigger = $"tr_{suffix}_instead";
         var customTrigger = $"tr_{suffix}_custom";
+        var restrictedPermissionsChanged = false;
 
         try
         {
@@ -103,6 +104,7 @@ public sealed class SqlServerTriggerIntegrationTests
                 adminConnectionString,
                 restrictedConnectionString,
                 customTable);
+            restrictedPermissionsChanged = true;
 
             var objectDenied = await RunCollectorAsync(
                 restrictedConnectionString,
@@ -122,14 +124,27 @@ public sealed class SqlServerTriggerIntegrationTests
         }
         finally
         {
-            await DropFixtureAsync(
-                adminConnectionString,
-                standardTable,
-                customTable,
-                standardTrigger,
-                disabledTrigger,
-                insteadOfTrigger,
-                customTrigger);
+            try
+            {
+                if (restrictedPermissionsChanged)
+                {
+                    await RestoreRestrictedPermissionsAsync(
+                        adminConnectionString,
+                        restrictedConnectionString,
+                        customTable);
+                }
+            }
+            finally
+            {
+                await DropFixtureAsync(
+                    adminConnectionString,
+                    standardTable,
+                    customTable,
+                    standardTrigger,
+                    disabledTrigger,
+                    insteadOfTrigger,
+                    customTrigger);
+            }
         }
     }
 
@@ -182,6 +197,29 @@ public sealed class SqlServerTriggerIntegrationTests
         await ExecuteAsync(admin, $"REVOKE SELECT ON SCHEMA::dbo FROM [{safeUser}];");
         await ExecuteAsync(admin, $"GRANT VIEW DEFINITION ON DATABASE::[{admin.Database}] TO [{safeUser}];");
         await ExecuteAsync(admin, $"DENY VIEW DEFINITION ON OBJECT::dbo.[{deniedTable}] TO [{safeUser}];");
+    }
+
+    private static async Task RestoreRestrictedPermissionsAsync(
+        string adminConnectionString,
+        string restrictedConnectionString,
+        string deniedTable)
+    {
+        string databaseUser;
+        await using (var restricted = new SqlConnection(restrictedConnectionString))
+        {
+            await restricted.OpenAsync();
+            await using var userCommand = restricted.CreateCommand();
+            userCommand.CommandText = "SELECT USER_NAME();";
+            databaseUser = Convert.ToString(await userCommand.ExecuteScalarAsync())
+                ?? throw new InvalidOperationException("Não foi possível identificar o utilizador SQL de teste.");
+        }
+
+        var safeUser = databaseUser.Replace("]", "]]", StringComparison.Ordinal);
+        await using var admin = new SqlConnection(adminConnectionString);
+        await admin.OpenAsync();
+        await ExecuteAsync(admin, $"REVOKE VIEW DEFINITION ON OBJECT::dbo.[{deniedTable}] FROM [{safeUser}];");
+        await ExecuteAsync(admin, $"REVOKE VIEW DEFINITION ON DATABASE::[{admin.Database}] FROM [{safeUser}];");
+        await ExecuteAsync(admin, $"GRANT SELECT ON SCHEMA::dbo TO [{safeUser}];");
     }
 
     private static async Task CreateFixtureAsync(
