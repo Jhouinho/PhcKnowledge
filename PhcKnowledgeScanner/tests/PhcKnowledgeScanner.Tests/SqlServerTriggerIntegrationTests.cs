@@ -148,6 +148,57 @@ public sealed class SqlServerTriggerIntegrationTests
         }
     }
 
+    [SqlServerTriggerIntegrationFact]
+    public async Task Empty_Table_Trigger_Catalog_Is_Reported_As_Successfully_Empty()
+    {
+        var adminConnectionString = Environment.GetEnvironmentVariable("PHC_KNOWLEDGE_SQL_TEST_CONNECTION_STRING")!;
+        var suffix = Guid.NewGuid().ToString("N")[..12];
+        var databaseName = $"PhcKnowledgeTriggerEmpty_{suffix}";
+        var masterBuilder = new SqlConnectionStringBuilder(adminConnectionString)
+        {
+            InitialCatalog = "master"
+        };
+        var testDatabaseBuilder = new SqlConnectionStringBuilder(adminConnectionString)
+        {
+            InitialCatalog = databaseName
+        };
+
+        try
+        {
+            await using (var admin = new SqlConnection(masterBuilder.ConnectionString))
+            {
+                await admin.OpenAsync();
+                await ExecuteAsync(admin, $"CREATE DATABASE [{databaseName}];");
+            }
+
+            var snapshot = await RunCollectorAsync(
+                testDatabaseBuilder.ConnectionString,
+                $"integration/empty-triggers/{suffix}");
+            var coverage = Assert.Single(
+                snapshot.Coverages,
+                x => x.OperationId == KnownOperations.SqlTriggers);
+
+            Assert.Equal(OperationExecutionResult.Succeeded, coverage.Result);
+            Assert.Equal(ContentAvailability.Empty, coverage.ContentAvailability);
+            Assert.Equal(0, coverage.ObservedCount);
+            Assert.Empty(snapshot.Triggers);
+            Assert.DoesNotContain(snapshot.Issues, x =>
+                x.Code == "sql.trigger.metadata_completeness_unverified");
+        }
+        finally
+        {
+            await using var admin = new SqlConnection(masterBuilder.ConnectionString);
+            await admin.OpenAsync();
+            await ExecuteAsync(admin, $"""
+                IF DB_ID(N'{databaseName}') IS NOT NULL
+                BEGIN
+                    ALTER DATABASE [{databaseName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+                    DROP DATABASE [{databaseName}];
+                END;
+                """);
+        }
+    }
+
     private static async Task<CollectorSnapshot> RunCollectorAsync(string connectionString, string scanId)
     {
         var root = Path.Combine(Path.GetTempPath(), "PhcKnowledgeScanner-sql-integration", Guid.NewGuid().ToString("N"));
