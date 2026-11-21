@@ -12,11 +12,18 @@ Definir a variável:
 
 O teste cria objetos com sufixo aleatório e remove-os no fim. Não guarda credenciais no repositório.
 
-## Teste de visibilidade limitada
+## Testes de visibilidade e completude
 
-Para validar a diferença entre inventário visível e inventário comprovadamente completo, é necessária uma segunda ligação à mesma instância e base de dados:
+É necessária uma segunda ligação à mesma instância e base de dados:
 
-- `PHC_KNOWLEDGE_SQL_TEST_RESTRICTED_CONNECTION_STRING`: login de teste sem `VIEW DEFINITION` ao nível da base de dados e com `SELECT` no schema `dbo`.
+- `PHC_KNOWLEDGE_SQL_TEST_RESTRICTED_CONNECTION_STRING`: login de teste usado para validar permissões limitadas.
+
+O teste executa dois cenários com esse login:
+
+1. Sem `VIEW DEFINITION` na base de dados, mas com `SELECT` no schema `dbo`. As triggers das tabelas visíveis podem ser recolhidas, mas o Scanner não declara o inventário global completo.
+2. Com `VIEW DEFINITION` na base de dados, mas com `DENY VIEW DEFINITION` numa tabela específica e sem `SELECT` no schema. A trigger dessa tabela fica oculta, apesar da permissão global. O Scanner tem de manter a cobertura parcial.
+
+A permissão `VIEW DEFINITION` ao nível da base de dados, isoladamente, não prova completude: um `DENY` ao nível de um objeto pode ocultar os metadados desse objeto. Nesta versão, a completude só é declarada como verificada quando a ligação é membro de `sysadmin`, que não está sujeita à filtragem normal de visibilidade de metadados.
 
 Exemplo de preparação, executado por um administrador na base de dados dedicada (substituir o nome e definir uma palavra-passe própria fora do repositório):
 
@@ -36,7 +43,7 @@ GRANT SELECT ON SCHEMA::dbo TO [phc_scanner_test_reader];
 GO
 ```
 
-Não conceder `db_owner`, `db_datareader` ou `VIEW DEFINITION` ao login restrito. A permissão `SELECT` no schema permite testar a visibilidade dos objetos de tabela sem conceder visibilidade global das definições.
+A preparação inicial concede apenas `SELECT` em `dbo`. O próprio teste altera temporariamente as permissões na base de dados dedicada para exercitar o cenário com `VIEW DEFINITION` global e `DENY` num objeto. Não usar estas instruções numa base de dados PHC real.
 
 ## GitHub Actions
 
@@ -59,6 +66,8 @@ Se uma das duas variáveis não estiver definida, o teste fica explicitamente **
 - Estado disabled.
 - Trigger INSTEAD OF numa tabela.
 - Definição SQL disponível e persistida como artefacto.
-- Login restrito: cobertura parcial, aviso de visibilidade não comprovada e definição indisponível quando o SQL Server a oculta.
+- Login com `SELECT` em `dbo`, sem `VIEW DEFINITION` global: as triggers visíveis são recolhidas, mas a cobertura global permanece parcial.
+- Login com `VIEW DEFINITION` global e `DENY VIEW DEFINITION` numa tabela: a trigger dessa tabela fica oculta e a cobertura permanece parcial.
+- Ligação `sysadmin`: completude do inventário DML de tabelas declarada como verificada.
 
 O teste não tenta simular permissões com mocks: a segunda ligação tem de usar efetivamente o login restrito no SQL Server.
