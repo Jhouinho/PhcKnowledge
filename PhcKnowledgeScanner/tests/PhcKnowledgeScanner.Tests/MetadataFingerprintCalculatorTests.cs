@@ -131,10 +131,12 @@ public sealed class MetadataFingerprintCalculatorTests
     [Fact]
     public void Fingerprint_Is_Lowercase_Sha256_Hex()
     {
+        // Trigger capability 2.0 requires the complete trigger/parent tuple and
+        // event metadata before a semantic fingerprint can be produced.
         var result = Fingerprint(Create(
             ObjectKind.Trigger,
             "sql.server.structure",
-            """{"isDisabled":false}"""));
+            """{"triggerSchema":"dbo","triggerName":"trg_Test","parentSchema":"dbo","parentName":"FT","events":["INSERT"],"isDisabled":false,"isInsteadOf":false}"""));
 
         Assert.Equal("sha256", result.Algorithm);
         Assert.Equal(64, result.Value.Length);
