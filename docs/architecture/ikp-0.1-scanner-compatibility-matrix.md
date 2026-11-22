@@ -53,7 +53,7 @@ Factos e interpretações são coleções lógicas separadas. O Knowledge dever�
 1. Testar a persistência e as constraints atuais contra SQL Server real.
 2. Definir reconciliação/retry para ZIP arquivado sem receipt SQL (arquivo ocorre antes do receipt).
 3. Testar explicitamente idempotência e conflitos de PackageId/SHA, incluindo recepções concorrentes/idempotentes no contexto da organização única.
-4. Desenhar endpoint HTTP e autenticação; obter OrganizationId do contexto autenticado.
+4. Desenhar endpoint HTTP e autenticação; o OrganizationId é o contexto global único da plataforma, enquanto o cliente e a instalação são escolhidos/confirmados no fluxo de importação.
 5. Só depois avançar para materialização de artefactos, Observations, REL/DTL e associação de contexto.
 
 Não gerar migrations globais novas nesta etapa. Ver [Modelo de domínio 0.2](knowledge-domain-model-0.2.md).
