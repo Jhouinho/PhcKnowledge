@@ -7,6 +7,8 @@
 - **Natureza:** relatório de auditoria e preservação de contexto; não é uma aprovação de decisões nem uma autorização de implementação.
 - **Estado da fotografia original:** análise consolidada em 21-11-2026. As decisões posteriormente aprovadas estão registadas no aditamento final e prevalecem sobre os estados pendentes desta fotografia.
 
+> **Leitura obrigatória:** as secções 1–19 são a fotografia da auditoria antes das decisões finais. As linhas que classificam D-015, D-016 e Cliente/Instalação como pendentes, bem como as referências a ZIP permanente, multi-organização ou escolha de storage, foram supersedidas pelo aditamento final (secção posterior). Não usar essas linhas como estado actual. A referência normativa é [Decisões arquitecturais aprovadas](../architecture/decisoes-aprovadas-2026-11-21.md).
+
 > Este documento regista o diagnóstico produzido numa revisão intensiva do repositório, da documentação, das branches, dos contratos e do estado funcional conhecido. Distingue factos observados, interpretação, propostas e decisões pendentes. Não deve ser usado para converter propostas em decisões aprovadas.
 
 ---
