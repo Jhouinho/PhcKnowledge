@@ -109,3 +109,65 @@ A cada decisão aprovada:
 7. publicar as alterações numa branch de documentação. A main só é alterada após autorização explícita.
 
 Não declarar builds, testes, materialização ou validações que não tenham sido efectivamente executados.
+
+
+## 9. D-017 — Contrato de cobertura IKP e ausência segura
+
+**Data: 22-11-2026 — Estado: APROVADA.**
+
+A cobertura deve descrever separadamente o que foi lido na origem, o que foi emitido pelo Scanner, o que foi filtrado e o que falhou durante o processamento. O estado global de uma operação ou um contador de objetos emitidos não substitui estas evidências.
+
+### 9.1 Métricas obrigatórias por operação
+
+| Métrica | Semântica normativa |
+|---|---|
+| `SourceRowsRead` | Número de registos efetivamente lidos na fonte dentro do âmbito declarado. |
+| `ObjectsEmitted` | Número de objetos técnicos emitidos pelo Scanner para o pacote/Object Index. Não é uma contagem de linhas da origem. |
+| `RowsFiltered` | Número de registos lidos que foram excluídos por filtros declarados. |
+| `RowsFailed` | Número de registos lidos cujo processamento falhou. Falhas de consulta sem linha identificável são registadas no resultado/issues, não inventadas como linhas falhadas. |
+
+As métricas têm unidades e semânticas diferentes. Não se impõe uma igualdade aritmética entre `SourceRowsRead`, `ObjectsEmitted`, `RowsFiltered` e `RowsFailed`: um registo pode originar zero, um ou vários objetos técnicos. Contagens desconhecidas permanecem explicitamente desconhecidas; não são preenchidas com zero.
+
+### 9.2 Completude da origem
+
+Cada operação declara `SourceCompleteness`:
+
+- `Complete`: há evidência de que todo o âmbito declarado foi percorrido;
+- `Partial`: há evidência de que apenas parte do âmbito foi percorrida;
+- `Unknown`: não existem evidências suficientes para determinar a completude.
+
+A completude refere-se sempre ao âmbito e filtros declarados, não à totalidade indiscriminada da base de dados. Deve ser independente do estado de resultado da operação, da disponibilidade da estrutura e da disponibilidade do conteúdo.
+
+### 9.3 Ausência e remoção seguras
+
+O Knowledge só pode concluir que um objeto foi removido quando, cumulativamente:
+
+1. A operação correspondente foi suportada, solicitada e executada;
+2. A fonte foi identificada e a sua disponibilidade/visibilidade foi confirmada;
+3. A operação terminou sem falhas que afectem o âmbito relevante;
+4. `SourceCompleteness=Complete` para o âmbito declarado;
+5. O âmbito e a semântica dos filtros são conhecidos e comparáveis com a observação anterior;
+6. A identidade e a cobertura da observação anterior permitem uma comparação válida.
+
+Um registo contado em `RowsFiltered` não constitui, por si só, prova de que o objeto correspondente não existe. Quando um filtro exclui registos que contêm identidade de objeto, esses registos não podem ser tratados como removidos; o âmbito/filtro deve ser representado e a conclusão limitada ao universo que efetivamente foi inventariado.
+
+Se qualquer condição não for demonstrada, o resultado é inconclusivo/NotObserved. Nunca se converte falta de evidência em `Removed`.
+
+### 9.4 Compatibilidade
+
+A evolução do contrato de cobertura é versionada separadamente da versão principal do pacote IKP. O IKP 0.1 mantém-se; o schema de cobertura evolui de versão 1 para versão 2.
+
+Pacotes com coverage schema v1 continuam legíveis segundo a semântica histórica. O campo legado `observedCount` não é reinterpretado automaticamente como `SourceRowsRead`, e um resultado `Empty` ou `observedCount=0` não prova, isoladamente, que a origem estava vazia ou que a consulta foi completa. Quando não houver evidência equivalente explícita, `SourceCompleteness` é tratado como `Unknown` para decisões de ausência.
+
+### 9.5 Testes de aceitação obrigatórios antes da implementação ser considerada concluída
+
+- Origem realmente vazia, consultada integralmente e visível;
+- Origem preenchida com todos os registos filtrados;
+- Leitura parcial/interrompida;
+- Falha de permissões/visibilidade;
+- Operação não solicitada ou não executada;
+- Falha de processamento de registos;
+- Demonstração de que nenhum cenário sem evidência suficiente gera falsos `Removed`;
+- Leitura retrocompatível de pacotes de cobertura v1 sem atribuir garantias não existentes.
+
+Esta decisão aprova o contrato e os critérios de aceitação. Não autoriza, por si só, alterações ao código do Scanner, ao exportador IKP, ao workspace SQLite ou à materialização SQL. Essas alterações só serão planeadas depois de os contratos relacionados serem fechados e a documentação consolidada.
