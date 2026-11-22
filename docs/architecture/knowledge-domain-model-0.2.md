@@ -259,12 +259,12 @@ O catálogo abaixo é um mapa de responsabilidades, não uma ordem de implementa
 
 | Área | Entidades de destino | Estado |
 |---|---|---|
-| Core | Organization, Installation, Environment, DatabaseLocation, DatabaseLocationRevision, NameChangeAudit | OrganizationId já é usado no receipt; restantes entidades não materializadas |
+| Core | Organization (única), Customer, Installation, InstallationContextRevision/Lineage | OrganizationId já é usado no receipt como contexto global; Customer/Installation e histórico ainda não materializados |
 | Ingestion | Capture, Package, PackageReceipt, PackageReceiptAttempt, PackageValidation, PackageCapability, PackageOperationCoverage, PackageIssue, PackageProcessing, PackageProcessingAttempt, PackageFileIntegrity, PackageArtifact | PackageReceipt parcial implementado; restante modelo é destino/parcial no ZIP |
-| Materialização | CaptureMaterialization, CaptureMaterializationAttempt, Observation, ObservationArtifact, DeclaredRelation, DeclaredRelationInterpretation | Não implementado; dados de origem permanecem no ZIP |
-| Identity | CaptureAssociationCandidate, CaptureContextAssignment, EntityIdentity, IdentityMatch, IdentityEnvironmentState, EntityIdentityLifecycleEvent | Destino conceptual |
+| Materialização | CaptureMaterialization, CaptureMaterializationAttempt, Observation, ObservationArtifact, DeclaredRelation, DeclaredRelationInterpretation | Não implementado; após materialização, dados e artefactos necessários ficam no SQL Server; ZIP é eliminado |
+| Identity | CaptureAssociationCandidate, CaptureContextAssignment, EntityIdentity, IdentityMatch, EntityIdentityLifecycleEvent | Destino conceptual; ambiente/localização são atributos da instalação, não entidades obrigatórias |
 | Governance | DomainEvent, OutboxMessage, InstallationLineageEvent | Futuro; Outbox só quando existir protocolo transacional concreto |
-| Knowledge | StandardCatalog, CatalogEntry, CatalogEntryVersion, KnowledgeEntry, KnowledgeEntryVersion, KnowledgeProposal | Futuro; catálogo standard curado e conhecimento privado por Organization |
+| Knowledge | StandardCatalog, CatalogEntry, CatalogEntryVersion, KnowledgeEntry, KnowledgeEntryVersion, KnowledgeProposal | Futuro; catálogo standard curado; observações e conhecimento específico associados ao cliente/instalação de origem |
 
 ### Relações principais
 
@@ -330,3 +330,6 @@ O diagrama omite entidades de tentativa, processamento, auditoria e governação
 ## Revisão de decisões — 21-11-2026
 
 O modelo conceptual vigente é Cliente 1 → N Instalações 1 → N Capturas. Cada base de dados PHC registada recebe a sua própria instalação/InstallationId; cada captura pertence a uma única instalação. Cópias de bases de dados recebem nova identidade, ligada por linhagem; mudanças de servidor não criam automaticamente nova identidade se a continuidade for confirmada. Ambiente/localização são inicialmente atributos da instalação. Os detalhes normativos constam em [Decisões arquitecturais aprovadas](decisoes-aprovadas-2026-11-21.md).
+
+
+> **Correcção de leitura do mapa 0.2 — 21-11-2026:** a tabela acima foi alinhada ao modelo aprovado. Não criar hierarquia multi-organização, Environment ou DatabaseLocation como entidades nesta fase. O ZIP não é arquivo de origem permanente: o SQL Server guarda os dados materializados e artefactos originais necessários.
