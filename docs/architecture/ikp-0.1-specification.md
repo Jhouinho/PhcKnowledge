@@ -197,9 +197,9 @@ A plataforma mantém regras explícitas de compatibilidade entre versões de cap
 
 ## 6. Cobertura — coverage.json
 
-### 6.1 Três dimensões independentes
+### 6.1 Dimensões independentes
 
-Cada entrada corresponde a uma operação lógica declarada em capabilities.json.
+Cada entrada corresponde a uma operação lógica declarada em capabilities.json. A cobertura mantém separadas as dimensões seguintes:
 
 **Resultado da operação:**
 - Succeeded
@@ -222,59 +222,84 @@ Cada entrada corresponde a uma operação lógica declarada em capabilities.json
 - NotCollected
 - Empty
 
-Estas dimensões não se substituem. Uma consulta bem-sucedida pode encontrar zero registos; uma estrutura pode estar ausente; um inventário pode ser completo apesar de algumas definições não estarem disponíveis.
+**Completude da origem (schemaVersion 2):**
+- Complete
+- Partial
+- Unknown
 
-### 6.2 Exemplo
+Estas dimensões não se substituem. Uma operação pode terminar com sucesso e ainda assim não ter evidência suficiente de completude; uma consulta pode encontrar zero registos; uma estrutura pode estar ausente; um inventário pode ser completo apesar de algumas definições não estarem disponíveis.
+
+### 6.2 Métricas de cobertura (schemaVersion 2)
+
+Cada operação declara, quando aplicável:
+
+| Campo | Semântica |
+|---|---|
+| `sourceRowsRead` | Número de registos efetivamente lidos na fonte dentro do âmbito declarado |
+| `objectsEmitted` | Número de objetos técnicos emitidos pelo Scanner; não é uma contagem de linhas da origem |
+| `rowsFiltered` | Número de registos lidos e excluídos por filtros declarados |
+| `rowsFailed` | Número de registos lidos cujo processamento falhou |
+
+As quatro métricas têm unidades/semânticas diferentes. Não se impõe uma igualdade aritmética entre elas: um registo pode originar zero, um ou vários objetos. Contagens desconhecidas devem permanecer desconhecidas e nunca ser preenchidas artificialmente com zero. Falhas de consulta sem linha identificável são representadas no resultado/issues e na completude, não inventadas como linhas falhadas.
+
+`sourceCompleteness` descreve se todo o âmbito declarado foi percorrido:
+- `Complete`: há evidência de percurso integral do âmbito;
+- `Partial`: há evidência de percurso incompleto;
+- `Unknown`: a evidência disponível não permite determinar a completude.
+
+A completude é relativa ao âmbito e aos filtros declarados, não à totalidade indiscriminada da base de dados.
+
+### 6.3 Exemplo — schemaVersion 2
 
 ~~~json
 {
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "captureId": "b1b2c3d4-1111-4222-8333-123456789abc",
   "operations": [
     {
       "operationId": "phc.customizations.brule.inventory",
-      "capabilityVersion": "1.0",
+      "capabilityVersion": "2.0",
       "requested": true,
       "result": "Succeeded",
       "sourceAvailability": "Present",
+      "sourceCompleteness": "Complete",
       "contentAvailability": "Available",
       "scope": {
         "source": "dbo.brule",
         "filter": "all records"
       },
-      "observedCount": 65,
+      "sourceRowsRead": 120,
+      "objectsEmitted": 85,
+      "rowsFiltered": 35,
+      "rowsFailed": 0,
       "issueIds": []
-    },
-    {
-      "operationId": "phc.customizations.brule.definition",
-      "capabilityVersion": "1.0",
-      "requested": true,
-      "result": "Partial",
-      "sourceAvailability": "Present",
-      "contentAvailability": "Partial",
-      "scope": {
-        "source": "dbo.brule"
-      },
-      "observedCount": 61,
-      "issueIds": ["issue-004"]
     }
   ]
 }
 ~~~
 
-### 6.3 Regras de interpretação
+### 6.4 Regras de interpretação e ausência segura
 
 - Operação não suportada pela versão do Scanner: não consta como capacidade suportada.
 - Operação suportada mas não solicitada: requested=false e resultado Skipped; nunca é ausência/remoção.
 - Operação solicitada mas não iniciada: NotAttempted.
 - Estrutura não encontrada: NotPresent; não significa automaticamente NotApplicable.
 - Estrutura não aplicável: só declarar NotApplicable quando houver evidência suficiente.
-- Operação concluída com zero registos: resultado bem-sucedido e observedCount=0.
+- Uma operação concluída com zero registos só prova uma origem vazia quando a fonte está Present/visível, o âmbito foi integralmente percorrido e `sourceCompleteness=Complete`.
 - Inventário concluído e conteúdo não recolhido: manter a observação do objeto e declarar NotCollected para a definição.
+- Registos filtrados não são, por si só, prova de ausência dos objetos que representam. Os filtros devem ser conhecidos e o universo de comparação deve ser compatível.
 - Falhas e limitações referenciam issues identificadas no payload de diagnósticos ou no manifesto.
 - Cobertura por operação não precisa de ser detalhada por coluna/consulta. Descer ao nível de suboperação apenas quando os resultados forem independentes.
 
-Removed não é estado do Scanner nem do IKP. É uma conclusão da plataforma após comparação de capturas compatíveis e cobertura relevante completa.
+O Knowledge só pode concluir `Removed` quando a operação correspondente foi suportada, solicitada e executada; a fonte foi identificada e a visibilidade confirmada; não existem falhas que afectem o âmbito; `sourceCompleteness=Complete`; o âmbito/filtros são conhecidos e comparáveis; e a observação anterior permite comparação válida. Se qualquer condição não estiver demonstrada, o estado é inconclusivo/`NotObserved`.
+
+`Removed` não é estado do Scanner nem do IKP. É uma conclusão da plataforma após comparação de capturas compatíveis e cobertura relevante completa.
+
+### 6.5 Retrocompatibilidade
+
+O IKP 0.1 mantém a sua versão principal. A versão do schema de cobertura evolui independentemente: schemaVersion 1 continua a ser aceite com a semântica histórica; schemaVersion 2 introduz as métricas e `sourceCompleteness`.
+
+Em pacotes schemaVersion 1, `observedCount` não é reinterpretado automaticamente como `sourceRowsRead`. Um resultado `Empty`, `observedCount=0` ou `Succeeded` não prova isoladamente que a origem estava vazia ou que o âmbito foi percorrido integralmente. Na ausência de evidência equivalente explícita, a completude é considerada `Unknown` para decisões de ausência. Não se atribuem garantias retroativas a capturas antigas.
 
 ## 7. Índice de objetos — object-index.json
 
