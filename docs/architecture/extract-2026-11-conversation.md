@@ -1,3 +1,5 @@
+> **Documento de extracção histórica:** este ficheiro preserva conteúdo e propostas de conversas anteriores, não é especificação normativa. Qualquer referência a reutilização multi-organização, tenants ou isolamento por organização está supersedida: a plataforma tem uma única organização interna e os clientes são contextos técnicos. Ver [decisões aprovadas](decisoes-aprovadas-2026-11-21.md).
+
 # Extrato — conversa «Analisar base PHC» (2026-11)
 
 Relatório conciso do tratamento da fonte bruta.  
