@@ -430,7 +430,7 @@ Sem DDL nesta fase.
 | EntityIdentity scoped | **Existe no ConsoleApp** — adaptar conceitos | `EntityIdentityPolicy` |
 | Discovery → Fusion → Store live | **Não reutilizar como arquitetura operacional** | ADR-0049; guidelines |
 | Explorer Blazor / FTS Store V1 | **Património UX/pesquisa** — adaptar ideias, não o pipeline | ConsoleApp |
-| Multiempresa + API + SignalR + React | **Ainda não existe** na plataforma central | Implementação futura por fatias |
+| Utilização interna + Portal/API + SignalR + React | Implementação parcial na plataforma central | Completar experiência de Portal e fluxo de ingestão; não existe requisito multiempresa |
 | Anotações humanas / promoção Standard | **Modelo conceptual** (docs) / Domain D histórico separado | `knowledge-layers.md`; IK piloto ConsoleApp |
 
 ---
