@@ -52,7 +52,7 @@ Factos e interpretações são coleções lógicas separadas. O Knowledge dever�
 
 1. Testar a persistência e as constraints atuais contra SQL Server real.
 2. Definir reconciliação/retry para ZIP arquivado sem receipt SQL (arquivo ocorre antes do receipt).
-3. Testar explicitamente idempotência e conflitos de PackageId/SHA, incluindo receções multi-organização.
+3. Testar explicitamente idempotência e conflitos de PackageId/SHA, incluindo recepções concorrentes/idempotentes no contexto da organização única.
 4. Desenhar endpoint HTTP e autenticação; obter OrganizationId do contexto autenticado.
 5. Só depois avançar para materialização de artefactos, Observations, REL/DTL e associação de contexto.
 
@@ -67,3 +67,8 @@ Não gerar migrations globais novas nesta etapa. Ver [Modelo de domínio 0.2](kn
 - O Knowledge compara com o catálogo standard e com o histórico da mesma instalação.
 - Só uma operação bem-sucedida com cobertura completa pode sustentar uma conclusão de remoção.
 - O ZIP é eliminado apenas depois da materialização SQL e verificação de integridade, referências, contagens e proveniência.
+
+
+## Âmbito de organização — clarificação de 21-11-2026
+
+A plataforma tem uma única organização interna. Testes de idempotência devem cobrir PackageId/SHA repetidos, concorrência, instalações distintas e capturas sucessivas, mas não devem introduzir tenancy ou isolamento multi-organização. OrganizationId existente no receipt é contexto global da plataforma.
