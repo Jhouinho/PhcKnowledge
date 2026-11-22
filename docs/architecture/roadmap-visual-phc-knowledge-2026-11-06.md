@@ -342,7 +342,7 @@ A PR #15 permanece na `main` (`6c619bfc…`). Os Incrementos A e B estão na `ma
 
 Estabilização pós-merge: build Release OK (0 erros); `PhcKnowledge.Import.Tests` 224 passed; SQL relevantes 12 passed (3 análise + 9 bootstrap); migration 004 na instalação 001–004. Detalhe: `phase-report-ikp-package-analysis-a-2026-11-19.md`.
 
-A API e o backend de autenticação não equivalem a um Portal utilizável: não existe UI React, confirmação explícita implementada, nem gestão/associação de Customer/Installation/Environment. O domínio 0.2 (Capture/Observation/REL/DTL/Identity Matching) ainda não está materializado.
+A API e o backend de autenticação não equivalem a um Portal utilizável: não existe UI React, confirmação explícita implementada, nem gestão/associação de Cliente/Instalação, com ambiente/localização como atributos. O domínio 0.2 (Capture/Observation/REL/DTL/Identity Matching) ainda não está materializado.
 
 Antes de produção, mantêm-se hardening de Data Protection e de bloqueios administrativos. Melhorias futuras de cobertura da análise: deadlock 1205 real, E2E `SqlScriptApplicator` do Install, recuperação pós-rearranque do Host, suite SQL completa. O Incremento C (confirmação) tem desenho aprovado e **aguarda autorização de implementação**; não iniciar React nem materialização sem decisão explícita.
 
