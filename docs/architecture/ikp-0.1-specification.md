@@ -146,10 +146,10 @@ CaptureId e PackageId nunca entram na identidade lógica da entidade. O mesmo SH
 ### 4.3 Associação à instalação
 
 Na importação:
-1. O utilizador escolhe a organização.
-2. A plataforma apresenta uma instalação existente candidata, permite criar uma instalação nova ou deixa a associação pendente quando há ambiguidade.
+1. A organização é única e corresponde à empresa utilizadora da plataforma.
+2. O utilizador selecciona o cliente PHC e associa a captura a uma instalação existente, cria uma nova instalação quando se trata de uma base de dados PHC ainda não registada, ou deixa a associação pendente quando há ambiguidade.
 3. A decisão e as evidências de associação ficam registadas na plataforma.
-4. O pacote permanece imutável; a plataforma não escreve o seu InstallationId no ZIP.
+4. O conteúdo recebido do pacote não é alterado durante a validação/análise; a plataforma não escreve o seu InstallationId no ZIP. Esta imutabilidade durante o processamento não implica retenção permanente: o ZIP é eliminado após materialização verificada.
 5. Reimportar o mesmo PackageId com o mesmo checksum do ZIP é idempotente. Mesmo CaptureId em pacotes diferentes deve ser tratado como a mesma captura com múltiplas representações/pacotes, não como recolhas independentes.
 
 A correspondência por fingerprint da origem ou hints é sugestão, não associação automática irrevogável.
@@ -621,3 +621,8 @@ Na captura real examinada, SourceObjectId teve máximo de 54 caracteres (16.618 
 5. Eliminação do ZIP e ficheiros temporários apenas após verificação bem-sucedida.
 
 A recepção concluída, a análise Ready ou a decisão humana não substituem a verificação da materialização. A ausência de objectos só pode ser interpretada como remoção quando a operação correspondente foi executada com sucesso e cobertura completa. Capturas parciais/falhadas não produzem falsos Removed.
+
+
+## Ciclo de vida do ZIP — decisão aprovada em 21-11-2026
+
+O ZIP IKP é exclusivamente um envelope temporário de transporte. Pode ser mantido em staging/arquivo transitório durante recepção, validação, análise e retry. O Knowledge extrai e materializa no SQL Server os dados estruturados, histórico e artefactos originais necessários. Após verificação de integridade, contagens, referências e proveniência, elimina o ZIP e os temporários. Em caso de falha ou materialização incompleta, mantém o pacote recuperável para retry. O PackageId e o checksum identificam o envelope durante o processamento; não criam obrigação de arquivo permanente.
