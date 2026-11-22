@@ -12,47 +12,44 @@ Pretende-se uma base de conhecimento estruturada, com proveniência, evidências
 
 ## Decisões de produto
 
-### Utilização
+### Organização e utilização
 
-- Interface web (browser).
-- Interface desktop (Windows-first, mesma SPA via WebView2).
-- Instalação **centralizada** num servidor da organização (on-premises na rede local).
-- Clientes ligam ao backend central; sem modo autónomo offline nem knowledge DB local independente.
-- O mesmo modelo funcional pode, no futuro, ser alojado de forma central externa, sem obrigar a redesenho.
-
-### Modelo de utilização
-
-- Plataforma central partilhada por várias organizações.
-- Cada organização terá os seus dados isolados.
-- Um utilizador poderá pertencer a várias organizações.
-- Vários consultores poderão trabalhar simultaneamente sobre a mesma instalação e o **mesmo** conhecimento partilhado no servidor.
-- As alterações e descobertas deverão ficar disponíveis aos restantes utilizadores autorizados (sem sincronização entre bases autónomas).
+- Existe uma única organização: a empresa utilizadora da plataforma.
+- A plataforma é reservada aos colaboradores, com contas individuais.
+- Cada cliente PHC tem um registo próprio e é contexto técnico, não tenant nem organização de autenticação.
+- Cada base de dados PHC registada tem a sua própria instalação e `InstallationId`.
+- Cada instalação pode ter várias capturas; cada captura pertence exclusivamente a uma instalação.
+- Ambiente e localização são inicialmente atributos da instalação.
+- Uma cópia de uma base de dados recebe nova identidade de instalação, com linhagem para a origem.
+- Mudar de servidor não implica nova instalação se a continuidade da mesma base de dados puder ser confirmada.
+- A plataforma é centralizada num Windows Server da empresa, acessível por LAN/VPN. A autenticação interna não deve depender de Internet.
+- O Scanner é autónomo e a transferência para o Knowledge é manual através do Portal.
 
 ### Conhecimento
 
-- O conhecimento PHC standard deverá ser reutilizável entre organizações.
-- O conhecimento específico de uma instalação deverá respeitar o isolamento da respetiva organização.
-- Cada informação deverá preservar a sua proveniência.
-- Distinguir factos confirmados, informação recolhida, inferências e conclusões ainda não validadas.
+- Separar PHC Standard, observações de instalações, personalizações e interpretações derivadas.
+- Personalizações de um cliente não são partilhadas automaticamente com outros.
+- Toda a informação preserva origem, instalação, captura, cobertura e proveniência.
+- A ausência só pode significar remoção quando a operação teve sucesso e a cobertura é completa.
 
 ## Arquitetura tecnológica
 
-Decisões consolidadas em [`docs/architecture/technology-and-import-contract-assessment.md`](docs/architecture/technology-and-import-contract-assessment.md) (§4–§5 e §11; revisão de 2026-11-10):
+Decisões actuais: [Decisões arquitecturais aprovadas — 21-11-2026](docs/architecture/decisoes-aprovadas-2026-11-21.md). A avaliação tecnológica é fonte histórica de investigação e deve ser lida subordinada a essa referência.
 
 | Área | Decisão |
 | --- | --- |
-| Utilização | Centralizada no servidor da organização; clientes browser/desktop |
+| Utilização | Centralizada no Windows Server da empresa; acesso LAN/VPN; clientes PHC como contextos |
 | Backend | .NET 10 + ASP.NET Core |
 | Web | React + TypeScript |
 | Desktop plataforma | Windows-first, mesma SPA via WebView2 (cliente do backend central) |
-| BD central | SQL Server Express (central, incluindo instalação on-premises) |
-| SQLite | Apenas workspace Scanner / cache auxiliar (não substitui SQL Server Express) |
-| Pesquisa inicial | SQL Server 2025 Express inclui Full-Text Search; versão concreta ainda por fixar e validar se for anterior a 2025 |
+| BD central | Microsoft SQL Server central (edição/versão por decidir; não assumir Express) |
+| SQLite | Apenas workspace/cache local do Scanner |
+| Pesquisa inicial | Pesquisa inicial sobre SQL Server; edição/versão e disponibilidade de Full-Text Search por validar |
 | Tempo real | SignalR (mantido na arquitetura; implementação conforme os casos de uso) |
 | Scanner | Componente funcionalmente autónomo, versionado neste monorepo; Knowledge não o executa em runtime |
-| Importação | IKP 0.1 emitido pelo Scanner; primeira fatia Receive / Validate / Archive implementada no projeto Import, sem API HTTP/autenticação demonstradas |
+| Importação | IKP 0.1 emitido pelo Scanner; recepção/análise HTTP existentes; integração de upload com sessão do Portal e materialização ainda por fechar |
 
-O Scanner já implementa o exportador IKP 0.1 e os comandos CLI `scan-ikp` e `export-ikp`. O núcleo PhcKnowledge.Import já implementa validação, arquivo imutável e persistência de receipts. O contrato deve evoluir sempre com schemas, fixtures e testes. Não ligar o Scanner ao backend em runtime.
+O Scanner já implementa o exportador IKP 0.1 e os comandos CLI `scan-ikp` e `export-ikp`. O núcleo PhcKnowledge.Import já implementa validação, recepção e persistência de receipts; o arquivo actual do ZIP é transitório e será removido após materialização verificada. O contrato deve evoluir sempre com schemas, fixtures e testes. Não ligar o Scanner ao backend em runtime.
 
 ## Projetos anteriores
 
@@ -123,6 +120,7 @@ Documentos de arquitetura relevantes:
 - Evitar documentação excessiva.
 - Não criar documentos intermédios sem valor efetivo.
 - No final de cada etapa, consolidar num relatório conciso: o que foi feito, implementado, validado, problemas encontrados, estado atual e próximo passo.
+- **A cada decisão aprovada**, actualizar imediatamente a referência canónica de decisões e todos os documentos activos afectados; corrigir instruções contraditórias e actualizar README/roadmap quando aplicável. Preservar relatórios históricos, identificando-os como fotografias anteriores. Não deixar decisões aprovadas apenas na conversa.
 - Evitar múltiplos documentos que descrevam o mesmo assunto.
 
 ### Reflexão obrigatória
@@ -161,3 +159,8 @@ Limites atuais:
 - Persistência/proteção de chaves Data Protection e reforço da garantia do bloqueio administrativo são hardening pendente antes de produção.
 
 O roadmap visual é a referência para estados e sequência. Não iniciar a fase seguinte automaticamente: apresentar a proposta e validar com o responsável do projeto. No final de cada etapa, atualizar o roadmap e produzir apenas um relatório conciso de fase, evitando documentação duplicada.
+
+
+## Decisões aprovadas — revisão 2026-11-21
+
+A referência normativa é [Decisões arquitecturais aprovadas](docs/architecture/decisoes-aprovadas-2026-11-21.md). Inclui o modelo Cliente → Instalação → Captura, D-015 (manter recolha REL/DTL e comparar com catálogo standard), D-016 (captura completa no âmbito declarado e materialização incremental), ZIP exclusivamente temporário e armazenamento permanente dos artefactos/dados no SQL Server central. Esta orientação prevalece sobre texto histórico deste ficheiro.

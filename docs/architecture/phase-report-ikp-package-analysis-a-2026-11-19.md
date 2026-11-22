@@ -1,3 +1,5 @@
+> **Clarificação de ciclo de vida — 21-11-2026:** as referências neste relatório ao ZIP como fonte imutável dos bytes descrevem a análise/reabertura durante a ingestão. Não estabelecem arquivo permanente. Depois da materialização verificada, os bytes do ZIP são eliminados; os artefactos originais necessários são persistidos no SQL Server. Ver [decisões aprovadas](decisoes-aprovadas-2026-11-21.md).
+
 # Relatório de fase — Incrementos A e B (análise IKP e persistência)
 
 | Campo | Valor |

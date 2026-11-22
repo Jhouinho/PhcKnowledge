@@ -1,3 +1,5 @@
+> **Revisão vinculativa — 21-11-2026:** esta especificação deve seguir o modelo de uma única organização interna, clientes como contextos técnicos, SQL Server central sem edição/versão escolhida e ZIP temporário eliminado após materialização verificada. Ver [decisões aprovadas](decisoes-aprovadas-2026-11-21.md).
+
 # PHC Knowledge — Especificação da experiência do Portal
 
 | Campo | Valor |
@@ -343,8 +345,8 @@ Esta especificação não altera os contratos nem as decisões técnicas existen
 
 - A plataforma é centralizada.
 - O PHC Knowledge recebe pacotes IKP; não executa o Scanner em runtime nem acede ao workspace SQLite.
-- O ZIP original permanece imutável e arquivado fora da base relacional.
-- A base central definida no estado atual do repositório é SQL Server Express; SQLite permanece limitado ao workspace/cache local do Scanner.
+- O ZIP é imutável apenas durante a recepção/processamento e é eliminado após materialização verificada. Não é arquivo permanente.
+- A base central é Microsoft SQL Server; edição/versão por decidir. PostgreSQL está excluído; não assumir Express. SQLite permanece limitado ao workspace/cache local do Scanner.
 - A UI deve consumir APIs do backend e respeitar autenticação, autorização, organização e isolamento.
 - Não criar dados de demonstração como se fossem dados reais.
 - Não criar migrations, entidades ou endpoints apenas para fazer coincidir o protótipo com o ecrã.

@@ -1,3 +1,5 @@
+> **Fotografia histórica — 17-11-2026:** este relatório regista decisões e implementação tal como existiam nessa data. As afirmações sobre ZIP imutável/permanente, Package global, multi-organização e testes multi-organização foram supersedidas pelas decisões de 21-11-2026. O ZIP é transporte temporário, os dados/artefactos necessários ficam no SQL Server e a plataforma tem uma única organização interna. Consultar [decisões aprovadas](decisoes-aprovadas-2026-11-21.md).
+
 # Relatório de fase — Fecho dos bloqueadores de contrato e domínio do modelo 0.2
 
 > Este relatório fecha os bloqueadores de contrato/domínio (PackageId/SHA-256, REL/DTL e SourceObjectId). Não significa que os bloqueadores técnicos de ingestão estejam fechados: SQL Server real, reconciliação arquivo/receipt e HTTP/autenticação permanecem pendentes.

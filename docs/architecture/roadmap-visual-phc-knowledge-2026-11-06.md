@@ -1,7 +1,10 @@
 # Roadmap visual do PHC Knowledge — visão, fases e estado atual
 
-**Data de referência:** 2026-11-19
-**Estado:** Scanner/IKP, ingestão/recovery, API HTTP IKP, Identity/Portal backend e análise IKP (Incrementos A+B) concluídos e integrados na `main` via PR #19 (`PHC Knowledge — IKP Package Analysis (Increments A+B)`, merge `98a0b200cf99098bc37eddf754c3d0bb360ca309`); materialização do domínio, confirmação explícita (Incremento C — desenho aprovado, não implementado), associação a instalações e UI continuam por construir. A PR #15 permanece integrada na main (`6c619bfc`).
+
+> **Revisão vinculativa — 21-11-2026:** este roadmap foi escrito antes do fecho do modelo Cliente/Instalação/Captura, D-015, D-016 e política de armazenamento. Para decisões actuais prevalece [Decisões aprovadas](decisoes-aprovadas-2026-11-21.md). O diagrama e estados anteriores são uma fotografia histórica e não devem reintroduzir tenancy multi-organização, SQL Server Express ou arquivo permanente do ZIP.
+
+**Data de referência:** 2026-11-21
+**Estado:** fotografia histórica anterior ao fecho das decisões de 21-11-2026. Scanner/IKP, ingestão/recovery, API HTTP, Identity/Portal backend e análise IKP A+B existem; materialização integral, experiência de upload pelo Portal e pesquisa continuam por construir. A Trigger Capability 2.0 foi integrada na main através da PR #21. As decisões actuais e o próximo passo estão no aditamento final e em `decisoes-aprovadas-2026-11-21.md`.
 **Nota:** as percentagens não são estimadas; os estados indicam maturidade qualitativa.
 
 ## 1. Objetivo do produto
@@ -339,6 +342,19 @@ A PR #15 permanece na `main` (`6c619bfc…`). Os Incrementos A e B estão na `ma
 
 Estabilização pós-merge: build Release OK (0 erros); `PhcKnowledge.Import.Tests` 224 passed; SQL relevantes 12 passed (3 análise + 9 bootstrap); migration 004 na instalação 001–004. Detalhe: `phase-report-ikp-package-analysis-a-2026-11-19.md`.
 
-A API e o backend de autenticação não equivalem a um Portal utilizável: não existe UI React, confirmação explícita implementada, nem gestão/associação de Customer/Installation/Environment. O domínio 0.2 (Capture/Observation/REL/DTL/Identity Matching) ainda não está materializado.
+A API e o backend de autenticação não equivalem a um Portal utilizável: não existe UI React, confirmação explícita implementada, nem gestão/associação de Cliente/Instalação, com ambiente/localização como atributos. O domínio 0.2 (Capture/Observation/REL/DTL/Identity Matching) ainda não está materializado.
 
 Antes de produção, mantêm-se hardening de Data Protection e de bloqueios administrativos. Melhorias futuras de cobertura da análise: deadlock 1205 real, E2E `SqlScriptApplicator` do Install, recuperação pós-rearranque do Host, suite SQL completa. O Incremento C (confirmação) tem desenho aprovado e **aguarda autorização de implementação**; não iniciar React nem materialização sem decisão explícita.
+
+
+## Actualização de direcção — 21-11-2026
+
+### Decisões fechadas
+- Modelo: uma organização interna; Cliente 1 → N Instalações 1 → N Capturas; uma instalação por base de dados PHC registada.
+- D-015: catálogo PHC Standard central/versionado; manter recolha REL/DTL e comparar no Knowledge.
+- D-016: captura completa dentro do âmbito declarado; materialização incremental e deduplicação no Knowledge; ausência só significa remoção com cobertura completa.
+- Armazenamento: SQL Server central para dados, histórico e artefactos originais.
+- ZIP: transporte temporário, eliminado apenas depois de materialização verificada.
+
+### Próxima etapa
+Construir a matriz de classificação por collector/ObjectKind com base na captura real existente. Depois fechar o contrato técnico de materialização SQL e o ciclo upload → análise → decisão → materialização → verificação → eliminação. A edição/versão do SQL Server e detalhes físicos de armazenamento continuam por definir.

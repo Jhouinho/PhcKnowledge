@@ -1,11 +1,14 @@
 # Integração do catálogo PHC Standard com o IKP
 
+
+> **Decisão D-015 aprovada — 21-11-2026:** catálogo PHC Standard central e versionado; o Scanner continua a recolher REL/DTL da instalação; o Knowledge compara evidência recolhida com a versão standard aplicável. Não classificar automaticamente sem correspondência como custom ou standard. A aprovação é da direcção arquitectural, não de todos os detalhes técnicos desta especificação. Ver [Decisões arquitecturais aprovadas](decisoes-aprovadas-2026-11-21.md).
+
 | Campo | Valor |
 |---|---|
 | Revisão | 2026-11-20 |
-| Estado | Especificação técnica proposta — aguarda aprovação antes de implementação |
+| Estado | Direcção D-015 aprovada em 2026-11-21; detalhes técnicos/curadoria e implementação ainda por validar |
 | Âmbito inicial | Triggers DML PHC Standard |
-| Base de dados central | SQL Server Express |
+| Base de dados central | Microsoft SQL Server (edição/versão por decidir) |
 | Contratos relacionados | IKP 0.1; P1 identidade/proveniência; modelo de domínio 0.2 |
 
 Este documento transforma a decisão arquitetural sobre conhecimento PHC Standard numa proposta de integração entre o Scanner, o pacote IKP e o PHC Knowledge. Não aprova alterações ao código, ao contrato IKP, ao SQLite, às migrations ou aos testes. Os pontos explicitamente assinalados como pendentes exigem decisão antes da implementação.
@@ -24,8 +27,8 @@ Consequências:
 - As definições desencriptadas de referência são importadas e curadas no PHC Knowledge; não são necessárias no cliente nem em cada captura.
 - Uma correspondência de identidade/metadados não prova equivalência do corpo SQL.
 - Ausência só pode ser concluída quando a operação relevante foi executada e a cobertura permite essa conclusão.
-- Conhecimento standard é central, reutilizável e versionado por aplicabilidade PHC; observações de instalações mantêm a sua proveniência e isolamento organizacional.
-- SQL Server Express continua a ser a base relacional central. SQLite permanece limitado ao workspace/cache local do Scanner.
+- Conhecimento standard é central, reutilizável e versionado por aplicabilidade PHC; observações de instalações mantêm a sua proveniência e associação ao cliente/instalação de origem.
+- Microsoft SQL Server é a base relacional central (edição/versão por decidir). SQLite permanece limitado ao workspace/cache local do Scanner.
 
 ## 2. Estado técnico confirmado
 
@@ -474,3 +477,10 @@ A fonte é registada como referência **CS Default 202603**. Não generalizar a 
 | Remoção da fonte | Apenas após importação integral, reconciliação e consulta no Portal sem dependência do ficheiro |
 
 **Decisões aprovadas pelo utilizador em 2026-11-20:** (1) capability existente `sql.server.structure.triggers` versão 2.0, preservando 1.0 e mantendo IKP 0.1; (2) chave de matching kind + schema/nome da trigger + schema/nome da tabela pai; (3) fingerprints separados, mantendo SHA-256 exato dos bytes originais e adotando fingerprint de comparação versionado com normalização lexical T-SQL testada. A Fase 0 fica encerrada. A Fase 1 — Scanner fica autorizada a avançar, começando pela especificação de implementação e testes do contrato 2.0; a implementação deve respeitar as compatibilidades aqui definidas. A remoção do ficheiro SQL de referência continua condicionada à importação integral, reconciliação e validação no Portal. Esta atualização documental não altera, por si só, código, schemas, SQLite, migrations ou testes.
+
+
+## Estado da decisão D-015 — 21-11-2026
+
+**Aprovado:** catálogo central PHC Standard versionado; manutenção da recolha REL/DTL no Scanner; comparação no Knowledge; preservação dos factos originais e das interpretações derivadas separadamente; classificação baseada em evidência.
+
+**Ainda por especificar/validar:** versão e aplicabilidade do catálogo por edição/versão PHC, algoritmo de comparação, critérios de correspondência, tratamento de diferenças não conclusivas, persistência SQL e curadoria. A aprovação de D-015 não autoriza retirar collectors nem eliminar fontes standard existentes.

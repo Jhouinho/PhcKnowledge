@@ -1,5 +1,8 @@
 # Matriz de compatibilidade — IKP 0.1, Scanner e PHC Knowledge
 
+
+> **Actualização de decisões — 21-11-2026:** D-015 e D-016 foram aprovadas. O Scanner mantém recolha REL/DTL; cada captura é completa dentro do âmbito declarado; o Knowledge compara e materializa incrementalmente. O ZIP é temporário e os dados/artefactos permanentes ficam no SQL Server. Ver [Decisões arquitecturais aprovadas](decisoes-aprovadas-2026-11-21.md). A matriz actual continua a ser fotografia de compatibilidade, não prova de cobertura integral.
+
 Data de revisão: 2026-11-17
 
 ## Conclusão
@@ -49,8 +52,23 @@ Factos e interpretações são coleções lógicas separadas. O Knowledge dever�
 
 1. Testar a persistência e as constraints atuais contra SQL Server real.
 2. Definir reconciliação/retry para ZIP arquivado sem receipt SQL (arquivo ocorre antes do receipt).
-3. Testar explicitamente idempotência e conflitos de PackageId/SHA, incluindo receções multi-organização.
-4. Desenhar endpoint HTTP e autenticação; obter OrganizationId do contexto autenticado.
+3. Testar explicitamente idempotência e conflitos de PackageId/SHA, incluindo recepções concorrentes/idempotentes no contexto da organização única.
+4. Desenhar endpoint HTTP e autenticação; o OrganizationId é o contexto global único da plataforma, enquanto o cliente e a instalação são escolhidos/confirmados no fluxo de importação.
 5. Só depois avançar para materialização de artefactos, Observations, REL/DTL e associação de contexto.
 
 Não gerar migrations globais novas nesta etapa. Ver [Modelo de domínio 0.2](knowledge-domain-model-0.2.md).
+
+
+## Política aprovada de captura e materialização
+
+- O Scanner não consulta o histórico central para seleccionar o que recolhe.
+- A captura cobre integralmente as operações declaradas e reporta sucesso, falha, cobertura e avisos.
+- REL/DTL continuam a ser recolhidos como factos declarados da instalação.
+- O Knowledge compara com o catálogo standard e com o histórico da mesma instalação.
+- Só uma operação bem-sucedida com cobertura completa pode sustentar uma conclusão de remoção.
+- O ZIP é eliminado apenas depois da materialização SQL e verificação de integridade, referências, contagens e proveniência.
+
+
+## Âmbito de organização — clarificação de 21-11-2026
+
+A plataforma tem uma única organização interna. Testes de idempotência devem cobrir PackageId/SHA repetidos, concorrência, instalações distintas e capturas sucessivas, mas não devem introduzir tenancy ou isolamento multi-organização. OrganizationId existente no receipt é contexto global da plataforma.

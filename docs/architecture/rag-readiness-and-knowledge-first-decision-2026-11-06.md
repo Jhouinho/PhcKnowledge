@@ -1,3 +1,5 @@
+> **Fotografia histórica — 06-11-2026:** a sequência Receive / Validate / Archive e a referência a SQL Server Express reflectem uma proposta anterior. A direcção actual é Microsoft SQL Server (edição/versão por decidir), ZIP temporário e eliminação após materialização verificada. RAG continua futuro e dependente de conhecimento materializado e pesquisável. Ver [decisões aprovadas](decisoes-aprovadas-2026-11-21.md).
+
 # Preparação do PHC Knowledge para RAG — decisão arquitetural
 
 **Data:** 2026-11-06  

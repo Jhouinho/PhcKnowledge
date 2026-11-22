@@ -1,6 +1,6 @@
 # Estado do projeto e próximos passos
 
-**Última atualização:** 2026-11-10  
+**Última atualização:** 2026-11-21  
 **Repositório:** [Jhouinho/PhcKnowledge](https://github.com/Jhouinho/PhcKnowledge) — monorepo canónico; Scanner em `PhcKnowledgeScanner/`  
 **Branch de referência:** `main`  
 **Nota de referência:** o histórico de commits e ADRs do Scanner mantém-se no monorepo; esta revisão documental não declara uma nova execução de build/testes.
@@ -223,3 +223,17 @@ No final de cada ciclo de implementação, atualizar apenas o necessário:
 ## 9. Integração com o PHC Knowledge — fronteira atual
 
 O Scanner é produtor de factos e pacotes. Não conhece nem chama a API do Knowledge, não acede à base central e não mantém histórico multi-captura. O IKP transporta uma captura e a respetiva cobertura/proveniência. A plataforma central validará e arquivará o pacote, associará instalações e materializará conhecimento em etapas próprias.
+
+
+## Actualização de integração com o PHC Knowledge — 2026-11-21
+
+As decisões actuais da plataforma estão em [Decisões arquitecturais aprovadas](../../docs/architecture/decisoes-aprovadas-2026-11-21.md) e prevalecem sobre planos anteriores deste estado do Scanner.
+
+- O Scanner continua autónomo e não consulta o histórico central para seleccionar o que recolhe.
+- Cada execução produz uma captura completa dentro do âmbito das operações declaradas e reporta cobertura/estado de cada operação.
+- A recolha REL/DTL mantém-se; o Knowledge compara os factos declarados com o catálogo PHC Standard versionado.
+- O ZIP é transporte temporário, não arquivo permanente.
+- A plataforma materializa dados estruturados e artefactos originais no SQL Server e só elimina o ZIP após verificação integral.
+- Não alterar collectors, workspace SQLite ou semântica dos dados antes da matriz de classificação por collector/ObjectKind ser validada com a captura real existente.
+
+Esta actualização regista decisões de integração; não declara alterações ou validações de código do Scanner.

@@ -1,5 +1,8 @@
 # Protocolo de recuperação de PackageReceipt
 
+
+> **Revisão de arquitectura — 21-11-2026:** o arquivo imutável descrito nesta implementação é uma retenção transitória do ZIP para garantir recuperação durante a recepção/análise. Não é o destino permanente aprovado. O ZIP é eliminado após materialização verificada; os artefactos originais e dados persistentes passam a residir no SQL Server. Não remover o arquivo actual antes de existir substituição testada com retry e recuperação. Ver [Decisões aprovadas](decisoes-aprovadas-2026-11-21.md).
+
 > Estado: protocolo implementado na branch `feat/package-receipt-recovery` através da biblioteca `PhcKnowledge.Import` e do Generic Host `PhcKnowledge.Host`. A PR #9 permanece em Draft e ainda não foi integrada na `main`. Não existe ainda endpoint HTTP, autenticação ou upload HTTP.
 
 ## Objectivo
@@ -40,7 +43,7 @@ Não é necessário estado `Archived`: o worker verifica a existência, tamanho 
 - Ficheiros de staging sem tentativa SQL associada podem ser eliminados após 24 horas. `PackageStagingCleanupService` consulta as tentativas pendentes e protege os respectivos `StagingKey`; a invocação periódica depende do host.
 - Se o staging desaparecer mas o arquivo válido existir, concluir usando metadados validados persistidos.
 - Se ambos desaparecerem, marcar `NeedsAttention`; será necessário novo envio.
-- O ZIP original arquivado mantém-se imutável e permanente, conforme a política já aprovada.
+- Durante a recepção/análise, o ZIP recebido é tratado como payload imutável para garantir integridade e recuperação. Esta imutabilidade não significa retenção permanente: após materialização verificada, o ZIP e o staging são eliminados. Os dados e artefactos originais necessários ficam no SQL Server.
 
 ## Persistência
 
@@ -52,7 +55,7 @@ A tabela `PackageReceiptAttempts` contém:
 - controlo: Status, AttemptCount, NextAttemptAtUtc, LeaseToken, LeaseUntilUtc;
 - diagnóstico e auditoria: LastErrorCode, LastErrorMessage, CreatedAtUtc, UpdatedAtUtc, CompletedAtUtc e RowVersion.
 
-Os índices únicos por OrganizationId + PackageId e OrganizationId + ZipSha256 impedem tentativas concorrentes duplicadas dentro da mesma organização, mantendo alinhamento com as constraints actuais do receipt. A política global Package/Receipt multi-organização continua a ser uma evolução separada do modelo 0.2 e não é alterada por esta migration.
+Os índices únicos actualmente existentes com OrganizationId são compatibilidade da implementação de recepção; OrganizationId representa o contexto global único da plataforma, não uma fronteira multi-tenant. A arquitectura aprovada não prevê recepção multi-organização. evolução separada do modelo 0.2 e não é alterada por esta migration.
 
 ## Implementação na branch
 
@@ -85,3 +88,11 @@ Os índices únicos por OrganizationId + PackageId e OrganizationId + ZipSha256 
 7. Limpeza não remove staging de tentativas pendentes.
 8. Corrupção do arquivo nunca é sobrescrita.
 9. Testes de repository/migration são executados contra SQL Server real; testes unitários isolados não substituem esta validação.
+
+
+## Compatibilidade com o ciclo de vida aprovado
+
+O protocolo aqui descrito resolve falhas entre staging e receipt no fluxo actualmente implementado. A arquitectura final acrescenta materialização idempotente e verificação posterior. O estado Completed de PackageReceipt não significa que a materialização esteja concluída. A eliminação do ZIP depende de um estado separado de materialização verificada, incluindo hashes, referências, contagens e proveniência. Até essa capacidade existir, a retenção actual deve manter-se para não perder a única cópia recuperável.
+
+
+> **Precedência — 21-11-2026:** este documento descreve a implementação de recuperação da recepção, não a política final de retenção. O ZIP é temporário e só pode ser eliminado depois da materialização SQL verificada. Não implementar arquivo permanente nem tenancy por cliente. Ver [decisões aprovadas](decisoes-aprovadas-2026-11-21.md).
