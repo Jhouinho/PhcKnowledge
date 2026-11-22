@@ -1,3 +1,5 @@
+> **Proposta histórica — 21-11-2026:** o capítulo de arquivo global e isolamento multi-organização abaixo não corresponde ao produto aprovado. Existe uma única organização interna; clientes são contextos técnicos; o ZIP é temporário e eliminado após materialização verificada. Consultar [decisões aprovadas](decisoes-aprovadas-2026-11-21.md). Esta proposta HTTP pode servir apenas como referência técnica subordinada a essas decisões.
+
 # P2.B — Contrato proposto de âmbito e integração HTTP
 
 | Campo | Valor |
