@@ -24,9 +24,7 @@
       },
       "definition": {
         "status": "NotCollected",
-        "artifactIds": [
-          "artifact-schema-ft"
-        ]
+        "artifactIds": []
       },
       "operationId": "sql.schema.tables.inventory"
     },
