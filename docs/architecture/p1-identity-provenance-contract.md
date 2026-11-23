@@ -120,7 +120,7 @@ Todos os fingerprints definidos neste contrato usam SHA-256, representado por 64
 - Só se ignoram diferenças de apresentação quando uma regra validada demonstra que a normalização preserva o significado. Não existe normalização universal.
 - Sem regra segura e validada, a comparação é conservadora: usa-se comparação exacta do original com modo explicitamente identificado, ou não se emite fingerprint semântico. Nunca se declara equivalência semântica por suposição.
 - O formato, encoding e hash de integridade do original continuam descritos pelo manifesto do artefacto. A representação canónica nunca substitui o original.
-- Se houver vários artefactos que, em conjunto, constituem uma definição, calcular um digest composto sobre uma lista determinística ordenada por `artifactId`; cada entrada usa `artifactId + LF + sha256 + LF`, codificada em UTF-8, e o resultado é novamente hashed com SHA-256.
+- Se a definição for composta por vários artefactos, calcular o fingerprint composto sobre uma lista determinística ordenada por `artifactId`; cada entrada usa `artifactId + LF + componentDefinitionFingerprint + LF`, codificada em UTF-8, incluindo a versão da política de normalização no envelope canónico. O resultado é novamente hashed com SHA-256. Os hashes de integridade dos artefactos componentes continuam preservados separadamente.
 - Só existe para `definition.status=Available`.
 - Não calcular hash de string vazia para representar `Empty`; ausência de fingerprint não equivale a hash de conteúdo vazio.
 - O SHA-256 do artefacto pode ser reutilizado como hash de integridade, mas não como DefinitionFingerprint semântico, salvo no modo conservador de comparação exacta explicitamente identificado.
