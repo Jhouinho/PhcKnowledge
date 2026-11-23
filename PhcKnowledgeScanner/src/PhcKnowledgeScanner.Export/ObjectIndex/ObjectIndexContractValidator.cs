@@ -4,7 +4,7 @@ namespace PhcKnowledgeScanner.Export.ObjectIndex;
 
 /// <summary>
 /// Checks the structural constraints and conditional invariants of the IKP 0.1
-/// object-index contract. The repository's JSON Schema validator remains the
+/// Object Index v2 contract. The repository's JSON Schema validator remains the
 /// authoritative full Draft 2020-12 validator.
 /// </summary>
 public static class ObjectIndexContractValidator
