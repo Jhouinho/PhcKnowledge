@@ -233,3 +233,36 @@ O PHC Knowledge deve distinguir alterações semânticas à definição técnica
 8. MetadataFingerprint mantém o contrato independente já aprovado: hash dos metadados semanticamente relevantes após normalização por categoria e canonicalização JSON.
 9. Esta decisão altera a semântica normativa de DefinitionFingerprint anteriormente descrita como hash direto do conteúdo original. O hash direto mantém-se como hash de integridade do artefacto, não como substituto do fingerprint semântico.
 10. A aprovação fecha o princípio e a separação conceptual. Não autoriza alterações aos collectors, exporter, workspace SQLite, schemas executáveis, validator ou materialização SQL. Antes da implementação, é obrigatória uma matriz por objectKind com regras de normalização e testes de aceitação, incluindo casos em que a normalização não é segura.
+
+
+## 12. D-020 — Fingerprint semântico indisponível sem normalizador validado
+
+**Data: 23-11-2026 — Estado: APROVADA.**
+
+Quando não existir uma política de normalização semântica segura, específica para o `objectKind` e validada pelos respectivos testes de aceitação, o Scanner não emite um **valor de fingerprint semântico** para essa definição. A representação explícita da indisponibilidade (`status: Unavailable` e `reasonCode`) segue a D-021.
+
+Regras:
+
+1. A ausência de normalizador validado significa `DefinitionFingerprint` indisponível; não se calcula nem se publica o SHA-256 dos bytes originais como substituto.
+2. O SHA-256 dos bytes exactos do artefacto mantém-se como hash de integridade, independente do fingerprint semântico.
+3. A comparação byte-a-byte pode ser usada como operação/modo de comparação exacta separado, mas nunca é apresentada, serializada ou interpretada como `DefinitionFingerprint` semântico.
+4. A comparação exacta não permite concluir equivalência semântica. Diferenças de encoding, espaços, comentários ou quebras de linha podem produzir resultado diferente, mesmo quando o comportamento técnico não muda.
+5. A disponibilidade de `DefinitionFingerprint` exige uma política identificada e versionada, aplicada à representação canónica específica do `objectKind`/variante e coberta por testes de aceitação aprovados.
+6. A ausência de valor de fingerprint semântico por falta de normalizador não é tratada como definição vazia, hash vazio, erro de integridade ou prova de que duas definições são diferentes; representa ausência de comparação semântica validada. A indisponibilidade é transportada pelo envelope definido em D-021.
+7. Pacotes antigos que contenham o fingerprint calculado segundo a regra anterior continuam legíveis, mas o valor legado não é reinterpretado retroactivamente como fingerprint semântico conforme à D-019/D-020. A compatibilidade e a classificação desses valores têm de ser explícitas.
+8. A verificação do hash de integridade e do comprimento do artefacto mantém-se obrigatória e independente do cálculo do fingerprint.
+
+Esta decisão fecha a regra de fallback. Não aprova ainda qualquer normalizador T-SQL, não define versões de política por `objectKind` e não autoriza alterações aos collectors, exporter, workspace SQLite, schemas executáveis, validator ou materialização SQL. A matriz por `objectKind` e os testes de aceitação continuam obrigatórios antes da implementação.
+
+## 13. D-021 — Estado, política e motivos do DefinitionFingerprint
+
+Aprovado em 23-11-2026.
+
+1. O estado do `DefinitionFingerprint` é independente do estado de disponibilidade da definição. Para uma definição `Available`, o envelope `definitionFingerprint` é representado explicitamente com estado `Available` ou `Unavailable`; neste último caso não contém valor de fingerprint semântico.
+2. Um fingerprint disponível contém `algorithm`, `value` e `policy.id`/`policy.version`. A identificação da política é específica do `objectKind`/variante; a versão identifica exactamente as regras de normalização aplicadas.
+3. A representação de um fingerprint indisponível contém `status: Unavailable` e um `reasonCode` de catálogo controlado, sem algoritmo, valor ou política aplicada.
+4. Para definições `Empty`, `Unavailable` ou `NotCollected`, a propriedade `definitionFingerprint` é omitida. Estes estados pertencem à disponibilidade da definição e não são motivos de indisponibilidade do fingerprint.
+5. O catálogo inicial de motivos é: `NoValidatedPolicy`, `UnsupportedSyntax` e `NormalizationFailed`. Os códigos são valores contratuais, não texto livre. Consumidores devem tolerar códigos desconhecidos sem os reinterpretar.
+6. A versão do Scanner e a versão da capability não substituem a identificação/versionamento da política.
+7. A incompatibilidade entre versões de política é tratada na comparação/migração; não altera nem reescreve o fingerprint originalmente produzido.
+8. A decisão fecha a representação documental, mas não autoriza alterações aos schemas executáveis, modelos, serialização, exporter, validator, collectors, workspace SQLite ou materialização SQL. A compatibilidade com consumidores existentes e a versão do schema do object-index têm de ser verificadas antes da implementação.
