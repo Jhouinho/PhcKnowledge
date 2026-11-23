@@ -21,10 +21,10 @@ Os testes devem ser independentes do normalizador concreto. Os testes específic
 5. Um fingerprint semântico disponível inclui a identificação/versionamento da política que o produziu (`policy.id` e `policy.version`).
 6. Para uma definição `Available`, o estado do fingerprint é explícito: `Available` ou `Unavailable`.
 7. Um fingerprint indisponível usa um `reasonCode` do catálogo controlado, sem `algorithm`, `value` ou `policy`.
-6. Fingerprints de políticas diferentes não são comparados como equivalentes sem regra explícita de migração/compatibilidade.
-7. O original e os seus bytes nunca são substituídos pela representação canónica.
+8. Fingerprints de políticas diferentes não são comparados como equivalentes sem regra explícita de migração/compatibilidade.
+9. O original e os seus bytes nunca são substituídos pela representação canónica.
 10. Estados de definição vazia, indisponível, não recolhida e fingerprint indisponível não podem ser confundidos.
-9. A leitura de pacotes legados mantém compatibilidade, sem atribuir retroactivamente semântica D-019/D-020 a valores antigos.
+11. A leitura de pacotes legados mantém compatibilidade, sem atribuir retroactivamente semântica D-019/D-020 a valores antigos.
 
 ### 2.1 Distinção entre bytes do artefacto e conteúdo da origem
 
