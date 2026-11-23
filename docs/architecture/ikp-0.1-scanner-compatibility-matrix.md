@@ -80,7 +80,8 @@ O contrato de cobertura foi aprovado para evolução, sem alteração da versão
 
 - coverage schema v1 mantém leitura retrocompatível e sem garantias inferidas;
 - coverage schema v2 acrescenta `sourceRowsRead`, `objectsEmitted`, `rowsFiltered`, `rowsFailed` e `sourceCompleteness` (`Complete`, `Partial`, `Unknown`);
-- `observedCount=0`, `Empty` ou `Succeeded` em pacotes antigos não demonstram, isoladamente, origem vazia ou consulta completa;
+- `observedCount=0`, `Empty` ou `Succeeded` em pacotes com coverage schema v1 que sejam aceites pela matriz não demonstram, isoladamente, origem vazia ou consulta completa;
+- esta compatibilidade específica do coverage schema v1 não implica suporte a pacotes IKP de teste descartados de iterações antigas do Scanner;
 - só a cobertura comprovadamente completa, com fonte visível, âmbito/filtros conhecidos e comparação compatível, pode sustentar `Removed`;
 - contagens de linhas e objetos são métricas distintas e não têm de fechar aritmeticamente;
 - os registos filtrados não podem ser convertidos automaticamente em objetos removidos.
