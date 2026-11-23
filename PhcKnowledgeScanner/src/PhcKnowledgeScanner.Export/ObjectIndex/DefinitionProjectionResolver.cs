@@ -165,9 +165,12 @@ public static class DefinitionProjectionResolver
             return DefinitionProjectionResolution.Empty(artifact.ArtifactId);
         }
 
+        // Integrity has been verified above. No semantic normalization policy is
+        // approved for production yet, so the definition remains Available while
+        // its semantic fingerprint is explicitly Unavailable.
         return DefinitionProjectionResolution.Available(
             artifact.ArtifactId,
-            new DefinitionFingerprintValue("sha256", digest));
+            fingerprintUnavailableReasonCode: "NoValidatedPolicy");
     }
 
     private static CollectionIssue? FindDefinitionIssue(
@@ -236,6 +239,7 @@ public sealed record DefinitionProjectionResolution(
     DefinitionStatus Status,
     IReadOnlyList<string> ArtifactIds,
     DefinitionFingerprintValue? Fingerprint,
+    string? FingerprintUnavailableReasonCode,
     string? DiagnosticCode,
     string? Message)
 {
@@ -243,23 +247,33 @@ public sealed record DefinitionProjectionResolution(
 
     public static DefinitionProjectionResolution Available(
         string artifactId,
+        string? fingerprintUnavailableReasonCode = null) =>
+        new(DefinitionStatus.Available, [artifactId], null,
+            fingerprintUnavailableReasonCode ?? "NoValidatedPolicy", null, null);
+
+    public static DefinitionProjectionResolution Available(
+        string artifactId,
         DefinitionFingerprintValue fingerprint) =>
-        new(DefinitionStatus.Available, [artifactId], fingerprint, null, null);
+        new(DefinitionStatus.Available, [artifactId], fingerprint, null, null, null);
 
     public static DefinitionProjectionResolution Empty(string artifactId) =>
-        new(DefinitionStatus.Empty, [artifactId], null, null, null);
+        new(DefinitionStatus.Empty, [artifactId], null, null, null, null);
 
     public static DefinitionProjectionResolution NotCollected(
         string? code = null,
         string? message = null) =>
-        new(DefinitionStatus.NotCollected, Array.Empty<string>(), null, code, message);
+        new(DefinitionStatus.NotCollected, Array.Empty<string>(), null, null, code, message);
 
     public static DefinitionProjectionResolution Unavailable(string code, string message) =>
-        new(DefinitionStatus.Unavailable, Array.Empty<string>(), null, code, message);
+        new(DefinitionStatus.Unavailable, Array.Empty<string>(), null, null, code, message);
 
     public static DefinitionProjectionResolution Failure(string code, string message) =>
         Unavailable(code, message);
 }
 
-/// <summary>SHA-256 fingerprint of the exact bytes of a collected definition artifact.</summary>
-public sealed record DefinitionFingerprintValue(string Algorithm, string Value);
+/// <summary>Semantic fingerprint value produced only by a validated, versioned policy.</summary>
+public sealed record DefinitionFingerprintValue(
+    string Algorithm,
+    string Value,
+    string PolicyId,
+    string PolicyVersion);
