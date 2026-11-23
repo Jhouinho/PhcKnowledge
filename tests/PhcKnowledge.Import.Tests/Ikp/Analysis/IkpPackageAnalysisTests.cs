@@ -317,7 +317,7 @@ public sealed class IkpPackageAnalysisTests
         Assert.Equal(0, analysis.ObjectIndex.DefinitionFingerprintAvailableCount);
         Assert.Equal(1, analysis.ObjectIndex.DefinitionFingerprintUnavailableCount);
         Assert.Equal(1, analysis.ObjectIndex.Available);
-        Assert.Equal(PackageImportAnalysisSchema.Version, "0.3");
+        Assert.Equal("0.3", PackageImportAnalysisSchema.Version);
     }
 
     [Fact]
