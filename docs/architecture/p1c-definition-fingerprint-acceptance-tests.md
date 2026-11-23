@@ -2,13 +2,13 @@
 
 - **Data:** 23-11-2026
 - **Estado:** proposta de testes; ainda não aprovada como suite final
-- **Decisões normativas:** D-018, D-019 e D-020
+- **Decisões normativas:** D-018, D-019, D-020 e D-021
 - **Âmbito:** separação entre hash de integridade, DefinitionFingerprint semântico e comparação exacta
 - **Restrição:** documento de desenho; não altera código, schemas executáveis, collectors, exporter, workspace SQLite, validator ou materialização SQL.
 
 ## 1. Objectivo
 
-Garantir que o Scanner nunca apresenta um hash dos bytes integrais como fingerprint semântico, que preserva a verificação de integridade dos artefactos e que só emite `DefinitionFingerprint` quando existe uma política semântica específica, identificada, versionada e validada.
+Garantir que o Scanner nunca apresenta um hash dos bytes integrais como fingerprint semântico, que preserva a verificação de integridade dos artefactos e que só emite um **valor** de `DefinitionFingerprint` quando existe uma política semântica específica, identificada, versionada e validada; sem essa política, representa explicitamente a indisponibilidade conforme D-021.
 
 Os testes devem ser independentes do normalizador concreto. Os testes específicos de cada `objectKind` serão acrescentados quando a respectiva matriz estiver aprovada.
 
@@ -55,7 +55,7 @@ Nos artefactos compostos, como os de `phc.user_tsql_function`, o hash de integri
 | DF-015 | Metadata muda sem alteração da definição | `MetadataFingerprint` só muda se o atributo alterado pertencer à projecção semântica aprovada e completa para aquele kind; `DefinitionFingerprint` mantém-se |
 | DF-016 | Definição muda sem alteração da metadata projectada | `DefinitionFingerprint` pode mudar; `MetadataFingerprint` mantém-se |
 | DF-017 | Pacote legado contém fingerprint produzido pela regra antiga | Pacote continua legível; o valor antigo é preservado e identificado como legado, sem ser apresentado como fingerprint semântico conforme a D-019/D-020 nem reinterpretado retroactivamente |
-| DF-018 | Fingerprint indisponível por falta de política numa definição disponível | `definition.status=Available`; `definitionFingerprint.status=Unavailable`; `reasonCode=NoValidatedPolicy`; sem `algorithm`, `value` ou `policy` |
+| DF-018 | Resolução semântica sem política validada | O resolver mantém `definition.status=Available` e produz o resultado de domínio `DefinitionFingerprint.Unavailable` com motivo `NoValidatedPolicy`, sem fabricar valor semântico |
 
 ### 3.1 Estados e motivos de indisponibilidade
 
