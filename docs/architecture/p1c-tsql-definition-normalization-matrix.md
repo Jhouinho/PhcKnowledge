@@ -214,3 +214,20 @@ A futura alteração deverá, no mínimo:
 7. Garantir compatibilidade explícita com pacotes antigos: não reinterpretar silenciosamente fingerprints antigos como se fossem semânticos D-019.
 
 **Não foi feita qualquer alteração de código.** Esta secção é uma auditoria estática da `main`; não equivale à execução da suite de testes nem à validação do comportamento em runtime.
+
+
+## 10. D-020 — regra de fallback aprovada
+
+A decisão D-020 fecha a questão que estava em aberto nesta matriz:
+
+- Sem normalizador semântico seguro, específico e validado para o kind/variante, `DefinitionFingerprint` fica indisponível.
+- O SHA-256 dos bytes exactos continua a ser calculado/validado como hash de integridade do artefacto, nunca como substituto do fingerprint semântico.
+- Uma comparação byte-a-byte pode existir como operação separada e explicitamente exacta. Não pode preencher o campo `definitionFingerprint` nem ser interpretada como equivalência semântica.
+- A ausência de fingerprint por falta de normalizador não significa definição vazia, erro, nem diferença semântica; significa que ainda não existe uma política segura para comparar semanticamente.
+- Fingerprints produzidos por pacotes antigos segundo a regra anterior não são reinterpretados retroactivamente como fingerprints semânticos conformes à D-019/D-020.
+
+Esta decisão aprova apenas o fallback. Não aprova normalizador T-SQL, alterações ao modelo serializado, schemas, collectors, exporter, workspace SQLite, validator ou materialização SQL. Esses elementos terão de ser alterados em conjunto numa fase de implementação posterior, depois de a matriz e os testes estarem aprovados.
+
+## 11. Próxima etapa de trabalho
+
+A validação da divergência D-019 está concluída a nível estático. O passo seguinte é desenhar os testes de aceitação para a separação entre hash de integridade e fingerprint semântico, incluindo ausência de normalizador e compatibilidade com pacotes antigos. Depois fechamos o contrato serializado para transportar a política/versão e o estado de disponibilidade sem ambiguidades. Só então se implementa a correcção no projector e no validador.
