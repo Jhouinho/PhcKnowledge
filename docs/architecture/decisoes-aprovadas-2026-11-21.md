@@ -270,7 +270,7 @@ Aprovado em 23-11-2026.
 ## 14. D-022 — Baseline técnico para implementação do DefinitionFingerprint
 
 **Data: 23-11-2026 — Estado: APROVADA.**  
-**Âmbito:** desenho técnico e sequência de implementação; não representa implementação concluída.
+**Âmbito:** decisão de desenho técnico e sequência de implementação. O estado efectivo da implementação é registado na secção 14.7.
 
 A D-022 fecha a forma como D-019, D-020 e D-021 serão concretizadas no Scanner e no importador IKP. Mantêm-se integralmente as decisões anteriores; esta decisão especifica a sua tradução técnica.
 
@@ -351,3 +351,20 @@ Sequência aprovada:
 7. revisão integrada do diff e dos resultados de execução.
 
 **Limites desta aprovação:** D-022 aprova o baseline técnico e a sequência, não autoriza por si só a implementação de código ou a alteração dos schemas executáveis. Não autoriza alterações a collectors, workspace SQLite, materialização SQL, suporte a múltiplos artefactos, nem políticas semânticas T-SQL em produção. Builds, testes, validação runtime e SQL Server só podem ser declarados depois de efectivamente executados.
+
+### 14.7 Estado da implementação — 23-11-2026
+
+A implementação aprovada foi concluída e integrada na `main` através da PR #27, merge commit `ad42f53fc3d4f7b654d61dea56f0f501af0905b8`.
+
+- Scanner: integridade do artefacto separada do fingerprint semântico; sem política validada, definição disponível com fingerprint `Unavailable/NoValidatedPolicy`.
+- Object Index: schema v2 e envelope D-021.
+- Importer: leitura do v2 e preservação do estado/detalhes do fingerprint.
+- PackageImportAnalysis: schema 0.3, com contagens Available e Unavailable separadas.
+- Schemas, fixture, checksums, testes Python/.NET e CI actualizados.
+- MetadataFingerprint preservado sem alteração semântica.
+- Sem políticas semânticas de produção; sem alterações a collectors, workspace SQLite ou materialização SQL; sem suporte a múltiplos artefactos ou normalizador T-SQL de produção.
+
+**Validação CI:** passaram as execuções de contrato IKP, suites .NET do Scanner e Knowledge Import, integração SQL Server 2022 e validação/build do repositório. A suite dedicada do Scanner reportou 291 testes aprovados e 2 ignorados. Estes resultados confirmam os pipelines executados, não substituem a validação funcional em instalações PHC reais.
+
+A integração não altera os limites de âmbito aprovados em D-022. Qualquer expansão futura — em particular políticas semânticas de produção, normalização T-SQL, múltiplos artefactos ou alterações à recolha/SQLite/materialização — exige decisão própria.
+
