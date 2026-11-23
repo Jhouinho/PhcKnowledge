@@ -596,8 +596,8 @@ A confirmação de remoção em capturas completas sucessivas pode ser introduzi
 - A versão global do Scanner identifica o build do produtor, mas não substitui as versões das capacidades.
 - A plataforma mantém uma matriz de compatibilidade explícita por operação/capabilityVersion.
 - Categorias e operações novas podem ser opcionais; consumidores antigos não devem inferir cobertura para operações desconhecidas.
-- Contratos incompatíveis são rejeitados ou encaminhados para conversor explicitamente suportado.
-- Adaptadores para ZIPs antigos são conversores de legado, não uma segunda via de aquisição permanente. A direção preferida é o Scanner emitir IKP nativamente.
+- Contratos incompatíveis são rejeitados ou encaminhados para conversor apenas quando esse conversor estiver explicitamente suportado na matriz de compatibilidade.
+- Não existe obrigação de criar adaptadores para pacotes IKP de teste produzidos por iterações anteriores do Scanner que tenham sido descartados. Esses pacotes não são entradas suportadas e não têm de continuar legíveis. Qualquer necessidade futura de recuperar um pacote histórico exige decisão explícita e um conversor delimitado; não constitui compatibilidade implícita.
 
 ## 14. Estado real e lacunas Scanner ↔ IKP
 
@@ -709,7 +709,7 @@ Quando não existir uma política de normalização semântica segura, específi
 
 A comparação byte-a-byte pode ser disponibilizada como modalidade exacta separada, mas não preenche `definition.definitionFingerprint` nem demonstra equivalência semântica. A ausência de fingerprint por falta de normalizador não significa definição vazia, erro de integridade ou diferença semântica.
 
-Valores legados produzidos pela regra anterior continuam legíveis, mas não são reinterpretados retroactivamente como fingerprints semânticos conformes à D-019/D-020. O contrato executável terá de transportar a política/versão e a distinção de estados necessárias; esta nota documental não altera por si só os schemas nem o validador.
+Não se exige leitura nem compatibilidade com os pacotes IKP de teste de iterações anteriores do Scanner que foram descartados. Os fingerprints produzidos nesses pacotes pela regra anterior não têm de ser preservados, classificados como legado ou convertidos; não será criada uma via de compatibilidade para esses pacotes. As novas capturas devem cumprir D-019/D-020/D-021. O contrato executável terá de transportar a política/versão e a distinção de estados necessárias; esta nota documental não altera por si só os schemas nem o validador.
 
 ## Representação versionada do DefinitionFingerprint — D-021 (23-11-2026)
 
