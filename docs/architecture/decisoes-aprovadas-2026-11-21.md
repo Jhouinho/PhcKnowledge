@@ -106,7 +106,7 @@ A cada decisão aprovada:
 4. actualizar README, PROJECT_GUIDELINES e roadmap quando a orientação geral ou estado mudar;
 5. preservar relatórios e artefactos históricos sem os reescrever retroactivamente;
 6. verificar coerência e links entre documentos;
-7. publicar as alterações numa branch de documentação. A main só é alterada após autorização explícita.
+7. consolidar as decisões aprovadas e os documentos activos afectados directamente na main, após autorização explícita do responsável; branches temporárias podem ser usadas para análise técnica, mas não devem criar uma fonte documental concorrente.
 
 Não declarar builds, testes, materialização ou validações que não tenham sido efectivamente executados.
 
@@ -266,3 +266,88 @@ Aprovado em 23-11-2026.
 6. A versão do Scanner e a versão da capability não substituem a identificação/versionamento da política.
 7. A incompatibilidade entre versões de política é tratada na comparação/migração; não altera nem reescreve o fingerprint originalmente produzido.
 8. A decisão fecha a representação documental, mas não autoriza alterações aos schemas executáveis, modelos, serialização, exporter, validator, collectors, workspace SQLite ou materialização SQL. A compatibilidade com consumidores existentes e a versão do schema do object-index têm de ser verificadas antes da implementação.
+
+## 14. D-022 — Baseline técnico para implementação do DefinitionFingerprint
+
+**Data: 23-11-2026 — Estado: APROVADA.**  
+**Âmbito:** desenho técnico e sequência de implementação; não representa implementação concluída.
+
+A D-022 fecha a forma como D-019, D-020 e D-021 serão concretizadas no Scanner e no importador IKP. Mantêm-se integralmente as decisões anteriores; esta decisão especifica a sua tradução técnica.
+
+### 14.1 Separação de responsabilidades
+
+A implementação deve manter quatro dimensões independentes:
+
+1. **Integridade do artefacto:** validar comprimento e SHA-256 dos bytes exactos. Este digest nunca alimenta o DefinitionFingerprint.
+2. **Disponibilidade da definição:** preservar Available, Empty, Unavailable e NotCollected, de acordo com a evidência do artefacto.
+3. **Fingerprint semântico:** calcular apenas através de política validada, específica por objectKind/variante, identificada e versionada; sem política, fica indisponível.
+4. **MetadataFingerprint:** permanece independente e sem alteração de semântica ou representação nesta fase.
+
+A indisponibilidade do fingerprint semântico não torna a definição indisponível, não altera a cobertura da operação e não bloqueia, por si só, a análise ou preparação para materialização.
+
+### 14.2 Representação D-021 no Object Index
+
+Para definition.status=Available, a propriedade definitionFingerprint é obrigatória e assume exactamente uma das formas:
+
+Disponível:
+```json
+{
+  "status": "Available",
+  "algorithm": "sha256",
+  "value": "<digest>",
+  "policy": { "id": "<policy-id>", "version": "<policy-version>" }
+}
+```
+
+Indisponível:
+```json
+{
+  "status": "Unavailable",
+  "reasonCode": "NoValidatedPolicy"
+}
+```
+
+O estado indisponível não contém algorithm, value ou policy. Para definições Empty, Unavailable ou NotCollected, a propriedade é omitida. Os códigos emitidos inicialmente são NoValidatedPolicy, UnsupportedSyntax e NormalizationFailed; consumidores preservam/toleram códigos desconhecidos sem reinterpretar a definição.
+
+### 14.3 Versionamento dos contratos
+
+1. O IKP global mantém-se em 0.1.
+2. O object-index.json evolui de schemaVersion=1 para schemaVersion=2, porque a representação de definitionFingerprint é estruturalmente incompatível.
+3. O importador desta implementação aceita Object Index v2. Object Index v1 não é aceite por esta via; não se cria conversão ou compatibilidade para pacotes de teste antigos descartados.
+4. MetadataFingerprint mantém o formato e a semântica existentes. O schema genérico de fingerprint fica explicitamente associado a metadata; é criado schema próprio para DefinitionFingerprint quando os schemas executáveis forem alterados na fase de implementação.
+5. PackageImportAnalysis evolui de schema 0.2 para 0.3, substituindo a contagem ambígua por DefinitionFingerprintAvailableCount e DefinitionFingerprintUnavailableCount. A análise guarda contagens/resumo; o objecto inspeccionado mantém o estado e os detalhes completos do fingerprint.
+6. A mudança do schema do Object Index não altera a versão global IKP nem a versão do coverage schema.
+
+### 14.4 Política semântica inicial
+
+A primeira implementação não activa políticas de normalização semântica em produção. Para artefactos íntegros cuja definição está disponível, o Scanner emite definition.status=Available e definitionFingerprint.status=Unavailable, com reasonCode=NoValidatedPolicy.
+
+Políticas artificiais podem ser usadas exclusivamente em testes para validar o caminho Available; não podem ser registadas como políticas de produção. Não implementar parser/normalizador T-SQL, normalização genérica por trim/remoção de comentários, heurísticas de cabeçalhos PHC, comparação byte-a-byte como fingerprint ou suporte a múltiplos artefactos por definição nesta fase.
+
+### 14.5 Componentes e invariantes de implementação
+
+- DefinitionProjectionResolver: separar verificação de integridade da resolução do fingerprint semântico.
+- ObjectIndexProjector: emitir o envelope D-021 e Object Index v2.
+- ObjectIndexContractValidator: validar as duas formas do fingerprint e a sua relação com definition.status.
+- IkpPackageExporter: manter a cobertura baseada na disponibilidade/conclusão da definição, nunca na disponibilidade do fingerprint.
+- IkpPackageInspectionEngine e IkpInspectedObject: ler v2 e transportar o estado, reasonCode ou algorithm/value/policy.
+- IkpPackageAnalysisBuilder: produzir análise 0.3 e contagens distintas.
+- MaterializationReadinessEvaluator: não bloquear por fingerprint indisponível quando a definição está disponível e os restantes critérios estão satisfeitos.
+- Validação Python, fixtures e CI: usar o mesmo schema/contrato v2.
+
+O MetadataFingerprint e os percursos de recolha/SQLite que não sejam necessários para esta separação permanecem inalterados.
+
+### 14.6 Testes e sequência
+
+Os testes devem demonstrar: integridade correcta sem política → definição Available/fingerprint Unavailable; hash ou comprimento incorrecto → definição indisponível conforme a regra de integridade; definição Empty → sem propriedade fingerprint; política de teste → fingerprint Available com política/versionamento; sintaxe não suportada e falha de normalização → reasonCodes próprios; reasonCode desconhecido aceite; MetadataFingerprint inalterado; cobertura e readiness independentes do fingerprint; Object Index v1 rejeitado e v2 aceite; análise 0.3 com contagens distintas.
+
+Sequência aprovada:
+1. Contrato documental e schemas/fixtures executáveis em alteração coordenada;
+2. Scanner e projector;
+3. Exporter e reconciliação de cobertura;
+4. Importer e validação;
+5. Análise 0.3 e readiness;
+6. Fixtures, testes automatizados, validação Python e CI;
+7. revisão integrada do diff e dos resultados de execução.
+
+**Limites desta aprovação:** D-022 aprova o baseline técnico e a sequência, não autoriza por si só a implementação de código ou a alteração dos schemas executáveis. Não autoriza alterações a collectors, workspace SQLite, materialização SQL, suporte a múltiplos artefactos, nem políticas semânticas T-SQL em produção. Builds, testes, validação runtime e SQL Server só podem ser declarados depois de efectivamente executados.
