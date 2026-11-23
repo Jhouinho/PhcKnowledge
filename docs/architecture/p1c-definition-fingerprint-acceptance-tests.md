@@ -160,3 +160,23 @@ A suite deve cobrir, adicionalmente:
 | DF-023 | Definição `Empty`, `Unavailable` ou `NotCollected` | Omitir `definitionFingerprint`; preservar exactamente `definition.status` |
 | DF-024 | Alteração da versão da política | Identidade de política/versão fica explícita; não comparar como equivalente sem compatibilidade/migração aprovada |
 | DF-025 | Consumidor recebe `reasonCode` desconhecido | Preservar/tolerar o código; não o converter em estado de definição nem em erro de integridade |
+
+## 10. Baseline de implementação D-022 — Object Index v2 e Analysis 0.3
+
+Os seguintes cenários passam a fazer parte dos critérios de aceitação da implementação coordenada:
+
+| ID | Cenário | Resultado esperado |
+|---|---|---|
+| DF-026 | Artefacto íntegro, definição Available, sem política de produção | Definição Available; fingerprint Unavailable/NoValidatedPolicy |
+| DF-027 | Hash SHA-256 ou comprimento do artefacto inválido | Falha de integridade mantém-se independente; não emitir fingerprint semântico válido |
+| DF-028 | Definição Available com política artificial de teste | Fingerprint Available com algorithm, value e policy id/version |
+| DF-029 | MetadataFingerprint | Formato, cálculo e resultados existentes mantêm-se inalterados |
+| DF-030 | Fingerprint indisponível e coverage/readiness | Não alterar coverage nem bloquear readiness apenas por essa indisponibilidade |
+| DF-031 | Object Index schemaVersion 1 | Rejeitado pelo importador desta implementação |
+| DF-032 | Object Index schemaVersion 2 | Aceite quando cumprir o contrato D-021 |
+| DF-033 | PackageImportAnalysis schema 0.3 | Disponibilizar contagens separadas Available/Unavailable |
+| DF-034 | Definição não Available | Omitir definitionFingerprint, mantendo o estado original da definição |
+
+A primeira implementação não disponibiliza políticas de normalização semântica em produção. Os casos com fingerprint Available usam uma política artificial isolada nos testes. A aceitação destes cenários não autoriza nem implica normalização T-SQL em produção.
+
+A versão global IKP permanece 0.1. A versão interna do Object Index é 2 e a versão da análise de importação é 0.3. Não existe migração para Object Index v1 nem compatibilidade com pacotes de teste antigos descartados.
