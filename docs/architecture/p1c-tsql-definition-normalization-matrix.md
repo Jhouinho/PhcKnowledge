@@ -100,13 +100,13 @@ Para views, procedures e triggers, esse digest é pelo menos um hash exacto do a
 
 | Categoria | Candidato conservador | O que não se deve ignorar sem prova |
 |---|---|---|
-| Views | Comparação exacta do texto devolvido pelo catálogo, identificada como modo exacto, até existir parser/regra validada | Literais, comentários com directivas, hints, delimitadores, casing de identificadores em contextos relevantes, SET options e semântica de collation |
+| Views | Comparação byte-a-byte separada do `DefinitionFingerprint`, sobre o texto devolvido pelo catálogo, até existir parser/regra semântica validada | Literais, comentários com directivas, hints, delimitadores, casing de identificadores em contextos relevantes, SET options e semântica de collation |
 | Stored procedures | Igual a views | Igual a views; em particular parâmetros, defaults, ordem, SET options e SQL dinâmico |
-| Triggers | Comparação exacta do texto da definição; fingerprint de metadata separado para eventos/estado/configuração após decisão | Tudo o que possa alterar execução; não fundir `isDisabled`, `isInsteadOf` ou eventos no hash do código sem contrato explícito |
+| Triggers | Comparação byte-a-byte separada do `DefinitionFingerprint`; fingerprint de metadata separado para eventos/estado/configuração após decisão | Tudo o que possa alterar execução; não fundir `isDisabled`, `isInsteadOf` ou eventos no hash do código sem contrato explícito |
 | Funções `ftu` | Extrair `xbase` como componente de definição apenas quando a proveniência e os limites forem inequívocos; caso contrário, sem fingerprint semântico | Não remover cabeçalho por heurística textual; não tratar trim aplicado pelo collector como prova de equivalência |
-| Funções `sys.objects` | Obter/identificar separadamente o texto retornado por `OBJECT_DEFINITION`; até existir projecção validada, comparação exacta claramente identificada ou fingerprint semântico indisponível | Não confundir texto de catálogo com bytes de autoria; não remover cabeçalho gerado por pesquisa de delimitadores frágeis |
+| Funções `sys.objects` | Obter/identificar separadamente o texto retornado por `OBJECT_DEFINITION`; até existir projecção validada, comparação byte-a-byte separada ou fingerprint semântico indisponível | Não confundir texto de catálogo com bytes de autoria; não remover cabeçalho gerado por pesquisa de delimitadores frágeis |
 
-A comparação exacta é uma alternativa conservadora e deve ser identificada como tal. Não pode ser apresentada como equivalência semântica. Se o contrato de implementação não conseguir distinguir o modo exacto do fingerprint semântico, deve deixar o `DefinitionFingerprint` indisponível até essa distinção existir.
+A comparação byte-a-byte, se disponibilizada, é uma operação independente e explicitamente exacta. Não pode preencher `definitionFingerprint` nem ser apresentada como equivalência semântica. A implementação desta operação e a representação do seu resultado permanecem fora do contrato de `DefinitionFingerprint` e exigem desenho próprio.
 
 ## 6. Testes de aceitação necessários
 
@@ -126,15 +126,14 @@ Antes de aprovar qualquer normalizador T-SQL, preparar testes por categoria/vari
 ## 7. Decisões ainda em aberto
 
 - Qual o parser/lexer T-SQL suportado e quais as versões/dialetos SQL Server abrangidos.
-- Se a primeira versão de cada kind terá apenas comparação exacta identificada ou um normalizador semântico validado.
-- Como representar explicitamente o modo exacto versus o fingerprint semântico no contrato IKP.
+- Se e quando disponibilizar uma operação de comparação byte-a-byte independente do `DefinitionFingerprint`, e qual será o seu contrato de resultado.
 - Como separar e preservar os componentes de código original/extraído dos cabeçalhos gerados em `phc.user_tsql_function`.
 - Quais os atributos do trigger incluídos na política de `MetadataFingerprint`.
 - Como tratar metadata SQL relevante que não está actualmente no `SummaryJson`, sem recolher campos adicionais antes de demonstrada a necessidade.
 
 ## 8. Próximo passo
 
-Inspeccionar as opções de metadata SQL disponíveis para views, procedures e triggers, e fechar a matriz de **conteúdo versus metadata** para estes quatro kinds. Em paralelo, definir os casos de teste T-SQL e escolher a estratégia de parser/lexer. Não alterar código nem schemas executáveis antes de essas decisões serem aprovadas.
+Fechar a matriz de **conteúdo versus metadata** para cada kind/variante, definir as fixtures T-SQL e escolher a estratégia de parser/lexer. A representação D-021 do `DefinitionFingerprint` está fechada documentalmente; continua pendente a validação de compatibilidade do schema do object-index e dos consumidores. Não alterar código nem schemas executáveis antes de a matriz e os testes estarem aprovados.
 
 
 ## 9. Validação da divergência D-019 — auditoria estática
@@ -234,9 +233,9 @@ A validação estática da divergência D-019 está concluída e a regra de fall
 
 A sequência agora é:
 
-1. Rever e aprovar os testes transversais.
-2. Fechar a representação no contrato IKP para política/versão e ausência de fingerprint.
-3. Completar e aprovar a matriz por kind/variante, incluindo T-SQL.
+1. Completar e aprovar os testes transversais e as fixtures por kind/variante.
+2. Completar e aprovar a matriz por kind/variante, incluindo T-SQL.
+3. Verificar a compatibilidade da representação D-021 com o schema do object-index e os consumidores existentes.
 4. Só depois implementar projector, modelo, exporter/schema e validador em conjunto.
 
 Não alterar código ou schemas executáveis antes destas etapas estarem fechadas.
