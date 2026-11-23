@@ -416,8 +416,8 @@ public sealed class IkpPackageAnalysisTests
         {
             var objectIndexPath = Path.Combine(root, "object-index.json");
             var node = JsonNode.Parse(File.ReadAllText(objectIndexPath))!.AsObject();
-            node["objects"]![0]!["definition"]!["artifactIds"]!.AsArray().Add(
-                node["objects"]![0]!["definition"]!["artifactIds"]![0]!.GetValue<string>());
+            node["objects"]![1]!["definition"]!["artifactIds"]!.AsArray().Add(
+                node["objects"]![1]!["definition"]!["artifactIds"]![0]!.GetValue<string>());
             File.WriteAllText(objectIndexPath, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
         });
         await Assert.ThrowsAsync<IkpPackageValidationException>(() => reader.ReadAsync(invalidSchema));
@@ -426,7 +426,7 @@ public sealed class IkpPackageAnalysisTests
         {
             var objectIndexPath = Path.Combine(root, "object-index.json");
             var node = JsonNode.Parse(File.ReadAllText(objectIndexPath))!.AsObject();
-            node["objects"]![0]!["definition"]!["artifactIds"] = new JsonArray("artifact-missing");
+            node["objects"]![1]!["definition"]!["artifactIds"] = new JsonArray("artifact-missing");
             File.WriteAllText(objectIndexPath, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
             RebuildChecksums(root);
         });
