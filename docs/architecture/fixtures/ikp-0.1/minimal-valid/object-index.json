@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "captureId": "b1b2c3d4-1111-4222-8333-123456789abc",
   "objects": [
     {
@@ -23,14 +23,8 @@
         "value": "edbd09a947413fba4ab124e27fbbd5cf7f1fa05747bd8386c36e3b1f9c3886d9"
       },
       "definition": {
-        "status": "Available",
-        "artifactIds": [
-          "artifact-schema-ft"
-        ],
-        "definitionFingerprint": {
-          "algorithm": "sha256",
-          "value": "d8cb31f102bad14680e617a5bc8250ddcd3ebfff4a5b59b91aaf2b08de86a260"
-        }
+        "status": "NotCollected",
+        "artifactIds": []
       },
       "operationId": "sql.schema.tables.inventory"
     },
@@ -59,8 +53,8 @@
           "artifact-brule-001"
         ],
         "definitionFingerprint": {
-          "algorithm": "sha256",
-          "value": "d1e847aeed26bf2ee3dc3fab175a5a62ad4ad608e23fe3b637bc798eeaa189b6"
+          "status": "Unavailable",
+          "reasonCode": "NoValidatedPolicy"
         }
       },
       "operationId": "phc.customizations.brule.inventory"

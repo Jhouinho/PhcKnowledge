@@ -216,16 +216,25 @@ public sealed class ObjectIndexProjector
                 new ObjectIndexDefinition(
                     definition.Status.ToString(),
                     definition.ArtifactIds.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
-                    definition.Fingerprint is null
+                    definition.Status != DefinitionStatus.Available
                         ? null
-                        : new ObjectIndexFingerprint(
-                            definition.Fingerprint.Algorithm,
-                            definition.Fingerprint.Value)),
+                        : definition.Fingerprint is null
+                            ? new ObjectIndexDefinitionFingerprint(
+                                "Unavailable", null, null, null,
+                                definition.FingerprintUnavailableReasonCode ?? "NoValidatedPolicy")
+                            : new ObjectIndexDefinitionFingerprint(
+                                "Available",
+                                definition.Fingerprint.Algorithm,
+                                definition.Fingerprint.Value,
+                                new ObjectIndexFingerprintPolicy(
+                                    definition.Fingerprint.PolicyId,
+                                    definition.Fingerprint.PolicyVersion),
+                                null)),
                 operations[record.ObjectId].OperationId!,
                 parentId));
         }
 
-        var document = new ObjectIndexDocument("1", input.CaptureId!, projectedObjects);
+        var document = new ObjectIndexDocument("2", input.CaptureId!, projectedObjects);
         var json = JsonSerializer.SerializeToUtf8Bytes(document, JsonOptions);
         var contractDiagnostics = ObjectIndexContractValidator.Validate(json);
         if (contractDiagnostics.Count > 0)
@@ -261,7 +270,16 @@ public sealed record ObjectIndexFingerprint(string Algorithm, string Value);
 public sealed record ObjectIndexDefinition(
     string Status,
     IReadOnlyList<string> ArtifactIds,
-    ObjectIndexFingerprint? DefinitionFingerprint);
+    ObjectIndexDefinitionFingerprint? DefinitionFingerprint);
+
+public sealed record ObjectIndexDefinitionFingerprint(
+    string Status,
+    string? Algorithm,
+    string? Value,
+    ObjectIndexFingerprintPolicy? Policy,
+    string? ReasonCode);
+
+public sealed record ObjectIndexFingerprintPolicy(string Id, string Version);
 
 public sealed record ObjectIndexProjectionResult(
     bool IsSuccess,

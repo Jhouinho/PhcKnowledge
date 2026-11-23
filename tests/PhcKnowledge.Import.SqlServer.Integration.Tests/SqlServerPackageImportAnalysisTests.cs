@@ -108,7 +108,7 @@ public sealed class SqlServerPackageImportAnalysisTests
             new PackageImportObjectIndexAnalysis(
                 1, new SortedDictionary<string, int> { ["stored_procedure"] = 1 },
                 new SortedDictionary<string, int> { ["Unavailable"] = 1 },
-                0, 1, 0, 0, 1, 0, 0, 0, 0),
+                0, 1, 0, 0, 1, 0, 0, 0, 0, 0),
             new PackageImportArtifactsAnalysis(
                 0, true, Array.Empty<IkpInspectedArtifact>(),
                 new SortedDictionary<string, int>()),

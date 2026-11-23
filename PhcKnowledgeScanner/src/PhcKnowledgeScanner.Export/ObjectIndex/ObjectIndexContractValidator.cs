@@ -4,7 +4,7 @@ namespace PhcKnowledgeScanner.Export.ObjectIndex;
 
 /// <summary>
 /// Checks the structural constraints and conditional invariants of the IKP 0.1
-/// object-index contract. The repository's JSON Schema validator remains the
+/// Object Index v2 contract. The repository's JSON Schema validator remains the
 /// authoritative full Draft 2020-12 validator.
 /// </summary>
 public static class ObjectIndexContractValidator
@@ -33,8 +33,8 @@ public static class ObjectIndexContractValidator
                 return diagnostics;
             }
 
-            if (!TryString(root, "schemaVersion", out var schemaVersion) || schemaVersion != "1")
-                Add("object_index_schema_version_invalid", "schemaVersion must be the string '1'.");
+            if (!TryString(root, "schemaVersion", out var schemaVersion) || schemaVersion != "2")
+                Add("object_index_schema_version_invalid", "schemaVersion must be the string '2'.");
             if (!TryString(root, "captureId", out var captureId) || !Guid.TryParseExact(captureId, "D", out _))
                 Add("object_index_capture_id_invalid", "captureId must be a UUID string.");
             if (!TryProperty(root, "objects", out var objects) || objects.ValueKind != JsonValueKind.Array)
@@ -146,11 +146,52 @@ public static class ObjectIndexContractValidator
                 return;
             }
 
-            ValidateFingerprint(fingerprint, $"{prefix}.definition.definitionFingerprint", add);
+            ValidateDefinitionFingerprint(fingerprint, $"{prefix}.definition.definitionFingerprint", add);
         }
         else if (hasFingerprint)
         {
             add("object_index_definition_fingerprint_forbidden", $"{prefix}.definitionFingerprint is only allowed when status is Available.");
+        }
+    }
+
+    private static void ValidateDefinitionFingerprint(
+        JsonElement fingerprint,
+        string path,
+        Action<string, string> add)
+    {
+        if (fingerprint.ValueKind != JsonValueKind.Object
+            || !TryString(fingerprint, "status", out var status))
+        {
+            add("object_index_definition_fingerprint_invalid", $"{path} must be an object with a status.");
+            return;
+        }
+
+        if (status == "Unavailable")
+        {
+            if (fingerprint.EnumerateObject().Count() != 2
+                || !TryString(fingerprint, "reasonCode", out _)
+                || fingerprint.TryGetProperty("algorithm", out _)
+                || fingerprint.TryGetProperty("value", out _)
+                || fingerprint.TryGetProperty("policy", out _))
+                add("object_index_definition_fingerprint_invalid", $"{path} Unavailable requires reasonCode and forbids algorithm, value and policy.");
+            return;
+        }
+
+        if (status != "Available"
+            || fingerprint.EnumerateObject().Count() != 4
+            || !TryProperty(fingerprint, "policy", out var policy)
+            || policy.ValueKind != JsonValueKind.Object
+            || policy.EnumerateObject().Count() != 2
+            || !TryString(policy, "id", out _)
+            || !TryString(policy, "version", out _)
+            || !TryString(fingerprint, "algorithm", out var algorithm)
+            || algorithm != "sha256"
+            || !TryString(fingerprint, "value", out var value)
+            || value.Length != 64
+            || value.Any(character => character is not (>= '0' and <= '9') and not (>= 'a' and <= 'f'))
+            || fingerprint.TryGetProperty("reasonCode", out _))
+        {
+            add("object_index_definition_fingerprint_invalid", $"{path} Available requires lowercase SHA-256, policy id/version and no reasonCode.");
         }
     }
 

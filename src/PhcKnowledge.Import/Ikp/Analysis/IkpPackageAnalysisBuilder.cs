@@ -119,7 +119,7 @@ public sealed class IkpPackageAnalysisBuilder
                 0,
                 new SortedDictionary<string, int>(StringComparer.Ordinal),
                 new SortedDictionary<string, int>(StringComparer.Ordinal),
-                0, 0, 0, 0, 0, 0, 0, 0, 0),
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
             new PackageImportArtifactsAnalysis(
                 0, false, Array.Empty<IkpInspectedArtifact>(),
                 new SortedDictionary<string, int>(StringComparer.Ordinal)),
@@ -191,7 +191,8 @@ public sealed class IkpPackageAnalysisBuilder
         var notCollected = 0;
         var sourceIdentity = 0;
         var metadataFingerprint = 0;
-        var definitionFingerprint = 0;
+        var definitionFingerprintAvailable = 0;
+        var definitionFingerprintUnavailable = 0;
 
         foreach (var item in objects)
         {
@@ -213,7 +214,8 @@ public sealed class IkpPackageAnalysisBuilder
 
             if (item.HasSourceIdentity) sourceIdentity++;
             if (item.HasMetadataFingerprint) metadataFingerprint++;
-            if (item.HasDefinitionFingerprint) definitionFingerprint++;
+            if (item.DefinitionFingerprintStatus == "Available") definitionFingerprintAvailable++;
+            if (item.DefinitionFingerprintStatus == "Unavailable") definitionFingerprintUnavailable++;
         }
 
         return new PackageImportObjectIndexAnalysis(
@@ -228,7 +230,8 @@ public sealed class IkpPackageAnalysisBuilder
             notCollected,
             sourceIdentity,
             metadataFingerprint,
-            definitionFingerprint);
+            definitionFingerprintAvailable,
+            definitionFingerprintUnavailable);
     }
 
     private static PackageImportArtifactsAnalysis BuildArtifacts(

@@ -45,7 +45,7 @@ public sealed class IkpPackageValidatorTests
             var objectIndexPath = Path.Combine(root, "object-index.json");
             var node = JsonNode.Parse(File.ReadAllText(objectIndexPath))!
                 .AsObject();
-            var definition = node["objects"]![0]!["definition"]!.AsObject();
+            var definition = node["objects"]![1]!["definition"]!.AsObject();
             var artifactIds = definition["artifactIds"]!.AsArray();
             var existing = artifactIds[0]!.GetValue<string>();
             artifactIds.Add(existing);

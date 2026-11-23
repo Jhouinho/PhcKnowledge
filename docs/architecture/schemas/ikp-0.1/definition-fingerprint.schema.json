@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phcknowledge.local/schemas/ikp-0.1/definition-fingerprint.schema.json",
+  "title": "IKP DefinitionFingerprint (D-021)",
+  "type": "object",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["status", "algorithm", "value", "policy"],
+      "properties": {
+        "status": { "const": "Available" },
+        "algorithm": { "const": "sha256" },
+        "value": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "policy": {
+          "type": "object",
+          "required": ["id", "version"],
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "version": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["status", "reasonCode"],
+      "properties": {
+        "status": { "const": "Unavailable" },
+        "reasonCode": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  ]
+}

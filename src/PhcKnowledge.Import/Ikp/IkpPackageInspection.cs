@@ -51,7 +51,13 @@ public sealed record IkpInspectedObject(
     bool HasMetadataFingerprint,
     bool HasDefinitionFingerprint,
     string? Name,
-    string? SchemaName);
+    string? SchemaName,
+    string? DefinitionFingerprintStatus = null,
+    string? DefinitionFingerprintReasonCode = null,
+    string? DefinitionFingerprintAlgorithm = null,
+    string? DefinitionFingerprintValue = null,
+    string? DefinitionFingerprintPolicyId = null,
+    string? DefinitionFingerprintPolicyVersion = null);
 
 public sealed record IkpInspectedArtifact(
     string ArtifactId,

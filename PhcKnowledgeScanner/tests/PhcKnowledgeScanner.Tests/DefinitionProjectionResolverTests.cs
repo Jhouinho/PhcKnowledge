@@ -44,7 +44,7 @@ public sealed class DefinitionProjectionResolverTests
     }
 
     [Fact]
-    public void Phc_Definition_Is_Available_And_Fingerprints_Exact_Artifact_Bytes()
+    public void Phc_Definition_Is_Available_Without_Validated_Semantic_Policy()
     {
         var content = Encoding.UTF8.GetBytes("FUNCTION BODY\r\n");
         var record = Create(
@@ -58,8 +58,8 @@ public sealed class DefinitionProjectionResolverTests
 
         Assert.Equal(DefinitionStatus.Available, result.Status);
         Assert.Equal(new[] { "artifact-1" }, result.ArtifactIds);
-        Assert.Equal("sha256", result.Fingerprint?.Algorithm);
-        Assert.Equal(Hash(content), result.Fingerprint?.Value);
+        Assert.False(result.HasFingerprint);
+        Assert.Equal("NoValidatedPolicy", result.FingerprintUnavailableReasonCode);
     }
 
     [Fact]
@@ -78,7 +78,8 @@ public sealed class DefinitionProjectionResolverTests
         var result = Resolve([record], [Artifact("view-artifact", content)])[record.ObjectId];
 
         Assert.Equal(DefinitionStatus.Available, result.Status);
-        Assert.Equal(Hash(content), result.Fingerprint?.Value);
+        Assert.False(result.HasFingerprint);
+        Assert.Equal("NoValidatedPolicy", result.FingerprintUnavailableReasonCode);
     }
 
     [Fact]

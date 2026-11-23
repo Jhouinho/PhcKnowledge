@@ -2,11 +2,11 @@ namespace PhcKnowledge.Import.Ikp.Analysis;
 
 /// <summary>
 /// Explicit version of the persisted/ephemeral analysis model (not IKP ContractVersion).
-/// Increment B starts at 0.2 (adds UnavailableObjects and persistence contract).
+/// Increment B 0.3 adds separate DefinitionFingerprint availability counts.
 /// </summary>
 public static class PackageImportAnalysisSchema
 {
-    public const string Version = "0.2";
+    public const string Version = "0.3";
 }
 
 public enum MaterializationReadiness
@@ -141,7 +141,8 @@ public sealed record PackageImportAnalysis(
         left.NotCollected == right.NotCollected &&
         left.SourceIdentityCount == right.SourceIdentityCount &&
         left.MetadataFingerprintCount == right.MetadataFingerprintCount &&
-        left.DefinitionFingerprintCount == right.DefinitionFingerprintCount &&
+        left.DefinitionFingerprintAvailableCount == right.DefinitionFingerprintAvailableCount &&
+        left.DefinitionFingerprintUnavailableCount == right.DefinitionFingerprintUnavailableCount &&
         DictionaryEquals(left.CountByObjectKind, right.CountByObjectKind) &&
         DictionaryEquals(left.CountByDefinitionStatus, right.CountByDefinitionStatus);
 
@@ -185,7 +186,8 @@ public sealed record PackageImportObjectIndexAnalysis(
     int NotCollected,
     int SourceIdentityCount,
     int MetadataFingerprintCount,
-    int DefinitionFingerprintCount);
+    int DefinitionFingerprintAvailableCount,
+    int DefinitionFingerprintUnavailableCount);
 
 public sealed record PackageImportArtifactsAnalysis(
     int TotalArtifacts,

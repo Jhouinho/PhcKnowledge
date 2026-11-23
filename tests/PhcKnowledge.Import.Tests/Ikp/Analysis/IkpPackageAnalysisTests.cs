@@ -35,6 +35,10 @@ public sealed class IkpPackageAnalysisTests
         Assert.NotEmpty(inspection.Capabilities);
         Assert.NotEmpty(inspection.Coverage);
         Assert.NotEmpty(inspection.Objects);
+        var availableDefinition = Assert.Single(inspection.Objects.Where(x => x.DefinitionStatus == "Available"));
+        Assert.Equal("Unavailable", availableDefinition.DefinitionFingerprintStatus);
+        Assert.Equal("NoValidatedPolicy", availableDefinition.DefinitionFingerprintReasonCode);
+        Assert.False(availableDefinition.HasDefinitionFingerprint);
         Assert.NotEmpty(inspection.Artifacts);
         Assert.NotNull(inspection.Relations);
         Assert.Contains(inspection.Issues, x => x.Severity == "Warning");
@@ -288,6 +292,35 @@ public sealed class IkpPackageAnalysisTests
     }
 
     [Fact]
+    public void Analysis_counts_definition_fingerprint_available_and_unavailable_separately()
+    {
+        var validation = new IkpPackageValidationResult(
+            Guid.NewGuid(), Guid.NewGuid(), "0.1", "p", "1", null,
+            "a".PadLeft(64, 'a'), 10, 5, 1, 1, 1, 1, 0, "b".PadLeft(64, 'b'));
+        var inspected = new IkpInspectedObject(
+            "rule:1", "phc.brule", "op.brule", "Available",
+            ["artifact-1"], true, false, false, false, "Rule", "dbo",
+            "Unavailable", "NoValidatedPolicy");
+        var inspection = new IkpPackageInspection(
+            validation, true, "phc.installation.knowledge.package", "Full", "Complete", "sqlserver",
+            null, null, null,
+            Array.Empty<IkpInspectedCapabilityOperation>(),
+            Array.Empty<IkpInspectedCoverageOperation>(),
+            [inspected],
+            [new IkpInspectedArtifact("artifact-1", "payload/rule.txt", "code", "text/plain", null, true, 4, "c".PadLeft(64, 'c'))],
+            Array.Empty<IkpInspectedIssue>(),
+            null);
+
+        var analysis = new IkpPackageAnalysisBuilder().Build(
+            Guid.NewGuid(), Guid.NewGuid(), inspection, true, DateTimeOffset.UtcNow);
+
+        Assert.Equal(0, analysis.ObjectIndex.DefinitionFingerprintAvailableCount);
+        Assert.Equal(1, analysis.ObjectIndex.DefinitionFingerprintUnavailableCount);
+        Assert.Equal(1, analysis.ObjectIndex.Available);
+        Assert.Equal("0.3", PackageImportAnalysisSchema.Version);
+    }
+
+    [Fact]
     public void Semantic_fingerprint_and_equals_ignore_receipt_and_analyzed_at()
     {
         var baseAnalysis = BuildMinimalAnalysis(
@@ -383,8 +416,8 @@ public sealed class IkpPackageAnalysisTests
         {
             var objectIndexPath = Path.Combine(root, "object-index.json");
             var node = JsonNode.Parse(File.ReadAllText(objectIndexPath))!.AsObject();
-            node["objects"]![0]!["definition"]!["artifactIds"]!.AsArray().Add(
-                node["objects"]![0]!["definition"]!["artifactIds"]![0]!.GetValue<string>());
+            node["objects"]![1]!["definition"]!["artifactIds"]!.AsArray().Add(
+                node["objects"]![1]!["definition"]!["artifactIds"]![0]!.GetValue<string>());
             File.WriteAllText(objectIndexPath, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
         });
         await Assert.ThrowsAsync<IkpPackageValidationException>(() => reader.ReadAsync(invalidSchema));
@@ -393,7 +426,7 @@ public sealed class IkpPackageAnalysisTests
         {
             var objectIndexPath = Path.Combine(root, "object-index.json");
             var node = JsonNode.Parse(File.ReadAllText(objectIndexPath))!.AsObject();
-            node["objects"]![0]!["definition"]!["artifactIds"] = new JsonArray("artifact-missing");
+            node["objects"]![1]!["definition"]!["artifactIds"] = new JsonArray("artifact-missing");
             File.WriteAllText(objectIndexPath, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
             RebuildChecksums(root);
         });

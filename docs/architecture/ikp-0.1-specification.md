@@ -739,3 +739,8 @@ A análise de importação evolui para schema 0.3, com DefinitionFingerprintAvai
 A primeira implementação não activa políticas semânticas em produção: definições disponíveis sem política validada produzem fingerprint Unavailable/NoValidatedPolicy. Uma política artificial pode existir apenas nos testes. A implementação não inclui normalizador T-SQL, heurísticas textuais, comparação byte-a-byte como fingerprint ou alteração de collectors/SQLite.
 
 Este baseline documental não altera ainda schemas JSON executáveis, fixtures, código, validator ou CI. Esses artefactos serão actualizados coordenadamente na fase de implementação aprovada.
+
+
+## Estado da implementação D-022 — 23-11-2026
+
+A implementação inicial do Object Index v2 e do DefinitionFingerprint D-021 está em revisão na PR #27, na branch `implementation/d022-definition-fingerprint-v2`; ainda não foi integrada na `main`. O Scanner separa a verificação de integridade do fingerprint semântico e emite `Unavailable/NoValidatedPolicy` para definições disponíveis sem política validada. O Importer lê o envelope D-021 e a análise evoluiu para 0.3 com contagens separadas. Os schemas e a fixture foram actualizados para Object Index v2. Não existem políticas semânticas de produção activas. Os testes foram acrescentados, mas builds, testes automatizados e CI ainda não foram confirmados. Consultar a matriz de compatibilidade para o estado e os limites de validação.
