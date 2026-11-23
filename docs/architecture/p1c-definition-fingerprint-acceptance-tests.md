@@ -180,3 +180,8 @@ Os seguintes cenários passam a fazer parte dos critérios de aceitação da imp
 A primeira implementação não disponibiliza políticas de normalização semântica em produção. Os casos com fingerprint Available usam uma política artificial isolada nos testes. A aceitação destes cenários não autoriza nem implica normalização T-SQL em produção.
 
 A versão global IKP permanece 0.1. A versão interna do Object Index é 2 e a versão da análise de importação é 0.3. Não existe migração para Object Index v1 nem compatibilidade com pacotes de teste antigos descartados.
+
+
+## 11. Estado de implementação D-022 — 23-11-2026
+
+Os cenários DF-026 a DF-034 foram traduzidos para alterações de código, schema, fixture e testes na PR #27 (`implementation/d022-definition-fingerprint-v2`). Foram acrescentados testes para integridade sem política, envelope D-021, reasonCode desconhecido, Object Index v1/v2, parsing pelo Importer e contagens da análise 0.3. Esta indicação significa apenas que os testes foram escritos; não significa que tenham sido executados ou aprovados. Builds, execução C#/Python e CI permanecem pendentes de confirmação antes do merge.
