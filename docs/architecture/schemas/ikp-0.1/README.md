@@ -9,7 +9,8 @@ Schemas publicados em JSON Schema Draft 2020-12.
 | `coverage.schema.json` | Resultado e disponibilidade por operação |
 | `object-index.schema.json` | Objetos observados, identidade e definição |
 | `checksums.schema.json` | Integridade por ficheiro e digest lógico |
-| `fingerprint.schema.json` | Definição reutilizável de fingerprint |
+| `fingerprint.schema.json` | MetadataFingerprint |
+| `definition-fingerprint.schema.json` | Envelope D-021 do DefinitionFingerprint |
 
 Os schemas validam forma, tipos, campos obrigatórios e enums, incluindo a unicidade local de `definition.artifactIds`. Não substituem validações semânticas entre ficheiros, hashes dos bytes, consistência de CaptureId ou validação de paths, cobertas pelo validador de referência em `tools/ikp-validation`. A unicidade de `sourceObjectId` é também verificada pelo `IkpPackageValidator` C# através de um `HashSet<string>` com comparação ordinal.
 
@@ -25,3 +26,6 @@ O IKP global mantém a versão 0.1; o Object Index passa de schemaVersion=1 para
 O fingerprint.schema.json existente fica associado ao MetadataFingerprint, cujo contrato não muda. Na implementação será introduzido um schema próprio definition-fingerprint.schema.json para os estados D-021. O Object Index v2 exige fingerprint explícito (Available ou Unavailable) quando a definição está Available, e omite a propriedade quando a definição está Empty, Unavailable ou NotCollected.
 
 A análise de importação evolui para schema 0.3, com contagens separadas de fingerprints disponíveis e indisponíveis. Estas alterações são aqui documentadas como baseline aprovado; os ficheiros JSON Schema, fixtures, modelos e validadores executáveis só serão alterados em conjunto na fase de implementação.
+
+
+Object Index `schemaVersion=2` é a versão suportada pela implementação D-022. O fingerprint genérico é exclusivo de `MetadataFingerprint`; `DefinitionFingerprint` tem schema próprio com estados `Available` e `Unavailable`, incluindo política/versionamento ou `reasonCode`. Para definições `Available`, o envelope é obrigatório; para `Empty`, `Unavailable` e `NotCollected`, é omitido. A primeira implementação emite `Unavailable/NoValidatedPolicy` para definições disponíveis, pois não existem políticas semânticas de produção aprovadas. Object Index v1 é rejeitado; não há conversão de pacotes de teste antigos descartados.
