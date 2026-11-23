@@ -2,7 +2,7 @@ namespace PhcKnowledge.Import.Ikp.Analysis;
 
 /// <summary>
 /// Explicit version of the persisted/ephemeral analysis model (not IKP ContractVersion).
-/// Increment B starts at 0.2 (adds UnavailableObjects and persistence contract).
+/// Increment B 0.3 adds separate DefinitionFingerprint availability counts.
 /// </summary>
 public static class PackageImportAnalysisSchema
 {
