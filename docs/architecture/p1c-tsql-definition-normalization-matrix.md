@@ -239,3 +239,16 @@ A sequência agora é:
 4. Só depois implementar projector, modelo, exporter/schema e validador em conjunto.
 
 Não alterar código ou schemas executáveis antes destas etapas estarem fechadas.
+
+
+## 12. Baseline D-022 — sem políticas T-SQL em produção na primeira implementação
+
+A aprovação do desenho técnico não aprova qualquer dos candidatos de normalização descritos na secção 5. A primeira implementação do contrato D-021 não activa políticas semânticas de produção para view, stored_procedure, trigger, phc.user_tsql_function ou qualquer outra variante.
+
+Enquanto não existir política específica, validada e versionada, cada definição íntegra e disponível mantém definition.status=Available e recebe definitionFingerprint.status=Unavailable com reasonCode=NoValidatedPolicy. Se uma política vier a ser criada no futuro, sintaxe fora do âmbito suportado deve produzir UnsupportedSyntax; uma falha segura durante a normalização deve produzir NormalizationFailed.
+
+Políticas artificiais podem ser usadas apenas em testes para provar a representação Available. Não podem ser registadas como políticas de produção nem servir de base a comparações reais.
+
+Ficam explicitamente fora desta primeira implementação: parser/lexer T-SQL, normalizador genérico por trim ou remoção de comentários, heurísticas para separar cabeçalhos gerados de ftu/funções, comparação byte-a-byte como DefinitionFingerprint, suporte a definições com múltiplos artefactos e alterações aos collectors ou workspace SQLite.
+
+O Object Index evolui para schemaVersion 2 e a análise de importação para 0.3, conforme D-022. A alteração dos schemas executáveis, fixtures e CI será coordenada com o código na fase de implementação; este documento continua a ser uma matriz de evidência e não uma aprovação de normalizadores.
