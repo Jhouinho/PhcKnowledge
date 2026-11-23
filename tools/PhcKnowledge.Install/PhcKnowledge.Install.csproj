@@ -17,5 +17,6 @@
     <Content Include="..\..\src\PhcKnowledge.Import\Database\002_package_receipt_attempts.sql" Link="SqlScripts\002_package_receipt_attempts.sql" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\src\PhcKnowledge.Import\Database\003_organizations.sql" Link="SqlScripts\003_organizations.sql" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\src\PhcKnowledge.Import\Database\004_package_import_analyses.sql" Link="SqlScripts\004_package_import_analyses.sql" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\src\PhcKnowledge.Import\Database\005_package_import_analysis_decisions.sql" Link="SqlScripts\005_package_import_analysis_decisions.sql" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

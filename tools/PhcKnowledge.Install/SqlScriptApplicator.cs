@@ -4,7 +4,7 @@ using Microsoft.Data.SqlClient;
 namespace PhcKnowledge.Install;
 
 /// <summary>
-/// Applies the platform SQL scripts 001–004 in order (idempotent IF NOT EXISTS scripts).
+/// Applies the platform SQL scripts 001–005 in order (idempotent IF NOT EXISTS scripts).
 /// Does not apply EF Identity migrations.
 /// </summary>
 public sealed class SqlScriptApplicator(string connectionString)
@@ -14,7 +14,8 @@ public sealed class SqlScriptApplicator(string connectionString)
         "001_package_ingestion_receipts.sql",
         "002_package_receipt_attempts.sql",
         "003_organizations.sql",
-        "004_package_import_analyses.sql"
+        "004_package_import_analyses.sql",
+        "005_package_import_analysis_decisions.sql"
     ];
 
     public async Task ApplyAsync(CancellationToken cancellationToken = default)

@@ -504,18 +504,24 @@ public sealed class IkpHttpApiTests : IClassFixture<IkpHttpApiFactory>
         using var postDoc = await JsonDocument.ParseAsync(postStream);
         Assert.Equal(status.PackageId.ToString(), postDoc.RootElement.GetProperty("packageId").GetString());
         Assert.Equal("Blocked", postDoc.RootElement.GetProperty("readiness").GetProperty("status").GetString());
+        Assert.True(Guid.TryParse(postDoc.RootElement.GetProperty("analysisId").GetString(), out var postedAnalysisId));
+        Assert.NotEqual(Guid.Empty, postedAnalysisId);
 
         var get = await client.GetAsync($"/api/v1/ikp/packages/{status.PackageId:D}/analysis");
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
         await using var getStream = await get.Content.ReadAsStreamAsync();
         using var getDoc = await JsonDocument.ParseAsync(getStream);
         Assert.Equal(status.ReceiptId!.Value.ToString(), getDoc.RootElement.GetProperty("receiptId").GetString());
+        Assert.Equal(postedAnalysisId.ToString("D"), getDoc.RootElement.GetProperty("analysisId").GetString());
         Assert.False(getDoc.RootElement.TryGetProperty("organizationId", out _));
         Assert.False(getDoc.RootElement.TryGetProperty("storageKey", out _));
 
         var postAgain = await client.PostAsync($"/api/v1/ikp/packages/{status.PackageId:D}/analysis", null);
         Assert.Equal(HttpStatusCode.OK, postAgain.StatusCode);
         Assert.Equal(1, _factory.Analyses.Count);
+        await using var postAgainStream = await postAgain.Content.ReadAsStreamAsync();
+        using var postAgainDoc = await JsonDocument.ParseAsync(postAgainStream);
+        Assert.Equal(postedAnalysisId.ToString("D"), postAgainDoc.RootElement.GetProperty("analysisId").GetString());
     }
 
     private static IkpIngestionResult CompletedResult(PackageIngestionStatus status)
@@ -754,6 +760,10 @@ public sealed class CountingInMemoryPackageImportAnalysisRepository : IPackageIm
         Guid organizationId, Guid packageId, string zipSha256, string analysisSchemaVersion,
         CancellationToken cancellationToken = default) =>
         _inner.GetAsync(organizationId, packageId, zipSha256, analysisSchemaVersion, cancellationToken);
+
+    public Task<PersistedPackageImportAnalysis?> GetByAnalysisIdAsync(
+        Guid organizationId, Guid analysisId, CancellationToken cancellationToken = default) =>
+        _inner.GetByAnalysisIdAsync(organizationId, analysisId, cancellationToken);
 
     public async Task<PersistedPackageImportAnalysis> InsertOrGetExistingAsync(
         PersistedPackageImportAnalysis analysis, CancellationToken cancellationToken = default)

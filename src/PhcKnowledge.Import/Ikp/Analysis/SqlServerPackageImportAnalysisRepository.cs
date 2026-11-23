@@ -45,6 +45,38 @@ public sealed class SqlServerPackageImportAnalysisRepository : IPackageImportAna
         return ReadRow(reader);
     }
 
+    public async Task<PersistedPackageImportAnalysis?> GetByAnalysisIdAsync(
+        Guid organizationId,
+        Guid analysisId,
+        CancellationToken cancellationToken = default)
+    {
+        if (organizationId == Guid.Empty)
+            throw new ArgumentException("OrganizationId é obrigatório.", nameof(organizationId));
+        if (analysisId == Guid.Empty)
+            throw new ArgumentException("AnalysisId é obrigatório.", nameof(analysisId));
+
+        const string sql = """
+            SELECT AnalysisId, OrganizationId, ReceiptId, PackageId, CaptureId,
+                   ZipSha256, ZipByteLength, LogicalContentDigest, AnalysisSchemaVersion,
+                   ContractVersion, ReadinessStatus, SemanticFingerprint, AnalysisJson,
+                   ObjectCount, ArtifactCount, IssueCount, UnavailableObjectCount,
+                   AnalyzedAtUtc, CreatedAtUtc
+            FROM dbo.PackageImportAnalyses
+            WHERE OrganizationId = @OrganizationId
+              AND AnalysisId = @AnalysisId;
+            """;
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add("@OrganizationId", SqlDbType.UniqueIdentifier).Value = organizationId;
+        command.Parameters.Add("@AnalysisId", SqlDbType.UniqueIdentifier).Value = analysisId;
+        await using var reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            return null;
+        return ReadRow(reader);
+    }
+
     public async Task<PersistedPackageImportAnalysis> InsertOrGetExistingAsync(
         PersistedPackageImportAnalysis analysis,
         CancellationToken cancellationToken = default)

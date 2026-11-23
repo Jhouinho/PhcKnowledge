@@ -45,10 +45,25 @@ public sealed class IkpPackageAnalysisService
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
     }
 
+    /// <summary>Compatibility API returning the analysis model used by existing callers.</summary>
+    public async Task<PackageImportAnalysis> ExecuteAsync(
+        Guid organizationId,
+        Guid packageId,
+        CancellationToken cancellationToken = default) =>
+        (await ExecutePersistedAsync(organizationId, packageId, cancellationToken)).ToAnalysis();
+
+    /// <summary>Compatibility API returning the analysis model used by existing callers.</summary>
+    public async Task<PackageImportAnalysis> GetPersistedAsync(
+        Guid organizationId,
+        Guid packageId,
+        CancellationToken cancellationToken = default) =>
+        (await GetPersistedRecordAsync(organizationId, packageId, cancellationToken)).ToAnalysis();
+
     /// <summary>
     /// POST semantics: return compatible persisted analysis or compute, persist, and return.
+    /// The returned row carries the real persisted <see cref="PersistedPackageImportAnalysis.AnalysisId"/>.
     /// </summary>
-    public async Task<PackageImportAnalysis> ExecuteAsync(
+    public async Task<PersistedPackageImportAnalysis> ExecutePersistedAsync(
         Guid organizationId,
         Guid packageId,
         CancellationToken cancellationToken = default)
@@ -64,7 +79,7 @@ public sealed class IkpPackageAnalysisService
         if (existing is not null)
         {
             // Compatible key wins. ReceiptId on the row is first-writer provenance and is not rewritten.
-            return existing.ToAnalysis();
+            return existing;
         }
 
         var computed = await ComputeAsync(receipt, cancellationToken);
@@ -74,14 +89,13 @@ public sealed class IkpPackageAnalysisService
             receipt.ZipByteLength,
             _clock());
         // InsertOrGetExisting may return an earlier winner (incl. different ReceiptId); preserve that row.
-        var stored = await _analyses.InsertOrGetExistingAsync(persisted, cancellationToken);
-        return stored.ToAnalysis();
+        return await _analyses.InsertOrGetExistingAsync(persisted, cancellationToken);
     }
 
     /// <summary>
     /// GET semantics: read-only. Never opens the ZIP or creates rows.
     /// </summary>
-    public async Task<PackageImportAnalysis> GetPersistedAsync(
+    public async Task<PersistedPackageImportAnalysis> GetPersistedRecordAsync(
         Guid organizationId,
         Guid packageId,
         CancellationToken cancellationToken = default)
@@ -95,7 +109,7 @@ public sealed class IkpPackageAnalysisService
             cancellationToken);
         if (existing is null)
             throw new PackageImportAnalysisNotFoundException(organizationId, packageId);
-        return existing.ToAnalysis();
+        return existing;
     }
 
     /// <summary>

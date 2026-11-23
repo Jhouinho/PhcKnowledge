@@ -43,6 +43,7 @@ public static class PortalApiEndpoints
             .WithMetadata(PortalAntiforgeryMetadata.Instance);
 
         endpoints.MapPortalAdminUserApi();
+        endpoints.MapPortalPackageImportAnalysisDecisionApi();
 
         if (environment.IsEnvironment("Testing"))
         {

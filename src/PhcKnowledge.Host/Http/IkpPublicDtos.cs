@@ -66,8 +66,19 @@ public static class IkpPublicDtoMapper
             status.CompletedAtUtc,
             statusUrl);
 
-    public static IkpPackageAnalysisDto ToAnalysisDto(PackageImportAnalysis analysis) =>
+    /// <summary>
+    /// Maps a persisted analysis row. <paramref name="persisted"/>.AnalysisId is the real stored id —
+    /// never invent a new identifier here.
+    /// </summary>
+    public static IkpPackageAnalysisDto ToAnalysisDto(PersistedPackageImportAnalysis persisted)
+    {
+        ArgumentNullException.ThrowIfNull(persisted);
+        return ToAnalysisDto(persisted.AnalysisId, persisted.ToAnalysis());
+    }
+
+    public static IkpPackageAnalysisDto ToAnalysisDto(Guid analysisId, PackageImportAnalysis analysis) =>
         new(
+            analysisId,
             analysis.ReceiptId,
             analysis.PackageId,
             analysis.CaptureId,
@@ -101,7 +112,9 @@ public static class IkpPublicDtoMapper
                 analysis.ObjectIndex.Available,
                 analysis.ObjectIndex.Empty,
                 analysis.ObjectIndex.Unavailable,
-                analysis.ObjectIndex.NotCollected),
+                analysis.ObjectIndex.NotCollected,
+                analysis.ObjectIndex.DefinitionFingerprintAvailableCount,
+                analysis.ObjectIndex.DefinitionFingerprintUnavailableCount),
             new IkpArtifactsAnalysisDto(
                 analysis.Artifacts.TotalArtifacts,
                 analysis.Artifacts.ReferencesValidated,
@@ -125,6 +138,7 @@ public static class IkpPublicDtoMapper
 }
 
 public sealed record IkpPackageAnalysisDto(
+    Guid AnalysisId,
     Guid ReceiptId,
     Guid PackageId,
     Guid CaptureId,
@@ -180,7 +194,9 @@ public sealed record IkpObjectIndexAnalysisDto(
     int Available,
     int Empty,
     int Unavailable,
-    int NotCollected);
+    int NotCollected,
+    int DefinitionFingerprintAvailableCount,
+    int DefinitionFingerprintUnavailableCount);
 
 public sealed record IkpArtifactsAnalysisDto(
     int TotalArtifacts,
