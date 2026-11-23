@@ -135,3 +135,82 @@ Antes de aprovar qualquer normalizador T-SQL, preparar testes por categoria/vari
 ## 8. Próximo passo
 
 Inspeccionar as opções de metadata SQL disponíveis para views, procedures e triggers, e fechar a matriz de **conteúdo versus metadata** para estes quatro kinds. Em paralelo, definir os casos de teste T-SQL e escolher a estratégia de parser/lexer. Não alterar código nem schemas executáveis antes de essas decisões serem aprovadas.
+
+
+## 9. Validação da divergência D-019 — auditoria estática
+
+**Data:** 23-11-2026  
+**Base de código:** `main`  
+**Resultado:** divergência confirmada; não foram feitas alterações ao código nem executados testes.
+
+### 9.1 Evidência directa
+
+No ficheiro `PhcKnowledgeScanner/src/PhcKnowledgeScanner.Export/ObjectIndex/DefinitionProjectionResolver.cs`:
+
+1. As linhas 148–160 calculam SHA-256 de `artifact.Content` e comparam-no com `ExpectedSha256`. Esta verificação é correcta como validação de integridade do artefacto.
+2. As linhas 168–170 reutilizam exactamente o mesmo `digest` para construir `DefinitionFingerprintValue("sha256", digest)`.
+3. Não existe nesse percurso uma representação canónica semântica, uma política de normalização, uma versão de normalizador ou uma distinção entre comparação exacta e fingerprint semântico.
+4. O tipo `DefinitionFingerprintValue`, no fim do mesmo ficheiro, está documentado como “SHA-256 fingerprint of the exact bytes of a collected definition artifact”, descrição que corresponde ao contrato antigo e contradiz a D-019.
+
+### 9.2 Os testes confirmam o comportamento antigo
+
+Ficheiro `PhcKnowledgeScanner/tests/PhcKnowledgeScanner.Tests/DefinitionProjectionResolverTests.cs`:
+
+- `Phc_Definition_Is_Available_And_Fingerprints_Exact_Artifact_Bytes` (linhas 47–63) exige explicitamente que o fingerprint seja igual ao SHA-256 dos bytes exactos.
+- `Sql_View_With_Definition_Artifact_Is_Available` (linhas 66–82) também exige o hash exacto do conteúdo do artefacto.
+- Existem testes para mismatch do hash de integridade, mismatch do comprimento, bytes em falta e definição vazia. Esses cenários são úteis e devem ser preservados.
+- Não foram encontrados testes que demonstrem normalização semântica por `objectKind`, versão de política, comparação entre versões ou distinção entre hash de integridade e `DefinitionFingerprint`.
+
+Assim, não é apenas uma descrição desactualizada: os testes automatizados actualmente protegem o comportamento anterior à D-019.
+
+### 9.3 O que já está correctamente separado
+
+O cálculo de `MetadataFingerprint` está separado em `MetadataProjectionResolver` e `MetadataFingerprintCalculator`:
+
+- a projecção selecciona os atributos semanticamente relevantes;
+- a canonicalização JSON é determinística;
+- o SHA-256 é calculado sobre a projecção canónica;
+- os testes cobrem alterações semânticas, exclusão de identificadores/datas não relevantes e ausência de fingerprint quando a projecção é incompleta.
+
+No caso de triggers, a projecção de metadata exige informação completa e inclui no fingerprint, quando válida, `isDisabled`, `isInsteadOf` e `events`. Isto é coerente com a separação entre texto da definição e estado/configuração do trigger, embora a política de negócio desses atributos ainda deva ser validada na matriz.
+
+Para views e stored procedures, a projecção de metadata é intencionalmente vazia e não produz `MetadataFingerprint`. A adequação desta opção deve ser avaliada separadamente; não é a causa da divergência D-019.
+
+### 9.4 Lacuna no contrato serializado
+
+O modelo serializado actual de `object-index.json` expõe:
+
+- `definition.status`;
+- `definition.artifactIds`;
+- `definition.definitionFingerprint` (`algorithm` e `value`);
+- `metadataFingerprint` separado.
+
+O validador confirma o formato SHA-256, mas não consegue verificar se o valor deriva de bytes exactos ou de uma representação semântica, nem qual a versão da política que o produziu. A estrutura actual não transporta explicitamente essa distinção nem a versão do normalizador.
+
+A D-019 exige que essa versão seja conhecida e que fingerprints de políticas diferentes não sejam comparados como equivalentes. Portanto, a implementação terá de definir onde essa informação fica representada no contrato, sem assumir que o campo actual `algorithm=sha256` é suficiente.
+
+### 9.5 Conclusão da validação
+
+<badge>Conclusão técnica</badge>
+
+A divergência está **confirmada em três níveis**:
+
+1. **Implementação:** o projector usa o hash de integridade como `DefinitionFingerprint`.
+2. **Modelo/documentação do código:** o tipo ainda define o fingerprint como hash dos bytes exactos.
+3. **Testes:** os testes exigem o comportamento antigo e não cobrem a semântica D-019.
+
+O cálculo de `MetadataFingerprint` já tem uma arquitectura separada e testes próprios; não deve ser confundido com esta correcção.
+
+### 9.6 Correcção necessária — ainda não implementada
+
+A futura alteração deverá, no mínimo:
+
+1. Continuar a validar `ExpectedSha256` contra os bytes exactos do artefacto. Esta verificação não pode ser removida nem enfraquecida.
+2. Manter o hash de integridade do artefacto separado do fingerprint semântico.
+3. Calcular `DefinitionFingerprint` apenas através de política de normalização explícita, específica por kind/variante e versionada.
+4. Se ainda não existir normalizador seguro, não emitir um fingerprint semântico inventado. A comparação exacta poderá existir como modo distinto, claramente identificado, se o contrato for actualizado para o representar.
+5. Actualizar o modelo, o projector, o contrato/schema IKP e o validador em conjunto, para que a versão da política seja transportada e validada.
+6. Substituir os testes que hoje exigem igualdade entre fingerprint e hash dos bytes por testes independentes de integridade e semântica, mantendo os testes de corrupção/bytes/length.
+7. Garantir compatibilidade explícita com pacotes antigos: não reinterpretar silenciosamente fingerprints antigos como se fossem semânticos D-019.
+
+**Não foi feita qualquer alteração de código.** Esta secção é uma auditoria estática da `main`; não equivale à execução da suite de testes nem à validação do comportamento em runtime.
