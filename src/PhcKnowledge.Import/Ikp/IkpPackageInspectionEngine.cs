@@ -454,6 +454,29 @@ public sealed class IkpPackageInspectionEngine
             if (status == "Available" && artifactIds.Length == 0)
                 throw new IkpPackageValidationException($"Definição Available sem artefacto: {id}");
 
+            string? fingerprintStatus = null;
+            string? fingerprintReasonCode = null;
+            string? fingerprintAlgorithm = null;
+            string? fingerprintValue = null;
+            string? fingerprintPolicyId = null;
+            string? fingerprintPolicyVersion = null;
+            if (definition.TryGetProperty("definitionFingerprint", out var definitionFingerprint))
+            {
+                fingerprintStatus = definitionFingerprint.GetProperty("status").GetString();
+                if (fingerprintStatus == "Unavailable")
+                {
+                    fingerprintReasonCode = definitionFingerprint.GetProperty("reasonCode").GetString();
+                }
+                else if (fingerprintStatus == "Available")
+                {
+                    fingerprintAlgorithm = definitionFingerprint.GetProperty("algorithm").GetString();
+                    fingerprintValue = definitionFingerprint.GetProperty("value").GetString();
+                    var policy = definitionFingerprint.GetProperty("policy");
+                    fingerprintPolicyId = policy.GetProperty("id").GetString();
+                    fingerprintPolicyVersion = policy.GetProperty("version").GetString();
+                }
+            }
+
             list.Add(new IkpInspectedObject(
                 id,
                 item.GetProperty("objectKind").GetString()!,
@@ -463,9 +486,15 @@ public sealed class IkpPackageInspectionEngine
                 artifactIds.Length > 0,
                 item.TryGetProperty("sourceIdentity", out _),
                 item.TryGetProperty("metadataFingerprint", out _),
-                definition.TryGetProperty("definitionFingerprint", out _),
+                fingerprintStatus == "Available",
                 item.TryGetProperty("name", out var name) ? name.GetString() : null,
-                item.TryGetProperty("schemaName", out var schemaName) ? schemaName.GetString() : null));
+                item.TryGetProperty("schemaName", out var schemaName) ? schemaName.GetString() : null,
+                fingerprintStatus,
+                fingerprintReasonCode,
+                fingerprintAlgorithm,
+                fingerprintValue,
+                fingerprintPolicyId,
+                fingerprintPolicyVersion));
         }
         return list;
     }
