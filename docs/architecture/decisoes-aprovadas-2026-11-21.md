@@ -171,3 +171,45 @@ Pacotes com coverage schema v1 continuam legíveis segundo a semântica históri
 - Leitura retrocompatível de pacotes de cobertura v1 sem atribuir garantias não existentes.
 
 Esta decisão aprova o contrato e os critérios de aceitação. Não autoriza, por si só, alterações ao código do Scanner, ao exportador IKP, ao workspace SQLite ou à materialização SQL. Essas alterações só serão planeadas depois de os contratos relacionados serem fechados e a documentação consolidada.
+
+
+## 10. D-018 — Contrato de classificação e proveniência de artefactos
+
+**Data: 23-11-2026 — Estado: APROVADA.**
+
+O PHC Knowledge deve distinguir explicitamente a origem do conteúdo, a sua natureza semântica e a proveniência. Estas dimensões não podem ser condensadas num único campo nem inferidas apenas pelo tipo de objeto ou pelo nome do ficheiro.
+
+### 10.1 Origem do conteúdo
+
+- `source-content`: conteúdo obtido diretamente da fonte, preservado sem transformação semântica. Quando a representação exportada não for byte-a-byte igual à fonte, essa limitação tem de ser declarada; não pode ser apresentado como cópia exata.
+- `derived-projection`: conteúdo extraído, normalizado, formatado, combinado ou transformado a partir de uma ou mais fontes.
+- `generated-description`: descrição produzida pelo Scanner, incluindo descrições construídas a partir de metadados ou estrutura.
+- `generated-diagnostic`: aviso, erro, diagnóstico ou relatório produzido pelo processo de recolha.
+
+### 10.2 Natureza semântica
+
+Independentemente da origem, cada artefacto deve declarar a natureza aplicável: código, configuração, estrutura SQL, metadados, descrição, relação ou diagnóstico. A origem não determina, por si só, a natureza: uma descrição pode ser conteúdo original da fonte ou uma descrição gerada.
+
+### 10.3 Proveniência
+
+Quando aplicável, cada artefacto deve identificar a fonte/tabela, campo ou propriedade original, objeto associado, formato e codificação, transformação aplicada e respetiva versão, hash de integridade e relação com o artefacto de origem. Campos não aplicáveis ou desconhecidos não devem ser preenchidos com valores inventados.
+
+### 10.4 Associação a objetos e definição técnica
+
+A referência `definition.artifactIds` fica reservada a artefactos que representem efetivamente uma definição técnica do objeto. Artefactos descritivos, estruturais, diagnósticos e outras evidências podem ser associados ao objeto por uma relação genérica própria, sem serem promovidos a definição.
+
+Metadados disponíveis não implicam definição original disponível. A ausência de definição recolhida deve manter o estado correspondente como não recolhido/desconhecido, conforme a evidência; nunca deve ser inferida a partir de uma descrição.
+
+### 10.5 Integridade e fingerprints
+
+- O conteúdo original disponível deve ser preservado sem substituição por projeções.
+- Uma projeção ou descrição nunca substitui a evidência original.
+- O DefinitionFingerprint representa exclusivamente o conteúdo original relevante da definição, preservado segundo a política de identidade/proveniência aprovada.
+- Artefactos derivados podem ter hashes próprios de integridade/projeção, sem alterar o DefinitionFingerprint.
+- A transformação deve ser identificável e versionada quando aplicável.
+
+### 10.6 Compatibilidade e âmbito da aprovação
+
+Pacotes anteriores continuam legíveis segundo a informação que efetivamente transportam. Não se atribuem retroativamente classificações ou garantias de proveniência que não existam nos pacotes antigos.
+
+D-018 aprova a semântica e os princípios deste contrato. Não autoriza, por si só, alterações aos collectors, exporter, workspace SQLite, schemas executáveis, validator ou materialização SQL. A matriz por collector/ObjectKind e os testes de aceitação devem ser preparados antes da implementação.
