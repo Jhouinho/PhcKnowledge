@@ -230,4 +230,13 @@ Esta decisão aprova apenas o fallback. Não aprova normalizador T-SQL, alteraç
 
 ## 11. Próxima etapa de trabalho
 
-A validação da divergência D-019 está concluída a nível estático. O passo seguinte é desenhar os testes de aceitação para a separação entre hash de integridade e fingerprint semântico, incluindo ausência de normalizador e compatibilidade com pacotes antigos. Depois fechamos o contrato serializado para transportar a política/versão e o estado de disponibilidade sem ambiguidades. Só então se implementa a correcção no projector e no validador.
+A validação estática da divergência D-019 está concluída e a regra de fallback foi aprovada em D-020. Foi preparada uma primeira proposta de testes transversais em [P1.C — Testes de aceitação para DefinitionFingerprint](p1c-definition-fingerprint-acceptance-tests.md).
+
+A sequência agora é:
+
+1. Rever e aprovar os testes transversais.
+2. Fechar a representação no contrato IKP para política/versão e ausência de fingerprint.
+3. Completar e aprovar a matriz por kind/variante, incluindo T-SQL.
+4. Só depois implementar projector, modelo, exporter/schema e validador em conjunto.
+
+Não alterar código ou schemas executáveis antes destas etapas estarem fechadas.
