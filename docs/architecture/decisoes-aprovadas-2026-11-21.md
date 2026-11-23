@@ -239,7 +239,7 @@ O PHC Knowledge deve distinguir alterações semânticas à definição técnica
 
 **Data: 23-11-2026 — Estado: APROVADA.**
 
-Quando não existir uma política de normalização semântica segura, específica para o `objectKind` e validada pelos respectivos testes de aceitação, o Scanner **não emite `DefinitionFingerprint`** para essa definição.
+Quando não existir uma política de normalização semântica segura, específica para o `objectKind` e validada pelos respectivos testes de aceitação, o Scanner não emite um **valor de fingerprint semântico** para essa definição. A representação explícita da indisponibilidade (`status: Unavailable` e `reasonCode`) segue a D-021.
 
 Regras:
 
@@ -248,7 +248,7 @@ Regras:
 3. A comparação byte-a-byte pode ser usada como operação/modo de comparação exacta separado, mas nunca é apresentada, serializada ou interpretada como `DefinitionFingerprint` semântico.
 4. A comparação exacta não permite concluir equivalência semântica. Diferenças de encoding, espaços, comentários ou quebras de linha podem produzir resultado diferente, mesmo quando o comportamento técnico não muda.
 5. A disponibilidade de `DefinitionFingerprint` exige uma política identificada e versionada, aplicada à representação canónica específica do `objectKind`/variante e coberta por testes de aceitação aprovados.
-6. Fingerprints ausentes por falta de normalizador não são tratados como definição vazia, hash vazio, erro de integridade ou prova de que duas definições são diferentes; representam ausência de comparação semântica validada.
+6. A ausência de valor de fingerprint semântico por falta de normalizador não é tratada como definição vazia, hash vazio, erro de integridade ou prova de que duas definições são diferentes; representa ausência de comparação semântica validada. A indisponibilidade é transportada pelo envelope definido em D-021.
 7. Pacotes antigos que contenham o fingerprint calculado segundo a regra anterior continuam legíveis, mas o valor legado não é reinterpretado retroactivamente como fingerprint semântico conforme à D-019/D-020. A compatibilidade e a classificação desses valores têm de ser explícitas.
 8. A verificação do hash de integridade e do comprimento do artefacto mantém-se obrigatória e independente do cálculo do fingerprint.
 
@@ -258,9 +258,9 @@ Esta decisão fecha a regra de fallback. Não aprova ainda qualquer normalizador
 
 Aprovado em 23-11-2026.
 
-1. O estado do `DefinitionFingerprint` é independente do estado de disponibilidade da definição. Para uma definição `Available`, o resultado do fingerprint é explicitamente `Available` ou `Unavailable`.
+1. O estado do `DefinitionFingerprint` é independente do estado de disponibilidade da definição. Para uma definição `Available`, o envelope `definitionFingerprint` é representado explicitamente com estado `Available` ou `Unavailable`; neste último caso não contém valor de fingerprint semântico.
 2. Um fingerprint disponível contém `algorithm`, `value` e `policy.id`/`policy.version`. A identificação da política é específica do `objectKind`/variante; a versão identifica exactamente as regras de normalização aplicadas.
-3. Um fingerprint indisponível contém `status: Unavailable` e um `reasonCode` de catálogo controlado, sem algoritmo, valor ou política aplicada.
+3. A representação de um fingerprint indisponível contém `status: Unavailable` e um `reasonCode` de catálogo controlado, sem algoritmo, valor ou política aplicada.
 4. Para definições `Empty`, `Unavailable` ou `NotCollected`, a propriedade `definitionFingerprint` é omitida. Estes estados pertencem à disponibilidade da definição e não são motivos de indisponibilidade do fingerprint.
 5. O catálogo inicial de motivos é: `NoValidatedPolicy`, `UnsupportedSyntax` e `NormalizationFailed`. Os códigos são valores contratuais, não texto livre. Consumidores devem tolerar códigos desconhecidos sem os reinterpretar.
 6. A versão do Scanner e a versão da capability não substituem a identificação/versionamento da política.
