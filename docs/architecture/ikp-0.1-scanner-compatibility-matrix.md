@@ -72,3 +72,26 @@ Não gerar migrations globais novas nesta etapa. Ver [Modelo de domínio 0.2](kn
 ## Âmbito de organização — clarificação de 21-11-2026
 
 A plataforma tem uma única organização interna. Testes de idempotência devem cobrir PackageId/SHA repetidos, concorrência, instalações distintas e capturas sucessivas, mas não devem introduzir tenancy ou isolamento multi-organização. OrganizationId existente no receipt é contexto global da plataforma.
+
+
+## Decisão aprovada — D-017 (22-11-2026): cobertura e ausência segura
+
+O contrato de cobertura foi aprovado para evolução, sem alteração da versão principal IKP 0.1:
+
+- coverage schema v1 mantém leitura retrocompatível e sem garantias inferidas;
+- coverage schema v2 acrescenta `sourceRowsRead`, `objectsEmitted`, `rowsFiltered`, `rowsFailed` e `sourceCompleteness` (`Complete`, `Partial`, `Unknown`);
+- `observedCount=0`, `Empty` ou `Succeeded` em pacotes antigos não demonstram, isoladamente, origem vazia ou consulta completa;
+- só a cobertura comprovadamente completa, com fonte visível, âmbito/filtros conhecidos e comparação compatível, pode sustentar `Removed`;
+- contagens de linhas e objetos são métricas distintas e não têm de fechar aritmeticamente;
+- os registos filtrados não podem ser convertidos automaticamente em objetos removidos.
+
+**Estado de implementação:** decisão e especificação documental aprovadas; Scanner, exporter, validator e testes ainda não foram alterados nesta decisão. Os testes de aceitação definidos em D-017 continuam pendentes.
+
+
+## Decisão aprovada — D-018 (23-11-2026): classificação e proveniência de artefactos
+
+O contrato distingue três dimensões independentes: origem do conteúdo, natureza semântica e proveniência. As origens classificadas são `source-content`, `derived-projection`, `generated-description` e `generated-diagnostic`. A natureza semântica identifica código, configuração, estrutura SQL, metadados, descrição, relação ou diagnóstico.
+
+A referência `definition.artifactIds` fica reservada a definições técnicas reais. Artefactos descritivos, estruturais e diagnósticos não são definições e devem ter associações próprias. Metadados disponíveis não implicam definição original disponível. Conteúdo original não pode ser substituído por conteúdo derivado; DefinitionFingerprint usa exclusivamente o conteúdo original relevante, enquanto projeções podem ter hashes próprios.
+
+**Estado:** decisão e semântica documental aprovadas. Não foram autorizadas nem executadas alterações aos collectors, exporter, workspace SQLite, validator, schemas executáveis ou materialização SQL. A matriz por collector/ObjectKind e os testes de aceitação continuam necessários antes da implementação.
