@@ -35,6 +35,10 @@ public sealed class IkpPackageAnalysisTests
         Assert.NotEmpty(inspection.Capabilities);
         Assert.NotEmpty(inspection.Coverage);
         Assert.NotEmpty(inspection.Objects);
+        var availableDefinition = Assert.Single(inspection.Objects.Where(x => x.DefinitionStatus == "Available"));
+        Assert.Equal("Unavailable", availableDefinition.DefinitionFingerprintStatus);
+        Assert.Equal("NoValidatedPolicy", availableDefinition.DefinitionFingerprintReasonCode);
+        Assert.False(availableDefinition.HasDefinitionFingerprint);
         Assert.NotEmpty(inspection.Artifacts);
         Assert.NotNull(inspection.Relations);
         Assert.Contains(inspection.Issues, x => x.Severity == "Warning");
