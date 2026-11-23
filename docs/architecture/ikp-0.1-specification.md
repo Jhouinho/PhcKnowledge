@@ -679,3 +679,12 @@ A referência `definition.artifactIds` fica reservada a artefactos que constitua
 O conteúdo original disponível nunca é substituído por uma projeção. O hash de integridade do artefacto preserva a identidade byte-a-byte do conteúdo recolhido. O DefinitionFingerprint é calculado a partir de uma representação canónica derivada do original, segundo a política semântica versionada por objectKind. Projeções e descrições derivadas têm hashes próprios e não substituem nem alteram o original.
 
 Pacotes antigos continuam legíveis sem receber classificações ou garantias retroativas não transportadas. D-018 fecha a semântica do contrato, mas não altera collectors, exporter, workspace SQLite, validator, schemas executáveis ou materialização SQL. A implementação depende da matriz por collector/ObjectKind e dos testes de aceitação.
+
+
+## Regra de disponibilidade do DefinitionFingerprint — D-020 (23-11-2026)
+
+Quando não existir uma política de normalização semântica segura, específica para o `objectKind`/variante e validada pelos testes de aceitação, o `DefinitionFingerprint` fica indisponível. O SHA-256 dos bytes exactos do artefacto é exclusivamente um hash de integridade e nunca pode ser reutilizado como fingerprint semântico.
+
+A comparação byte-a-byte pode ser disponibilizada como modalidade exacta separada, mas não preenche `definition.definitionFingerprint` nem demonstra equivalência semântica. A ausência de fingerprint por falta de normalizador não significa definição vazia, erro de integridade ou diferença semântica.
+
+Valores legados produzidos pela regra anterior continuam legíveis, mas não são reinterpretados retroactivamente como fingerprints semânticos conformes à D-019/D-020. O contrato executável terá de transportar a política/versão e a distinção de estados necessárias; esta nota documental não altera por si só os schemas nem o validador.
