@@ -356,8 +356,13 @@ Exemplo:
         "status": "Available",
         "artifactIds": ["artifact-brule-7f3a"],
         "definitionFingerprint": {
+          "status": "Available",
           "algorithm": "sha256",
-          "value": "..."
+          "value": "...",
+          "policy": {
+            "id": "phc.brule.definition",
+            "version": "1.0"
+          }
         }
       },
       "operationId": "phc.customizations.brule.inventory"
