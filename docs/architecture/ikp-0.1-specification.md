@@ -720,3 +720,22 @@ Um fingerprint disponível contém `algorithm`, `value` e `policy` com `id` e `v
 Catálogo inicial fechado de motivos: `NoValidatedPolicy`, `UnsupportedSyntax` e `NormalizationFailed`. Os códigos não substituem os estados de disponibilidade da definição. Códigos futuros exigem evolução explícita do contrato; consumidores devem preservar e tolerar códigos desconhecidos.
 
 Esta decisão fecha a representação documental. Não altera ainda schemas JSON executáveis, modelos, serialização, exportador, validador ou materialização. A compatibilidade com consumidores existentes e a versão de schema do object-index têm de ser verificadas antes da implementação; não se presume que a alteração estrutural seja retrocompatível.
+
+## Object Index v2 e análise de importação 0.3 — baseline D-022 (23-11-2026)
+
+O IKP global permanece na versão 0.1. A versão interna do Object Index evolui para schemaVersion=2, para transportar a representação D-021 sem ambiguidade. Esta alteração não é retrocompatível: o importador desta implementação aceita Object Index v2 e rejeita v1. Não se cria um adaptador para pacotes de teste de iterações anteriores do Scanner que foram descartados.
+
+Quando definition.status=Available, definition.definitionFingerprint é obrigatório e contém uma destas formas:
+
+- Available: status, algorithm, value e policy com id e version;
+- Unavailable: status e reasonCode, sem algoritmo, valor ou política.
+
+Para definition.status=Empty, Unavailable ou NotCollected, a propriedade é omitida. A indisponibilidade do fingerprint não altera o estado da definição, a cobertura da operação ou a prontidão de materialização. Os reasonCodes iniciais emitidos são NoValidatedPolicy, UnsupportedSyntax e NormalizationFailed; consumidores toleram códigos desconhecidos.
+
+O hash SHA-256 dos bytes exactos e a validação do comprimento continuam a ser verificações de integridade independentes. Nunca são reutilizados como DefinitionFingerprint. O MetadataFingerprint mantém o contrato actual, sem alteração nesta fase.
+
+A análise de importação evolui para schema 0.3, com DefinitionFingerprintAvailableCount e DefinitionFingerprintUnavailableCount. O objecto inspeccionado conserva os detalhes do fingerprint; a análise persistida conserva as contagens/resumo.
+
+A primeira implementação não activa políticas semânticas em produção: definições disponíveis sem política validada produzem fingerprint Unavailable/NoValidatedPolicy. Uma política artificial pode existir apenas nos testes. A implementação não inclui normalizador T-SQL, heurísticas textuais, comparação byte-a-byte como fingerprint ou alteração de collectors/SQLite.
+
+Este baseline documental não altera ainda schemas JSON executáveis, fixtures, código, validator ou CI. Esses artefactos serão actualizados coordenadamente na fase de implementação aprovada.
