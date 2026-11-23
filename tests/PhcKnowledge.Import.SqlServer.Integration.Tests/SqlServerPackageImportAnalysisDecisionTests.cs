@@ -411,7 +411,7 @@ public sealed class SqlServerPackageImportAnalysisDecisionTests
             Array.Empty<IkpInspectedCoverageOperation>(),
             new PackageImportObjectIndexAnalysis(
                 0, new SortedDictionary<string, int>(), new SortedDictionary<string, int>(),
-                0, 0, 0, 0, 0, 0, 0, 0, 0),
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
             new PackageImportArtifactsAnalysis(
                 0, true, Array.Empty<IkpInspectedArtifact>(), new SortedDictionary<string, int>()),
             new PackageImportRelationsAnalysis(
