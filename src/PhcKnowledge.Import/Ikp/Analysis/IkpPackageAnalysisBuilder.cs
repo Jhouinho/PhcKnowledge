@@ -119,7 +119,7 @@ public sealed class IkpPackageAnalysisBuilder
                 0,
                 new SortedDictionary<string, int>(StringComparer.Ordinal),
                 new SortedDictionary<string, int>(StringComparer.Ordinal),
-                0, 0, 0, 0, 0, 0, 0, 0, 0),
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
             new PackageImportArtifactsAnalysis(
                 0, false, Array.Empty<IkpInspectedArtifact>(),
                 new SortedDictionary<string, int>(StringComparer.Ordinal)),
