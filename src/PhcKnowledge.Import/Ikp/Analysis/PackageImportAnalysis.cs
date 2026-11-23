@@ -6,7 +6,7 @@ namespace PhcKnowledge.Import.Ikp.Analysis;
 /// </summary>
 public static class PackageImportAnalysisSchema
 {
-    public const string Version = "0.2";
+    public const string Version = "0.3";
 }
 
 public enum MaterializationReadiness
@@ -141,7 +141,8 @@ public sealed record PackageImportAnalysis(
         left.NotCollected == right.NotCollected &&
         left.SourceIdentityCount == right.SourceIdentityCount &&
         left.MetadataFingerprintCount == right.MetadataFingerprintCount &&
-        left.DefinitionFingerprintCount == right.DefinitionFingerprintCount &&
+        left.DefinitionFingerprintAvailableCount == right.DefinitionFingerprintAvailableCount &&
+        left.DefinitionFingerprintUnavailableCount == right.DefinitionFingerprintUnavailableCount &&
         DictionaryEquals(left.CountByObjectKind, right.CountByObjectKind) &&
         DictionaryEquals(left.CountByDefinitionStatus, right.CountByDefinitionStatus);
 
@@ -185,7 +186,8 @@ public sealed record PackageImportObjectIndexAnalysis(
     int NotCollected,
     int SourceIdentityCount,
     int MetadataFingerprintCount,
-    int DefinitionFingerprintCount);
+    int DefinitionFingerprintAvailableCount,
+    int DefinitionFingerprintUnavailableCount);
 
 public sealed record PackageImportArtifactsAnalysis(
     int TotalArtifacts,
