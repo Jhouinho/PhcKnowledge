@@ -1,0 +1,40 @@
+name: .NET tests
+
+on:
+  pull_request:
+    paths:
+      - "PhcKnowledgeScanner/src/**"
+      - "PhcKnowledgeScanner/tests/**"
+      - "src/PhcKnowledge.Import/**"
+      - "src/PhcKnowledge.Host/**"
+      - "tests/PhcKnowledge.Import.Tests/**"
+      - "docs/architecture/schemas/ikp-0.1/**"
+      - "docs/architecture/fixtures/ikp-0.1/**"
+      - ".github/workflows/dotnet-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "PhcKnowledgeScanner/src/**"
+      - "PhcKnowledgeScanner/tests/**"
+      - "src/PhcKnowledge.Import/**"
+      - "src/PhcKnowledge.Host/**"
+      - "tests/PhcKnowledge.Import.Tests/**"
+      - "docs/architecture/schemas/ikp-0.1/**"
+      - "docs/architecture/fixtures/ikp-0.1/**"
+      - ".github/workflows/dotnet-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Test Scanner
+        run: dotnet test PhcKnowledgeScanner/tests/PhcKnowledgeScanner.Tests/PhcKnowledgeScanner.Tests.csproj --configuration Release
+      - name: Test Knowledge Import
+        run: dotnet test tests/PhcKnowledge.Import.Tests/PhcKnowledge.Import.Tests.csproj --configuration Release
