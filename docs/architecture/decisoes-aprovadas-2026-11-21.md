@@ -157,7 +157,7 @@ Se qualquer condição não for demonstrada, o resultado é inconclusivo/NotObse
 
 A evolução do contrato de cobertura é versionada separadamente da versão principal do pacote IKP. O IKP 0.1 mantém-se; o schema de cobertura evolui de versão 1 para versão 2.
 
-Pacotes com coverage schema v1 continuam legíveis segundo a semântica histórica. O campo legado `observedCount` não é reinterpretado automaticamente como `SourceRowsRead`, e um resultado `Empty` ou `observedCount=0` não prova, isoladamente, que a origem estava vazia ou que a consulta foi completa. Quando não houver evidência equivalente explícita, `SourceCompleteness` é tratado como `Unknown` para decisões de ausência.
+A compatibilidade de leitura do coverage schema v1 é uma regra específica de versionamento desse schema e não constitui uma obrigação geral de suportar qualquer pacote antigo. Quando um pacote v1 é aceite no âmbito da matriz de compatibilidade, o campo legado `observedCount` não é reinterpretado automaticamente como `SourceRowsRead`, e um resultado `Empty` ou `observedCount=0` não prova, isoladamente, que a origem estava vazia ou que a consulta foi completa. Quando não houver evidência equivalente explícita, `SourceCompleteness` é tratado como `Unknown` para decisões de ausência. Esta regra não obriga a manter compatibilidade com pacotes IKP de teste explicitamente descartados.
 
 ### 9.5 Testes de aceitação obrigatórios antes da implementação ser considerada concluída
 
@@ -212,7 +212,7 @@ Metadados disponíveis não implicam definição original disponível. A ausênc
 
 ### 10.6 Compatibilidade e âmbito da aprovação
 
-Pacotes anteriores continuam legíveis segundo a informação que efetivamente transportam. Não se atribuem retroativamente classificações ou garantias de proveniência que não existam nos pacotes antigos.
+A leitura de pacotes de versões anteriores não é uma garantia genérica do produto: só são aceites versões/capacidades incluídas numa matriz explícita de compatibilidade. Esta regra não cria obrigação de suportar pacotes IKP de teste de iterações antigas do Scanner que tenham sido descartados; em particular, não se exigem adaptadores nem preservação de fingerprints desses pacotes. Não se atribuem retroativamente classificações ou garantias de proveniência.
 
 D-018 aprova a semântica e os princípios deste contrato. Não autoriza, por si só, alterações aos collectors, exporter, workspace SQLite, schemas executáveis, validator ou materialização SQL. A matriz por collector/ObjectKind e os testes de aceitação devem ser preparados antes da implementação.
 
@@ -249,7 +249,7 @@ Regras:
 4. A comparação exacta não permite concluir equivalência semântica. Diferenças de encoding, espaços, comentários ou quebras de linha podem produzir resultado diferente, mesmo quando o comportamento técnico não muda.
 5. A disponibilidade de `DefinitionFingerprint` exige uma política identificada e versionada, aplicada à representação canónica específica do `objectKind`/variante e coberta por testes de aceitação aprovados.
 6. A ausência de valor de fingerprint semântico por falta de normalizador não é tratada como definição vazia, hash vazio, erro de integridade ou prova de que duas definições são diferentes; representa ausência de comparação semântica validada. A indisponibilidade é transportada pelo envelope definido em D-021.
-7. Pacotes antigos que contenham o fingerprint calculado segundo a regra anterior continuam legíveis, mas o valor legado não é reinterpretado retroactivamente como fingerprint semântico conforme à D-019/D-020. A compatibilidade e a classificação desses valores têm de ser explícitas.
+7. Não existe obrigação de compatibilidade com pacotes IKP de teste produzidos por iterações anteriores do Scanner que tenham sido explicitamente descartados. Esses pacotes não são uma entrada suportada: não se exige que continuem legíveis, que os seus fingerprints antigos sejam preservados como legado, nem que exista um adaptador/conversor. O trabalho parte de novas capturas produzidas pelo Scanner actualizado. Esta exclusão não apaga código, documentação, histórico Git ou testes úteis do repositório.
 8. A verificação do hash de integridade e do comprimento do artefacto mantém-se obrigatória e independente do cálculo do fingerprint.
 
 Esta decisão fecha a regra de fallback. Não aprova ainda qualquer normalizador T-SQL, não define versões de política por `objectKind` e não autoriza alterações aos collectors, exporter, workspace SQLite, schemas executáveis, validator ou materialização SQL. A matriz por `objectKind` e os testes de aceitação continuam obrigatórios antes da implementação.
