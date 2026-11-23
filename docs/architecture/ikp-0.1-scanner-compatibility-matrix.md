@@ -86,3 +86,12 @@ O contrato de cobertura foi aprovado para evolução, sem alteração da versão
 - os registos filtrados não podem ser convertidos automaticamente em objetos removidos.
 
 **Estado de implementação:** decisão e especificação documental aprovadas; Scanner, exporter, validator e testes ainda não foram alterados nesta decisão. Os testes de aceitação definidos em D-017 continuam pendentes.
+
+
+## Decisão aprovada — D-018 (23-11-2026): classificação e proveniência de artefactos
+
+O contrato distingue três dimensões independentes: origem do conteúdo, natureza semântica e proveniência. As origens classificadas são `source-content`, `derived-projection`, `generated-description` e `generated-diagnostic`. A natureza semântica identifica código, configuração, estrutura SQL, metadados, descrição, relação ou diagnóstico.
+
+A referência `definition.artifactIds` fica reservada a definições técnicas reais. Artefactos descritivos, estruturais e diagnósticos não são definições e devem ter associações próprias. Metadados disponíveis não implicam definição original disponível. Conteúdo original não pode ser substituído por conteúdo derivado; DefinitionFingerprint usa exclusivamente o conteúdo original relevante, enquanto projeções podem ter hashes próprios.
+
+**Estado:** decisão e semântica documental aprovadas. Não foram autorizadas nem executadas alterações aos collectors, exporter, workspace SQLite, validator, schemas executáveis ou materialização SQL. A matriz por collector/ObjectKind e os testes de aceitação continuam necessários antes da implementação.
