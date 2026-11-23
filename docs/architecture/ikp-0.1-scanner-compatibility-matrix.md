@@ -113,6 +113,6 @@ A implementação inicial está em revisão na [PR #27](https://github.com/Jhoui
 | Cobertura e readiness | Continuam dependentes da disponibilidade da definição e da cobertura; não do fingerprint semântico | Confirmar por testes automatizados |
 | Collectors / SQLite / materialização SQL | Sem alterações nesta PR | Permanecem fora do âmbito D-022 |
 
-**Validação:** foram acrescentados testes C# e Python e actualizados schema/fixture. Até à revisão desta matriz, não foi possível executar builds ou testes neste ambiente e não há resultados CI associados ao commit consultado. A PR não deve ser integrada até a execução automatizada e revisão técnica confirmarem o contrato completo.
+**Validação:** foram acrescentados testes C# e Python e actualizados schema/fixture. A validação CI do commit de implementação foi concluída com sucesso: IKP contract validation (run #67); suites .NET Scanner (291 passed, 2 skipped) e Knowledge Import (225 passed); integração SQL Server 2022 (run #149); build/test global .NET (run #381), incluindo validação do Object Index gerado pelo C# contra o JSON Schema e validação independente do ZIP IKP. A PR continua por integrar na main até à revisão final do diff e aprovação.
 
-**Próximo passo:** obter resultados de CI/build/testes para a PR #27, corrigir eventuais falhas, rever o diff final e só então propor a integração na `main`.
+**Próximo passo:** revisão final do diff e aprovação da integração da PR #27 na `main`. Nenhum teste manual contra uma instalação PHC real foi realizado nesta fase.
