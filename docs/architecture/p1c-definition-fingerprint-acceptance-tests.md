@@ -137,13 +137,13 @@ A revisão técnica dos 18 cenários transversais identificou cinco melhorias de
 4. Explicitar os limites da normalização: igualdade segundo política validada, não prova de equivalência absoluta de comportamento SQL.
 5. Numerar os testes de artefactos compostos e exigir fixtures concretas por `ObjectKind` e variante.
 
-Esta revisão não transforma a suite em testes executados nem aprova uma política de normalização T-SQL. Os nomes sugeridos para motivos de indisponibilidade permanecem exemplos até decisão sobre o contrato.
+Esta revisão não transforma a suite em testes executados nem aprova uma política de normalização T-SQL. Os códigos `NoValidatedPolicy`, `UnsupportedSyntax` e `NormalizationFailed` foram entretanto aprovados para o contrato pela D-021; os restantes detalhes de fixtures e testes específicos continuam por fechar.
 
 ## 8. Decisões ainda necessárias
 
-1. Aprovar esta suite transversal e definir fixtures/nomes finais dos testes.
-2. Verificar a compatibilidade do novo envelope com o schema do object-index e consumidores existentes antes de alterar qualquer schema executável.
-3. Aprovar a matriz de normalização por kind/variante.
+1. Completar as fixtures e os nomes finais dos testes executáveis por kind/variante.
+2. Verificar a compatibilidade do envelope D-021 com o schema do object-index e consumidores existentes antes de alterar qualquer schema executável.
+3. Aprovar a matriz de normalização por kind/variante e os limites de sintaxe suportados.
 4. Só depois implementar projector, modelo, exporter/schema e validador em conjunto.
 
 
