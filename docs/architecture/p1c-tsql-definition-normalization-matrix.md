@@ -191,7 +191,7 @@ A D-019 exige que essa versão seja conhecida e que fingerprints de políticas d
 
 ### 9.5 Conclusão da validação
 
-<badge>Conclusão técnica</badge>
+**Conclusão técnica**
 
 A divergência está **confirmada em três níveis**:
 
