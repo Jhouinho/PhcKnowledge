@@ -117,6 +117,10 @@ As fixtures T-SQL devem ser concretas e separadas por `ObjectKind` e variante de
 - Modelo, serialização, schema e validador concordam sobre a presença/ausência e a versão do fingerprint.
 - Pacotes antigos continuam legíveis; os fingerprints produzidos pela regra antiga são preservados como valores legados, sem reclassificação silenciosa.
 - Testes de regressão demonstram que o fingerprint já não é igual, por construção, ao hash de integridade.
+- Estados de definição vazia, indisponível, não recolhida e fingerprint indisponível são distinguíveis no resultado de teste.
+- A documentação dos testes distingue sempre bytes do artefacto armazenado de bytes/texto de autoria na origem.
+- Os testes T-SQL e de artefactos compostos têm fixtures concretas, identificadas por kind e variante.
+- A suite limita expressamente a conclusão à igualdade segundo a política/versão e ao âmbito de sintaxe validado; não afirma equivalência absoluta de comportamento SQL.
 - Testes são executados em CI e o resultado fica registado.
 
 ## 7. Estado desta revisão
@@ -131,7 +135,7 @@ A revisão técnica dos 18 cenários transversais identificou cinco melhorias de
 
 Esta revisão não transforma a suite em testes executados nem aprova uma política de normalização T-SQL. Os nomes sugeridos para motivos de indisponibilidade permanecem exemplos até decisão sobre o contrato.
 
-## 9. Decisões ainda necessárias
+## 8. Decisões ainda necessárias
 
 1. Aprovar esta suite transversal e definir fixtures/nomes finais dos testes.
 2. Fechar a representação no contrato IKP para política/versão e ausência de fingerprint.
