@@ -3,7 +3,7 @@
 
 > **Actualização de decisões — 21-11-2026:** D-015 e D-016 foram aprovadas. O Scanner mantém recolha REL/DTL; cada captura é completa dentro do âmbito declarado; o Knowledge compara e materializa incrementalmente. O ZIP é temporário e os dados/artefactos permanentes ficam no SQL Server. Ver [Decisões arquitecturais aprovadas](decisoes-aprovadas-2026-11-21.md). A matriz actual continua a ser fotografia de compatibilidade, não prova de cobertura integral.
 
-Data de revisão: 2026-11-17
+Data de revisão: 2026-11-23
 
 ## Conclusão
 
@@ -96,3 +96,23 @@ O contrato distingue três dimensões independentes: origem do conteúdo, nature
 A referência `definition.artifactIds` fica reservada a definições técnicas reais. Artefactos descritivos, estruturais e diagnósticos não são definições e devem ter associações próprias. Metadados disponíveis não implicam definição original disponível. Conteúdo original não pode ser substituído por conteúdo derivado: o SHA-256 exacto do artefacto é o hash de integridade, enquanto DefinitionFingerprint representa a definição semântica através de normalização segura, específica e versionada por objectKind. Sem normalizador validado, a comparação é conservadora e não declara equivalência semântica.
 
 **Estado:** decisão e semântica documental aprovadas. Não foram autorizadas nem executadas alterações aos collectors, exporter, workspace SQLite, validator, schemas executáveis ou materialização SQL. A matriz por collector/ObjectKind e os testes de aceitação continuam necessários antes da implementação.
+
+
+## Estado de implementação D-022 — 23-11-2026
+
+A implementação inicial está em revisão na [PR #27](https://github.com/Jhouinho/PhcKnowledge/pull/27), branch `implementation/d022-definition-fingerprint-v2`. A PR ainda não foi integrada na `main`.
+
+| Componente | Estado nesta implementação | Limite / validação pendente |
+|---|---|---|
+| Object Index | Schema interno evoluído para `schemaVersion=2`; projector e validador do Scanner emitem/validam o novo envelope D-021 | PR #27 pendente; execução de build/testes e validação CI ainda não confirmadas |
+| Integridade de artefactos | Comprimento e SHA-256 dos bytes exactos continuam a ser verificados separadamente | Não confundir o digest de integridade com fingerprint semântico |
+| DefinitionFingerprint | Definições íntegras continuam `Available`; sem política validada em produção, fingerprint é `Unavailable/NoValidatedPolicy` | Nenhuma política T-SQL ou outra política semântica de produção está activa |
+| MetadataFingerprint | Contrato e cálculo mantidos sem alteração nesta implementação | Regressão automatizada ainda por executar |
+| Importer | Lê Object Index v2 e preserva estado, reasonCode e eventual algoritmo/valor/política | Object Index v1 é rejeitado; não existe adaptador para pacotes de teste antigos descartados |
+| PackageImportAnalysis | Versão 0.3, com contagens separadas Available/Unavailable | Confirmar round-trip e persistência SQL através da suite automatizada |
+| Cobertura e readiness | Continuam dependentes da disponibilidade da definição e da cobertura; não do fingerprint semântico | Confirmar por testes automatizados |
+| Collectors / SQLite / materialização SQL | Sem alterações nesta PR | Permanecem fora do âmbito D-022 |
+
+**Validação:** foram acrescentados testes C# e Python e actualizados schema/fixture. Até à revisão desta matriz, não foi possível executar builds ou testes neste ambiente e não há resultados CI associados ao commit consultado. A PR não deve ser integrada até a execução automatizada e revisão técnica confirmarem o contrato completo.
+
+**Próximo passo:** obter resultados de CI/build/testes para a PR #27, corrigir eventuais falhas, rever o diff final e só então propor a integração na `main`.
