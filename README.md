@@ -29,7 +29,7 @@ O Scanner também mantém a sua solução própria em `PhcKnowledgeScanner/PhcKn
 
 ## Estado actual — 23-11-2026
 
-**Referência:** `main`, commit `31deb2badb91a2b0453099290eaddaaa6afd944e`. A implementação D-022 foi integrada pela PR #27, merge commit `ad42f53fc3d4f7b654d61dea56f0f501af0905b8`.
+**Baseline de código auditada:** `main` no commit `31deb2badb91a2b0453099290eaddaaa6afd944e`. Esta consolidação documental foi integrada no commit `bf7d1854d766eeb0e2ca902da3ac77ac7f7e4eee`. A implementação D-022 foi integrada pela PR #27, merge commit `ad42f53fc3d4f7b654d61dea56f0f501af0905b8`.
 
 ### Direcção aprovada
 

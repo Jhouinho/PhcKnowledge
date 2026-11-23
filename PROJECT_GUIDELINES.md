@@ -168,7 +168,7 @@ A referência normativa é [Decisões arquitecturais aprovadas](docs/architectur
 
 ## Estado vigente após revisão global — 23-11-2026
 
-Esta secção prevalece sobre as fotografias de estado anteriores deste documento. A referência de código é a `main` do repositório canónico, commit `31deb2badb91a2b0453099290eaddaaa6afd944e`.
+Esta secção prevalece sobre as fotografias de estado anteriores deste documento. A baseline de código auditada foi a `main` no commit `31deb2badb91a2b0453099290eaddaaa6afd944e`; a consolidação documental desta revisão ficou integrada na `main` pelo commit `bf7d1854d766eeb0e2ca902da3ac77ac7f7e4eee`.
 
 - A base central é Microsoft SQL Server; PostgreSQL está excluído. Edição/versão SQL Server continua por decidir.
 - O Scanner é autónomo, vive em `PhcKnowledgeScanner/` neste monorepo e não é executado pelo Knowledge em runtime.
