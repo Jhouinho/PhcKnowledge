@@ -253,3 +253,16 @@ Regras:
 8. A verificação do hash de integridade e do comprimento do artefacto mantém-se obrigatória e independente do cálculo do fingerprint.
 
 Esta decisão fecha a regra de fallback. Não aprova ainda qualquer normalizador T-SQL, não define versões de política por `objectKind` e não autoriza alterações aos collectors, exporter, workspace SQLite, schemas executáveis, validator ou materialização SQL. A matriz por `objectKind` e os testes de aceitação continuam obrigatórios antes da implementação.
+
+## 13. D-021 — Estado, política e motivos do DefinitionFingerprint
+
+Aprovado em 23-11-2026.
+
+1. O estado do `DefinitionFingerprint` é independente do estado de disponibilidade da definição. Para uma definição `Available`, o resultado do fingerprint é explicitamente `Available` ou `Unavailable`.
+2. Um fingerprint disponível contém `algorithm`, `value` e `policy.id`/`policy.version`. A identificação da política é específica do `objectKind`/variante; a versão identifica exactamente as regras de normalização aplicadas.
+3. Um fingerprint indisponível contém `status: Unavailable` e um `reasonCode` de catálogo controlado, sem algoritmo, valor ou política aplicada.
+4. Para definições `Empty`, `Unavailable` ou `NotCollected`, a propriedade `definitionFingerprint` é omitida. Estes estados pertencem à disponibilidade da definição e não são motivos de indisponibilidade do fingerprint.
+5. O catálogo inicial de motivos é: `NoValidatedPolicy`, `UnsupportedSyntax` e `NormalizationFailed`. Os códigos são valores contratuais, não texto livre. Consumidores devem tolerar códigos desconhecidos sem os reinterpretar.
+6. A versão do Scanner e a versão da capability não substituem a identificação/versionamento da política.
+7. A incompatibilidade entre versões de política é tratada na comparação/migração; não altera nem reescreve o fingerprint originalmente produzido.
+8. A decisão fecha a representação documental, mas não autoriza alterações aos schemas executáveis, modelos, serialização, exporter, validator, collectors, workspace SQLite ou materialização SQL. A compatibilidade com consumidores existentes e a versão do schema do object-index têm de ser verificadas antes da implementação.
