@@ -168,7 +168,8 @@ public static class ObjectIndexContractValidator
 
         if (status == "Unavailable")
         {
-            if (!TryString(fingerprint, "reasonCode", out _)
+            if (fingerprint.EnumerateObject().Count() != 2
+                || !TryString(fingerprint, "reasonCode", out _)
                 || fingerprint.TryGetProperty("algorithm", out _)
                 || fingerprint.TryGetProperty("value", out _)
                 || fingerprint.TryGetProperty("policy", out _))
@@ -177,8 +178,10 @@ public static class ObjectIndexContractValidator
         }
 
         if (status != "Available"
+            || fingerprint.EnumerateObject().Count() != 4
             || !TryProperty(fingerprint, "policy", out var policy)
             || policy.ValueKind != JsonValueKind.Object
+            || policy.EnumerateObject().Count() != 2
             || !TryString(policy, "id", out _)
             || !TryString(policy, "version", out _)
             || !TryString(fingerprint, "algorithm", out var algorithm)
