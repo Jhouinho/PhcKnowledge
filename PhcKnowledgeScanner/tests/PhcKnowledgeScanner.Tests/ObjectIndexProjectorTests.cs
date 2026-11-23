@@ -283,6 +283,28 @@ public sealed class ObjectIndexProjectorTests
     }
 
     [Fact]
+    public void Contract_Validator_Accepts_Available_Fingerprint_With_Versioned_Policy()
+    {
+        var json = Encoding.UTF8.GetBytes(
+            """{"schemaVersion":"2","captureId":"b1b2c3d4-1111-4222-8333-123456789abc","objects":[{"sourceObjectId":"x","objectKind":"phc.brule","metadata":{},"definition":{"status":"Available","artifactIds":["a"],"definitionFingerprint":{"status":"Available","algorithm":"sha256","value":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","policy":{"id":"test.policy","version":"1"}}},"operationId":"op"}]}""");
+
+        var diagnostics = ObjectIndexContractValidator.Validate(json);
+
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public void Contract_Validator_Accepts_Unknown_Fingerprint_Reason_Code()
+    {
+        var json = Encoding.UTF8.GetBytes(
+            """{"schemaVersion":"2","captureId":"b1b2c3d4-1111-4222-8333-123456789abc","objects":[{"sourceObjectId":"x","objectKind":"phc.brule","metadata":{},"definition":{"status":"Available","artifactIds":["a"],"definitionFingerprint":{"status":"Unavailable","reasonCode":"FutureReasonCode"}},"operationId":"op"}]}""");
+
+        var diagnostics = ObjectIndexContractValidator.Validate(json);
+
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
     public void Contract_Validator_Rejects_Available_Definition_Without_Artifact_And_Fingerprint()
     {
         var json = Encoding.UTF8.GetBytes(
