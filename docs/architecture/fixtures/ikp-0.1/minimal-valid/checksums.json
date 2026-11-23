@@ -20,7 +20,7 @@
     {
       "path": "object-index.json",
       "byteLength": 2287,
-      "sha256": "b0150287ac9b059f554a0be71848e18f96aab91c2bb793384a901e5cf16e27c7"
+      "sha256": "caff316cad2b393e48a743c769d87fd540b682a6a1e433ed2973e84789432793"
     },
     {
       "path": "payload/customizations/brule/7F3A.prg",
@@ -45,6 +45,6 @@
   ],
   "logicalContentDigest": {
     "algorithm": "SHA-256",
-    "value": "f2baf446f6c89ab5ae306e67292257ef380813f8f1b4b7b607a5f98acb94528a"
+    "value": "548bb58e867abf131e72cf7e11b535613aa59fdbad99cd55e00ac8f3248667d6"
   }
 }
