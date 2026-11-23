@@ -651,3 +651,22 @@ A recepção concluída, a análise Ready ou a decisão humana não substituem a
 ## Ciclo de vida do ZIP — decisão aprovada em 21-11-2026
 
 O ZIP IKP é exclusivamente um envelope temporário de transporte. Pode ser mantido em staging/arquivo transitório durante recepção, validação, análise e retry. O Knowledge extrai e materializa no SQL Server os dados estruturados, histórico e artefactos originais necessários. Após verificação de integridade, contagens, referências e proveniência, elimina o ZIP e os temporários. Em caso de falha ou materialização incompleta, mantém o pacote recuperável para retry. O PackageId e o checksum identificam o envelope durante o processamento; não criam obrigação de arquivo permanente.
+
+
+## Contrato de classificação e proveniência de artefactos — D-018 (23-11-2026)
+
+A classificação de artefactos separa três dimensões independentes:
+
+1. **Origem do conteúdo:** `source-content`, `derived-projection`, `generated-description` ou `generated-diagnostic`.
+2. **Natureza semântica:** código, configuração, estrutura SQL, metadados, descrição, relação ou diagnóstico.
+3. **Proveniência:** fonte/tabela, campo/propriedade, objeto associado, formato/codificação, transformação e versão, hash e relação com o conteúdo de origem, quando aplicável.
+
+`source-content` significa conteúdo obtido diretamente da fonte e preservado sem transformação semântica. Se a representação exportada não preservar exatamente os bytes da origem, essa limitação deve ser explícita. Conteúdo extraído, normalizado, formatado, combinado ou transformado é `derived-projection`. Descrições e diagnósticos produzidos pelo Scanner são classificados separadamente como `generated-description` e `generated-diagnostic`.
+
+A natureza semântica não é deduzida da origem. Uma descrição pode ser original ou gerada; código pode ser original ou derivado. As dimensões devem permanecer independentes.
+
+A referência `definition.artifactIds` fica reservada a artefactos que constituam efetivamente a definição técnica do objeto. Artefactos descritivos, estruturais e diagnósticos são associados por relações próprias, sem serem classificados como definições. Metadados disponíveis não provam que a definição original tenha sido recolhida.
+
+O conteúdo original disponível nunca é substituído por uma projeção. O DefinitionFingerprint utiliza exclusivamente o conteúdo original relevante da definição; projeções e descrições podem ter hashes próprios de integridade, sem alterar esse fingerprint.
+
+Pacotes antigos continuam legíveis sem receber classificações ou garantias retroativas não transportadas. D-018 fecha a semântica do contrato, mas não altera collectors, exporter, workspace SQLite, validator, schemas executáveis ou materialização SQL. A implementação depende da matriz por collector/ObjectKind e dos testes de aceitação.
