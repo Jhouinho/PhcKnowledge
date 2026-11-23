@@ -24,7 +24,7 @@ Os testes devem ser independentes do normalizador concreto. Os testes específic
 8. Fingerprints de políticas diferentes não são comparados como equivalentes sem regra explícita de migração/compatibilidade.
 9. O original e os seus bytes nunca são substituídos pela representação canónica.
 10. Estados de definição vazia, indisponível, não recolhida e fingerprint indisponível não podem ser confundidos.
-11. A leitura de pacotes legados mantém compatibilidade, sem atribuir retroactivamente semântica D-019/D-020 a valores antigos.
+11. Não existe obrigação de ler ou converter pacotes IKP de teste de iterações anteriores do Scanner que tenham sido descartados; a validação parte de novas capturas conformes com o contrato actual. Só versões/capacidades explicitamente incluídas na matriz de compatibilidade são entradas suportadas.
 
 ### 2.1 Distinção entre bytes do artefacto e conteúdo da origem
 
@@ -54,7 +54,7 @@ Nos artefactos compostos, como os de `phc.user_tsql_function`, o hash de integri
 | DF-014 | Artefacto de origem recolhido e representação canónica produzida | Os bytes do artefacto armazenado permanecem inalterados; a representação canónica é derivada e reproduzível. O teste não afirma que os bytes do artefacto são os bytes originais de autoria quando a fonte apenas fornece texto de catálogo ou quando o collector transforma/compõe o conteúdo |
 | DF-015 | Metadata muda sem alteração da definição | `MetadataFingerprint` só muda se o atributo alterado pertencer à projecção semântica aprovada e completa para aquele kind; `DefinitionFingerprint` mantém-se |
 | DF-016 | Definição muda sem alteração da metadata projectada | `DefinitionFingerprint` pode mudar; `MetadataFingerprint` mantém-se |
-| DF-017 | Pacote legado contém fingerprint produzido pela regra antiga | Pacote continua legível; o valor antigo é preservado e identificado como legado, sem ser apresentado como fingerprint semântico conforme a D-019/D-020 nem reinterpretado retroactivamente |
+| DF-017 | Pacote IKP de teste de uma iteração anterior do Scanner contém fingerprint produzido pela regra antiga | O pacote não é uma entrada suportada: não se exige leitura, preservação do valor legado, classificação retroactiva ou conversão; a validação usa uma nova captura conforme ao contrato actual |
 | DF-018 | Resolução semântica sem política validada | O resolver mantém `definition.status=Available` e produz o resultado de domínio `DefinitionFingerprint.Unavailable` com motivo `NoValidatedPolicy`, sem fabricar valor semântico |
 
 ### 3.1 Estados e motivos de indisponibilidade
@@ -119,7 +119,7 @@ As fixtures T-SQL devem ser concretas e separadas por `ObjectKind` e variante de
 - Nenhum kind sem política validada emite `DefinitionFingerprint`.
 - Hash de integridade continua a ser validado independentemente.
 - Modelo, serialização, schema e validador concordam sobre a presença/ausência e a versão do fingerprint.
-- Pacotes antigos continuam legíveis; os fingerprints produzidos pela regra antiga são preservados como valores legados, sem reclassificação silenciosa.
+- Não existe requisito de compatibilidade para pacotes IKP de teste de iterações anteriores do Scanner explicitamente descartados; não se implementa preservação de fingerprints legados nem conversor para esses pacotes. A compatibilidade de outras versões só existe quando declarada na matriz correspondente.
 - Testes de regressão demonstram que o fingerprint já não é igual, por construção, ao hash de integridade.
 - Estados de definição vazia, indisponível, não recolhida e fingerprint indisponível são distinguíveis no resultado de teste.
 - A documentação dos testes distingue sempre bytes do artefacto armazenado de bytes/texto de autoria na origem.
@@ -133,7 +133,7 @@ A revisão técnica dos 18 cenários transversais identificou cinco melhorias de
 
 1. Distinguir bytes exactos do artefacto armazenado de bytes/texto originais da autoria.
 2. Separar os estados de disponibilidade da definição dos motivos de indisponibilidade do fingerprint.
-3. Preservar fingerprints antigos como valores legados, sem reinterpretá-los.
+3. Não exigir leitura, preservação ou conversão dos pacotes IKP de teste descartados; não reinterpretar retroactivamente fingerprints antigos.
 4. Explicitar os limites da normalização: igualdade segundo política validada, não prova de equivalência absoluta de comportamento SQL.
 5. Numerar os testes de artefactos compostos e exigir fixtures concretas por `ObjectKind` e variante.
 
