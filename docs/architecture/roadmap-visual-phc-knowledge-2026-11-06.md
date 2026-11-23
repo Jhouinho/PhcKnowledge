@@ -1,10 +1,10 @@
 # Roadmap visual do PHC Knowledge — visão, fases e estado atual
 
 
-> **Revisão vinculativa — 21-11-2026:** este roadmap foi escrito antes do fecho do modelo Cliente/Instalação/Captura, D-015, D-016 e política de armazenamento. Para decisões actuais prevalece [Decisões aprovadas](decisoes-aprovadas-2026-11-21.md). O diagrama e estados anteriores são uma fotografia histórica e não devem reintroduzir tenancy multi-organização, SQL Server Express ou arquivo permanente do ZIP.
+> **Revisão vinculativa — 23-11-2026:** o diagrama e as fases anteriores são fotografias históricas. O estado actual, incluindo D-022 integrada e a situação da PR #20, está consolidado na secção 10. Para decisões normativas prevalece [Decisões aprovadas](decisoes-aprovadas-2026-11-21.md). Não reintroduzir tenancy multi-organização, PostgreSQL ou arquivo permanente do ZIP.
 
-**Data de referência:** 2026-11-21
-**Estado:** fotografia histórica anterior ao fecho das decisões de 21-11-2026. Scanner/IKP, ingestão/recovery, API HTTP, Identity/Portal backend e análise IKP A+B existem; materialização integral, experiência de upload pelo Portal e pesquisa continuam por construir. A Trigger Capability 2.0 foi integrada na main através da PR #21. As decisões actuais e o próximo passo estão no aditamento final e em `decisoes-aprovadas-2026-11-21.md`.
+**Data de referência:** 2026-11-23
+**Estado:** o roadmap visual original é histórico. A fotografia actual a 23-11-2026 está na secção 10: D-022 integrada na main; Incremento C/UI React fora da main na PR #20; materialização integral e pesquisa por construir.
 **Nota:** as percentagens não são estimadas; os estados indicam maturidade qualitativa.
 
 ## 1. Objetivo do produto
@@ -284,7 +284,7 @@ A IA não deverá inventar factos nem substituir a proveniência. Deve investiga
 | 7 | API HTTP IKP | **Implementada.** Upload raw ZIP e consultas org-scoped, com JWT/scopes opcionais por configuração. |
 | 8 | Identity e Portal backend | **Implementado e integrado na main (PR #15).** Login, sessões, roles, bootstrap e administração de utilizadores. |
 | 9 | Análise IKP (Incrementos A+B) | **Concluído e integrado na `main` (PR #19, merge `98a0b20…`).** Reopen/Reader/análise + persistência POST/GET; migration 004 após 001–003 no Install/preflight/bootstrap; build Release OK; Import 224; SQL relevantes 12 (3+9). |
-| 10 | Incremento C — confirmação explícita | **Desenho aprovado; não implementado.** Documento: `increment-c-package-import-analysis-confirmation-design-2026-11-19.md`. Implementação aguarda autorização. |
+| 10 | Incremento C — confirmação explícita | **Em branch, não integrado.** PR #20 aberta; branch divergente da main actual (97 commits à frente / 89 atrás no compare consultado). Reconciliar, rever e validar antes de qualquer merge. |
 | 11 | Associação de contexto | **Futuro.** CaptureContextAssignment / Customer/Installation/Environment; distinto de confirmação e de materialização. |
 | 12 | Materialização e comparação | **Futuro.** Capture, Observation, REL/DTL, identidade lógica e diff com cobertura suficiente. |
 | 13 | Pesquisa e conhecimento reutilizável | **Futuro.** Consultas com evidências, contexto e anotações rastreáveis. |
@@ -344,7 +344,7 @@ Estabilização pós-merge: build Release OK (0 erros); `PhcKnowledge.Import.Tes
 
 A API e o backend de autenticação não equivalem a um Portal utilizável: não existe UI React, confirmação explícita implementada, nem gestão/associação de Cliente/Instalação, com ambiente/localização como atributos. O domínio 0.2 (Capture/Observation/REL/DTL/Identity Matching) ainda não está materializado.
 
-Antes de produção, mantêm-se hardening de Data Protection e de bloqueios administrativos. Melhorias futuras de cobertura da análise: deadlock 1205 real, E2E `SqlScriptApplicator` do Install, recuperação pós-rearranque do Host, suite SQL completa. O Incremento C (confirmação) tem desenho aprovado e **aguarda autorização de implementação**; não iniciar React nem materialização sem decisão explícita.
+Antes de produção, mantêm-se hardening de Data Protection e de bloqueios administrativos. Melhorias futuras de cobertura da análise: deadlock 1205 real, E2E `SqlScriptApplicator` do Install, recuperação pós-rearranque do Host, suite SQL completa. O Incremento C está proposto na PR #20, mas não está integrado na main; a branch precisa de reconciliação com a main actual e revisão antes de qualquer merge.
 
 
 ## Actualização de direcção — 21-11-2026
@@ -358,3 +358,51 @@ Antes de produção, mantêm-se hardening de Data Protection e de bloqueios admi
 
 ### Próxima etapa
 Construir a matriz de classificação por collector/ObjectKind com base na captura real existente. Depois fechar o contrato técnico de materialização SQL e o ciclo upload → análise → decisão → materialização → verificação → eliminação. A edição/versão do SQL Server e detalhes físicos de armazenamento continuam por definir.
+
+
+## 10. Revisão global da main — estado vinculativo a 23-11-2026
+
+Esta secção substitui as referências de estado e próximos passos anteriores sempre que exista divergência. Os diagramas e relatórios datados mantêm-se como histórico; não são apagados nem reescritos retroactivamente.
+
+### 10.1 Baseline confirmada
+
+- **main:** `31deb2badb91a2b0453099290eaddaaa6afd944e` (commit documental de registo do merge D-022).
+- **D-022:** PR #27 integrada em 23-11-2026, merge commit `ad42f53fc3d4f7b654d61dea56f0f501af0905b8`.
+- **IKP:** versão global 0.1; Object Index v2; PackageImportAnalysis 0.3.
+- **CI no merge D-022:** .NET Knowledge, .NET Scanner, validação do contrato IKP e integração SQL Server 2022 — todos com conclusão success. Scanner: 291 testes aprovados e 2 ignorados.
+- **Limite da validação:** CI não equivale a teste numa instalação PHC real. A implementação D-022 ainda precisa de ser exercitada numa nova captura real para confirmar o comportamento ponta-a-ponta do Scanner e do pacote produzido.
+
+### 10.2 Estado por capacidade
+
+| Capacidade | Estado na main | Limite / evidência em falta |
+|---|---|---|
+| Scanner autónomo e exportador IKP | Implementado | Validar a nova semântica D-022 com captura real |
+| Receive / Validate / Archive, receipts e recovery | Implementado | O ciclo completo de materialização ainda não existe |
+| API HTTP IKP e Identity/backend de Portal | Implementado | Não equivale a experiência Portal completa |
+| Análise IKP A+B | Implementado | Não é confirmação nem materialização |
+| Trigger Capability 2.0 | Integrada | Catálogo standard completo e comparação efectiva continuam por fechar |
+| D-022 / Object Index v2 / análise 0.3 | Integrado e CI verde | Sem política semântica de produção; sem validação PHC real |
+| Incremento C e UI React | Não integrado | PR #20 aberta, branch divergente; reconciliar/rever |
+| Contexto Cliente/Instalação/Captura | Parcial / por integrar no fluxo | Associação e correcção de contexto no Portal |
+| Materialização SQL Server | Por construir | Contrato físico, persistência, verificação e recovery |
+| Comparação histórica / pesquisa contextual | Por construir | Dependem da materialização fiável |
+| RAG | Futuro | Só após conhecimento estruturado e pesquisa fundamentada |
+
+### 10.3 PR #20 — risco de integração
+
+A PR #20 (`feat(ikp): Increment C — confirmação de PackageImportAnalysis`) continua aberta, fora da main. No compare consultado em 23-11-2026, a branch apresentava 97 commits à frente e 89 atrás da cabeça da main, com divergência em documentação, solução, backend, frontend, catálogo standard e testes.
+
+Não integrar directamente nem assumir que o diff continua válido contra a main actual. Primeiro reconciliar a branch (ou reaplicar as alterações em branch nova baseada na main), rever o diff integral, actualizar os testes e executar CI. A decisão de merge continua a exigir aprovação explícita do responsável do projecto.
+
+### 10.4 Próxima sequência recomendada
+
+1. **Reconciliar PR #20:** trazer a proposta do Incremento C para uma base actualizada; resolver divergências sem perder decisões já aprovadas; rever backend, UI, migrations e documentação.
+2. **Validar D-022 em captura real:** executar Scanner actualizado numa instalação PHC de teste, produzir pacote novo e verificar Object Index v2, integridade e análise 0.3 ponta-a-ponta. Não usar pacotes de teste antigos descartados.
+3. **Matriz collector/ObjectKind:** classificar origem, conteúdo original/derivado, natureza, completude, fingerprint, proveniência e destino de materialização, usando a captura real existente.
+4. **Contrato físico de materialização:** fechar tabelas/identidades, armazenamento de artefactos, transacções, idempotência, recuperação e critérios de verificação no SQL Server central.
+5. **Materialização V1:** implementar apenas depois de contratos e critérios aprovados; eliminar ZIP/staging só após verificação integral.
+6. **Comparação e pesquisa:** evoluir para diff histórico e pesquisa contextual após existir conhecimento persistente fiável.
+
+### 10.5 Limites desta revisão
+
+A revisão consultou a main, a documentação, a árvore do repositório, a PR #20, o merge #27 e os workflows associados. Não executou build/testes localmente, não acedeu a uma instalação PHC real nem ao SQL Server do utilizador, e não alterou código, schemas executáveis, collectors, SQLite, migrations ou materialização.

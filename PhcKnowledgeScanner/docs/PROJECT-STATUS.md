@@ -1,6 +1,6 @@
 # Estado do projeto e próximos passos
 
-**Última atualização:** 2026-11-21  
+**Última atualização:** 2026-11-23  
 **Repositório:** [Jhouinho/PhcKnowledge](https://github.com/Jhouinho/PhcKnowledge) — monorepo canónico; Scanner em `PhcKnowledgeScanner/`  
 **Branch de referência:** `main`  
 **Nota de referência:** o histórico de commits e ADRs do Scanner mantém-se no monorepo; esta revisão documental não declara uma nova execução de build/testes.
@@ -28,7 +28,7 @@ Princípios que se mantêm:
 - Nunca alterar a base de dados PHC.
 - Não normalizar nem reescrever destrutivamente o código original.
 - Não truncar silenciosamente conteúdos.
-- Não misturar este projeto com `Jhouinho/ConsoleApp` (arquitetura histórica / Scanner V1). O produto PHC Knowledge atual está no repositório `Jhouinho/PhcKnowledge`, fora da pasta Scanner.
+- Não confundir este componente com `Jhouinho/ConsoleApp` (exploração histórica / Scanner V1). O produto PHC Knowledge actual está no mesmo repositório `Jhouinho/PhcKnowledge`; o Scanner está integrado no monorepo em `PhcKnowledgeScanner/`, mantendo autonomia funcional e executável.
 - Aplicação desktop nativa WPF; não introduzir uma interface web, HTTP ou WebView.
 
 ## 2. Estado atual — resumo
@@ -184,7 +184,7 @@ Critérios obrigatórios desta evolução:
 - **Contrato de intercâmbio:** IKP 0.1 definido por especificação, schemas, fixtures, validador e matriz de compatibilidade.
 - **Exportação IKP:** implementada em `PhcKnowledgeScanner.Export`, com comandos CLI `scan-ikp` e `export-ikp`.
 - **Validação real:** Object Index projetado com a captura PHC default `CSDefault202603` (8/21 kinds presentes; 16.618 objetos e 49 artefactos com tamanho/hash confirmados). Falta validar o ZIP completo produzido pelo exportador com o validador independente.
-- **Importação no Knowledge:** ainda não implementada; a primeira fatia será Receive / Validate / Archive no projeto central.
+- **Integração no Knowledge:** Receive / Validate / Archive, receipts/recovery, API HTTP e análise IKP A+B já estão implementados no núcleo central. A confirmação explícita (Incremento C) está numa PR aberta, não integrada na main; a materialização persistente continua por implementar.
 - Preservar a independência do Scanner: não criar dependência runtime ou referência de projeto para a plataforma Knowledge.
 
 ## 6. Fora de âmbito / não assumir como decidido
@@ -194,7 +194,7 @@ Critérios obrigatórios desta evolução:
 - Comentários funcionais automáticos por IA: ainda não implementados.
 - Reescrita ou correção automática de código PHC: não pretendida.
 - Escrita na base de dados PHC: fora de âmbito.
-- Importação no PHC Knowledge: ainda não implementada. O emissor IKP 0.1 existe; o Knowledge ainda não tem API/armazenamento próprios.
+- Materialização persistente do conhecimento no PHC Knowledge: ainda não implementada. O emissor IKP 0.1 e a recepção/análise central já existem; a materialização SQL Server, verificação integral e eliminação do ZIP continuam pendentes.
 - Qualquer alteração ao `ConsoleApp`/PHC Knowledge: projeto separado.
 
 As decisões técnicas ainda em aberto continuam registadas em [open-decisions.md](open-decisions.md). Não converter automaticamente esses pontos em requisitos.
@@ -237,3 +237,18 @@ As decisões actuais da plataforma estão em [Decisões arquitecturais aprovadas
 - Não alterar collectors, workspace SQLite ou semântica dos dados antes da matriz de classificação por collector/ObjectKind ser validada com a captura real existente.
 
 Esta actualização regista decisões de integração; não declara alterações ou validações de código do Scanner.
+
+
+## Estado de integração actualizado — 23-11-2026
+
+Esta secção prevalece sobre as fotografias anteriores deste documento sempre que descrevam a integração Scanner ↔ Knowledge.
+
+- O repositório canónico é `Jhouinho/PhcKnowledge`; este projecto vive em `PhcKnowledgeScanner/` dentro do mesmo monorepo. Mantém autonomia funcional, solução, dependências, CLI/desktop e testes próprios.
+- O Scanner produz IKP 0.1. A implementação D-022 está integrada na main (PR #27, merge `ad42f53fc3d4f7b654d61dea56f0f501af0905b8`): Object Index v2 e envelope de DefinitionFingerprint D-021. CI associado: 291 testes Scanner aprovados, 2 ignorados, além dos restantes workflows verdes.
+- A integração D-022 ainda precisa de validação com uma captura nova numa instalação PHC real. A captura CSDefault202603 anterior não deve ser apresentada como validação desta nova implementação.
+- No Knowledge já existem Receive / Validate / Archive, receipts/recovery, API HTTP e análise IKP A+B. Isto não significa que o conhecimento esteja materializado.
+- A confirmação explícita da análise e a UI React estão propostas na PR #20, ainda fora da main. A branch está divergente da main actual e exige reconciliação/revisão antes de qualquer merge.
+- A materialização persistente de observações, relações REL/DTL, metadados e artefactos originais no SQL Server central, bem como a verificação integral e eliminação do ZIP, continuam por implementar.
+- O Scanner não deve consultar o histórico central para decidir o que recolhe. Não alterar collectors, workspace SQLite ou semântica de recolha sem decisão explícita e validação baseada em evidência real.
+
+O estado global, sequência e dependências estão em `docs/architecture/roadmap-visual-phc-knowledge-2026-11-06.md` (secção 10) e `README.md`. Esta actualização documental não executou build/testes localmente nem validou uma instalação PHC.

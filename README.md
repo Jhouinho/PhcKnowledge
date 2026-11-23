@@ -4,35 +4,20 @@ Plataforma de conhecimento técnico sobre PHC, destinada a recolher, organizar, 
 
 O repositório reúne a plataforma PHC Knowledge e o componente de recolha **PhcKnowledgeScanner**. O Scanner mantém autonomia funcional e executável, mas o seu código é versionado neste mesmo repositório.
 
-## Estrutura
+## Estrutura e fronteiras
 
-```text
-PhcKnowledge/
-├── PhcKnowledge.sln
-├── global.json
-├── src/                       # plataforma PHC Knowledge (em desenvolvimento)
-├── tests/                     # testes da plataforma
-├── tools/                     # ferramentas e validação do contrato IKP
-├── PhcKnowledgeScanner/       # aplicação de recolha PHC autónoma
-│   ├── src/
-│   ├── tests/
-│   ├── tools/
-│   └── docs/
-└── docs/                      # arquitetura e contrato de importação
-```
+- `PhcKnowledgeScanner/`: aplicação autónoma de recolha read-only, workspace SQLite local e exportação IKP.
+- `src/`: plataforma central, incluindo serviços de importação e host HTTP.
+- `tests/`: testes da plataforma; os testes do Scanner permanecem nos seus projectos próprios.
+- `docs/`: decisões, contratos, relatórios e fontes.
 
-## Limites entre componentes
-
-- **PhcKnowledgeScanner:** liga-se às instalações PHC em modo de leitura, recolhe metadados e personalizações, mantém o workspace local e produz artefactos/pacotes.
-- **PHC Knowledge:** recebe, valida e importa pacotes IKP; mantém o conhecimento central, histórico, identidade e proveniência.
-- A plataforma não executa o Scanner em runtime nem acede ao workspace SQLite do Scanner.
-- Ambos evoluem no mesmo repositório, mas mantêm projetos, dependências, testes e responsabilidades separados.
+O Knowledge não executa o Scanner em runtime nem acede ao seu workspace SQLite. O pacote IKP é transferido do Scanner para o Portal; o SQL Server central é o armazenamento persistente do conhecimento, histórico e artefactos originais necessários.
 
 ## Desenvolvimento
 
 Requisito: .NET SDK 10.0.403 ou posterior compatível com `global.json`.
 
-A partir da raiz do repositório:
+A partir da raiz:
 
 ```bash
 dotnet restore PhcKnowledge.sln
@@ -40,56 +25,59 @@ dotnet build PhcKnowledge.sln --no-restore
 dotnet test PhcKnowledge.sln --no-build
 ```
 
-Executar a aplicação desktop (Windows):
+O Scanner também mantém a sua solução própria em `PhcKnowledgeScanner/PhcKnowledgeScanner.sln`.
 
-```bash
-dotnet run --project PhcKnowledgeScanner/src/PhcKnowledgeScanner.Desktop
-```
+## Estado actual — 23-11-2026
 
-Executar um teste de ligação pela CLI (definir a password em `PHC_SCANNER_SQL_PASSWORD`, sem a colocar nos argumentos):
+**Referência:** `main`, commit `31deb2badb91a2b0453099290eaddaaa6afd944e`. A implementação D-022 foi integrada pela PR #27, merge commit `ad42f53fc3d4f7b654d61dea56f0f501af0905b8`.
 
-```bash
-dotnet run --project PhcKnowledgeScanner/src/PhcKnowledgeScanner.Cli -- test-connection --server HOST\INSTANCE --database BD --auth sql --user UTILIZADOR
-```
+### Direcção aprovada
 
-Também se mantém a solução específica do Scanner em `PhcKnowledgeScanner/PhcKnowledgeScanner.sln` para desenvolvimento isolado do componente.
+- Uma organização interna; clientes PHC são contextos técnicos.
+- Relação Cliente → Instalação → Capturas.
+- Base central Microsoft SQL Server. PostgreSQL está excluído; edição/versão concreta ainda por decidir.
+- Scanner autónomo, captura completa dentro do âmbito declarado e transporte IKP manual.
+- D-015: manter factos REL/DTL e compará-los no Knowledge com o catálogo PHC Standard versionado.
+- D-016: materialização e deduplicação incrementais no Knowledge; ausência só pode significar remoção quando a operação teve sucesso e a cobertura é completa.
+- ZIP IKP exclusivamente temporário: só é eliminado depois de materialização integral e verificada.
+- SQLite apenas como workspace/cache local do Scanner; não é a base central.
 
-## Estado da plataforma — 2026-11-21
+A referência normativa é [Decisões arquitecturais aprovadas](docs/architecture/decisoes-aprovadas-2026-11-21.md).
 
-A referência de código é a `main`, commit `b8a188175eb6792210e2a242bc237c6747b19f68`. A Trigger Capability 2.0 foi integrada na PR #21 e os workflows associados terminaram com sucesso.
+### Implementado e validado por CI
 
-### Decisões actuais
+- Scanner autónomo, collectors existentes e exportador IKP 0.1.
+- Receive / Validate / Archive, receipts, recovery e API HTTP IKP.
+- Identity e backend de sessão do Portal.
+- Análise IKP A+B persistida.
+- Trigger Capability 2.0.
+- D-022: Object Index v2, envelope de DefinitionFingerprint D-021, análise 0.3 e schemas/fixtures/testes actualizados.
 
-As decisões aprovadas de produto, identidade, captura, transporte e armazenamento estão consolidadas em [Decisões arquitecturais aprovadas](docs/architecture/decisoes-aprovadas-2026-11-21.md). Em síntese:
+Na execução CI associada ao merge D-022 passaram os workflows .NET Knowledge, .NET Scanner, validação do contrato IKP e integração SQL Server 2022. A suite dedicada do Scanner reportou 291 testes aprovados e 2 ignorados. Isto valida os pipelines executados; não equivale a validação numa instalação PHC real.
 
-- Uma única organização (a empresa utilizadora); clientes são contextos técnicos.
-- Cada base de dados PHC registada tem uma instalação e um `InstallationId`; cada instalação tem várias capturas.
-- Base central Microsoft SQL Server; edição/versão por decidir. PostgreSQL está excluído e não se assume Express.
-- O Scanner é autónomo; o pacote é transferido manualmente.
-- D-015: manter a recolha REL/DTL e comparar a evidência da instalação com o catálogo PHC Standard versionado.
-- D-016: captura completa dentro do âmbito declarado; materialização e deduplicação incrementais no Knowledge.
-- ZIP é apenas transporte temporário; depois da materialização verificada, é eliminado.
-- Dados estruturados, histórico e artefactos originais necessários ficam permanentemente no SQL Server.
+### Por construir ou validar
 
-### Estado técnico conhecido
+- Confirmação/rejeição da análise no Portal (Incremento C): existe a PR #20 aberta, mas não está integrada na `main`.
+- UI React do Portal: não está integrada na `main`.
+- Matriz validada de classificação por collector/ObjectKind com captura real.
+- Catálogo PHC Standard versionado e comparação efectiva com REL/DTL e restantes evidências.
+- Associação de Cliente/Instalação/Captura no fluxo do Portal.
+- Materialização persistente de observações, relações, metadados e artefactos no SQL Server.
+- Verificação pós-materialização e eliminação segura do ZIP/staging.
+- Comparação histórica, pesquisa contextual e evolução RAG.
+- Escolha da edição/versão SQL Server e detalhe físico de armazenamento de artefactos.
+- Hardening operacional antes de produção.
 
-**Existente:**
-- Scanner autónomo e exportador IKP 0.1.
-- Recepção, validação, receipts e recuperação de pacotes.
-- Análise IKP A+B integrada na `main`.
-- Trigger Capability 2.0 integrada na PR #21.
+### Estado da PR #20
 
-**Por construir ou validar:**
-- Matriz semântica completa dos collectors e ObjectKinds.
-- Materialização persistente de observações, relações e artefactos no modelo de conhecimento.
-- Comparação histórica com regras seguras de cobertura.
-- Catálogo PHC Standard versionado e comparação efectiva.
-- Ciclo final upload → análise → decisão → materialização → verificação → eliminação do ZIP.
-- Pesquisa contextual sobre o conhecimento materializado.
-- Edição/versão concreta do SQL Server.
+A PR [#20 — Increment C](https://github.com/Jhouinho/PhcKnowledge/pull/20) continua aberta e fora da `main`. A branch está divergente da cabeça actual da `main` (97 commits à frente e 89 atrás no compare consultado), pelo que não deve ser integrada sem reconciliação/rebase e nova revisão integral. A sua existência não significa que as funcionalidades estejam disponíveis na `main`.
 
-O arquivo imutável actual de ZIPs é transitório e não representa o destino aprovado. Não o remover antes de existir materialização, verificação e recuperação testadas.
+### Próxima sequência recomendada
 
-### Próximo passo
+1. Reconciliar a PR #20 com a `main` actual e rever os seus contratos, código e testes antes de qualquer merge.
+2. Fechar a matriz collector/ObjectKind com a captura real existente, sem alterar collectors ou SQLite antes da validação.
+3. Fechar o contrato físico de materialização no SQL Server.
+4. Implementar materialização incremental, verificação integral e ciclo de vida temporário do ZIP.
+5. Só depois avançar para comparação histórica e pesquisa contextual.
 
-Construir a matriz de classificação por collector/ObjectKind, usando primeiro a captura real já disponível. Não alterar collectors, SQLite ou migrations antes de validar as lacunas concretas. O roadmap deve acompanhar a referência de decisões aprovada.
+O roadmap e o relatório da revisão global registam os critérios, dependências e limitações. Não declarar validação PHC real nem materialização central concluída sem execução efectiva.

@@ -164,3 +164,21 @@ O roadmap visual é a referência para estados e sequência. Não iniciar a fase
 ## Decisões aprovadas — revisão 2026-11-21
 
 A referência normativa é [Decisões arquitecturais aprovadas](docs/architecture/decisoes-aprovadas-2026-11-21.md). Inclui o modelo Cliente → Instalação → Captura, D-015 (manter recolha REL/DTL e comparar com catálogo standard), D-016 (captura completa no âmbito declarado e materialização incremental), ZIP exclusivamente temporário e armazenamento permanente dos artefactos/dados no SQL Server central. Esta orientação prevalece sobre texto histórico deste ficheiro.
+
+
+## Estado vigente após revisão global — 23-11-2026
+
+Esta secção prevalece sobre as fotografias de estado anteriores deste documento. A referência de código é a `main` do repositório canónico, commit `31deb2badb91a2b0453099290eaddaaa6afd944e`.
+
+- A base central é Microsoft SQL Server; PostgreSQL está excluído. Edição/versão SQL Server continua por decidir.
+- O Scanner é autónomo, vive em `PhcKnowledgeScanner/` neste monorepo e não é executado pelo Knowledge em runtime.
+- IKP 0.1 mantém-se como contrato global; Object Index v2 e PackageImportAnalysis 0.3 estão implementados e integrados pela PR #27 (`ad42f53fc3d4f7b654d61dea56f0f501af0905b8`).
+- Receive / Validate / Archive, API HTTP, receipts/recovery e análise IKP A+B estão na `main`.
+- Os workflows .NET Knowledge, .NET Scanner, validação IKP e integração SQL Server 2022 passaram no CI associado ao merge D-022. Não existe, por esse facto, validação funcional em instalação PHC real.
+- A UI React e a confirmação do Incremento C não estão na `main`; a PR #20 está aberta, mas a sua branch está divergente da `main` actual (97 commits à frente / 89 atrás no compare consultado). Reconciliar e rever antes de qualquer integração.
+- Materialização persistente de Capture/Observation/REL/DTL/artefactos no SQL Server, verificação pós-materialização e eliminação do ZIP continuam por implementar.
+- A próxima actividade técnica de domínio é fechar a matriz de classificação por collector/ObjectKind com base na captura real, sem alterar collectors, workspace SQLite ou materialização antes da validação e autorização correspondentes.
+
+A sequência e o estado detalhado encontram-se em `docs/architecture/roadmap-visual-phc-knowledge-2026-11-06.md`; a decisão normativa encontra-se em `docs/architecture/decisoes-aprovadas-2026-11-21.md`. O relatório da revisão global está em `docs/audits/revisao-global-main-2026-11-23.md`.
+
+A revisão documental não executou build/testes localmente, não validou uma instalação PHC real e não alterou código, schemas executáveis, collectors, SQLite, migrations ou materialização SQL.
