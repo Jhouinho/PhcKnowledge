@@ -18,10 +18,12 @@ Os testes devem ser independentes do normalizador concreto. Os testes específic
 2. O hash de integridade não é reutilizado como `DefinitionFingerprint`.
 3. Sem política de normalização semântica validada para o kind/variante, `DefinitionFingerprint` fica indisponível.
 4. A comparação exacta, se disponibilizada, é identificada como modalidade separada e não preenche o campo de fingerprint semântico.
-5. Um fingerprint semântico inclui a identificação/versionamento da política que o produziu.
+5. Um fingerprint semântico disponível inclui a identificação/versionamento da política que o produziu (`policy.id` e `policy.version`).
+6. Para uma definição `Available`, o estado do fingerprint é explícito: `Available` ou `Unavailable`.
+7. Um fingerprint indisponível usa um `reasonCode` do catálogo controlado, sem `algorithm`, `value` ou `policy`.
 6. Fingerprints de políticas diferentes não são comparados como equivalentes sem regra explícita de migração/compatibilidade.
 7. O original e os seus bytes nunca são substituídos pela representação canónica.
-8. Estados de definição vazia, indisponível, não recolhida e fingerprint indisponível por falta de política não podem ser confundidos.
+10. Estados de definição vazia, indisponível, não recolhida e fingerprint indisponível não podem ser confundidos.
 9. A leitura de pacotes legados mantém compatibilidade, sem atribuir retroactivamente semântica D-019/D-020 a valores antigos.
 
 ### 2.1 Distinção entre bytes do artefacto e conteúdo da origem
@@ -53,7 +55,7 @@ Nos artefactos compostos, como os de `phc.user_tsql_function`, o hash de integri
 | DF-015 | Metadata muda sem alteração da definição | `MetadataFingerprint` só muda se o atributo alterado pertencer à projecção semântica aprovada e completa para aquele kind; `DefinitionFingerprint` mantém-se |
 | DF-016 | Definição muda sem alteração da metadata projectada | `DefinitionFingerprint` pode mudar; `MetadataFingerprint` mantém-se |
 | DF-017 | Pacote legado contém fingerprint produzido pela regra antiga | Pacote continua legível; o valor antigo é preservado e identificado como legado, sem ser apresentado como fingerprint semântico conforme a D-019/D-020 nem reinterpretado retroactivamente |
-| DF-018 | Campo fingerprint ausente por falta de política | Ausência não é interpretada como definição vazia, erro de integridade ou prova de diferença semântica; a causa da indisponibilidade deve ser distinguível de definição indisponível e de conteúdo não recolhido |
+| DF-018 | Fingerprint indisponível por falta de política numa definição disponível | `definition.status=Available`; `definitionFingerprint.status=Unavailable`; `reasonCode=NoValidatedPolicy`; sem `algorithm`, `value` ou `policy` |
 
 ### 3.1 Estados e motivos de indisponibilidade
 
@@ -64,9 +66,9 @@ Os testes devem distinguir, no mínimo, os seguintes estados conceptuais:
 - **Não recolhida:** a operação/capability não solicitou ou não recolheu a definição.
 - **Fingerprint indisponível:** a definição pode estar disponível, mas não existe política segura para produzir fingerprint, ou a política não consegue processar aquele conteúdo.
 
-Para testes e diagnóstico, podem ser avaliados motivos distintos como `NoNormalizer`, `UnsupportedSyntax`, `NormalizationFailed`, `DefinitionUnavailable` e `NotCollected`. Estes identificadores são **propostas de nomenclatura**, não valores aprovados para o contrato IKP. Não devem ser introduzidos no schema/modelo executável sem decisão própria.
+Catálogo controlado inicial aprovado para `definitionFingerprint.reasonCode`: `NoValidatedPolicy`, `UnsupportedSyntax` e `NormalizationFailed`. `DefinitionUnavailable` e `NotCollected` não pertencem a este catálogo: são representados por `definition.status`. Os códigos são valores contratuais, não mensagens livres.
 
-A ausência de fingerprint não deve colapsar estes estados numa única condição nem alterar o estado de disponibilidade da definição.
+A ausência de fingerprint não deve colapsar estes estados numa única condição nem alterar o estado de disponibilidade da definição. Para `definition.status` igual a `Empty`, `Unavailable` ou `NotCollected`, omite-se `definitionFingerprint`; para `Available`, o resultado é explícito (`Available` ou `Unavailable`).
 
 ## 4. Casos específicos de artefactos compostos
 
@@ -111,7 +113,9 @@ As fixtures T-SQL devem ser concretas e separadas por `ObjectKind` e variante de
 ## 6. Critérios para considerar a correcção concluída
 
 - Todos os casos transversais aplicáveis passam.
-- Cada kind com fingerprint disponível tem política e versão explícitas.
+- Cada kind/variante com fingerprint disponível tem `policy.id` e `policy.version` explícitos.
+- Para cada definição `Available`, o estado do fingerprint é explícito; motivos de indisponibilidade usam apenas códigos do catálogo controlado.
+- A propriedade `definitionFingerprint` é omitida para estados de definição `Empty`, `Unavailable` e `NotCollected`.
 - Nenhum kind sem política validada emite `DefinitionFingerprint`.
 - Hash de integridade continua a ser validado independentemente.
 - Modelo, serialização, schema e validador concordam sobre a presença/ausência e a versão do fingerprint.
@@ -138,7 +142,21 @@ Esta revisão não transforma a suite em testes executados nem aprova uma polít
 ## 8. Decisões ainda necessárias
 
 1. Aprovar esta suite transversal e definir fixtures/nomes finais dos testes.
-2. Fechar a representação no contrato IKP para política/versão e ausência de fingerprint.
+2. Verificar a compatibilidade do novo envelope com o schema do object-index e consumidores existentes antes de alterar qualquer schema executável.
 3. Aprovar a matriz de normalização por kind/variante.
 4. Só depois implementar projector, modelo, exporter/schema e validador em conjunto.
 
+
+## 9. D-021 — testes da representação aprovada
+
+A suite deve cobrir, adicionalmente:
+
+| ID | Cenário | Resultado esperado |
+|---|---|---|
+| DF-019 | Definição disponível com política validada | Fingerprint `Available` com `algorithm`, `value`, `policy.id` e `policy.version` |
+| DF-020 | Definição disponível sem política validada | Fingerprint `Unavailable` com `reasonCode=NoValidatedPolicy`; sem algoritmo, valor ou política |
+| DF-021 | Sintaxe fora do âmbito suportado | Fingerprint `Unavailable` com `reasonCode=UnsupportedSyntax` |
+| DF-022 | Falha segura durante normalização | Fingerprint `Unavailable` com `reasonCode=NormalizationFailed` |
+| DF-023 | Definição `Empty`, `Unavailable` ou `NotCollected` | Omitir `definitionFingerprint`; preservar exactamente `definition.status` |
+| DF-024 | Alteração da versão da política | Identidade de política/versão fica explícita; não comparar como equivalente sem compatibilidade/migração aprovada |
+| DF-025 | Consumidor recebe `reasonCode` desconhecido | Preservar/tolerar o código; não o converter em estado de definição nem em erro de integridade |
