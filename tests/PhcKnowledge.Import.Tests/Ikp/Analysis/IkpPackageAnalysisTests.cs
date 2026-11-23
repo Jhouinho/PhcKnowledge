@@ -288,6 +288,35 @@ public sealed class IkpPackageAnalysisTests
     }
 
     [Fact]
+    public void Analysis_counts_definition_fingerprint_available_and_unavailable_separately()
+    {
+        var validation = new IkpPackageValidationResult(
+            Guid.NewGuid(), Guid.NewGuid(), "0.1", "p", "1", null,
+            "a".PadLeft(64, 'a'), 10, 5, 1, 1, 1, 1, 0, "b".PadLeft(64, 'b'));
+        var inspected = new IkpInspectedObject(
+            "rule:1", "phc.brule", "op.brule", "Available",
+            ["artifact-1"], true, false, false, false, "Rule", "dbo",
+            "Unavailable", "NoValidatedPolicy");
+        var inspection = new IkpPackageInspection(
+            validation, true, "phc.installation.knowledge.package", "Full", "Complete", "sqlserver",
+            null, null, null,
+            Array.Empty<IkpInspectedCapabilityOperation>(),
+            Array.Empty<IkpInspectedCoverageOperation>(),
+            [inspected],
+            [new IkpInspectedArtifact("artifact-1", "payload/rule.txt", "code", "text/plain", null, true, 4, "c".PadLeft(64, 'c'))],
+            Array.Empty<IkpInspectedIssue>(),
+            null);
+
+        var analysis = new IkpPackageAnalysisBuilder().Build(
+            Guid.NewGuid(), Guid.NewGuid(), inspection, true, DateTimeOffset.UtcNow);
+
+        Assert.Equal(0, analysis.ObjectIndex.DefinitionFingerprintAvailableCount);
+        Assert.Equal(1, analysis.ObjectIndex.DefinitionFingerprintUnavailableCount);
+        Assert.Equal(1, analysis.ObjectIndex.Available);
+        Assert.Equal(PackageImportAnalysisSchema.Version, "0.3");
+    }
+
+    [Fact]
     public void Semantic_fingerprint_and_equals_ignore_receipt_and_analyzed_at()
     {
         var baseAnalysis = BuildMinimalAnalysis(
