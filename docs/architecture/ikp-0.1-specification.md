@@ -148,9 +148,9 @@ CaptureId e PackageId nunca entram na identidade lógica da entidade. O mesmo SH
 - Todos os fingerprints usam SHA-256 e hexadecimal minúsculo de 64 caracteres.
 - MetadataFingerprint: SHA-256 dos bytes UTF-8 do objeto `metadata` serializado segundo JSON Canonicalization Scheme (RFC 8785). Excluir datas de recolha, timestamps voláteis, caminhos temporários e dados de execução que não descrevam o objeto. A política de inclusão de cada campo pertence ao contrato da respetiva categoria.
 - O SHA-256 dos bytes exatos de cada artefacto original é o respetivo hash de integridade; qualquer diferença de bytes altera esse hash.
-- DefinitionFingerprint: SHA-256 de uma representação canónica semântica da definição, com normalização específica por objectKind, determinística, identificada e versionada. Só pode ignorar diferenças de apresentação quando a regra estiver validada como semanticamente segura. Sem normalizador seguro, a comparação é conservadora e não declara equivalência semântica; pode usar comparação exata identificada ou não emitir fingerprint semântico.
+- DefinitionFingerprint: SHA-256 de uma representação canónica semântica da definição, com normalização específica por objectKind/variante, determinística, identificada e versionada. Só pode ignorar diferenças de apresentação quando a regra estiver validada como semanticamente segura. Sem normalizador seguro, não emitir fingerprint semântico. A representação transporta status, algorithm, value e policy.id/policy.version quando disponível; quando indisponível, transporta status e um reasonCode do catálogo controlado. A comparação exacta por bytes é uma operação separada e não preenche este campo.
 - Se a definição for composta por vários artefactos, calcular o fingerprint composto sobre uma lista determinística ordenada por `artifactId`; cada entrada usa `artifactId + LF + componentDefinitionFingerprint + LF`, codificada em UTF-8, incluindo a versão da política de normalização no envelope canónico. O resultado é novamente hashed com SHA-256. Os hashes de integridade dos artefactos componentes continuam preservados separadamente.
-- Não calcular DefinitionFingerprint para estados `Empty`, `Unavailable` ou `NotCollected`. A ausência de fingerprint nesses estados não equivale a hash vazio.
+- definition.status descreve a disponibilidade do conteúdo (Available, Empty, Unavailable, NotCollected) e é independente de definition.definitionFingerprint.status (Available, Unavailable). Quando a definição está Available, o resultado do fingerprint é explícito: disponível com algoritmo, valor e política; ou indisponível com código de motivo. Para Empty, Unavailable e NotCollected, não existe cálculo de fingerprint e a propriedade definitionFingerprint é omitida. A omissão nesses estados não equivale a hash vazio.
 
 ### 4.3 Associação à instalação
 
@@ -365,6 +365,23 @@ Exemplo:
   ]
 }
 ~~~
+
+Representação do resultado do fingerprint:
+
+- `Available`: requer `algorithm`, `value`, `policy.id` e `policy.version`. O algoritmo é actualmente `sha256`; o valor é hexadecimal minúsculo com 64 caracteres.
+- `Unavailable`: requer `reasonCode` do catálogo controlado; não inclui `algorithm`, `value` ou `policy`.
+- `definitionFingerprint` só é representado quando `definition.status` é `Available`. Para os restantes estados de definição, a propriedade é omitida.
+- `policy.id` identifica a política específica do `objectKind`/variante; `policy.version` identifica a versão exacta das regras de normalização. A versão do Scanner e a versão da capability não substituem estes campos.
+
+Catálogo controlado inicial de `reasonCode` para fingerprint indisponível:
+
+| Código | Significado |
+|---|---|
+| `NoValidatedPolicy` | Não existe política específica, aprovada e validada para o kind/variante. |
+| `UnsupportedSyntax` | A política existe, mas a definição contém sintaxe fora do âmbito suportado. |
+| `NormalizationFailed` | A política aplicável não conseguiu produzir a representação canónica com segurança. |
+
+Os códigos são valores fechados do contrato, não mensagens livres. Um consumidor deve tolerar códigos desconhecidos sem os reinterpretar. Falta de conteúdo na origem pertence a `definition.status`, não a `reasonCode`. Incompatibilidade entre versões de política é uma condição de comparação/migração, não um motivo para reescrever o resultado original.
 
 Estados individuais de definição:
 - Available: conteúdo recuperado e referenciado;
@@ -688,3 +705,13 @@ Quando não existir uma política de normalização semântica segura, específi
 A comparação byte-a-byte pode ser disponibilizada como modalidade exacta separada, mas não preenche `definition.definitionFingerprint` nem demonstra equivalência semântica. A ausência de fingerprint por falta de normalizador não significa definição vazia, erro de integridade ou diferença semântica.
 
 Valores legados produzidos pela regra anterior continuam legíveis, mas não são reinterpretados retroactivamente como fingerprints semânticos conformes à D-019/D-020. O contrato executável terá de transportar a política/versão e a distinção de estados necessárias; esta nota documental não altera por si só os schemas nem o validador.
+
+## Representação versionada do DefinitionFingerprint — D-021 (23-11-2026)
+
+O estado do fingerprint é independente do estado de disponibilidade da definição. Para uma definição `Available`, o pacote representa explicitamente `definitionFingerprint.status` como `Available` ou `Unavailable`. Quando a definição é `Empty`, `Unavailable` ou `NotCollected`, a propriedade `definitionFingerprint` é omitida, pois não há conteúdo disponível para calcular o fingerprint.
+
+Um fingerprint disponível contém `algorithm`, `value` e `policy` com `id` e `version`. Um fingerprint indisponível contém `reasonCode` de catálogo controlado, sem algoritmo, valor ou política aplicada. A política identifica o normalizador específico por kind/variante e a versão exacta das regras; não pode ser inferida apenas da versão do Scanner ou da capability.
+
+Catálogo inicial fechado de motivos: `NoValidatedPolicy`, `UnsupportedSyntax` e `NormalizationFailed`. Os códigos não substituem os estados de disponibilidade da definição. Códigos futuros exigem evolução explícita do contrato; consumidores devem preservar e tolerar códigos desconhecidos.
+
+Esta decisão fecha a representação documental. Não altera ainda schemas JSON executáveis, modelos, serialização, exportador, validador ou materialização. A compatibilidade com consumidores existentes e a versão de schema do object-index têm de ser verificadas antes da implementação; não se presume que a alteração estrutural seja retrocompatível.
