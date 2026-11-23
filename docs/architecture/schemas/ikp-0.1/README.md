@@ -16,3 +16,12 @@ Os schemas validam forma, tipos, campos obrigatórios e enums, incluindo a unici
 **Nota de desempenho — 2026-11-18:** um teste A/B com um pacote real mostrou que `uniqueItems: true` no array raiz `objects` fazia a validação exceder 120 segundos; removendo apenas essa regra, a validação terminou em cerca de 2,8 segundos. A regra foi removida do schema oficial. Mantêm-se a verificação de `sourceObjectId` no validador C# (`HashSet` ordinal) e `uniqueItems` em `definition.artifactIds`. Com a captura real CSDefault202603 (~16.618 objetos), o harness de receção/recovery passou a concluir em segundos.
 
 Os schemas são intencionalmente extensíveis em objetos de metadados e envelopes, mas mantêm estritos os campos que determinam identidade e integridade. A versão do contrato continua a ser `0.1`; alterações incompatíveis exigem nova versão de contrato ou capability, não uma alteração silenciosa deste schema. A compatibilidade de uma versão anterior só existe quando estiver explicitamente declarada na matriz aplicável. Não se exige leitura ou conversão dos pacotes IKP de teste de iterações antigas do Scanner que foram descartados. A regra específica de leitura do coverage schema v1 não cria uma obrigação geral de suportar esses pacotes.
+
+
+## Baseline de compatibilidade — Object Index v2 (D-022, 23-11-2026)
+
+O IKP global mantém a versão 0.1; o Object Index passa de schemaVersion=1 para schemaVersion=2 para representar o envelope D-021 de definitionFingerprint. Esta evolução é incompatível com o formato anterior: o importador actualizado aceita v2 e rejeita v1. Não existe obrigação de ler ou converter pacotes IKP de teste antigos que foram descartados.
+
+O fingerprint.schema.json existente fica associado ao MetadataFingerprint, cujo contrato não muda. Na implementação será introduzido um schema próprio definition-fingerprint.schema.json para os estados D-021. O Object Index v2 exige fingerprint explícito (Available ou Unavailable) quando a definição está Available, e omite a propriedade quando a definição está Empty, Unavailable ou NotCollected.
+
+A análise de importação evolui para schema 0.3, com contagens separadas de fingerprints disponíveis e indisponíveis. Estas alterações são aqui documentadas como baseline aprovado; os ficheiros JSON Schema, fixtures, modelos e validadores executáveis só serão alterados em conjunto na fase de implementação.
