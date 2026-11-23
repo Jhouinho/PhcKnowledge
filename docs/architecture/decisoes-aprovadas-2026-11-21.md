@@ -204,12 +204,32 @@ Metadados disponíveis não implicam definição original disponível. A ausênc
 
 - O conteúdo original disponível deve ser preservado sem substituição por projeções.
 - Uma projeção ou descrição nunca substitui a evidência original.
-- O DefinitionFingerprint representa exclusivamente o conteúdo original relevante da definição, preservado segundo a política de identidade/proveniência aprovada.
-- Artefactos derivados podem ter hashes próprios de integridade/projeção, sem alterar o DefinitionFingerprint.
-- A transformação deve ser identificável e versionada quando aplicável.
+- O conteúdo original disponível é preservado sem substituição por projeções. O SHA-256 dos bytes exatos do artefacto original é o seu hash de integridade e muda perante qualquer diferença de bytes, incluindo encoding, espaços ou quebras de linha.
+- O DefinitionFingerprint representa a definição técnica em termos semânticos: é calculado por SHA-256 sobre uma representação canónica cuja normalização é específica do objectKind, determinística, identificada e versionada.
+- A normalização só pode ignorar diferenças de apresentação quando houver garantia documentada de que não altera o significado. Não existe normalizador universal para todo o código/conteúdo PHC.
+- Quando não houver normalização segura e validada para um objectKind, a comparação é conservadora: usa-se a representação original sem remover diferenças, ou declara-se o fingerprint semântico indisponível até existir política validada. Nunca se presume equivalência semântica.
+- Hashes de integridade de artefactos e hashes de projeções derivadas permanecem distintos do DefinitionFingerprint.
 
 ### 10.6 Compatibilidade e âmbito da aprovação
 
 Pacotes anteriores continuam legíveis segundo a informação que efetivamente transportam. Não se atribuem retroativamente classificações ou garantias de proveniência que não existam nos pacotes antigos.
 
 D-018 aprova a semântica e os princípios deste contrato. Não autoriza, por si só, alterações aos collectors, exporter, workspace SQLite, schemas executáveis, validator ou materialização SQL. A matriz por collector/ObjectKind e os testes de aceitação devem ser preparados antes da implementação.
+
+
+## 11. D-019 — Fingerprint semântico da definição técnica
+
+**Data: 23-11-2026 — Estado: APROVADA.**
+
+O PHC Knowledge deve distinguir alterações semânticas à definição técnica de diferenças meramente de apresentação, sem perder a evidência original.
+
+1. O artefacto original é preservado integralmente. O seu SHA-256 sobre os bytes exatos funciona como hash de integridade e detecta qualquer alteração de bytes.
+2. O DefinitionFingerprint passa a representar a definição técnica semântica, calculada por SHA-256 sobre uma representação canónica normalizada.
+3. A normalização é específica por objectKind, determinística, identificada e versionada. Só pode remover diferenças de apresentação quando for demonstrável que não altera o significado.
+4. Não se aplica normalização universal nem se removem espaços, comentários, casing ou quebras de linha indiscriminadamente.
+5. Quando não existir normalizador seguro e validado, a comparação é conservadora: não se declara equivalência semântica. Pode usar-se a representação original como comparação exacta, identificando esse modo, ou deixar o fingerprint semântico indisponível até existir política validada.
+6. O conteúdo original nunca é substituído pela representação canónica. A normalização é uma projeção de comparação, reproduzível a partir do original.
+7. A versão da política/normalizador tem de ser conhecida para interpretar e comparar fingerprints. Mudanças de versão do normalizador exigem tratamento explícito; não se comparam valores produzidos por políticas diferentes como se fossem equivalentes.
+8. MetadataFingerprint mantém o contrato independente já aprovado: hash dos metadados semanticamente relevantes após normalização por categoria e canonicalização JSON.
+9. Esta decisão altera a semântica normativa de DefinitionFingerprint anteriormente descrita como hash direto do conteúdo original. O hash direto mantém-se como hash de integridade do artefacto, não como substituto do fingerprint semântico.
+10. A aprovação fecha o princípio e a separação conceptual. Não autoriza alterações aos collectors, exporter, workspace SQLite, schemas executáveis, validator ou materialização SQL. Antes da implementação, é obrigatória uma matriz por objectKind com regras de normalização e testes de aceitação, incluindo casos em que a normalização não é segura.
