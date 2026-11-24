@@ -65,6 +65,22 @@ Foram executadas duas capturas Full sucessivas da mesma instalação operacional
 
 **Conclusão temporal:** os stamps `formb` e `formc` demonstraram reprodutibilidade observacional entre duas capturas sucessivas, nesta instalação e janela, sem alterações deliberadas. Não demonstra comportamento sob mutações, generalização a outras instalações/versões, identidade persistente ou correspondência standard. Os hashes dos ZIPs e logical content digests diferem; isso não contradiz o resultado dos stamps, mas a composição exacta do logical content digest não foi auditada nesta avaliação.
 
+### 3.1.2 Controlo T-A — T0/T1 na dfblock
+
+Depois de C1/C2, foi executado T-A como controlo sem mutações deliberadas, na instalação de testes `dfblock`. Foram produzidas duas capturas Full (T0/T1), com **300,0 segundos** sem mutações deliberadas entre elas.
+
+| Indicador | T0 | T1 |
+|---|---|---|
+| CaptureId | `6dab37bd-…` | `6fcd4606-…` |
+| PackageId | `d78a2db7-…` | `ff4a0d16-…` |
+| Objectos / payloads | 18 955 / 882 | 18 955 / 882 |
+
+A1 (`Personalização 1`, `formb`) e A2 (`hide_calculos`, `formc`) mantiveram stamp único, `SourceObjectId`, nome/ecrã, `MetadataFingerprint` face à baseline, metadata, definição `Available` e bytes do artefacto. As contagens por `ObjectKind` permaneceram iguais.
+
+Os hashes SHA-256 dos ZIPs e os logical content digests globais diferiram. A composição dos digests não foi auditada; não se conclui que a diferença seja irrelevante, nem se atribui qualquer alteração às duas âncoras.
+
+**Resultado:** T-A aprovado como controlo sem mutações para estas duas âncoras, nesta instalação e janela. O resultado não valida detecção de mutações nem permite generalização a outras instalações/versões. Nenhuma mutação foi executada; T-B…T-E não foram corridos. O relatório detalhado comunicado pelo responsável do projecto é `artifacts/ikp-te-ta-control-report.md` e permanece fora do repositório.
+
 ### 3.2 Identificadores SQL Server
 
 `sqlserver.object_id` não coincide como triplo `scheme/value/scope` entre as duas bases, porque o scope inclui o nome da base de dados. Entre os 7 933 pares de tabelas candidatos, 6 179 têm o mesmo valor numérico de `object_id` quando o scope é ignorado e 1 754 têm valor diferente. A coincidência numérica não é identidade cross-installation.
@@ -162,7 +178,7 @@ A próxima etapa documental/técnica deve seguir esta ordem:
 4. **Diagnosticar cobertura SQL:** investigar os triggers sem definição e as nove transições Available → Unavailable sem presumir causa.
 5. Só depois apresentar proposta técnica para Scanner, IKP, domínio e persistência SQL Server, sujeita a aprovação explícita.
 
-A matriz D-023 v0.2 consolida a evidência e as limitações por ObjectKind; continua draft, não é política operacional.
+A matriz D-023 v0.4 consolida a evidência e as limitações por ObjectKind; continua draft, não é política operacional.
 
 ## 10. Não realizado / não autorizado por esta avaliação
 
