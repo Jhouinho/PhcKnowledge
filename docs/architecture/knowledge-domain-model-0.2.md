@@ -244,7 +244,7 @@ Remoção:
 
 - Catálogo PHC Standard é central e versionado.
 - Organizações podem propor alterações, não publicar diretamente.
-- Conhecimento privado fica isolado por Organization.
+- O texto histórico de isolamento por Organization não define a segregação actual: existe uma única organização interna. O âmbito de acesso e reutilização por cliente/instalação depende da governação e permissões aprovadas, conforme D-023.
 - Promoção para conhecimento standard exige curadoria humana.
 - Eliminação histórica bloqueada; desativação permitida; eventos append-only.
 - RAG é consumidor futuro da base estruturada, não entidade obrigatória do modelo.
