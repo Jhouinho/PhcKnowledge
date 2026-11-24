@@ -508,9 +508,9 @@ D-023 foi aprovado e documentado em [Contrato D-023 — Identidade e correspond�
 
 ### Próxima sequência aprovada
 
-1. Construir a matriz de reconhecimento por objectKind, com evidência, scopes, critérios, cardinalidades, limites e testes. Não preencher lacunas por suposição.
-2. Validar a matriz com as capturas reais CS default e dfblock, sem alterar os pacotes originais.
-3. Registar ambiguidades e pontos sem evidência suficiente como pendentes/Unknown.
+1. **Matriz documental v0.1 criada:** [D-023 — Matriz de reconhecimento por ObjectKind](d-023-objectkind-recognition-matrix-2026-11-24.md), com evidência estática, resultados agregados e lacunas explícitas. Ainda não é política operacional.
+2. **Próximo:** analisar os pacotes originais CS default e dfblock, sem os alterar, para obter evidência por objecto — começar por stamps formb/formc e tabelas SQL; verificar duplicados, scopes e atributos.
+3. Validar a matriz com evidência individual, registar ambiguidades como pendentes/Unknown e completar testes de cobertura.
 4. Só depois apresentar proposta técnica para Scanner, IKP, modelo de domínio e persistência SQL Server.
 5. Obter aprovação explícita antes de alterações a collectors, workspace SQLite, schemas executáveis ou migrations/materialização.
 
