@@ -115,7 +115,8 @@ O modelo conceptual coloca `EntityIdentity` no âmbito de uma Installation. Inst
 6. Não há fingerprints semânticos disponíveis nas capturas; não foi possível demonstrar diff semântico de definições.
 7. A causa dos 540 triggers sem definição na dfblock e das nove transições Available → Unavailable permanece desconhecida.
 8. REL/DTL tem evidência de stamps comuns, mas falta contrato próprio de identidade e correspondência para factos declarados.
-9. `EntityIdentity`, `Correspondence` e Observations continuam a ser conceitos de destino, sem materialização persistente no SQL Server.
+9. `phc.user_tsql_function` apresenta 6 registos em cada captura, sem `SourceIdentity` e com 6 nomes comuns; é necessário esclarecer a variante/origem dos registos e a diferença face à previsão P1.B para `dbo.ftu`.
+10. `EntityIdentity`, `Correspondence` e Observations continuam a ser conceitos de destino, sem materialização persistente no SQL Server.
 
 ## 8. Distinções obrigatórias para o desenho seguinte
 
