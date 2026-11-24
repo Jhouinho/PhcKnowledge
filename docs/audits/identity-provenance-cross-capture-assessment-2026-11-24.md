@@ -81,6 +81,28 @@ Os hashes SHA-256 dos ZIPs e os logical content digests globais diferiram. A com
 
 **Resultado:** T-A aprovado como controlo sem mutações para estas duas âncoras, nesta instalação e janela. O resultado não valida detecção de mutações nem permite generalização a outras instalações/versões. Nenhuma mutação foi executada; T-B…T-E não foram corridos. O relatório detalhado comunicado pelo responsável do projecto é `artifacts/ikp-te-ta-control-report.md` e permanece fora do repositório.
 
+### 3.1.3 Ensaio T-B — alteração controlada e reposição de definição
+
+T-B foi executado depois de T-A, na mesma instalação de testes `dfblock`, com a build `1.0.0+ba3bf7c0839acc634cb47da8c374f536e02d19f4`, modo Full e IKP 0.1 / Object Index v2. O alvo foi uma única definição `phc.hidden_grid` em `dbo.formc`. As mutações temporárias foram feitas pela interface PHC; cada captura foi read-only.
+
+A primeira captura identificada como T0 encontrou o marcador já presente e não foi aceite como baseline. A investigação apontou uma gravação PHC pelo utilizador `ADM` às 17:02:24 como hipótese mais suportada, mas não provada. O estado foi reposto manualmente e uma nova T0 foi capturada. A baseline recuperada produziu artefacto de 426 bytes, SHA-256 `ec217df6e0d2b11005e24fe56216fd3d0e833ad1f173f7acac7ac0ebe69e8811`, igual byte a byte ao artefacto de T-A. O campo SQL `prop` tinha 289 bytes devido a CRLF, sem diferença no artefacto normalizado.
+
+| Indicador | T0 recuperada | T1 | T2 |
+|---|---|---|---|
+| CaptureId | `ec8be6c7-40aa-46de-a6ba-1f68b3ba0c6d` | `484bdb48-3bba-4cf2-8108-65c0162090e1` | `cabe1217-8af0-46ea-a73b-d2494862de13` |
+| Artefacto | 426 bytes | 467 bytes | 426 bytes |
+| SHA-256 do artefacto | `ec217df6…e69e8811` | `0fc66d80…44371469` | igual a T0 |
+| `prop` SQL | 289 bytes | 331 bytes | 289 bytes, igual a T0 byte a byte |
+| MetadataFingerprint | `4e48a43e…` | igual | igual |
+| DefinitionFingerprint | Unavailable / NoValidatedPolicy | igual | igual |
+| Definição | Available | Available | Available |
+
+A única diferença de conteúdo T0→T1 foi a linha de comentário de teste acrescentada; a instrução executável permaneceu inalterada. SourceObjectId, SourceIdentity, metadata e MetadataFingerprint não mudaram. As 23 operações de coverage e as 18 955 contagens de objectos mantiveram-se; nenhum outro objecto mudou. O artefacto T1 tem SHA-256 `0fc66d8074dcb41eb225ad02feea57ac7b1bfca100dcf213fd4db56044371469`.
+
+Na reposição, T2 recuperou os bytes originais de `prop` e o artefacto de 426 bytes, com o mesmo SHA-256 de T0. A linha de teste deixou de existir em `dbo.formc`. A única diferença residual reportada fora da definição foi `usrhora` (17:35:50→17:47:09, utilizador `ADM`), consistente com a gravação da reposição. O logical digest global diferiu porque CaptureId integra o pacote; igualando esse identificador, object-index, coverage e declared-relations foram iguais.
+
+**Conclusão limitada:** T-B demonstrou detecção de alteração e reposição byte a byte do conteúdo capturado nesta âncora `formc`. Não demonstrou equivalência/diferença semântica: DefinitionFingerprint permaneceu `Unavailable / NoValidatedPolicy`. Também não demonstra identidade persistente, matching cross-installation, estabilidade universal, renomeação, eliminação, recriação ou generalização a outros ObjectKinds. O relatório completo está em [Ensaio T-B — alteração controlada e reposição](controlled-definition-change-tb-assessment-2026-11-24.md).
+
 ### 3.2 Identificadores SQL Server
 
 `sqlserver.object_id` não coincide como triplo `scheme/value/scope` entre as duas bases, porque o scope inclui o nome da base de dados. Entre os 7 933 pares de tabelas candidatos, 6 179 têm o mesmo valor numérico de `object_id` quando o scope é ignorado e 1 754 têm valor diferente. A coincidência numérica não é identidade cross-installation.
@@ -145,7 +167,7 @@ O modelo conceptual coloca `EntityIdentity` no âmbito de uma Installation. Inst
 
 ## 7. Lacunas demonstradas
 
-1. A estabilidade temporal dos stamps `formb`/`formc` foi observada em C1/C2 na instalação `dfblock` (30/30 e 19/19, respectivamente); mutações controladas e generalização a outras instalações/versões continuam por validar.
+1. A estabilidade temporal dos stamps `formb`/`formc` foi observada em C1/C2 na instalação `dfblock` (30/30 e 19/19). T-B demonstrou alteração e reposição de definição numa âncora `formc`; renomeação, eliminação, recriação e generalização a outras instalações/versões continuam por validar.
 2. Não existe ainda evidência cross-installation suficiente para todas as famílias PHC; as restantes famílias com stamp não demonstraram correspondências comuns neste conjunto.
 3. A correspondência de 7 933 tabelas por schema+nome continua a ser candidata estrutural, mas a lacuna sobre a MetadataFingerprint está fechada: as diferenças dos 4 905 pares são exclusivamente datas de catálogo SQL. Isto não confirma identidade nem correspondência cross-installation.
 4. A política de resolução de candidatos, desempate, confirmação, rejeição e histórico não está fechada em detalhe operacional.
@@ -172,22 +194,22 @@ O contrato seguinte deve manter separadas estas situações:
 
 A próxima etapa documental/técnica deve seguir esta ordem:
 
-1. **Validar comportamento sob mutações controladas:** em ambiente de testes, estudar alteração de definição, renomeação, eliminação e recriação de `formb`/`formc`; a estabilidade sem mutações já foi observada em C1/C2 na `dfblock`. Recolher evidência noutras instalações/versões separadamente, sem criar matching automático nesta fase.
+1. **Completar a validação de mutações:** T-B já demonstrou alteração e reposição de definição numa âncora `formc`. Continuam por estudar renomeação, eliminação e recriação de `formb`/`formc`, além de outras âncoras, ObjectKinds, instalações e versões. Cada ensaio requer ambiente de testes e autorização explícita; não criar matching automático.
 2. **Manter catálogo PHC Standard e classificação em aberto:** especificar versão/edição/cobertura antes de inferir StandardIntact, StandardModified ou InstallationDevelopment.
 3. **Tratar REL/DTL separadamente:** propor contrato de identidade/proveniência dos factos declarados, sem os converter em ObjectKinds.
 4. **Diagnosticar cobertura SQL:** investigar os triggers sem definição e as nove transições Available → Unavailable sem presumir causa.
 5. Só depois apresentar proposta técnica para Scanner, IKP, domínio e persistência SQL Server, sujeita a aprovação explícita.
 
-A matriz D-023 v0.4 consolida a evidência e as limitações por ObjectKind; continua draft, não é política operacional.
+A matriz D-023 v0.5 consolida a evidência e as limitações por ObjectKind, incluindo T-B; continua draft, não é política operacional.
 
 ## 10. Não realizado / não autorizado por esta avaliação
 
 - Não foram alterados código, collectors, schemas executáveis, SQLite, migrations ou materialização.
-- Não foram executadas consultas adicionais ao SQL Server.
+- Foram executadas leituras SQL para verificar a âncora e comparar os bytes de `prop`; as capturas T0/T1/T2 foram read-only.
 - Não foram activadas políticas de fingerprint semântico.
 - Não foi classificado individualmente qualquer objecto da dfblock.
 - Não foi implementado matching, classificação automática, diff histórico ou RAG.
 - Não foram copiados pacotes, payloads ou dados proprietários para o GitHub.
-- A validação C1/C2 não alterou código, collectors, contratos, SQLite, base de dados PHC ou documentação canónica; os artefactos e relatórios locais permanecem fora do repositório.
+- T-B incluiu gravações temporárias e controladas da definição pela interface PHC, com reposição confirmada byte a byte. Não alterou código, collectors, contratos, SQLite, schemas executáveis, migrations, materialização ou RAG.
 
 **Conclusão:** a arquitectura conceptual existente é uma boa base e deve ser preservada. A lacuna principal não é a ausência de identificadores no Scanner, mas a falta de um contrato operacional de correspondência e proveniência na plataforma, validado para o âmbito cross-capture e cross-installation.
