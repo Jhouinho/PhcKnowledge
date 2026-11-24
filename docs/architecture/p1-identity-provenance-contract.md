@@ -224,3 +224,15 @@ O Scanner não recebe InstallationId como autoridade e não mantém histórico m
 ## 12. Próximo passo — atualizado em 2026-11-10
 
 A etapa P1.B de inspeção e projeção foi implementada. O trabalho pendente é alargar a validação aos kinds não presentes na captura real, testar identidade entre capturas e confirmar o pacote ZIP completo emitido pelo exportador. Não alterar SQLite/collectors sem evidência concreta de lacuna.
+
+
+## Aditamento — evidência cross-capture de 2026-11-24
+
+A comparação local das capturas CS default e dfblock, produzidas com a mesma build, acrescenta evidência que não existia quando este contrato foi escrito:
+
+- Foram encontradas 12 correspondências com `phc.stamp`, limitadas aos kinds `formb` e `formc`.
+- `sqlserver.object_id` não atravessa bases de dados distintas, conforme o scope já definido.
+- Cerca de 7 933 tabelas foram correspondidas por nome/`SourceObjectId`; esta correspondência é observacional e não demonstra identidade lógica persistente.
+- A validação abrange duas instalações e não demonstra estabilidade para todos os kinds ou schemes.
+
+Esta evidência confirma a necessidade de manter separados SourceObjectId, SourceIdentity e EntityIdentity. Não altera o contrato nem autoriza novos schemes, scopes, recolhas ou alterações ao Scanner. A política operacional de correspondência entre capturas/instalações permanece por fechar. Ver [avaliação de identidade e proveniência entre capturas](../audits/identity-provenance-cross-capture-assessment-2026-11-24.md).
