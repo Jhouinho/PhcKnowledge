@@ -514,3 +514,31 @@ A auditoria do Scanner deve avaliar se a recolha permite responder a perguntas f
 D-024 é um objectivo de produto e orientação de roadmap. Não altera a sequência imediata de validação nem autoriza alterações a código, collectors, queries, SQLite, schemas executáveis IKP, migrations, materialização SQL Server ou RAG. Qualquer alteração técnica exige evidência, proposta e aprovação específica.
 
 Referência normativa: [D-024 — Decisões aprovadas](decisoes-aprovadas-2026-11-21.md#15-d-024--descoberta-progressiva-de-conhecimento-funcional).
+
+
+## 14. D-025 aprovado — camada independente de conhecimento funcional persistente
+
+**Aprovado em 24-11-2026.**
+
+O conhecimento funcional descoberto será persistido numa camada independente no SQL Server central, ligada às evidências técnicas originais e sem alterar ou incorporar os artefactos do Scanner.
+
+### Fluxo evolutivo
+
+1. Investigar artefactos reais da CS Default com Cursor ou análise humana.
+2. Produzir descobertas estruturadas com relações, evidências, âmbito e limitações.
+3. Avaliar a qualidade e utilidade dos resultados fora da base central.
+4. Definir um contrato versionado de entrada e um processo de validação/importação.
+5. Persistir descobertas e validações no SQL Server central, mantendo referências às evidências originais.
+6. Disponibilizar pesquisa e navegação no Portal entre conclusões, objectos e evidências.
+
+### Salvaguardas
+
+- Evidência original e conhecimento derivado permanecem separados.
+- Hipóteses não são conclusões validadas.
+- PHC Standard e Installation Knowledge mantêm âmbitos separados.
+- Cursor pode propor descobertas, mas não escreve directamente na base central nem governa o conhecimento.
+- A proposta de modelo físico, pacote JSON, APIs e importação continua por fechar.
+
+D-025 não altera a sequência imediata da auditoria do Scanner nem autoriza implementação de código, collectors, SQLite, schemas executáveis IKP, migrations, materialização SQL Server ou RAG. A experiência CS Default e a avaliação dos resultados precedem a proposta técnica.
+
+Referência normativa: [D-025 — Decisões aprovadas](decisoes-aprovadas-2026-11-21.md#16-d-025--camada-independente-de-conhecimento-funcional-persistente).
