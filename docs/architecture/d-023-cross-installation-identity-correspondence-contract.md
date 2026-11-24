@@ -125,7 +125,11 @@ A comparação de definições permanece subordinada a D-018 a D-022: original p
 
 ## 8. Matriz de reconhecimento por objectKind
 
-A matriz documental v0.2, actualizada com a análise comparativa por objecto das capturas CS default e dfblock, está em [D-023 — Matriz de reconhecimento por ObjectKind (v0.2)](d-023-objectkind-recognition-matrix-2026-11-24.md). A análise confirmou 1 par `formb` e 11 pares `formc` com `phc.stamp`, únicos 1:1 nestas duas capturas, e 7 933 candidatos de tabelas SQL por schema+nome. A investigação da MetadataFingerprint confirmou que a projecção de tabelas usa apenas `typeDesc` e `isMsShipped`; os 4 905 casos em que a metadata completa diverge diferem exclusivamente em `createDate` e/ou `modifyDate`. A projecção actual é coerente com os testes do Scanner e mantém-se inalterada. A matriz continua draft: estes resultados não criam automaticamente `Correspondence.Confirmed`, não demonstram `SameLogicalEntity` persistente ou `SameStandardEntity`, não validam classificação e não autorizam implementação.
+A matriz documental v0.3, actualizada com a análise comparativa CS default/dfblock e a validação temporal C1/C2 em `dfblock`, está em [D-023 — Matriz de reconhecimento por ObjectKind (v0.3)](d-023-objectkind-recognition-matrix-2026-11-24.md). A análise cross-installation confirmou 1 par `formb` e 11 pares `formc` com `phc.stamp`, únicos 1:1 nestas duas capturas, e 7 933 candidatos de tabelas SQL por schema+nome. A investigação da MetadataFingerprint confirmou que a projecção de tabelas usa apenas `typeDesc` e `isMsShipped`; os 4 905 casos em que a metadata completa diverge diferem exclusivamente em `createDate` e/ou `modifyDate`. A projecção actual é coerente com os testes do Scanner e mantém-se inalterada.
+
+A validação temporal C1/C2, na mesma instalação operacional `DESKTOP-GB9607Q\\SQLEXPRESS/dfblock`, com a build `1.0.0+ba3bf7c0839acc634cb47da8c374f536e02d19f4`, IKP 0.1 e Object Index v2, encontrou 30/30 stamps `formb` e 19/19 stamps `formc` comuns, sem duplicados ou drift observado nos atributos comparados. O IKP 0.1 não transporta `InstallationId`; a mesma instalação foi confirmada por servidor, `origin.databaseName` e `installation_label`. A validação demonstra reprodutibilidade observacional temporal nesta instalação/janela, sem alterações deliberadas, mas não demonstra estabilidade sob mutação, generalização, identidade persistente ou correspondência standard. O SOID deriva do stamp e não é evidência independente; DefinitionFingerprint semântico continua indisponível (`NoValidatedPolicy`). A composição dos logical content digests diferentes não foi auditada nesta avaliação.
+
+A matriz continua draft: estes resultados não criam automaticamente `Correspondence.Confirmed`, não demonstram por si só `SameLogicalEntity` persistente ou `SameStandardEntity`, não validam classificação e não autorizam implementação.
 
 Antes de qualquer implementação, criar e validar uma matriz com, no mínimo:
 
@@ -161,9 +165,10 @@ Sequência obrigatória:
 1. consolidar documentação e referências cruzadas;
 2. produzir a matriz por `objectKind` com base nos contratos e evidência real;
 3. validar identidade e correspondências nas capturas CS default e dfblock;
-4. registar ambiguidades e lacunas sem inventar resultados;
-5. apresentar proposta técnica de alterações ao Scanner, IKP, domínio e SQL Server;
-6. obter aprovação antes de implementar.
+4. validar estabilidade temporal e, separadamente, comportamento sob mutações controladas por `objectKind` (a estabilidade sem mutações de `formb`/`formc` foi observada em C1/C2 na `dfblock`);
+5. registar ambiguidades e lacunas sem inventar resultados;
+6. apresentar proposta técnica de alterações ao Scanner, IKP, domínio e SQL Server;
+7. obter aprovação antes de implementar.
 
 ## 10. Relação com decisões anteriores
 
