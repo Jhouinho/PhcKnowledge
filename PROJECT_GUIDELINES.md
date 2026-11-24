@@ -199,6 +199,8 @@ Esta secção prevalece sobre as fotografias de estado anteriores deste document
 - Continua pendente validar D-022 com uma captura nova numa instalação PHC real. Não usar a captura anterior CSDefault202603 como prova dessa validação.
 - Próxima atividade de domínio: fechar a matriz collector/operation/ObjectKind/cobertura, usando código e evidência de captura real. A análise estática não substitui a validação com captura. Não alterar collectors, workspace SQLite ou semântica de recolha antes dessa validação e decisão explícita.
 
+A matriz estática Collector / Operation / ObjectKind encontra-se em `docs/architecture/collector-operation-objectkind-matrix-2026-11-24.md`; é uma leitura do código e não deve ser tratada como validada por captura PHC até conclusão dessa validação.
+
 ### Governação do repositório
 
 - Decisões aprovadas e documentação canónica consolidam-se diretamente na `main`.
