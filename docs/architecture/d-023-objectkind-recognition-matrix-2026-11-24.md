@@ -42,7 +42,9 @@ A comparação CS default / dfblock, realizada com a mesma build do Scanner, rep
 - Zero DefinitionFingerprints semânticos `Available`; os 60 envelopes elegíveis na CS e 280 na dfblock estão `Unavailable / NoValidatedPolicy`;
 - Procedures e triggers têm cobertura `Partial`; na dfblock, 540 triggers estão sem definição. Nove triggers com nome comum passam de `Available` na CS para `Unavailable` na dfblock; a causa permanece desconhecida.
 
-Os pacotes são IKP 0.1 / Object Index v2, produzidos pela mesma build `1.0.0+960eed18828bcbe60d28d072ef50bc0e3e4baf35`. A análise confirmou os hashes e a reconstrução do ZIP da dfblock. A evidência detalhada dos 12 pares e dos candidatos SQL está registada no relatório comparativo local, não versionado no repositório.\n\nA unicidade dos stamps está demonstrada apenas dentro destas duas capturas e destes scopes. Não demonstra estabilidade intra-installation, generalização a outras instalações/versões, `SameLogicalEntity` persistente ou `SameStandardEntity`. Não permite classificar objectos individuais.
+Os pacotes são IKP 0.1 / Object Index v2, produzidos pela mesma build `1.0.0+960eed18828bcbe60d28d072ef50bc0e3e4baf35`. A análise confirmou os hashes e a reconstrução do ZIP da dfblock. A evidência detalhada dos 12 pares e dos candidatos SQL está registada no relatório comparativo local, não versionado no repositório.
+
+A unicidade dos stamps está demonstrada apenas dentro destas duas capturas e destes scopes. Não demonstra estabilidade intra-installation, generalização a outras instalações/versões, `SameLogicalEntity` persistente ou `SameStandardEntity`. Não permite classificar objectos individuais.
 
 ## 3. Matriz SQL Server
 
@@ -55,6 +57,12 @@ Os pacotes são IKP 0.1 / Object Index v2, produzidos pela mesma build `1.0.0+96
 | `view` | Nome/schema; object_id não está no registo actual; definição pode estar disponível ou indisponível | Nome/schema geram candidato; continuidade não comprovada | Nome/schema/definição podem gerar candidato, não confirmação automática | DefinitionFingerprint semântico indisponível sem política validada | Unknown | Evidência insuficiente |
 | `stored_procedure` | Nome/schema; object_id não está no registo actual | Nome/schema geram candidato; não provam continuidade | Nome/schema/conteúdo não fundem identidades | Fingerprint semântico indisponível; cobertura Partial deve ser respeitada | Unknown | Evidência insuficiente |
 | `trigger` | Nome/schema/tabela; object_id não está no registo actual; operação cobre apenas triggers DML associadas a tabelas | Relação com tabela pai é contexto, não identidade | Não generalizar para triggers DDL ou triggers DML em views; nome é candidato | Fingerprint semântico indisponível; 540 definições ausentes na dfblock sem causa conhecida | Unknown | Parcial / âmbito restrito |
+
+### 3.2 MetadataFingerprint — limite observado nas tabelas
+
+Nos 7 933 candidatos por `schemaName + name`, o `MetadataFingerprint` SHA-256 coincide em todos os pares. Contudo, o objecto `metadata` completo coincide apenas em 3 028 pares; nos restantes 4 905 há diferenças em campos adicionais ou fora da projecção usada pelo fingerprint.
+
+Este resultado não demonstra que os 4 905 pares sejam semanticamente diferentes, nem que os campos excluídos sejam irrelevantes. Antes de usar o fingerprint como critério de correspondência SQL, é necessário documentar a projecção exacta (campos incluídos/excluídos), a canonicalização e a semântica pretendida. Até essa análise, o fingerprint igual é evidência comparativa observada, não confirmação de identidade ou equivalência.
 
 ### 3.1 Regras específicas SQL
 
@@ -118,8 +126,8 @@ REL e DTL são factos declarados transportados como `DeclaredRelationRecord`, n�
 
 | Fonte | Evidência | Regra de reconhecimento |
 |---|---|---|
-| `dbo.rel` | Pode conter stamp; sem stamp, identificador derivado de atributos/hash | Não tratar hash derivado como SourceIdentity nativa; exige contrato próprio de identidade para factos declarados |
-| `dbo.dtl` | Pode conter stamp; sem stamp, identificador derivado de atributos/hash | Mesma regra; distinguir facto declarado de FK SQL e de relação inferida |
+| `dbo.rel` | 295 registos CS / 313 dfblock; 373 stamps comuns no conjunto REL/DTL por `(sourceType, sourceStamp)` | Não tratar hash derivado como SourceIdentity nativa; exige contrato próprio de identidade para factos declarados |
+| `dbo.dtl` | 626 registos CS / 610 dfblock; os 373 comuns são agregados com REL e não estão aqui distribuídos por fonte | Mesma regra; distinguir facto declarado de FK SQL e de relação inferida |
 
 Não atribuir `SameLogicalEntity` ou `SameStandardEntity` automaticamente a REL/DTL. As duas capturas têm 921 e 923 factos declarados, todos interpretados (`Parsed`); 13 interpretações em cada captura têm referências de tabela não resolvidas. A coincidência de 373 `(sourceType, sourceStamp)` é observacional e não cria identidade automaticamente. É necessário contrato próprio, fora do Object Index.
 
