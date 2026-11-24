@@ -125,6 +125,8 @@ A comparação de definições permanece subordinada a D-018 a D-022: original p
 
 ## 8. Matriz de reconhecimento por objectKind
 
+A primeira versão documental, com evidência estática e resultados agregados CS default/dfblock, está em [D-023 — Matriz de reconhecimento por ObjectKind (v0.1)](d-023-objectkind-recognition-matrix-2026-11-24.md). É um draft de critérios e lacunas, não uma política automática validada nem autorização de implementação. A distribuição individual dos stamps e a validação por objecto continuam pendentes.
+
 Antes de qualquer implementação, criar e validar uma matriz com, no mínimo:
 
 | Campo | Conteúdo exigido |
