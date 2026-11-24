@@ -1,7 +1,7 @@
-# D-023 — Matriz de reconhecimento por ObjectKind (v0.1)
+# D-023 — Matriz de reconhecimento por ObjectKind (v0.2)
 
 **Data:** 24-11-2026  
-**Estado:** primeira matriz documental; evidência estática e resultados agregados de duas capturas reais. **Não aprovada como política automática de matching nem como matriz operacional final.**  
+**Estado:** matriz documental v0.2; evidência por objecto e agregados de duas capturas reais. **Não aprovada como política automática de matching nem como matriz operacional final.**  
 **Referências:** [D-023 — Identidade e correspondência cross-installation](d-023-cross-installation-identity-correspondence-contract.md); [P1.B — SourceIdentity e scopes](p1b-source-identity-scope-matrix-2026-11-06.md); [Matriz Collector/Operation/ObjectKind](collector-operation-objectkind-matrix-2026-11-24.md); [Avaliação CS default / dfblock](../audits/identity-provenance-cross-capture-assessment-2026-11-24.md).
 
 ## 1. Finalidade e limites
@@ -36,20 +36,20 @@ A comparação CS default / dfblock, realizada com a mesma build do Scanner, rep
 - 63 e 881 artefactos;
 - 8 294 e 9 601 tabelas físicas;
 - 0 e 598 campos físicos `u_*`;
-- 12 correspondências cross-capture com `phc.stamp`, nos kinds `phc.custom_screen` (`formb`) e `phc.hidden_grid` (`formc`);
-- cerca de 7 933 tabelas comuns por nome/`SourceObjectId`; esta é correspondência observacional, não identidade persistente;
-- `sqlserver.object_id` não corresponde entre bases de dados diferentes;
-- não foram disponibilizados DefinitionFingerprints semânticos: as definições elegíveis ficaram `Unavailable / NoValidatedPolicy`;
-- procedures e triggers ficaram com cobertura Partial; na dfblock, 540 triggers estavam sem definição, sem causa diagnosticada.
+- **12 pares `phc.stamp` únicos e 1:1:** 1 em `phc.custom_screen` (`formb`) e 11 em `phc.hidden_grid` (`formc`); em todos, mesmo kind, operationId, scope, scheme, nome, `SourceObjectId`, `MetadataFingerprint` SHA-256 e metadata projectada. Não houve stamps repetidos nestes kinds nas duas capturas;
+- **7 933 tabelas candidatas** por `schemaName + name` (todas `dbo`), sem duplicados locais; 361 só CS e 1 668 só dfblock. Os 7 933 pares têm `SourceObjectId` e `MetadataFingerprint` iguais, mas apenas 3 028 têm o objecto `metadata` completo igual; 4 905 diferem em campos adicionais/fora da projecção do fingerprint;
+- `sqlserver.object_id` não coincide como triplo `scheme/value/scope` entre bases, porque o scope inclui o nome da base. Ignorando o scope, 6 179 valores numéricos coincidem e 1 754 diferem; a coincidência numérica não é identidade cross-installation;
+- Zero DefinitionFingerprints semânticos `Available`; os 60 envelopes elegíveis na CS e 280 na dfblock estão `Unavailable / NoValidatedPolicy`;
+- Procedures e triggers têm cobertura `Partial`; na dfblock, 540 triggers estão sem definição. Nove triggers com nome comum passam de `Available` na CS para `Unavailable` na dfblock; a causa permanece desconhecida.
 
-Esta evidência é agregada. Não inclui a listagem individual de todos os objectos, stamps, definições ou colisões. Não permite declarar unicidade global nem classificar objectos individuais.
+Os pacotes são IKP 0.1 / Object Index v2, produzidos pela mesma build `1.0.0+960eed18828bcbe60d28d072ef50bc0e3e4baf35`. A análise confirmou os hashes e a reconstrução do ZIP da dfblock. A evidência detalhada dos 12 pares e dos candidatos SQL está registada no relatório comparativo local, não versionado no repositório.\n\nA unicidade dos stamps está demonstrada apenas dentro destas duas capturas e destes scopes. Não demonstra estabilidade intra-installation, generalização a outras instalações/versões, `SameLogicalEntity` persistente ou `SameStandardEntity`. Não permite classificar objectos individuais.
 
 ## 3. Matriz SQL Server
 
 | ObjectKind | Evidência actual / scope | Continuidade na mesma Installation | Correspondência entre Installations | Comparação de definição | Classificação possível nesta fase | Estado |
 |---|---|---|---|---|---|---|
 | `database` | `databaseId` não projectado como SourceIdentity; falta scope inequívoco da instância SQL | Contexto de Installation é atribuído pela plataforma, não por databaseId | Não comparar por databaseId ou nome isolado | Não aplicável como definição de objecto | Unknown até catálogo/contexto e âmbito estarem estabelecidos | Não disponível |
-| `table` | `sqlserver.object_id`, scope `database:<database-name>`; nome/schema e estrutura são atributos | Candidato contextual dentro da mesma base; drop/recreate pode mudar object_id | object_id não atravessa bases. Nome/schema/estrutura apenas geram candidato | Sem política semântica validada nesta evidência | Unknown; não classificar como standard ou desenvolvimento pelo nome/exclusividade | Evidência contextual + candidato estrutural |
+| `table` | `sqlserver.object_id`, scope `database:<database-name>`; nome/schema e estrutura são atributos | Candidato contextual dentro da mesma base; drop/recreate pode mudar object_id | `object_id` não atravessa bases. 7 933 pares por schema+nome são candidatos 1:1; 6 179 têm coincidência numérica de object_id ignorando scope, sem valor identitário | `MetadataFingerprint` igual nos 7 933 candidatos; metadata completa igual em 3 028 e diferente em 4 905. A projecção do fingerprint precisa de análise antes de qualquer política | Unknown; não classificar como standard ou desenvolvimento pelo nome/exclusividade | Candidato estrutural observado; política por validar |
 | `primary_key` | Nome, tabela, colunas e uniqueIndexId; sem SourceIdentity nativa aprovada | Comparação estrutural pode propor candidato; renomeação/recriação ambígua | Nome/tabela/colunas são candidatos, não identidade | Comparação estrutural ainda sem contrato de equivalência validado | Unknown | Não disponível como identidade nativa |
 | `foreign_key` | Nome, tabela pai/referenciada, colunas e acções; SELECT actual não recolhe object_id da FK | Relação estrutural pode ser comparada, sem provar continuidade | Não usar nome ou conjunto de colunas como identidade global | Comparação estrutural apenas descritiva | Unknown | Não disponível como identidade nativa |
 | `view` | Nome/schema; object_id não está no registo actual; definição pode estar disponível ou indisponível | Nome/schema geram candidato; continuidade não comprovada | Nome/schema/definição podem gerar candidato, não confirmação automática | DefinitionFingerprint semântico indisponível sem política validada | Unknown | Evidência insuficiente |
@@ -81,12 +81,12 @@ O contrato P1.B projecta `phc.stamp` com scope por tabela de origem. A comparaç
 | `phc.web_script` | `dbo.escr` / `phc.customizations.escr` | `phc.stamp`, scope `phc.table:dbo.escr` | Não reportada | Stamp candidato; definição e semântica continuam separadas | Por validar |
 | `phc.user_javascript` | `dbo.jsu` / `phc.customizations.jsu` | `phc.stamp`, scope `phc.table:dbo.jsu` | Não reportada | Stamp candidato; validar semântica e âmbito | Por validar |
 | `phc.web_cssjs` | `dbo.cssjs` / `phc.customizations.cssjs` | `phc.stamp`, scope `phc.table:dbo.cssjs` | Não reportada | Stamp candidato; não inferir igualdade de comportamento | Por validar |
-| `phc.hidden_grid` | `dbo.formc` / `phc.customizations.formc` | `phc.stamp`, scope `phc.table:dbo.formc` | **12 correspondências agregadas em conjunto com formb**; detalhe individual não presente neste relatório | Evidência comparativa observada. Antes de confirmar cada par, verificar unicidade por tabela, duplicados e consistência do registo | Evidência observada; validação individual pendente |
-| `phc.custom_screen` | `dbo.formb` / `phc.customizations.formb` | `phc.stamp`, scope `phc.table:dbo.formb` | **12 correspondências agregadas em conjunto com formc**; detalhe individual não presente neste relatório | Evidência comparativa observada. Antes de confirmar cada par, verificar unicidade por tabela, duplicados e consistência do registo | Evidência observada; validação individual pendente |
+| `phc.hidden_grid` | `dbo.formc` / `phc.customizations.formc` | `phc.stamp`, scope `phc.table:dbo.formc` | **11 pares comuns**, todos 1:1; 19 objectos na dfblock, 11 na CS; zero stamps repetidos em cada captura | Correspondência observacional demonstrada para estes pares e capturas; não promove automaticamente `Correspondence` a `Confirmed`, nem prova continuidade ou standard | Evidência observada; generalização por validar |
+| `phc.custom_screen` | `dbo.formb` / `phc.customizations.formb` | `phc.stamp`, scope `phc.table:dbo.formb` | **1 par comum**, 1:1; 30 objectos na dfblock, 1 na CS; zero stamps repetidos em cada captura | Correspondência observacional demonstrada para este par e estas capturas; não promove automaticamente `Correspondence` a `Confirmed`, nem prova continuidade ou standard | Evidência observada; generalização por validar |
 | `phc.user_tsql_function` (variante `ftu`) | `dbo.ftu` / `phc.customizations.ftu` | `phc.stamp`, scope `phc.table:dbo.ftu` | Não reportada | Stamp candidato; validar variante e unicidade | Por validar |
 | `phc.user_tsql_function` (variante `sys.objects`) | Funções `Fx_*` / `User_*` | Sem SourceIdentity; SELECT não recolhe object_id | Não reportada | Nome/schema apenas referência sintética; não emitir identidade nativa | Não disponível |
 
-**Nota sobre as 12 correspondências:** a evidência agregada identifica os kinds `formb` e `formc`, mas não fornece aqui a distribuição exacta por kind, os valores de stamp nem a análise de colisões. Não atribuir 12 correspondências a cada kind nem confirmar pares individuais com base apenas neste resumo.
+**Nota sobre os 12 pares:** a análise por objecto confirmou 1 par `formb` + 11 pares `formc`. Cada stamp é único dentro do respectivo kind/scope em cada captura. Os valores são mascarados no relatório de análise; não são necessários para a política conceptual. A confirmação observacional não equivale a gravar uma correspondência persistente com estado `Confirmed`.
 
 ## 5. Objectos PHC e factos sem identidade de Object Index
 
@@ -121,7 +121,7 @@ REL e DTL são factos declarados transportados como `DeclaredRelationRecord`, n�
 | `dbo.rel` | Pode conter stamp; sem stamp, identificador derivado de atributos/hash | Não tratar hash derivado como SourceIdentity nativa; exige contrato próprio de identidade para factos declarados |
 | `dbo.dtl` | Pode conter stamp; sem stamp, identificador derivado de atributos/hash | Mesma regra; distinguir facto declarado de FK SQL e de relação inferida |
 
-Não atribuir `SameLogicalEntity` ou `SameStandardEntity` automaticamente a REL/DTL. A matriz actual apenas regista que necessitam de uma política própria, fora do Object Index.
+Não atribuir `SameLogicalEntity` ou `SameStandardEntity` automaticamente a REL/DTL. As duas capturas têm 921 e 923 factos declarados, todos interpretados (`Parsed`); 13 interpretações em cada captura têm referências de tabela não resolvidas. A coincidência de 373 `(sourceType, sourceStamp)` é observacional e não cria identidade automaticamente. É necessário contrato próprio, fora do Object Index.
 
 ## 7. Regras de decisão por tipo de correspondência
 
@@ -167,12 +167,12 @@ Antes de promover uma linha a política operacional, recolher e documentar:
 ### Confirmado documentalmente
 - D-023 separa identidades locais, catálogo standard, correspondências, comparação e classificação.
 - O contrato P1.B define os schemes/scopes que o Scanner actual consegue projectar sem novas queries.
-- A comparação CS default/dfblock encontrou 12 correspondências stamp em formb/formc e confirmou que SQL object_id não atravessa bases.
-- A comparação por nome de tabelas é apenas observacional.
+- A comparação por objecto confirmou 1 par `formb` e 11 pares `formc`, únicos 1:1 nestas duas capturas, sem provar identidade global, continuidade ou correspondência standard.
+- Foram identificados 7 933 candidatos de tabela por schema+nome; os 7 933 têm MetadataFingerprint igual, mas só 3 028 têm metadata completa igual. `sqlserver.object_id` não atravessa bases de dados.
 - Não existem fingerprints semânticos disponíveis nas capturas analisadas.
 
 ### Ainda por validar
-- Distribuição exacta das 12 correspondências entre formb e formc, valores e duplicados de stamp.
+- Estabilidade intra-installation dos stamps `formb`/`formc` e generalização a outras instalações/versões.
 - Unicidade e estabilidade dos stamps nas outras famílias PHC.
 - Continuidade intra-installation entre capturas sucessivas.
 - Relações de renomeação, derivação e substituição.
@@ -181,6 +181,6 @@ Antes de promover uma linha a política operacional, recolher e documentar:
 - Definições e causas das operações Partial, incluindo triggers sem definição.
 
 ### Próxima acção
-Usar os pacotes originais CS default e dfblock, sem os alterar, para produzir uma listagem de evidências por objecto: `ObjectKind`, `SourceIdentity`, scope, `SourceObjectId`, parent, atributos estruturais, estado de cobertura, artefactos e fingerprint. Essa análise deve responder primeiro às pendências de formb/formc e tabelas SQL, sem fazer classificação standard ainda.
+Investigar a projecção de `MetadataFingerprint` das tabelas SQL: identificar os campos incluídos/excluídos e avaliar se os 4 905 pares com metadata completa diferente representam diferenças semanticamente relevantes ou apenas campos fora da projecção. Em paralelo, validar estabilidade intra-installation e generalização dos stamps `formb`/`formc`; não criar correspondências persistentes nem políticas automáticas nesta fase.
 
 Só após essa análise se decide se a matriz pode ser promovida a baseline operacional e se há necessidade de alterar Scanner, IKP ou o modelo persistido.
