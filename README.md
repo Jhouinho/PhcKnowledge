@@ -62,6 +62,8 @@ Os quatro checks associados à cabeça da PR #28 terminaram com sucesso: `build-
 
 A implementação D-022 ainda precisa de validação com uma captura nova numa instalação PHC. A captura anterior CSDefault202603 não deve ser apresentada como validação da implementação D-022.
 
+A matriz estática de referência, ainda pendente de validação com captura real, está em [Matriz Collector / Operation / ObjectKind](docs/architecture/collector-operation-objectkind-matrix-2026-11-24.md).
+
 ### Por implementar ou validar
 
 - Matriz validada collector/operation/ObjectKind/cobertura, incluindo limites e evidência por tipo de objeto.
