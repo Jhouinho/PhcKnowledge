@@ -310,3 +310,40 @@ A IA não é pré-requisito para esta capacidade nem substitui validação. A pr
 - Não aprova a implementação imediata de um motor de inferência, grafo físico específico ou sistema de IA.
 
 Esta decisão complementa a direcção de produto e o plano de auditoria deste documento. Em caso de conflito sobre o estatuto deste objectivo, prevalece a decisão aprovada aqui e na referência canónica de decisões.
+
+
+## 12. Decisão aprovada — camada independente de conhecimento funcional persistente
+
+**Data: 24-11-2026 — Estado: APROVADA pelo responsável do projecto.**
+
+O conhecimento funcional descoberto será mantido numa camada conceptual independente, persistida no SQL Server central do PHC Knowledge e ligada às evidências técnicas originais. Esta camada não altera, substitui nem incorpora os artefactos originais recolhidos pelo Scanner.
+
+### Princípios aprovados
+
+1. **Separação entre evidência e conhecimento:** os artefactos e metadados recolhidos pelo Scanner permanecem a fonte técnica original; descobertas, relações, hipóteses e conclusões são informação própria da camada de conhecimento funcional.
+2. **Rastreabilidade obrigatória:** cada descoberta deve manter referências às evidências e aos objectos de origem que a sustentam, incluindo captura, instalação ou referência standard, versão/build e âmbito aplicável.
+3. **Estados epistemológicos distintos:** factos observados, relações identificadas, hipóteses funcionais e conclusões validadas não podem ser confundidos. A validação e a respectiva proveniência devem ser registadas.
+4. **Âmbito e governação:** conhecimento derivado de PHC Standard e conhecimento específico de uma instalação mantêm âmbitos separados. Não existe promoção automática de conhecimento de instalação para standard nem partilha automática entre instalações.
+5. **Independência do investigador:** Cursor, análise humana ou ferramentas futuras podem produzir propostas de conhecimento; não são proprietários da persistência nem da governação do conhecimento no PHC Knowledge.
+
+### Fluxo conceptual de entrada
+
+1. Um investigador analisa artefactos e evidências de uma captura ou referência PHC.
+2. Produz um pacote estruturado de descobertas, relações, evidências, âmbito e limitações.
+3. O PHC Knowledge valida a integridade estrutural, referências, proveniência, âmbito, permissões e duplicações.
+4. A descoberta é registada com o estado apropriado; a promoção a conclusão validada exige validação explícita segundo um processo aprovado.
+5. O Portal permite pesquisar o conhecimento e navegar da interpretação para as evidências originais.
+
+Um pacote estruturado e versionado (por exemplo, JSON) é uma possibilidade de transporte a avaliar; não constitui ainda um contrato aprovado.
+
+### Persistência conceptual
+
+A camada poderá vir a incluir conceitos como investigação, descoberta, referência a objecto, relação, evidência, validação e âmbito. Estes nomes são apenas conceitos de domínio para discussão, não nomes de tabelas, entidades físicas ou schema aprovado.
+
+A decisão favorece a persistência no SQL Server central já previsto para o PHC Knowledge, evitando uma base de dados paralela. Não fecha ainda o modelo relacional, as tabelas, os identificadores, o contrato de importação, as APIs ou o desenho físico.
+
+### Limites
+
+Esta decisão não autoriza alterações a código, Scanner, collectors, queries, workspace SQLite, schemas executáveis IKP, migrations, materialização SQL Server ou RAG. Também não autoriza acesso de escrita directo do Cursor à base de dados central. O fluxo de importação, validação, aprovação e persistência carece de proposta técnica própria e aprovação explícita.
+
+A primeira experiência deverá ser exploratória, com Cursor sobre artefactos reais da CS Default, produzindo resultados estruturados fora da base central. A avaliação desses resultados antecede a definição do contrato de entrada e da implementação da camada persistente.
