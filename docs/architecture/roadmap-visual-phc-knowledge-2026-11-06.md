@@ -440,13 +440,13 @@ Esta secção é a referência de estado mais recente e prevalece sobre as secç
 
 Os quatro checks da cabeça da PR #28 terminaram com sucesso: `build-and-test`, `dotnet-tests`, `portal` e integração `SQL Server 2022 — receipt recovery and Scanner triggers`. Estes resultados comprovam os pipelines executados na PR; não comprovam deployment, validação numa instalação PHC real ou materialização persistente.
 
-Matriz estática inicial (código, ainda sem validação PHC real): [collector-operation-objectkind-matrix-2026-11-24.md](collector-operation-objectkind-matrix-2026-11-24.md).
+Matriz estática inicial (código, ainda sem validação PHC real): [collector-operation-objectkind-matrix-2026-11-24.md](collector-operation-objectkind-matrix-2026-11-24.md). Procedimento das duas recolhas reais: [scanner-functional-validation-protocol-2026-11-24.md](scanner-functional-validation-protocol-2026-11-24.md).
 
 ### Próxima sequência
 
 1. **Revisão da baseline pós-merge:** confirmar que README, PROJECT_GUIDELINES, decisões, contratos e roadmap não se contradizem.
 2. **Matriz collector/operation/ObjectKind:** mapear o que cada operação declara, recolhe e projecta; separar inventário, definição/artefacto, cobertura e limitações de âmbito. Identificar explicitamente o que é evidência estática e o que requer captura real.
-3. **Validação com captura PHC actual:** validar a matriz e D-022 com uma captura nova; até lá, não alterar collectors, SQLite ou semântica de recolha.
+3. **Validação com captura PHC actual:** executar o [protocolo de validação funcional](scanner-functional-validation-protocol-2026-11-24.md): primeiro a CS default, depois uma base PHC com desenvolvimento, com a mesma versão do Scanner e artefactos separados. O protocolo está escrito e as recolhas ainda não existem. Até lá, não alterar collectors, SQLite ou semântica de recolha.
 4. **Contrato físico de materialização SQL Server:** fechar entidades, chaves, proveniência, idempotência, transacções, armazenamento de artefactos, verificação e recuperação. A edição/versão SQL Server permanece por decidir.
 5. **Implementação da materialização:** só após contrato aprovado; materializar incrementalmente e eliminar ZIP/staging apenas depois de verificação integral.
 6. **Evolução do conhecimento:** comparação histórica, pesquisa contextual e, mais tarde, RAG.

@@ -107,7 +107,7 @@ O catálogo estático declara 23 operações: 7 de estrutura SQL, 14 de personal
 
 Esta versão é uma leitura estática do código. Não fecha a classificação operacional nem autoriza alterações aos collectors.
 
-Com uma captura nova produzida pelo Scanner actualizado numa instalação PHC de teste, será necessário:
+O procedimento para obter essa evidência está no [protocolo de validação funcional](scanner-functional-validation-protocol-2026-11-24.md). Prevê duas recolhas com a mesma versão do Scanner: primeiro a CS default, depois uma base PHC com desenvolvimento, com artefactos separados. As recolhas ainda não foram executadas. Com esses pacotes, será necessário:
 - cruzar capabilities declaradas com coverage efectivamente emitida;
 - confirmar `requested`, resultado, contagens e razões de ausência por operação;
 - confirmar os `ObjectKind`, `CollectorId`, `SummaryJson.source` e `operationId` dos objetos reais;
@@ -122,4 +122,4 @@ Com uma captura nova produzida pelo Scanner actualizado numa instalação PHC de
 
 O contrato actual tem um caminho explícito para mapear 21 ObjectKinds para operações de observação, enquanto 4 constantes de ObjectKind não têm mapeamento no resolver. REL/DTL seguem um percurso separado. Esta é uma conclusão de código, não uma afirmação sobre o conteúdo de uma instalação PHC específica.
 
-Próximo passo: validar esta matriz estática com uma captura nova. Só depois fechar a matriz como baseline operacional e passar ao contrato físico de materialização SQL Server.
+Próximo passo: executar o protocolo de validação funcional nas duas bases. Só depois fechar a matriz como baseline operacional e passar ao contrato físico de materialização SQL Server.

@@ -60,7 +60,9 @@ A referência normativa é [Decisões arquitecturais aprovadas](docs/architectur
 
 Os quatro checks associados à cabeça da PR #28 terminaram com sucesso: `build-and-test`, `dotnet-tests`, `portal` e integração `SQL Server 2022 — receipt recovery and Scanner triggers`. Isto comprova os pipelines executados na PR; não equivale a deployment nem a validação funcional numa instalação PHC real.
 
-A implementação D-022 ainda precisa de validação com uma captura nova numa instalação PHC. A captura anterior CSDefault202603 não deve ser apresentada como validação da implementação D-022.
+A implementação D-022 ainda precisa de validação com recolhas reais. A captura anterior CSDefault202603 não deve ser apresentada como validação da implementação D-022.
+
+O procedimento para essas recolhas está em [Protocolo de validação funcional do Scanner](docs/architecture/scanner-functional-validation-protocol-2026-11-24.md). A primeira base é a CS default; a segunda é uma base PHC com desenvolvimento, escolhida pelo operador. As duas usam a mesma versão do Scanner e artefactos separados. O protocolo está preparado e as recolhas ainda não foram executadas.
 
 A matriz estática de referência, ainda pendente de validação com captura real, está em [Matriz Collector / Operation / ObjectKind](docs/architecture/collector-operation-objectkind-matrix-2026-11-24.md).
 
@@ -82,8 +84,8 @@ A matriz estática de referência, ainda pendente de validação com captura rea
 
 ### Próxima sequência recomendada
 
-1. Fechar a matriz collector/operation/ObjectKind com evidência de código e captura real.
-2. Validar D-022 e a matriz com uma captura nova numa instalação PHC.
+1. Fechar a matriz collector/operation/ObjectKind com evidência de código e das duas recolhas reais.
+2. Validar D-022 e a matriz com a CS default e, em seguida, com uma base PHC com desenvolvimento, segundo o protocolo de validação funcional. Não alterar collectors antes dessas recolhas.
 3. Fechar o contrato físico de materialização no SQL Server.
 4. Implementar materialização incremental, verificação integral e eliminação segura do ZIP.
 5. Só depois avançar para comparação histórica, pesquisa contextual e RAG.

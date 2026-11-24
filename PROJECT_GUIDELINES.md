@@ -196,10 +196,10 @@ Esta secção prevalece sobre as fotografias de estado anteriores deste document
 - D-022 mantém-se: IKP 0.1, Object Index v2, DefinitionFingerprint D-021 e PackageImportAnalysis 0.3.
 - A base central continua a ser Microsoft SQL Server; edição/versão concreta e contrato físico de artefactos continuam por decidir. PostgreSQL está excluído.
 - Continuam por implementar: associação completa Cliente/Instalação/Captura, materialização persistente de Capture/Observation/REL/DTL/metadados/artefactos, verificação pós-materialização e eliminação segura do ZIP temporário.
-- Continua pendente validar D-022 com uma captura nova numa instalação PHC real. Não usar a captura anterior CSDefault202603 como prova dessa validação.
-- Próxima atividade de domínio: fechar a matriz collector/operation/ObjectKind/cobertura, usando código e evidência de captura real. A análise estática não substitui a validação com captura. Não alterar collectors, workspace SQLite ou semântica de recolha antes dessa validação e decisão explícita.
+- Continua pendente validar D-022 com recolhas reais. A primeira base é a CS default; a segunda é uma base PHC com desenvolvimento, escolhida pelo operador, executada com a mesma versão do Scanner e com artefactos separados. Não usar a captura anterior CSDefault202603 como prova dessa validação.
+- Próxima atividade de domínio: executar o protocolo de validação funcional e só depois fechar a matriz collector/operation/ObjectKind/cobertura. A análise estática não substitui a validação com captura. Não alterar collectors, workspace SQLite ou semântica de recolha antes dessa validação e decisão explícita.
 
-A matriz estática Collector / Operation / ObjectKind encontra-se em `docs/architecture/collector-operation-objectkind-matrix-2026-11-24.md`; é uma leitura do código e não deve ser tratada como validada por captura PHC até conclusão dessa validação.
+O procedimento de recolha está em `docs/architecture/scanner-functional-validation-protocol-2026-11-24.md`. A matriz estática Collector / Operation / ObjectKind encontra-se em `docs/architecture/collector-operation-objectkind-matrix-2026-11-24.md`; é uma leitura do código e não deve ser tratada como validada por captura PHC até conclusão dessa validação. O protocolo foi preparado em 2026-11-24 e as duas recolhas ainda não foram executadas.
 
 ### Governação do repositório
 

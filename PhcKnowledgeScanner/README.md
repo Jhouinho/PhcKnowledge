@@ -72,3 +72,4 @@ dotnet run --project src/PhcKnowledgeScanner.Desktop
 - [Arquitetura](docs/architecture.md)
 - [Schema Snapshot](docs/database-schema-snapshot.md)
 - [Decisões](docs/decisions/)
+- [Protocolo de validação funcional](../docs/architecture/scanner-functional-validation-protocol-2026-11-24.md) — duas recolhas reais, CS default e base PHC com desenvolvimento, pela CLI `scan-ikp`. O Desktop e o comando `scan` não produzem o ZIP IKP.

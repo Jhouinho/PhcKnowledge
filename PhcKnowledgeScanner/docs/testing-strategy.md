@@ -1,5 +1,7 @@
 # Estratégia de testes — fundação histórica e cobertura atual
 
+> **Precedência — 2026-11-24:** o comando `smoke` referido abaixo foi removido da CLI. A validação funcional com instalações PHC reais segue o [protocolo de validação funcional](../../docs/architecture/scanner-functional-validation-protocol-2026-11-24.md) e usa `scan-ikp`. Este ficheiro permanece como fotografia da estratégia de testes automáticos; não é o procedimento das duas recolhas.
+
 ## Objetivos nesta fase
 
 Validar a **orquestração** e os **contratos**, não a recolha PHC.
