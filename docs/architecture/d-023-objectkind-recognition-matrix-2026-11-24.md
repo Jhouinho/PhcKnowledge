@@ -132,7 +132,7 @@ Em ambas, o stamp permaneceu único e mantiveram-se iguais o `SourceObjectId`, n
 
 Os SHA-256 dos ZIPs e os logical content digests globais diferiram entre T0 e T1. A composição desses digests não foi analisada nesta validação; a diferença fica registada e não é atribuída às duas âncoras nem declarada irrelevante.
 
-**Conclusão limitada:** T-A foi aprovado como controlo sem mutações para A1 e A2, nesta instalação, build/opções e janela observadas. Não testa sensibilidade a alterações, renomeações, eliminações ou recriações; não demonstra estabilidade universal, identidade persistente ou validade de DefinitionFingerprint semântico. Nenhuma mutação foi executada e T-B…T-E não foram corridos.
+**Conclusão limitada de T-A:** T-A foi aprovado como controlo sem mutações para A1 e A2, nesta instalação, build/opções e janela observadas. Na data de fecho de T-A, o ensaio não testava sensibilidade a alterações, renomeações, eliminações ou recriações; não demonstrava estabilidade universal, identidade persistente ou validade de DefinitionFingerprint semântico. T-B foi executado posteriormente e está registado na secção seguinte; T-C…T-E permanecem por correr.
 
 ### Ensaio T-B — alteração controlada e reposição (24-11-2026)
 
