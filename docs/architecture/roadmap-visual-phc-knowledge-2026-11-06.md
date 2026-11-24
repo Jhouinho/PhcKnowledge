@@ -440,6 +440,8 @@ Esta secção é a referência de estado mais recente e prevalece sobre as secç
 
 Os quatro checks da cabeça da PR #28 terminaram com sucesso: `build-and-test`, `dotnet-tests`, `portal` e integração `SQL Server 2022 — receipt recovery and Scanner triggers`. Estes resultados comprovam os pipelines executados na PR; não comprovam deployment, validação numa instalação PHC real ou materialização persistente.
 
+Matriz estática inicial (código, ainda sem validação PHC real): [collector-operation-objectkind-matrix-2026-11-24.md](collector-operation-objectkind-matrix-2026-11-24.md).
+
 ### Próxima sequência
 
 1. **Revisão da baseline pós-merge:** confirmar que README, PROJECT_GUIDELINES, decisões, contratos e roadmap não se contradizem.
