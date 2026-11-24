@@ -10,6 +10,9 @@
 
 Este documento é a referência normativa para identidade, proveniência e fingerprints no Object Index / IKP 0.1. As decisões foram aplicadas no Scanner. A validação com captura real confirmou a projeção para os kinds efetivamente presentes, mas não cobre todos os 21 kinds nem a estabilidade de identidade entre capturas. Não autoriza recolha indiscriminada nem inferências de identidade fora do âmbito definido.
 
+
+> **Adenda normativa — D-023 (24-11-2026):** este contrato continua a reger a identidade da origem, scopes e fingerprints. A identidade lógica local, o catálogo PHC Standard e as correspondências entre instalações ficam clarificados pelo [D-023](d-023-cross-installation-identity-correspondence-contract.md): cada instalação mantém EntityIdentity independentes; SourceIdentity nunca é chave global nem funde identidades cross-installation; correspondência é relação auditável, separada da igualdade de definições e da autorização de reutilização. A matriz por objectKind e a validação com capturas reais são pré-condições de implementação.
+
 ## 1. Decisões fundamentais
 
 1. **Identidade, observação, proveniência e conteúdo são conceitos distintos.**
