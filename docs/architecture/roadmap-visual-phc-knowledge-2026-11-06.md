@@ -1,7 +1,7 @@
 # Roadmap visual do PHC Knowledge — visão, fases e estado atual
 
 
-> **Revisão vinculativa — 23-11-2026:** o diagrama e as fases anteriores são fotografias históricas. O estado actual, incluindo D-022 integrada e a situação da PR #20, está consolidado na secção 10. Para decisões normativas prevalece [Decisões aprovadas](decisoes-aprovadas-2026-11-21.md). Não reintroduzir tenancy multi-organização, PostgreSQL ou arquivo permanente do ZIP.
+> **Revisão vinculativa — 24-11-2026:** o diagrama e as fases anteriores são fotografias históricas. O estado pós-merge do Incremento C está na secção 10 e a decisão de identidade/correspondência cross-installation D-023 está na secção 12. Para decisões normativas prevalece [Decisões aprovadas](decisoes-aprovadas-2026-11-21.md). Não reintroduzir tenancy multi-organização, PostgreSQL ou arquivo permanente do ZIP.
 
 **Data de referência:** 2026-11-23
 **Estado:** o roadmap visual original é histórico. A fotografia actual a 23-11-2026 está na secção 10: D-022 integrada na main; Incremento C/UI React fora da main na PR #20; materialização integral e pesquisa por construir.
@@ -491,3 +491,29 @@ A comparação prevista entre CS default e dfblock foi concluída com a mesma bu
 - Não alterar collectors, SQLite, schemas executáveis ou materialização sem decisão explícita.
 - A materialização SQL Server continua necessária, mas fica depois do fecho dos contratos de identidade e proveniência.
 - RAG continua dependente de conhecimento estruturado, contextualizado e rastreável.
+
+
+## 12. D-023 aprovado — identidade e correspondência cross-installation — 2026-11-24
+
+D-023 foi aprovado e documentado em [Contrato D-023 — Identidade e correspondência cross-installation](d-023-cross-installation-identity-correspondence-contract.md), com registo na [referência de decisões aprovadas](decisoes-aprovadas-2026-11-21.md).
+
+### Decisões fechadas
+
+- Cada Installation mantém EntityIdentity próprias; não há fusão de identidades ou históricos entre instalações.
+- O catálogo PHC Standard mantém identidades conceptuais próprias, versionadas e independentes das identidades locais.
+- Correspondence é uma relação auditável entre identidades, não uma operação de merge nem prova de igualdade de definição.
+- Tipos e cardinalidades de correspondência dependem da semântica e evidência de cada objectKind; não se presume relação universal 1:1.
+- Classificação standard intacto, standard alterado, desenvolvimento da instalação ou desconhecido é independente da identidade e exige evidência/cobertura adequadas.
+- Correspondência com standard não autoriza reutilização ou exposição automática de conteúdo de uma instalação. O futuro RAG respeitará proveniência, âmbito e permissões.
+
+### Próxima sequência aprovada
+
+1. Construir a matriz de reconhecimento por objectKind, com evidência, scopes, critérios, cardinalidades, limites e testes. Não preencher lacunas por suposição.
+2. Validar a matriz com as capturas reais CS default e dfblock, sem alterar os pacotes originais.
+3. Registar ambiguidades e pontos sem evidência suficiente como pendentes/Unknown.
+4. Só depois apresentar proposta técnica para Scanner, IKP, modelo de domínio e persistência SQL Server.
+5. Obter aprovação explícita antes de alterações a collectors, workspace SQLite, schemas executáveis ou migrations/materialização.
+
+### Estado e limites
+
+D-023 fecha o contrato conceptual; não significa que a matriz por objectKind esteja validada nem que exista implementação física de correspondências. Não iniciar materialização SQL Server enquanto os contratos e critérios de identidade/proveniência necessários não estiverem fechados. A materialização continua no roadmap, depois da validação e decisão técnica.
