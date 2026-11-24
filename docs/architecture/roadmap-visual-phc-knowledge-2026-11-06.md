@@ -444,43 +444,11 @@ Matriz estática inicial (código, ainda sem validação PHC real): [collector-o
 
 ### Próxima sequência
 
-1. **Revisão da baseline pós-merge:** confirmar que README, PROJECT_GUIDELINES, decisões, contratos e roadmap não se contradizem.
-2. **Matriz collector/operation/ObjectKind:** mapear o que cada operação declara, recolhe e projecta; separar inventário, definição/artefacto, cobertura e limitações de âmbito. Identificar explicitamente o que é evidência estática e o que requer captura real.
-3. **Validação com captura PHC actual:** executar o [protocolo de validação funcional](scanner-functional-validation-protocol-2026-11-24.md): primeiro a CS default, depois uma base PHC com desenvolvimento, com a mesma versão do Scanner e artefactos separados. O protocolo está escrito e as recolhas ainda não existem. Até lá, não alterar collectors, SQLite ou semântica de recolha.
-4. **Contrato físico de materialização SQL Server:** fechar entidades, chaves, proveniência, idempotência, transacções, armazenamento de artefactos, verificação e recuperação. A edição/versão SQL Server permanece por decidir.
-5. **Implementação da materialização:** só após contrato aprovado; materializar incrementalmente e eliminar ZIP/staging apenas depois de verificação integral.
-6. **Evolução do conhecimento:** comparação histórica, pesquisa contextual e, mais tarde, RAG.
-
-### Regras de rigor
-
-- Recepção não é análise; análise não é confirmação; confirmação não é materialização.
-- CI verde não é validação funcional em PHC real.
-- Uma operação bem-sucedida com zero resultados não equivale a falha; uma definição indisponível não equivale a objecto ausente.
-- A ausência só pode significar remoção quando a cobertura relevante é completa e comparável.
-- Não declarar a matriz fechada enquanto os casos que dependem de captura real não forem validados.
-
-
-## 11. Nova sequência de domínio após validação cross-capture — 2026-11-24
-
-A comparação prevista entre CS default e dfblock foi concluída com a mesma build do Scanner. A integridade dos pacotes e checksums foi confirmada. O relatório agregado está em [Avaliação de identidade e proveniência entre capturas](../audits/identity-provenance-cross-capture-assessment-2026-11-24.md).
-
-### O que a validação demonstrou
-
-- O Scanner produziu Object Index v2 válido nas duas instalações.
-- A CS default contém 17 182 objectos e 63 artefactos; a dfblock contém 18 954 objectos e 881 artefactos.
-- A dfblock apresenta mais 10 kinds PHC e 598 campos físicos `u_*`.
-- Foram encontradas 12 correspondências com `phc.stamp` em `formb`/`formc`.
-- `sqlserver.object_id` não atravessa bases de dados; correspondências por nome/`SourceObjectId` são observacionais.
-- Os envelopes D-022 estão correctos, mas não existem fingerprints semânticos disponíveis; a comparação semântica de definições não ficou demonstrada.
-- Procedures/triggers estão Partial nas duas capturas; a causa dos 540 triggers sem definição na dfblock não foi determinada.
-
-### Próxima sequência
-
-1. **Auditar e fechar identidade/correspondência:** distinguir continuidade entre capturas da mesma Installation de correspondências entre Installations; definir evidências, scopes, candidatos, estados e regras de confirmação sem fusão automática entre instalações.
-2. **Fechar proveniência e classificação:** especificar PHC Standard, desenvolvimento específico, alteração ao standard e origem desconhecida, dependentes do catálogo PHC Standard versionado de D-015.
-3. **Fechar comparação de definições:** manter integridade, comparação byte-a-byte e fingerprint semântico separados; definir políticas por kind apenas quando possam ser validadas.
-4. **Validar os contratos** com as duas capturas reais, sem modificar os pacotes originais.
-5. **Decidir a implementação** no Scanner/modelo de domínio e só depois fechar o contrato físico de materialização incremental SQL Server.
+1. **Investigar `MetadataFingerprint` SQL:** documentar os campos incluídos/excluídos na projecção e avaliar os 4 905 pares cuja metadata completa difere apesar do fingerprint igual.
+2. **Validar estabilidade `formb`/`formc`:** obter capturas sucessivas da mesma Installation e evidência de outras instalações/versões, sem promover já o matching a política automática.
+3. **Fechar proveniência e classificação:** especificar PHC Standard, desenvolvimento específico, alteração ao standard e origem desconhecida, dependentes do catálogo PHC Standard versionado de D-015.
+4. **Fechar comparação de definições:** manter integridade, comparação byte-a-byte e fingerprint semântico separados; definir políticas por kind apenas quando possam ser validadas.
+5. **Decidir implementação** no Scanner/modelo de domínio e só depois fechar o contrato físico de materialização incremental SQL Server.
 
 ### Regras e limites
 
@@ -508,9 +476,9 @@ D-023 foi aprovado e documentado em [Contrato D-023 — Identidade e correspond�
 
 ### Próxima sequência aprovada
 
-1. **Matriz documental v0.1 criada:** [D-023 — Matriz de reconhecimento por ObjectKind](d-023-objectkind-recognition-matrix-2026-11-24.md), com evidência estática, resultados agregados e lacunas explícitas. Ainda não é política operacional.
-2. **Próximo:** analisar os pacotes originais CS default e dfblock, sem os alterar, para obter evidência por objecto — começar por stamps formb/formc e tabelas SQL; verificar duplicados, scopes e atributos.
-3. Validar a matriz com evidência individual, registar ambiguidades como pendentes/Unknown e completar testes de cobertura.
+1. **Matriz documental v0.2 actualizada:** [D-023 — Matriz de reconhecimento por ObjectKind](d-023-objectkind-recognition-matrix-2026-11-24.md), com evidência individual dos 12 pares `formb`/`formc` e detalhe dos 7 933 candidatos SQL. Continua draft, sem política automática.
+2. **Próximo:** investigar a projecção do `MetadataFingerprint` SQL, em particular os 4 905 pares com metadata completa diferente.
+3. Validar estabilidade intra-installation e generalização do matching por stamp `formb`/`formc`; manter as outras famílias por validar.
 4. Só depois apresentar proposta técnica para Scanner, IKP, modelo de domínio e persistência SQL Server.
 5. Obter aprovação explícita antes de alterações a collectors, workspace SQLite, schemas executáveis ou migrations/materialização.
 
