@@ -476,12 +476,12 @@ D-023 foi aprovado e documentado em [Contrato D-023 — Identidade e correspond�
 
 ### Próxima sequência aprovada
 
-1. **Matriz documental v0.2 actualizada:** [D-023 — Matriz de reconhecimento por ObjectKind](d-023-objectkind-recognition-matrix-2026-11-24.md), com evidência individual dos 12 pares `formb`/`formc` e detalhe dos 7 933 candidatos SQL. Continua draft, sem política automática.
-2. **Próximo:** investigar a projecção do `MetadataFingerprint` SQL, em particular os 4 905 pares com metadata completa diferente.
-3. Validar estabilidade intra-installation e generalização do matching por stamp `formb`/`formc`; manter as outras famílias por validar.
-4. Só depois apresentar proposta técnica para Scanner, IKP, modelo de domínio e persistência SQL Server.
-5. Obter aprovação explícita antes de alterações a collectors, workspace SQLite, schemas executáveis ou migrations/materialização.
+1. **Matriz documental v0.5 actualizada:** [D-023 — Matriz de reconhecimento por ObjectKind](d-023-objectkind-recognition-matrix-2026-11-24.md), com evidência cross-installation, C1/C2, T-A e T-B. Continua draft, sem política automática.
+2. **MetadataFingerprint SQL:** investigação concluída; os 4 905 pares com metadata completa diferente divergem exclusivamente em datas de catálogo SQL, sem diferença nos campos projectados.
+3. **Validação temporal e mutação controlada:** C1/C2 demonstrou estabilidade observacional sem mutações; T-B demonstrou alteração e reposição byte a byte de uma definição `formc`. Renomeação, eliminação, recriação e generalização a outras famílias/instalações continuam por validar.
+4. Manter PHC Standard, classificação e correspondências persistentes sem automatismos até existir catálogo/versão/cobertura e política de evidência suficientes.
+5. Só depois apresentar proposta técnica para Scanner, IKP, modelo de domínio e persistência SQL Server; obter aprovação explícita antes de alterações a collectors, workspace SQLite, schemas executáveis ou migrations/materialização.
 
 ### Estado e limites
 
-D-023 fecha o contrato conceptual; não significa que a matriz por objectKind esteja validada nem que exista implementação física de correspondências. Não iniciar materialização SQL Server enquanto os contratos e critérios de identidade/proveniência necessários não estiverem fechados. A materialização continua no roadmap, depois da validação e decisão técnica.
+D-023 fecha o contrato conceptual; a matriz por ObjectKind v0.5 incorpora a evidência limitada de T-A e T-B, mas continua draft e não significa que exista implementação física de correspondências. Não iniciar materialização SQL Server enquanto os contratos e critérios de identidade/proveniência necessários não estiverem fechados. A materialização continua no roadmap, depois da validação e decisão técnica.
