@@ -10,7 +10,7 @@
 | Stack física | Microsoft SQL Server central (edição/versão por decidir); dados e artefactos permanentes no SQL Server; ZIP temporário; SQLite apenas workspace/cache Scanner |
 | Implementação atual | Primeira fatia Receive / Validate / Archive em PhcKnowledge.Import |
 
-Este documento é a referência consolidada do modelo de domínio 0.2. Distingue decisões de domínio, estado físico implementado e capacidades futuras. Não autoriza por si só migrations ou alterações ao contrato IKP.
+Este documento preserva a referência conceptual do modelo de domínio 0.2. Distingue decisões de domínio, estado físico implementado e capacidades futuras. Não autoriza por si só migrations ou alterações ao contrato IKP. A identidade cross-installation, o catálogo PHC Standard e as correspondências são regidos por [D-023](d-023-cross-installation-identity-correspondence-contract.md); em caso de conflito, D-023 prevalece. As secções conceptuais antigas sobre IdentityMatch, cardinalidade ou isolamento por Organization não constituem contrato normativo actual.
 
 ## 1. Princípios e fronteiras
 
@@ -211,9 +211,9 @@ As entidades são logicamente separadas mesmo residindo no mesmo ficheiro. Inter
 ## 8. Identidade e continuidade entre capturas
 
 - EntityIdentity pertence a uma Installation, não a Organization isoladamente.
-- Pode ser partilhada entre Environments da mesma Installation após correspondência confirmada.
-- Nunca fundir automaticamente identidades entre Installations.
-- IdentityMatch mantém candidatos/evidências; no máximo um match confirmado/ativo por Observation.
+- A identidade pertence exclusivamente à Installation; não é partilhada entre instalações.
+- Nunca fundir identidades entre Installations, mesmo perante stamps, nomes ou definições coincidentes.
+- A correspondência é uma relação autónoma conforme D-023; não assumir limite universal de um match confirmado por Observation nem cardinalidade 1:1.
 - Criar nova EntityIdentity apenas por decisão explícita.
 - SourceObjectId não é EntityIdentity.
 - SourceIdentity é evidência de origem, não identidade interna do Knowledge.
@@ -333,3 +333,16 @@ O modelo conceptual vigente é Cliente 1 → N Instalações 1 → N Capturas. C
 
 
 > **Correcção de leitura do mapa 0.2 — 21-11-2026:** a tabela acima foi alinhada ao modelo aprovado. Não criar hierarquia multi-organização, Environment ou DatabaseLocation como entidades nesta fase. O ZIP não é arquivo de origem permanente: o SQL Server guarda os dados materializados e artefactos originais necessários.
+
+
+## Adenda normativa — D-023 (24-11-2026)
+
+O modelo de domínio deve distinguir:
+
+- `EntityIdentity`: identidade local e independente por Installation;
+- `StandardEntityIdentity`: identidade conceptual do catálogo PHC Standard versionado;
+- `Correspondence`: relação auditável entre identidades, sem fusão.
+
+A correspondência não prova igualdade de definição nem autoriza reutilização/publicação do conteúdo local. Os tipos de relação, estados, evidências, cardinalidade e critérios de classificação são os definidos em [D-023](d-023-cross-installation-identity-correspondence-contract.md). A matriz por `objectKind` e a validação com capturas reais são pré-condições antes de schema físico, migrations ou implementação.
+
+Este modelo 0.2 continua a ser conceptual e parcialmente supersedido; não deve ser usado como schema SQL definitivo.
