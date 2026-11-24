@@ -252,3 +252,21 @@ Esta secção prevalece sobre as fotografias anteriores deste documento sempre q
 - O Scanner não deve consultar o histórico central para decidir o que recolhe. Não alterar collectors, workspace SQLite ou semântica de recolha sem decisão explícita e validação baseada em evidência real.
 
 O estado global, sequência e dependências estão em `docs/architecture/roadmap-visual-phc-knowledge-2026-11-06.md` (secção 10) e `README.md`. Esta actualização documental não executou build/testes localmente nem validou uma instalação PHC.
+
+---
+
+## Estado da integração com o PHC Knowledge — 2026-11-24
+
+Esta atualização prevalece sobre as fotografias anteriores deste documento no que respeita à integração Scanner ↔ Knowledge.
+
+- A baseline do monorepo `Jhouinho/PhcKnowledge` é a `main`, merge commit `dfb44b5ce4370ccf5b43856c87328f1915c58a99`.
+- A PR #28 integrou o Incremento C sobre D-022. A confirmação/rejeição de `PackageImportAnalysis` e a UI React do Portal estão agora na `main`; a PR #20 original foi preservada e não deve ser apresentada como trabalho ainda por integrar.
+- D-022 permanece na baseline: Object Index v2 e DefinitionFingerprint D-021. IKP global continua em 0.1.
+- Os quatro checks associados à PR #28 passaram, incluindo build/testes .NET, Portal React e integração SQL Server 2022/Scanner. Não foi declarado novo build local nesta atualização.
+- A integração D-022 continua a precisar de validação com uma captura nova numa instalação PHC real. A captura CSDefault202603 anterior não comprova o comportamento da implementação D-022.
+- O Scanner mantém autonomia funcional e não deve ser executado pelo Knowledge em runtime, nem consultar o histórico central para decidir o que recolhe.
+- Não alterar collectors, workspace SQLite, queries ou semântica de recolha antes de fechar a matriz collector/operation/ObjectKind com evidência de captura e aprovação explícita.
+- Próximo trabalho: matriz de classificação e cobertura; depois contrato físico de materialização SQL Server. A materialização persistente, verificação integral e eliminação segura do ZIP continuam fora do estado implementado.
+
+A revisão documental não executou uma nova captura PHC nem uma nova bateria de testes local. CI aprovado não equivale a validação numa instalação PHC real.
+
