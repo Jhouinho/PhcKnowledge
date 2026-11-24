@@ -1,0 +1,33 @@
+name: Portal React
+
+on:
+  pull_request:
+    paths:
+      - "src/PhcKnowledge.Portal/**"
+      - ".github/workflows/portal.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/PhcKnowledge.Portal/**"
+      - ".github/workflows/portal.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  portal:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/PhcKnowledge.Portal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.12.0"
+          cache: npm
+          cache-dependency-path: src/PhcKnowledge.Portal/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build

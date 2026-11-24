@@ -66,24 +66,55 @@ public sealed class SqlServerSchemaPreflightService(
               (N'PackageImportAnalyses', N'ReadinessStatus'),
               (N'PackageImportAnalyses', N'SemanticFingerprint'),
               (N'PackageImportAnalyses', N'AnalyzedAtUtc'),
-              (N'PackageImportAnalyses', N'CreatedAtUtc');
+              (N'PackageImportAnalyses', N'CreatedAtUtc'),
+              (N'PackageImportAnalysisDecisions', N'DecisionId'),
+              (N'PackageImportAnalysisDecisions', N'AnalysisId'),
+              (N'PackageImportAnalysisDecisions', N'OrganizationId'),
+              (N'PackageImportAnalysisDecisions', N'Decision'),
+              (N'PackageImportAnalysisDecisions', N'DecisionSequence'),
+              (N'PackageImportAnalysisDecisions', N'DecidedAtUtc'),
+              (N'PackageImportAnalysisDecisions', N'DecidedBySubject'),
+              (N'PackageImportAnalysisDecisions', N'DecidedByIssuer'),
+              (N'PackageImportAnalysisDecisions', N'Rationale'),
+              (N'PackageImportAnalysisDecisions', N'SemanticFingerprintSnapshot');
 
-            SELECT STRING_AGG(
-                CONVERT(nvarchar(max), CONCAT(required.TableName, N'.', required.ColumnName)), N', ')
-            FROM @RequiredColumns AS required
-            LEFT JOIN sys.columns AS actual
-              ON actual.object_id = OBJECT_ID(QUOTENAME(N'dbo') + N'.' + QUOTENAME(required.TableName), N'U')
-             AND actual.name = required.ColumnName
-            WHERE actual.column_id IS NULL;
+            DECLARE @MissingColumns nvarchar(max) = (
+                SELECT STRING_AGG(
+                    CONVERT(nvarchar(max), CONCAT(required.TableName, N'.', required.ColumnName)), N', ')
+                FROM @RequiredColumns AS required
+                LEFT JOIN sys.columns AS actual
+                  ON actual.object_id = OBJECT_ID(QUOTENAME(N'dbo') + N'.' + QUOTENAME(required.TableName), N'U')
+                 AND actual.name = required.ColumnName
+                WHERE actual.column_id IS NULL);
+
+            DECLARE @MissingUnique nvarchar(max) = NULL;
+            IF OBJECT_ID(N'dbo.PackageImportAnalyses', N'U') IS NOT NULL
+               AND NOT EXISTS (
+                    SELECT 1
+                    FROM sys.indexes
+                    WHERE object_id = OBJECT_ID(N'dbo.PackageImportAnalyses', N'U')
+                      AND name = N'UX_PackageImportAnalyses_AnalysisId_OrganizationId'
+                      AND is_unique = 1)
+            BEGIN
+                SET @MissingUnique = N'UX_PackageImportAnalyses_AnalysisId_OrganizationId';
+            END;
+
+            SELECT CASE
+                WHEN @MissingColumns IS NOT NULL AND @MissingUnique IS NOT NULL
+                    THEN CONCAT(@MissingColumns, N'; ', @MissingUnique)
+                WHEN @MissingColumns IS NOT NULL THEN @MissingColumns
+                ELSE @MissingUnique
+            END;
             """, connection);
 
         var missingColumns = await command.ExecuteScalarAsync(cancellationToken) as string;
         if (!string.IsNullOrWhiteSpace(missingColumns))
             throw new InvalidOperationException(
-                $"Schema de PackageReceipt/análise incompleto. Colunas em falta: {missingColumns}. Aplicar/actualizar as migrations 001–004.");
+                $"Schema de PackageReceipt/análise/decisões incompleto. Em falta: {missingColumns}. Aplicar/actualizar as migrations 001–005.");
 
         readiness.MarkSchemaReady();
-        logger.LogInformation("SQL Server preflight concluído; tabelas PackageReceipt e PackageImportAnalyses disponíveis.");
+        logger.LogInformation(
+            "SQL Server preflight concluído; tabelas PackageReceipt, PackageImportAnalyses e PackageImportAnalysisDecisions disponíveis.");
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

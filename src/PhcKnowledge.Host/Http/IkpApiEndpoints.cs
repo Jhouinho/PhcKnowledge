@@ -240,9 +240,9 @@ public static class IkpApiEndpoints
         return ExecuteAsync(httpContext, logger, async () =>
         {
             var organizationId = organizationIdResolver.ResolveRequired(httpContext.User);
-            var analysis = await analysisService.GetPersistedAsync(
+            var persisted = await analysisService.GetPersistedRecordAsync(
                 organizationId, packageId, cancellationToken);
-            return Results.Json(IkpPublicDtoMapper.ToAnalysisDto(analysis));
+            return Results.Json(IkpPublicDtoMapper.ToAnalysisDto(persisted));
         });
     }
 
@@ -258,9 +258,9 @@ public static class IkpApiEndpoints
         return ExecuteAsync(httpContext, logger, async () =>
         {
             var organizationId = organizationIdResolver.ResolveRequired(httpContext.User);
-            var analysis = await analysisService.ExecuteAsync(
+            var persisted = await analysisService.ExecutePersistedAsync(
                 organizationId, packageId, cancellationToken);
-            return Results.Json(IkpPublicDtoMapper.ToAnalysisDto(analysis));
+            return Results.Json(IkpPublicDtoMapper.ToAnalysisDto(persisted));
         });
     }
 

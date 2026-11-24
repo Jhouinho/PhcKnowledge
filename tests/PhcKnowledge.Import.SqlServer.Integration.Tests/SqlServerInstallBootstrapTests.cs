@@ -293,7 +293,8 @@ public sealed class SqlServerInstallBootstrapTests
             "001_package_ingestion_receipts.sql",
             "002_package_receipt_attempts.sql",
             "003_organizations.sql",
-            "004_package_import_analyses.sql"
+            "004_package_import_analyses.sql",
+            "005_package_import_analysis_decisions.sql"
         })
         {
             var path = Path.Combine(AppContext.BaseDirectory, "Migrations", migration);

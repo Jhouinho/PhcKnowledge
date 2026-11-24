@@ -1,0 +1,43 @@
+.page {
+  display: grid;
+  gap: 28px;
+  max-width: 920px;
+}
+
+.intro {
+  display: grid;
+  gap: 10px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--color-steel);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.page h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 36px);
+  font-weight: 550;
+  letter-spacing: -0.045em;
+}
+
+.lead {
+  margin: 0;
+  max-width: 54ch;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.meta {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.meta code,
+.lead code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
