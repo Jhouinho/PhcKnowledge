@@ -387,3 +387,26 @@ O contrato normativo completo está em [D-023 — Identidade e correspondência 
 9. A análise cross-installation confirmou 12 pares observacionais `formb`/`formc`, sem validar matching universal, `Correspondence.Confirmed`, `SameStandardEntity` ou classificação. A investigação da projecção SQL concluiu que as diferenças de metadata nos 4 905 pares são exclusivamente datas de catálogo. C1/C2 demonstrou estabilidade temporal observacional; T-A demonstrou controlo sem mutações; T-B demonstrou detecção de alteração e reposição byte a byte numa âncora `formc`, mantendo identidade observada e MetadataFingerprint estáveis e DefinitionFingerprint indisponível. Estes ensaios não validam normalização semântica, identidade persistente ou generalização. D-023 aprova o contrato conceptual, mas não autoriza alterações ao Scanner, collectors, SQLite, schemas executáveis IKP, migrations/materialização SQL Server ou RAG. Essas alterações exigem proposta técnica e aprovação posterior.
 
 D-023 complementa D-015 a D-022 e prevalece em caso de conflito sobre identidade e correspondência entre instalações.
+
+## 15. D-024 — Descoberta Progressiva de Conhecimento Funcional
+
+**Data: 24-11-2026 — Estado: APROVADA.**  
+**Estatuto: objectivo fundamental do produto PHC Knowledge.**
+
+O PHC Knowledge deve permitir descobrir, construir, relacionar e validar progressivamente conhecimento sobre o funcionamento do PHC, partindo dos objectos técnicos e evidências recolhidos pelo Scanner e seguindo as relações que permitem compreender processos, dependências, regras e comportamentos funcionais.
+
+1. O produto não se limita a inventariar tabelas, campos, código ou personalizações. Deve evoluir para explicar como os elementos técnicos participam no funcionamento do PHC.
+2. As capacidades fundamentais são descoberta, correlação, investigação progressiva, validação e acumulação de conhecimento contextualizado.
+3. O sistema distingue factos observados, relações identificadas, hipóteses funcionais e conclusões validadas. A origem, semântica, contexto, evidências e estado de validação devem ser preservados.
+4. Uma relação inferida por análise de código não é apresentada como FK ou relação declarada PHC. Uma referência técnica não prova, por si só, regra de negócio ou causalidade funcional.
+5. A auditoria do Scanner avalia não só existência, completude e integridade dos artefactos, mas também se o contexto e as relações recolhidas permitem responder a perguntas funcionais reais.
+6. O Portal deverá permitir navegar das conclusões para as evidências de origem e investigar circuitos funcionais a partir de objectos conhecidos, sem exigir conhecimento antecipado de todas as tabelas ou etapas.
+7. O estudo Frenetikmove da factura 429 (FT → FI → SL → ST) é um caso de referência exploratório para avaliar esta capacidade, não uma regra universal do PHC nem conhecimento automaticamente transferível entre instalações.
+8. A capacidade evolui por etapas: qualidade da recolha; exploração estrutural/operacional; correlação rastreável; investigação e validação funcional; acumulação de conhecimento; e, posteriormente, IA fundamentada em evidências.
+9. A IA não é pré-requisito e não substitui a validação. A fundação deve ser útil sem IA, estruturada, pesquisável e rastreável.
+10. Conhecimento específico de uma instalação permanece sujeito a proveniência, âmbito, governação e permissões; não se torna standard nem partilhável automaticamente.
+11. D-024 orienta decisões futuras sobre Scanner, modelo de conhecimento e Portal, mas não aprova alterações a collectors, queries, Scanner, SQLite, schemas executáveis IKP, migrations, materialização SQL Server, motor de inferência ou RAG. Cada alteração exige evidência, proposta técnica e aprovação específica.
+
+O enquadramento funcional, as capacidades, o caso de referência e a sequência de evolução estão detalhados em [Novo rumo do produto e auditoria do Scanner](product-direction-and-scanner-knowledge-audit-2026-11-24.md).
+
+D-024 complementa as decisões anteriores. Não substitui D-015 a D-023 nem altera os respectivos contratos de identidade, proveniência, captura ou correspondência.
