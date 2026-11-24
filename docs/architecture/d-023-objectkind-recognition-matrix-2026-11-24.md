@@ -1,8 +1,8 @@
-# D-023 — Matriz de reconhecimento por ObjectKind (v0.4)
+# D-023 — Matriz de reconhecimento por ObjectKind (v0.5)
 
 **Data:** 24-11-2026  
-**Estado:** matriz documental v0.4; integra evidência cross-installation CS default/dfblock, validação temporal C1/C2 e controlo T-A na instalação dfblock. **Não aprovada como política automática de matching nem como matriz operacional final.**  
-**Referências:** [D-023 — Identidade e correspondência cross-installation](d-023-cross-installation-identity-correspondence-contract.md); [P1.B — SourceIdentity e scopes](p1b-source-identity-scope-matrix-2026-11-06.md); [Matriz Collector/Operation/ObjectKind](collector-operation-objectkind-matrix-2026-11-24.md); [Avaliação CS default / dfblock](../audits/identity-provenance-cross-capture-assessment-2026-11-24.md).
+**Estado:** matriz documental v0.5; integra evidência cross-installation CS default/dfblock, validação temporal C1/C2, controlo T-A sem mutações e ensaio T-B de alteração/reposição controladas na instalação dfblock. **Não aprovada como política automática de matching nem como matriz operacional final.**  
+**Referências:** [D-023 — Identidade e correspondência cross-installation](d-023-cross-installation-identity-correspondence-contract.md); [P1.B — SourceIdentity e scopes](p1b-source-identity-scope-matrix-2026-11-06.md); [Matriz Collector/Operation/ObjectKind](collector-operation-objectkind-matrix-2026-11-24.md); [Avaliação CS default / dfblock](../audits/identity-provenance-cross-capture-assessment-2026-11-24.md); [Ensaio T-B — alteração controlada e reposição](../audits/controlled-definition-change-tb-assessment-2026-11-24.md).
 
 ## 1. Finalidade e limites
 
@@ -134,6 +134,14 @@ Os SHA-256 dos ZIPs e os logical content digests globais diferiram entre T0 e T1
 
 **Conclusão limitada:** T-A foi aprovado como controlo sem mutações para A1 e A2, nesta instalação, build/opções e janela observadas. Não testa sensibilidade a alterações, renomeações, eliminações ou recriações; não demonstra estabilidade universal, identidade persistente ou validade de DefinitionFingerprint semântico. Nenhuma mutação foi executada e T-B…T-E não foram corridos.
 
+### Ensaio T-B — alteração controlada e reposição (24-11-2026)
+
+O ensaio T-B foi concluído para uma âncora `phc.hidden_grid` (`dbo.formc`) na instalação de testes `dfblock`, com a mesma build do controlo T-A. A baseline T0 recuperada foi validada contra T-A pelo artefacto: 426 bytes e SHA-256 `ec217df6e0d2b11005e24fe56216fd3d0e833ad1f173f7acac7ac0ebe69e8811`. A T1 acrescentou apenas uma linha de comentário: o artefacto passou para 467 bytes e SHA-256 `0fc66d8074dcb41eb225ad02feea57ac7b1bfca100dcf213fd4db56044371469`. A T2 repôs o conteúdo de `prop` byte a byte face à T0 recuperada e o artefacto voltou aos mesmos 426 bytes e SHA-256.
+
+Durante T0→T1→T2, SourceObjectId, SourceIdentity, metadata e MetadataFingerprint mantiveram-se; a definição permaneceu Available; DefinitionFingerprint permaneceu `Unavailable / NoValidatedPolicy`; coverage (23 operações), contagens (18 955 objectos) e os restantes objectos não apresentaram alterações reportadas. O logical digest global difere entre capturas porque CaptureId integra o pacote; igualando o identificador, object-index, coverage e declared-relations foram iguais. A gravação de reposição actualizou `usrhora`, uma diferença de auditoria fora da definição.
+
+**Conclusão limitada:** T-B demonstra detecção da alteração e da reposição do conteúdo capturado para esta âncora e ambiente. Não valida comparação semântica, normalizador, DefinitionFingerprint, estabilidade universal, renomeação, eliminação, recriação, identidade persistente ou matching. A captura T0 discrepante inicial foi preservada, mas não usada como baseline; a origem da alteração prévia foi apenas inferida como provável gravação PHC por `ADM`, sem prova causal. O detalhe e todos os CaptureIds estão no [relatório T-B](../audits/controlled-definition-change-tb-assessment-2026-11-24.md).
+
 ## 5. Objectos PHC e factos sem identidade de Object Index
 
 ### 5.1 ObjectKinds declarados sem operação mapeada
@@ -218,7 +226,7 @@ Antes de promover uma linha a política operacional, recolher e documentar:
 - Não existem fingerprints semânticos disponíveis nas capturas analisadas.
 
 ### Ainda por validar
-- Comportamento dos stamps `formb`/`formc` sob mutações controladas (alteração de definição, renomeação, eliminação e recriação).
+- Comportamento dos stamps `formb`/`formc` sob renomeação, eliminação e recriação; T-B cobriu apenas alteração de definição e reposição numa âncora `formc`.
 - Generalização da estabilidade temporal a outras instalações/versões.
 - Unicidade e estabilidade dos stamps nas outras famílias PHC.
 - Continuidade intra-installation entre capturas sucessivas.
@@ -228,6 +236,6 @@ Antes de promover uma linha a política operacional, recolher e documentar:
 - Definições e causas das operações Partial, incluindo triggers sem definição.
 
 ### Próxima acção
-A investigação da MetadataFingerprint das tabelas SQL está concluída e registada na secção 3.2. A validação temporal C1/C2 de `formb`/`formc` está concluída para a instalação `dfblock` e documentada como evidência observacional limitada. A próxima validação possível é o comportamento sob mutações controladas, em ambiente de testes e mediante autorização explícita; não criar correspondências persistentes nem políticas automáticas nesta fase.
+A investigação da MetadataFingerprint das tabelas SQL, a validação temporal C1/C2 e o ensaio T-B estão concluídos nos âmbitos descritos. T-B validou alteração e reposição de definição numa única âncora `formc`; a próxima evidência possível é renomeação, eliminação e recriação, bem como generalização a outras instalações/versões e famílias, sempre em ambiente de testes e mediante autorização explícita. Não criar correspondências persistentes nem políticas automáticas nesta fase.
 
 Só após essa análise se decide se a matriz pode ser promovida a baseline operacional e se há necessidade de alterar Scanner, IKP ou o modelo persistido.
