@@ -1,7 +1,7 @@
 # D-023 — Matriz de reconhecimento por ObjectKind (v0.2)
 
 **Data:** 24-11-2026  
-**Estado:** matriz documental v0.2; evidência por objecto e agregados de duas capturas reais. **Não aprovada como política automática de matching nem como matriz operacional final.**  
+**Estado:** matriz documental v0.3; integra evidência cross-installation CS default/dfblock e validação temporal C1/C2 na instalação dfblock. **Não aprovada como política automática de matching nem como matriz operacional final.**  
 **Referências:** [D-023 — Identidade e correspondência cross-installation](d-023-cross-installation-identity-correspondence-contract.md); [P1.B — SourceIdentity e scopes](p1b-source-identity-scope-matrix-2026-11-06.md); [Matriz Collector/Operation/ObjectKind](collector-operation-objectkind-matrix-2026-11-24.md); [Avaliação CS default / dfblock](../audits/identity-provenance-cross-capture-assessment-2026-11-24.md).
 
 ## 1. Finalidade e limites
@@ -30,7 +30,7 @@ Não se atribuem scores numéricos. A palavra «forte» não deve ser aplicada a
 
 ## 2. Evidência real disponível
 
-A comparação CS default / dfblock, realizada com a mesma build do Scanner, reportou:
+A comparação CS default / dfblock, realizada com a build `1.0.0+960eed18828bcbe60d28d072ef50bc0e3e4baf35`, e a validação temporal C1/C2 na instalação `dfblock`, com build `1.0.0+ba3bf7c0839acc634cb47da8c374f536e02d19f4`, reportaram:
 
 - 17 182 e 18 954 objectos no Object Index, respectivamente;
 - 63 e 881 artefactos;
@@ -44,7 +44,7 @@ A comparação CS default / dfblock, realizada com a mesma build do Scanner, rep
 
 Os pacotes são IKP 0.1 / Object Index v2, produzidos pela mesma build `1.0.0+960eed18828bcbe60d28d072ef50bc0e3e4baf35`. A análise confirmou os hashes e a reconstrução do ZIP da dfblock. A evidência detalhada dos 12 pares e dos candidatos SQL está registada no relatório comparativo local, não versionado no repositório.
 
-A unicidade dos stamps está demonstrada apenas dentro destas duas capturas e destes scopes. Não demonstra estabilidade intra-installation, generalização a outras instalações/versões, `SameLogicalEntity` persistente ou `SameStandardEntity`. Não permite classificar objectos individuais.
+A comparação cross-installation CS default/dfblock demonstrou 12 pares observacionais; separadamente, C1/C2 demonstrou estabilidade temporal observacional de 30/30 stamps `formb` e 19/19 stamps `formc` na instalação `dfblock`, sem drift observado nos atributos comparados. C1/C2 não valida mutações controladas, outras instalações/versões, identidade persistente, `SameStandardEntity` ou classificação individual. A evidência temporal é limitada à janela e às condições descritas no relatório C1/C2.
 
 ## 3. Matriz SQL Server
 
@@ -103,12 +103,14 @@ O contrato P1.B projecta `phc.stamp` com scope por tabela de origem. A comparaç
 | `phc.web_script` | `dbo.escr` / `phc.customizations.escr` | `phc.stamp`, scope `phc.table:dbo.escr` | 0 comuns; CS=0, dfblock=8 | Stamp candidato; definição e semântica continuam separadas | Por validar |
 | `phc.user_javascript` | `dbo.jsu` / `phc.customizations.jsu` | `phc.stamp`, scope `phc.table:dbo.jsu` | 0 comuns; CS=0, dfblock=20 | Stamp candidato; validar semântica e âmbito | Por validar |
 | `phc.web_cssjs` | `dbo.cssjs` / `phc.customizations.cssjs` | `phc.stamp`, scope `phc.table:dbo.cssjs` | 0 em ambas; coverage Empty/0 nas duas capturas | Stamp candidato; não inferir igualdade de comportamento | Por validar |
-| `phc.hidden_grid` | `dbo.formc` / `phc.customizations.formc` | `phc.stamp`, scope `phc.table:dbo.formc` | **11 pares comuns**, todos 1:1; 19 objectos na dfblock, 11 na CS; zero stamps repetidos em cada captura | Correspondência observacional demonstrada para estes pares e capturas; não promove automaticamente `Correspondence` a `Confirmed`, nem prova continuidade ou standard | Evidência observada; generalização por validar |
-| `phc.custom_screen` | `dbo.formb` / `phc.customizations.formb` | `phc.stamp`, scope `phc.table:dbo.formb` | **1 par comum**, 1:1; 30 objectos na dfblock, 1 na CS; zero stamps repetidos em cada captura | Correspondência observacional demonstrada para este par e estas capturas; não promove automaticamente `Correspondence` a `Confirmed`, nem prova continuidade ou standard | Evidência observada; generalização por validar |
+| `phc.hidden_grid` | `dbo.formc` / `phc.customizations.formc` | `phc.stamp`, scope `phc.table:dbo.formc` | Cross-installation: **11 pares comuns** 1:1. Intra-installation C1/C2 (`dfblock`): **19/19** stamps comuns, zero duplicados e zero drift observado | Evidência temporal reprodutível nesta instalação/janela; não promove automaticamente `Correspondence` a `Confirmed`, nem prova identidade persistente, correspondência standard ou estabilidade sob mutação | Estabilidade observada C1/C2; mutações e generalização por validar |
+| `phc.custom_screen` | `dbo.formb` / `phc.customizations.formb` | `phc.stamp`, scope `phc.table:dbo.formb` | Cross-installation: **1 par comum**, 1:1. Intra-installation C1/C2 (`dfblock`): **30/30** stamps comuns, zero duplicados e zero drift observado | Evidência temporal reprodutível nesta instalação/janela; não promove automaticamente `Correspondence` a `Confirmed`, nem prova identidade persistente, correspondência standard ou estabilidade sob mutação | Estabilidade observada C1/C2; mutações e generalização por validar |
 | `phc.user_tsql_function` (origem/variante por confirmar) | Operação `phc.customizations.ftu`; distinguir registos `dbo.ftu` de funções `sys.objects` (`Fx_*` / `User_*`) | P1.B prevê `phc.stamp` apenas para a variante `dbo.ftu` | CS=6, dfblock=6; 0 SourceIdentity e 6 nomes comuns; o relatório não permite atribuir inequivocamente os seis registos à variante emissora | Resolver a discrepância entre a previsão P1.B e a ausência de SourceIdentity no Object Index; nome comum não confirma identidade | Evidência insuficiente / por validar |
 | `phc.user_tsql_function` (variante `sys.objects`) | Funções `Fx_*` / `User_*` | Sem SourceIdentity; SELECT não recolhe object_id | Não observada separadamente no Object Index comparativo | Nome/schema apenas referência sintética; não emitir identidade nativa | Não disponível |
 
-**Nota sobre os 12 pares:** a análise por objecto confirmou 1 par `formb` + 11 pares `formc`. Cada stamp é único dentro do respectivo kind/scope em cada captura. Os valores são mascarados no relatório de análise; não são necessários para a política conceptual. A confirmação observacional não equivale a gravar uma correspondência persistente com estado `Confirmed`.
+**Nota sobre os 12 pares cross-installation:** a análise por objecto confirmou 1 par `formb` + 11 pares `formc`. Cada stamp é único dentro do respectivo kind/scope em cada captura. Os valores são mascarados no relatório de análise; não são necessários para a política conceptual. A confirmação observacional não equivale a gravar uma correspondência persistente com estado `Confirmed`.
+
+**Validação temporal C1/C2 (24-11-2026):** duas capturas Full da mesma instalação operacional `DESKTOP-GB9607Q\\SQLEXPRESS/dfblock`, com `CaptureId` distintos, mesma build `1.0.0+ba3bf7c0839acc634cb47da8c374f536e02d19f4`, IKP 0.1 e Object Index v2. Resultado: `formb` 30/30 stamps comuns; `formc` 19/19; zero duplicados intra-captura e zero drift observado em SOID, nome, metadata/MetadataFingerprint e estado de disponibilidade da definição. As definições estavam Available (30 e 19, respectivamente). `InstallationId` de plataforma não existe no IKP 0.1; a comparabilidade foi estabelecida operacionalmente por servidor, `origin.databaseName` e `installation_label`. A janela C1→C2 não teve alterações deliberadas, mas a actividade operacional não foi auditada independentemente. O SOID deriva do stamp e não é evidência independente. DefinitionFingerprint semântico permaneceu indisponível (`NoValidatedPolicy`); não se conclui estabilidade semântica a partir de zero alterações reportadas nessa dimensão.
 
 ## 5. Objectos PHC e factos sem identidade de Object Index
 
@@ -194,7 +196,8 @@ Antes de promover uma linha a política operacional, recolher e documentar:
 - Não existem fingerprints semânticos disponíveis nas capturas analisadas.
 
 ### Ainda por validar
-- Estabilidade intra-installation dos stamps `formb`/`formc` e generalização a outras instalações/versões.
+- Comportamento dos stamps `formb`/`formc` sob mutações controladas (alteração de definição, renomeação, eliminação e recriação).
+- Generalização da estabilidade temporal a outras instalações/versões.
 - Unicidade e estabilidade dos stamps nas outras famílias PHC.
 - Continuidade intra-installation entre capturas sucessivas.
 - Relações de renomeação, derivação e substituição.
@@ -203,6 +206,6 @@ Antes de promover uma linha a política operacional, recolher e documentar:
 - Definições e causas das operações Partial, incluindo triggers sem definição.
 
 ### Próxima acção
-A investigação da MetadataFingerprint das tabelas SQL está concluída e registada na secção 3.2. A próxima validação é a estabilidade intra-installation e a generalização dos stamps `formb`/`formc`; não criar correspondências persistentes nem políticas automáticas nesta fase.
+A investigação da MetadataFingerprint das tabelas SQL está concluída e registada na secção 3.2. A validação temporal C1/C2 de `formb`/`formc` está concluída para a instalação `dfblock` e documentada como evidência observacional limitada. A próxima validação possível é o comportamento sob mutações controladas, em ambiente de testes e mediante autorização explícita; não criar correspondências persistentes nem políticas automáticas nesta fase.
 
 Só após essa análise se decide se a matriz pode ser promovida a baseline operacional e se há necessidade de alterar Scanner, IKP ou o modelo persistido.
