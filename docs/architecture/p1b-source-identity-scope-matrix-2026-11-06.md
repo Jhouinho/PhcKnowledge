@@ -1,6 +1,6 @@
 # P1.B — Matriz SourceIdentity e scopes dos emissores
 **Data:** 2026-11-06  
-**Estado:** matriz implementada no núcleo puro do Export; integração no projector e validação com captura real pendentes  
+**Estado:** matriz implementada no núcleo puro do Export e projectada pelo `SourceIdentityResolver`; validação real confirmada para os kinds observados nas capturas CS default/dfblock, com estabilidade intra-installation e generalização ainda pendentes  
 **Âmbito:** primeiro `object-index.json` IKP 0.1
 
 ## 1. Objetivo
@@ -125,8 +125,8 @@ A extração de `operationId` continua a ser uma preocupação separada: o regis
 - Testes unitários do resolver: aprovados no GitHub Actions.
 - Alterações ao schema SQLite e aos collectors: nenhuma; novas consultas à base PHC: nenhuma.
 - Captura real `CSDefault202603`: projeção confirmada para os kinds presentes; 8/21 kinds mapeados foram observados.
-- Unicidade e estabilidade de identidade entre capturas não ficam demonstradas por uma única captura.
-- Próximo passo: testar estabilidade entre capturas e validar kinds não observados, sem recolha adicional até existir necessidade demonstrada.
+- Unicidade dos stamps `formb`/`formc` foi observada nas duas capturas CS default/dfblock; isto não demonstra estabilidade intra-installation nem generalização a outras instalações/versões. Para as restantes famílias, a unicidade/estabilidade cross-installation continua por validar.
+- Próximo passo: testar estabilidade entre capturas sucessivas e validar kinds não observados, sem recolha adicional até existir necessidade demonstrada.
 
 
 ## Aditamento — validação entre duas instalações, 2026-11-24
