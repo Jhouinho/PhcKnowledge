@@ -127,3 +127,12 @@ A extração de `operationId` continua a ser uma preocupação separada: o regis
 - Captura real `CSDefault202603`: projeção confirmada para os kinds presentes; 8/21 kinds mapeados foram observados.
 - Unicidade e estabilidade de identidade entre capturas não ficam demonstradas por uma única captura.
 - Próximo passo: testar estabilidade entre capturas e validar kinds não observados, sem recolha adicional até existir necessidade demonstrada.
+
+
+## Aditamento — validação entre duas instalações, 2026-11-24
+
+A comparação real CS default / dfblock encontrou 12 correspondências cross-capture com `phc.stamp`, nos kinds `formb` e `formc`. O resultado é compatível com a utilização do stamp como evidência nativa dentro do scope PHC documentado, mas não demonstra cobertura nem unicidade universal para os restantes kinds.
+
+O `sqlserver.object_id` não corresponde entre bases de dados distintas, confirmando que o scope por base de dados é obrigatório. As correspondências de tabelas por nome/`SourceObjectId` (cerca de 7 933) permanecem observacionais; não devem ser promovidas a identidade lógica nem provocar fusão automática.
+
+Não foram recolhidos novos identificadores, alterados scopes ou modificados collectors. A política de matching e a distinção entre continuidade dentro da Installation e correspondência entre Installations continuam a exigir contrato próprio. Ver [avaliação de identidade e proveniência entre capturas](../audits/identity-provenance-cross-capture-assessment-2026-11-24.md).
