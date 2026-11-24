@@ -2,7 +2,7 @@
 
 **Repositório:** `Jhouinho/PhcKnowledge`  
 **Branch:** `main`  
-**Âmbito:** avaliação documental dos contratos existentes e dos resultados agregados da comparação local CS default / dfblock.  
+**Âmbito:** avaliação documental dos contratos existentes, comparação CS default / dfblock e validação temporal C1/C2 na instalação dfblock.  
 **Natureza:** relatório de evidência e lacunas; não aprova alterações de modelo ou implementação.
 
 ## 1. Objectivo
@@ -41,7 +41,29 @@ A análise por objecto confirmou **12 pares cross-capture com `phc.stamp`**:
 
 Em cada captura, todos os stamps destes dois kinds são únicos no respectivo scope: zero valores repetidos. Nos 12 pares, a cardinalidade é 1:1 e coincidem `objectKind`, `operationId`, scope, scheme, nome, `SourceObjectId`, `MetadataFingerprint` SHA-256 e metadata projectada. As definições estão Available, mas o DefinitionFingerprint semântico está Unavailable / NoValidatedPolicy.
 
-**Conclusão:** existe correspondência observacional demonstrada para estes 12 pares e estas duas capturas. Não demonstra estabilidade intra-installation, generalização a outras instalações/versões, `SameLogicalEntity` persistente ou `SameStandardEntity`. Também não cria automaticamente um registo persistente `Correspondence.Confirmed` no modelo D-023.
+**Conclusão cross-installation:** existe correspondência observacional demonstrada para estes 12 pares e estas duas capturas. Não demonstra `SameLogicalEntity` persistente ou `SameStandardEntity`, nem cria automaticamente um registo persistente `Correspondence.Confirmed` no modelo D-023.
+
+### 3.1.1 Estabilidade temporal C1/C2 — dfblock
+
+Foram executadas duas capturas Full sucessivas da mesma instalação operacional `DESKTOP-GB9607Q\\SQLEXPRESS/dfblock`, utilizando a mesma build do Scanner `1.0.0+ba3bf7c0839acc634cb47da8c374f536e02d19f4`, IKP 0.1 e Object Index v2.
+
+| Indicador | C1 | C2 | Resultado comparativo |
+|---|---:|---:|---:|
+| Objectos no índice | 18 955 | 18 955 | Igual |
+| `formb` com stamp | 30 | 30 | 30/30 comuns |
+| `formc` com stamp | 19 | 19 | 19/19 comuns |
+| Duplicados de stamp por família | 0 | 0 | 0 |
+| Drift observado nos atributos comparados | — | — | 0 |
+
+- `CaptureId` C1: `113e35df-a4bb-45cc-b08a-2821b54389ae`.
+- `CaptureId` C2: `a9f628d4-c906-40cd-937f-ef5161e642f1`.
+- `InstallationId` de plataforma: ausente no IKP 0.1. A mesma instalação foi confirmada operacionalmente por servidor SQL, `origin.databaseName=dfblock` e `installation_label`.
+- Para os 30 `formb` e 19 `formc`, as chaves `(scheme, scope, value)` foram comuns entre C1/C2, sem duplicados, desaparecimentos, novidades ou drift observado em SOID, nome, metadata/MetadataFingerprint ou disponibilidade da definição. As definições estavam Available nas duas capturas.
+- O SOID é derivado do stamp e não constitui evidência independente.
+- DefinitionFingerprint semântico continua indisponível (`NoValidatedPolicy`). A ausência de alterações reportadas nessa dimensão não demonstra estabilidade de definição semântica.
+- Não houve alterações deliberadas a `formb`/`formc` entre capturas; actividade operacional inevitável não foi auditada independentemente.
+
+**Conclusão temporal:** os stamps `formb` e `formc` demonstraram reprodutibilidade observacional entre duas capturas sucessivas, nesta instalação e janela, sem alterações deliberadas. Não demonstra comportamento sob mutações, generalização a outras instalações/versões, identidade persistente ou correspondência standard. Os hashes dos ZIPs e logical content digests diferem; isso não contradiz o resultado dos stamps, mas a composição exacta do logical content digest não foi auditada nesta avaliação.
 
 ### 3.2 Identificadores SQL Server
 
@@ -107,7 +129,7 @@ O modelo conceptual coloca `EntityIdentity` no âmbito de uma Installation. Inst
 
 ## 7. Lacunas demonstradas
 
-1. A unicidade dos stamps `formb`/`formc` foi observada apenas nas duas capturas analisadas; estabilidade intra-installation e generalização continuam por validar.
+1. A estabilidade temporal dos stamps `formb`/`formc` foi observada em C1/C2 na instalação `dfblock` (30/30 e 19/19, respectivamente); mutações controladas e generalização a outras instalações/versões continuam por validar.
 2. Não existe ainda evidência cross-installation suficiente para todas as famílias PHC; as restantes famílias com stamp não demonstraram correspondências comuns neste conjunto.
 3. A correspondência de 7 933 tabelas por schema+nome continua a ser candidata estrutural, mas a lacuna sobre a MetadataFingerprint está fechada: as diferenças dos 4 905 pares são exclusivamente datas de catálogo SQL. Isto não confirma identidade nem correspondência cross-installation.
 4. A política de resolução de candidatos, desempate, confirmação, rejeição e histórico não está fechada em detalhe operacional.
@@ -134,7 +156,7 @@ O contrato seguinte deve manter separadas estas situações:
 
 A próxima etapa documental/técnica deve seguir esta ordem:
 
-1. **Validar estabilidade formb/formc:** comparar capturas sucessivas da mesma Installation e recolher evidência noutras instalações/versões, sem criar matching automático nesta fase.
+1. **Validar comportamento sob mutações controladas:** em ambiente de testes, estudar alteração de definição, renomeação, eliminação e recriação de `formb`/`formc`; a estabilidade sem mutações já foi observada em C1/C2 na `dfblock`. Recolher evidência noutras instalações/versões separadamente, sem criar matching automático nesta fase.
 2. **Manter catálogo PHC Standard e classificação em aberto:** especificar versão/edição/cobertura antes de inferir StandardIntact, StandardModified ou InstallationDevelopment.
 3. **Tratar REL/DTL separadamente:** propor contrato de identidade/proveniência dos factos declarados, sem os converter em ObjectKinds.
 4. **Diagnosticar cobertura SQL:** investigar os triggers sem definição e as nove transições Available → Unavailable sem presumir causa.
@@ -150,5 +172,6 @@ A matriz D-023 v0.2 consolida a evidência e as limitações por ObjectKind; con
 - Não foi classificado individualmente qualquer objecto da dfblock.
 - Não foi implementado matching, classificação automática, diff histórico ou RAG.
 - Não foram copiados pacotes, payloads ou dados proprietários para o GitHub.
+- A validação C1/C2 não alterou código, collectors, contratos, SQLite, base de dados PHC ou documentação canónica; os artefactos e relatórios locais permanecem fora do repositório.
 
 **Conclusão:** a arquitectura conceptual existente é uma boa base e deve ser preservada. A lacuna principal não é a ausência de identificadores no Scanner, mas a falta de um contrato operacional de correspondência e proveniência na plataforma, validado para o âmbito cross-capture e cross-installation.
