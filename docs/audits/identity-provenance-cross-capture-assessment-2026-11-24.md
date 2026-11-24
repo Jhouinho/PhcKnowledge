@@ -79,7 +79,7 @@ A1 (`Personalização 1`, `formb`) e A2 (`hide_calculos`, `formc`) mantiveram st
 
 Os hashes SHA-256 dos ZIPs e os logical content digests globais diferiram. A composição dos digests não foi auditada; não se conclui que a diferença seja irrelevante, nem se atribui qualquer alteração às duas âncoras.
 
-**Resultado:** T-A aprovado como controlo sem mutações para estas duas âncoras, nesta instalação e janela. O resultado não valida detecção de mutações nem permite generalização a outras instalações/versões. Nenhuma mutação foi executada; T-B…T-E não foram corridos. O relatório detalhado comunicado pelo responsável do projecto é `artifacts/ikp-te-ta-control-report.md` e permanece fora do repositório.
+**Resultado de T-A:** T-A foi aprovado como controlo sem mutações para estas duas âncoras, nesta instalação e janela. O resultado não valida detecção de mutações nem permite generalização a outras instalações/versões. À data do fecho de T-A, nenhuma mutação tinha sido executada e T-B…T-E ainda não tinham sido corridos. T-B foi executado posteriormente e está documentado na secção seguinte. O relatório detalhado de T-A é `artifacts/ikp-te-ta-control-report.md` e permanece fora do repositório.
 
 ### 3.1.3 Ensaio T-B — alteração controlada e reposição de definição
 
