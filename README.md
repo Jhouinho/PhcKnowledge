@@ -93,3 +93,29 @@ A matriz estática de referência, ainda pendente de validação com captura rea
 Não alterar collectors, workspace SQLite ou semântica de recolha antes de a matriz estar validada e a alteração correspondente ser aprovada. Não declarar materialização central concluída sem execução e verificação efectivas.
 
 O [roadmap visual](docs/architecture/roadmap-visual-phc-knowledge-2026-11-06.md) regista a sequência e os critérios. As [orientações do projecto](PROJECT_GUIDELINES.md) definem a governação e a documentação canónica.
+
+
+## Estado vigente após comparação das capturas — 2026-11-24
+
+A validação funcional foi executada nas duas bases previstas pelo protocolo, com a mesma build do Scanner: CS default e uma instalação PHC com desenvolvimento (dfblock). A integridade dos ZIP, hashes, checksums, IKP 0.1, Object Index v2 e alinhamento dos workspaces por CaptureId foram confirmados.
+
+Resultados agregados:
+- CS default: 17 182 objectos no Object Index e 63 artefactos.
+- dfblock: 18 954 objectos e 881 artefactos; mais 10 kinds PHC e 598 campos físicos `u_*`.
+- Foram encontradas 12 correspondências com `phc.stamp`, em `formb`/`formc`.
+- `sqlserver.object_id` não atravessa bases de dados. Cerca de 7 933 tabelas foram correspondidas por nome/`SourceObjectId`, como evidência observacional e não identidade persistente.
+- Os envelopes D-022 estão correctos, mas não existe DefinitionFingerprint semântico disponível (`NoValidatedPolicy`); diff semântico de definições não demonstrado.
+- Procedures e triggers ficaram Partial nas duas capturas. A causa dos 540 triggers `definition_missing` da dfblock não foi diagnosticada.
+
+O relatório agregado, sem payload proprietário, está em [Avaliação de identidade e proveniência entre capturas](docs/audits/identity-provenance-cross-capture-assessment-2026-11-24.md). Os pacotes e workspaces permanecem locais; não foram adicionados ao repositório.
+
+### Próxima fase de domínio
+
+Antes da materialização incremental, fechar os contratos operacionais de:
+1. identidade e correspondência entre capturas e instalações;
+2. proveniência e classificação PHC Standard / desenvolvimento / alteração ao standard / origem desconhecida;
+3. comparação exacta e semântica de definições.
+
+A identidade lógica continua scoped à Installation. Correspondências entre instalações não fundem automaticamente entidades ou históricos. A ausência na CS default, isoladamente, não prova que um objecto seja personalizado. O catálogo PHC Standard versionado de D-015 continua a ser uma dependência.
+
+A análise não autoriza alterações a código, collectors, schemas executáveis, SQLite, migrations ou materialização. A avaliação detalhada e as limitações estão no relatório ligado acima.
