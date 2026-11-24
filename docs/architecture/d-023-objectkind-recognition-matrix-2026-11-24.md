@@ -1,7 +1,7 @@
-# D-023 — Matriz de reconhecimento por ObjectKind (v0.3)
+# D-023 — Matriz de reconhecimento por ObjectKind (v0.4)
 
 **Data:** 24-11-2026  
-**Estado:** matriz documental v0.3; integra evidência cross-installation CS default/dfblock e validação temporal C1/C2 na instalação dfblock. **Não aprovada como política automática de matching nem como matriz operacional final.**  
+**Estado:** matriz documental v0.4; integra evidência cross-installation CS default/dfblock, validação temporal C1/C2 e controlo T-A na instalação dfblock. **Não aprovada como política automática de matching nem como matriz operacional final.**  
 **Referências:** [D-023 — Identidade e correspondência cross-installation](d-023-cross-installation-identity-correspondence-contract.md); [P1.B — SourceIdentity e scopes](p1b-source-identity-scope-matrix-2026-11-06.md); [Matriz Collector/Operation/ObjectKind](collector-operation-objectkind-matrix-2026-11-24.md); [Avaliação CS default / dfblock](../audits/identity-provenance-cross-capture-assessment-2026-11-24.md).
 
 ## 1. Finalidade e limites
@@ -111,6 +111,28 @@ O contrato P1.B projecta `phc.stamp` com scope por tabela de origem. A comparaç
 **Nota sobre os 12 pares cross-installation:** a análise por objecto confirmou 1 par `formb` + 11 pares `formc`. Cada stamp é único dentro do respectivo kind/scope em cada captura. Os valores são mascarados no relatório de análise; não são necessários para a política conceptual. A confirmação observacional não equivale a gravar uma correspondência persistente com estado `Confirmed`.
 
 **Validação temporal C1/C2 (24-11-2026):** duas capturas Full da mesma instalação operacional `DESKTOP-GB9607Q\\SQLEXPRESS/dfblock`, com `CaptureId` distintos, mesma build `1.0.0+ba3bf7c0839acc634cb47da8c374f536e02d19f4`, IKP 0.1 e Object Index v2. Resultado: `formb` 30/30 stamps comuns; `formc` 19/19; zero duplicados intra-captura e zero drift observado em SOID, nome, metadata/MetadataFingerprint e estado de disponibilidade da definição. As definições estavam Available (30 e 19, respectivamente). `InstallationId` de plataforma não existe no IKP 0.1; a comparabilidade foi estabelecida operacionalmente por servidor, `origin.databaseName` e `installation_label`. A janela C1→C2 não teve alterações deliberadas, mas a actividade operacional não foi auditada independentemente. O SOID deriva do stamp e não é evidência independente. DefinitionFingerprint semântico permaneceu indisponível (`NoValidatedPolicy`); não se conclui estabilidade semântica a partir de zero alterações reportadas nessa dimensão. Os logical content digests globais das capturas diferem (`c6bcd0767bcf75684f68e878345296887b601ea92ef13afc0aba4de65216fdf9` e `b3bc9036705d95925909631b796fff3821ef2974a4ec8978679f3a9c708bbb96`); a composição exacta do digest não foi auditada nesta validação, pelo que a diferença não é interpretada como alteração de `formb`/`formc` nem declarada irrelevante.
+
+### Validação de controlo T-A — T0/T1 (24-11-2026)
+
+Foi executado e aprovado um controlo sem mutações deliberadas na instalação de testes `dfblock`, com duas capturas Full sucessivas (T0 e T1), separadas por **300,0 segundos** de inactividade deliberada.
+
+| Indicador | T0 | T1 | Resultado |
+|---|---|---|---|
+| CaptureId | `6dab37bd-…` | `6fcd4606-…` | Distintos |
+| PackageId | `d78a2db7-…` | `ff4a0d16-…` | Distintos |
+| Base de dados | `dfblock` | `dfblock` | Mesma base operacional |
+| Objectos / payloads | 18 955 / 882 | 18 955 / 882 | Iguais |
+
+Foram comparadas duas âncoras, sem qualquer mutação:
+
+- A1 — `Personalização 1`, `phc.custom_screen` (`formb`);
+- A2 — `hide_calculos`, `phc.hidden_grid` (`formc`).
+
+Em ambas, o stamp permaneceu único e mantiveram-se iguais o `SourceObjectId`, nome/ecrã, `MetadataFingerprint` face à baseline, metadata, estado de definição `Available` e bytes do artefacto. As contagens por `ObjectKind` também permaneceram iguais.
+
+Os SHA-256 dos ZIPs e os logical content digests globais diferiram entre T0 e T1. A composição desses digests não foi analisada nesta validação; a diferença fica registada e não é atribuída às duas âncoras nem declarada irrelevante.
+
+**Conclusão limitada:** T-A foi aprovado como controlo sem mutações para A1 e A2, nesta instalação, build/opções e janela observadas. Não testa sensibilidade a alterações, renomeações, eliminações ou recriações; não demonstra estabilidade universal, identidade persistente ou validade de DefinitionFingerprint semântico. Nenhuma mutação foi executada e T-B…T-E não foram corridos.
 
 ## 5. Objectos PHC e factos sem identidade de Object Index
 
