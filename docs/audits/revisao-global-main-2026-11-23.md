@@ -78,3 +78,30 @@ Actualizados na main:
 - este relatório.
 
 Não foram alterados código, schemas executáveis, fixtures, collectors, workspace SQLite, migrations, pipelines ou materialização SQL. Não foi executado build/teste local. Não foi feita validação PHC real.
+
+---
+
+## Aditamento de estado após o merge da PR #28 — 2026-11-24
+
+A revisão de 2026-11-23 foi uma fotografia correcta da main naquele momento, mas o estado mudou com a integração posterior do Incremento C. Este aditamento prevalece sobre as referências anteriores deste relatório à PR #20 e ao Incremento C.
+
+- **HEAD actual da main:** `dfb44b5ce4370ccf5b43856c87328f1915c58a99`.
+- **PR #28 — Incremento C:** merged em 2026-11-24; merge commit acima.
+- **PR #20:** preservada; não é a implementação candidata nem está pendente de integração para disponibilizar o Incremento C.
+- **Incremento C:** decisão de confirmar/rejeitar PackageImportAnalysis, persistência append-only, endpoints do Host e UI React integrados.
+- **Checks da PR #28:** `build-and-test`, `dotnet-tests`, `portal` e integração SQL Server 2022/Scanner concluídos com sucesso.
+- **D-022:** continua integrada e preservada na baseline.
+- **Pendente:** validação D-022 com captura nova numa instalação PHC real; matriz collector/operation/ObjectKind; associação completa Cliente/Instalação/Captura; contrato e implementação de materialização persistente SQL Server; verificação e eliminação segura do ZIP.
+
+### Correcção da sequência
+
+A primeira prioridade já não é reconciliar a PR #20. A sequência vigente passa a ser:
+
+1. Rever a baseline pós-merge e manter README, PROJECT_GUIDELINES, roadmap e estado do Scanner alinhados.
+2. Fechar a matriz collector/operation/ObjectKind com evidência de código e captura real.
+3. Validar D-022 com uma captura nova numa instalação PHC.
+4. Fechar e aprovar o contrato físico de materialização SQL Server.
+5. Implementar materialização incremental e verificação; eliminar ZIP/staging apenas após verificação integral.
+
+A revisão e este aditamento são documentais. Não executaram novo build/teste local, captura PHC, deployment ou materialização.
+
