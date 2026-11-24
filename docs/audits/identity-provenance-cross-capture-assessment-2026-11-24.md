@@ -9,7 +9,7 @@
 
 Avaliar se os contratos actuais permitem reconhecer objectos entre capturas e instalações, distinguir identidade de correspondência e preservar a origem do conhecimento PHC.
 
-A comparação local dos pacotes foi executada pelo responsável do projecto. Esta revisão utiliza apenas os resultados agregados comunicados; não acedeu aos ZIP, workspaces, SQLite ou ao relatório local completo. Nenhum conteúdo proprietário da dfblock foi copiado para o repositório.
+A análise comparativa detalhada foi executada localmente pelo responsável do projecto sobre os dois pacotes originais e o respectivo relatório completo foi fornecido para revisão nesta etapa. Este documento consolida os resultados comunicados; não afirma uma execução independente dos ZIP, workspaces ou SQLite por esta revisão. O relatório técnico local e os agregados detalhados permanecem fora do repositório. Nenhum conteúdo proprietário, definição ou código personalizado da dfblock foi copiado para o GitHub.
 
 ## 2. Evidência comparativa
 
@@ -19,29 +19,37 @@ A comparação local dos pacotes foi executada pelo responsável do projecto. Es
 | Artefactos | 63 | 881 |
 | Tabelas físicas | 8 294 | 9 601 |
 | Campos físicos `u_*` | 0 | 598 |
-| Personalizações PHC | Mínimas | Presentes em mais 10 kinds PHC |
+| DefinitionFingerprint semântico Available | 0 | 0 |
+| Definições Available | 60 | 280 |
+| Triggers sem definição | 553 | 540 |
 
 As duas capturas:
-- foram produzidas pela mesma build do Scanner;
-- passaram as verificações de integridade, hashes e checksums;
+- foram produzidas pela mesma build `1.0.0+960eed18828bcbe60d28d072ef50bc0e3e4baf35` do Scanner;
 - usam IKP 0.1 e Object Index v2;
-- têm PackageId/CaptureId distintos e workspaces alinhados com o respectivo CaptureId.
+- têm PackageId/CaptureId distintos;
+- passaram as verificações de integridade reportadas; o ZIP da dfblock reconstruído a partir das partes coincide com o ZIP completo.
 
-A diferença de inventário demonstra que a captura distingue uma instalação próxima da baseline standard de outra com desenvolvimento significativo. Não prova, por si só, que todos os objectos exclusivos da dfblock sejam personalizações: versão PHC, âmbito, disponibilidade e cobertura também têm de ser considerados.
+A comparação detalhada identificou 19 ObjectKinds na dfblock e 9 na CS default. A dfblock contém mais 10 kinds PHC e 598 campos físicos `u_*`. A diferença de inventário não classifica automaticamente os objectos exclusivos como personalizações: versão PHC, âmbito, disponibilidade, cobertura e catálogo standard continuam a ser necessários.
 
 ## 3. Resultado da identidade entre capturas
 
 ### 3.1 Stamps PHC
 
-A comparação encontrou 12 correspondências cross-capture com evidência `phc.stamp`, nos kinds `formb` e `formc`.
+A análise por objecto confirmou **12 pares cross-capture com `phc.stamp`**:
+- 1 par em `phc.custom_screen` (`formb`);
+- 11 pares em `phc.hidden_grid` (`formc`).
 
-Isto confirma utilidade prática do stamp dentro do scope PHC documentado para essas famílias. Não demonstra cobertura universal nem autoriza tratar qualquer stamp como global fora do respectivo tipo/tabela.
+Em cada captura, todos os stamps destes dois kinds são únicos no respectivo scope: zero valores repetidos. Nos 12 pares, a cardinalidade é 1:1 e coincidem `objectKind`, `operationId`, scope, scheme, nome, `SourceObjectId`, `MetadataFingerprint` SHA-256 e metadata projectada. As definições estão Available, mas o DefinitionFingerprint semântico está Unavailable / NoValidatedPolicy.
+
+**Conclusão:** existe correspondência observacional demonstrada para estes 12 pares e estas duas capturas. Não demonstra estabilidade intra-installation, generalização a outras instalações/versões, `SameLogicalEntity` persistente ou `SameStandardEntity`. Também não cria automaticamente um registo persistente `Correspondence.Confirmed` no modelo D-023.
 
 ### 3.2 Identificadores SQL Server
 
-`sqlserver.object_id` não identifica o mesmo objecto entre bases de dados distintas. O scope por base de dados, já previsto no contrato, impede que o valor seja interpretado como identidade global.
+`sqlserver.object_id` não coincide como triplo `scheme/value/scope` entre as duas bases, porque o scope inclui o nome da base de dados. Entre os 7 933 pares de tabelas candidatos, 6 179 têm o mesmo valor numérico de `object_id` quando o scope é ignorado e 1 754 têm valor diferente. A coincidência numérica não é identidade cross-installation.
 
-Foram observadas cerca de 7 933 tabelas comuns por nome/`SourceObjectId`. Esta é uma correspondência observacional útil, não prova de identidade persistente: nomes podem ser reutilizados, objectos podem ser recriados e a semântica pode mudar.
+Foram identificadas **7 933 tabelas candidatas** por `schemaName + name` (todas em `dbo`), sem duplicados locais: 361 existem apenas na CS e 1 668 apenas na dfblock. Os 7 933 pares têm `SourceObjectId` e `MetadataFingerprint` iguais.
+
+Contudo, apenas **3 028** pares têm o objecto `metadata` completo igual; **4 905** diferem em campos adicionais ou fora da projecção do fingerprint. O fingerprint coincide, mas a semântica da sua projecção ainda não foi investigada. Assim, os pares permanecem candidatos estruturais, não identidades nem equivalências confirmadas.
 
 ### 3.3 SourceObjectId
 
@@ -53,7 +61,10 @@ A comparação por nome pode produzir candidatos de correspondência; não deve 
 
 Os envelopes D-022 foram reportados como estruturalmente correctos nas duas capturas.
 
-Não foi encontrado qualquer DefinitionFingerprint semântico disponível: as definições elegíveis ficaram com `Unavailable / NoValidatedPolicy`.
+- CS: 60 definições Available; dfblock: 280.
+- Em todos estes casos, o DefinitionFingerprint está Unavailable com `NoValidatedPolicy`.
+- DefinitionFingerprints semânticos Available: zero em ambas as capturas.
+- Não foi usado hash de bytes como substituto do fingerprint semântico.
 
 Consequências:
 - a integridade dos artefactos foi validada;
@@ -62,15 +73,24 @@ Consequências:
 - não se pode concluir que definições com conteúdos diferentes são semanticamente diferentes, nem que conteúdos iguais são semanticamente equivalentes;
 - MetadataFingerprint mantém-se uma dimensão separada e não substitui a comparação da definição.
 
-D-022 comportou-se conforme a política aprovada; a ausência de políticas semânticas validadas é uma capacidade ainda por desenvolver, não uma falha do envelope.
+**Ponto adicional por investigar:** nas tabelas SQL, 7 933 candidatos têm MetadataFingerprint igual, mas apenas 3 028 têm metadata completa igual. É necessário documentar a projecção exacta do MetadataFingerprint (campos incluídos/excluídos e canonicalização) antes de o usar como critério de correspondência.
 
 ## 5. Coverage e limitações
 
 Procedures e triggers ficaram em estado Partial nas duas capturas.
 
-Na dfblock, 540 triggers têm `definition_missing`, mas a causa não foi diagnosticada nesta tarefa. Não se assume que estejam encriptados apenas por analogia com a CS default.
+Na dfblock, 540 triggers estão sem definição; na CS, 553. A causa dos 540 triggers sem definição na dfblock não foi diagnosticada. Além disso, nove triggers com nome comum passam de definição Available na CS para Unavailable na dfblock. A causa desta transição também permanece desconhecida; não se assume encriptação, substituição ou outra explicação sem evidência.
 
 A comparação de identidade não deve converter indisponibilidade de definição em ausência de objecto, nem uma operação Partial em prova de exclusividade ou remoção.
+
+REL/DTL:
+- 921 factos declarados na CS (626 DTL + 295 REL);
+- 923 na dfblock (610 DTL + 313 REL);
+- todos reportados como interpretados (`Parsed`);
+- 13 interpretações em cada captura têm referências de tabela não resolvidas;
+- 373 valores comuns por `(sourceType, sourceStamp)`, agregados entre REL e DTL.
+
+Estes 373 casos são correspondências observacionais de factos declarados, não identidades de Object Index nem prova automática de `SameLogicalEntity` ou `SameStandardEntity`. REL/DTL requerem contrato próprio.
 
 ## 6. Contratos existentes e reutilizáveis
 
@@ -87,12 +107,15 @@ O modelo conceptual coloca `EntityIdentity` no âmbito de uma Installation. Inst
 
 ## 7. Lacunas demonstradas
 
-1. Não existe ainda evidência nativa cross-installation suficiente para todos os kinds.
-2. A correspondência por nome/`SourceObjectId` não é uma identidade permanente.
-3. A política de resolução de candidatos, desempate, confirmação, rejeição e histórico não está fechada em detalhe operacional.
-4. A classificação PHC Standard / desenvolvimento / standard alterado / origem desconhecida não está implementada como processo completo. O catálogo standard versionado e a comparação são dependências.
-5. Não há fingerprints semânticos disponíveis nas capturas; não foi possível demonstrar diff semântico de definições.
-6. `EntityIdentity`, `IdentityMatch` e Observations continuam a ser conceitos de destino, sem materialização persistente no SQL Server.
+1. A unicidade dos stamps `formb`/`formc` foi observada apenas nas duas capturas analisadas; estabilidade intra-installation e generalização continuam por validar.
+2. Não existe ainda evidência cross-installation suficiente para todas as famílias PHC; as restantes famílias com stamp não demonstraram correspondências comuns neste conjunto.
+3. A correspondência de 7 933 tabelas por schema+nome é candidata. A projecção de MetadataFingerprint carece de investigação porque 4 905 pares diferem na metadata completa.
+4. A política de resolução de candidatos, desempate, confirmação, rejeição e histórico não está fechada em detalhe operacional.
+5. A classificação PHC Standard / desenvolvimento / standard alterado / origem desconhecida depende do catálogo standard versionado e da cobertura aplicável; nenhum objecto foi classificado individualmente.
+6. Não há fingerprints semânticos disponíveis nas capturas; não foi possível demonstrar diff semântico de definições.
+7. A causa dos 540 triggers sem definição na dfblock e das nove transições Available → Unavailable permanece desconhecida.
+8. REL/DTL tem evidência de stamps comuns, mas falta contrato próprio de identidade e correspondência para factos declarados.
+9. `EntityIdentity`, `Correspondence` e Observations continuam a ser conceitos de destino, sem materialização persistente no SQL Server.
 
 ## 8. Distinções obrigatórias para o desenho seguinte
 
@@ -108,13 +131,16 @@ O contrato seguinte deve manter separadas estas situações:
 
 ## 9. Próxima fase proposta
 
-A próxima fase de domínio é fechar, antes da materialização incremental, os contratos de:
+A próxima etapa documental/técnica deve seguir esta ordem:
 
-1. **Identidade e correspondência:** evidência, scope, precedência, candidatos, estados, confirmação/rejeição e histórico.
-2. **Proveniência e classificação:** origem standard, desenvolvimento específico, alteração ao standard e origem desconhecida, sempre sustentadas por evidência e pelo catálogo PHC Standard versionado.
-3. **Comparação de definições:** separar integridade, comparação byte-a-byte e comparação semântica; definir políticas por kind apenas quando possam ser validadas.
+1. **Investigar MetadataFingerprint SQL:** documentar campos incluídos/excluídos, canonicalização e intenção semântica da projecção; explicar os 4 905 pares com metadata completa diferente.
+2. **Validar estabilidade formb/formc:** comparar capturas sucessivas da mesma Installation e recolher evidência noutras instalações/versões, sem criar matching automático nesta fase.
+3. **Manter catálogo PHC Standard e classificação em aberto:** especificar versão/edição/cobertura antes de inferir StandardIntact, StandardModified ou InstallationDevelopment.
+4. **Tratar REL/DTL separadamente:** propor contrato de identidade/proveniência dos factos declarados, sem os converter em ObjectKinds.
+5. **Diagnosticar cobertura SQL:** investigar os triggers sem definição e as nove transições Available → Unavailable sem presumir causa.
+6. Só depois apresentar proposta técnica para Scanner, IKP, domínio e persistência SQL Server, sujeita a aprovação explícita.
 
-Depois, validar os contratos com as duas capturas reais, sem modificar os pacotes originais. Só então decidir alterações ao Scanner, ao modelo de domínio e à persistência SQL Server.
+A matriz D-023 v0.2 consolida a evidência e as limitações por ObjectKind; continua draft, não é política operacional.
 
 ## 10. Não realizado / não autorizado por esta avaliação
 
