@@ -254,3 +254,59 @@ O conhecimento específico de uma instalação continua sujeito a proveniência,
 - Se a referência CS Default disponível cobre os módulos e a versão pretendidos.
 
 **Estado final:** direção de produto e plano de validação registados. A matriz operacional do Scanner continua dependente de validação com capturas reais. Nenhuma alteração de código ou de contratos executáveis foi aprovada por este documento.
+
+## 11. Decisão aprovada — Descoberta Progressiva de Conhecimento Funcional
+
+**Data: 24-11-2026 — Estado: APROVADA pelo responsável do projecto.**  
+**Estatuto: objectivo fundamental do PHC Knowledge.**
+
+O PHC Knowledge deve permitir descobrir, construir, relacionar e validar progressivamente conhecimento sobre o funcionamento do PHC, partindo dos objectos técnicos e evidências recolhidos pelo Scanner e seguindo as relações que permitem compreender processos, dependências, regras e comportamentos funcionais.
+
+O produto não se limita a inventariar tabelas, campos, código ou personalizações. Deve evoluir para explicar como os elementos técnicos participam no funcionamento do PHC, mantendo cada conclusão ligada às evidências, origem, contexto e estado de validação que a sustentam.
+
+### Capacidades funcionais
+
+1. **Descoberta:** partir de uma tabela, campo, ecrã, regra ou funcionalidade e localizar objectos e evidências relacionados.
+2. **Correlação:** relacionar estrutura SQL, relações declaradas PHC, triggers, procedures, funções, regras, eventos, teclas, ecrãs, grelhas, scripts e outros artefactos efectivamente recolhidos.
+3. **Investigação progressiva:** seguir relações para descobrir circuitos funcionais mais amplos, sem exigir que todas as tabelas ou etapas sejam conhecidas antecipadamente.
+4. **Validação:** permitir confirmar, rejeitar ou manter em aberto hipóteses com base em código, metadados, dados de teste e observação controlada do comportamento.
+5. **Acumulação de conhecimento:** preservar conclusões reutilizáveis, evidências, proveniência, âmbito, limitações e estado de validação.
+
+### Distinção obrigatória entre evidência e interpretação
+
+O modelo de conhecimento e a experiência do Portal devem distinguir, pelo menos:
+
+- **Facto observado:** conteúdo directamente recolhido ou observado, como uma instrução SQL presente numa trigger.
+- **Relação identificada:** ligação sustentada por uma referência ou análise técnica, com tipo e origem explícitos.
+- **Hipótese funcional:** interpretação possível que ainda carece de validação.
+- **Conclusão validada:** interpretação confirmada por evidência suficiente, com âmbito e limitações registados.
+
+Uma relação inferida por análise de código não deve ser apresentada como FK ou relação declarada PHC. A existência de uma referência técnica não prova, por si só, uma regra de negócio ou causalidade funcional.
+
+### Caso de referência
+
+O estudo Frenetikmove da factura 429, que permitiu relacionar FT → FI → SL → ST e analisar triggers e influências adicionais, passa a ser um caso de referência para avaliar esta capacidade. É uma demonstração exploratória numa instalação concreta, não uma regra universal do PHC nem conhecimento automaticamente transferível para outras instalações.
+
+Outros estudos anteriores, como BRULE, ecrãs personalizados e grelhas ocultas, podem fornecer casos complementares, desde que a origem e o âmbito de cada evidência sejam preservados.
+
+### Evolução por etapas
+
+1. validar a recolha e a qualidade das evidências por tipo/operação do Scanner;
+2. disponibilizar pesquisa e exploração estrutural/operacional dos objectos recolhidos;
+3. correlacionar objectos e apresentar relações com origem e semântica explícitas;
+4. permitir investigar circuitos funcionais e registar hipóteses/conclusões validadas;
+5. acumular conhecimento contextualizado e reutilizável, respeitando instalação, proveniência e permissões;
+6. numa fase posterior, introduzir IA para apoiar a descoberta e explicação, sempre com respostas fundamentadas em evidências.
+
+A IA não é pré-requisito para esta capacidade nem substitui validação. A primeira fundação deve ser um conhecimento estruturado, pesquisável, rastreável e útil sem IA.
+
+### Implicações e limites
+
+- As decisões futuras sobre Scanner, modelo de conhecimento e Portal devem considerar se preservam as fundações necessárias à descoberta e explicação funcional.
+- A auditoria do Scanner deve avaliar não só a existência e integridade dos artefactos, mas também se o contexto e as relações recolhidas permitem responder a perguntas funcionais reais.
+- O Portal deverá permitir navegar das conclusões para as evidências de origem.
+- Factos de uma instalação não se tornam conhecimento standard nem podem ser expostos a outras instalações sem governação, validação e permissões adequadas.
+- Esta decisão não aprova alterações a collectors, queries, Scanner, workspace SQLite, schemas executáveis IKP, migrations, materialização SQL Server ou RAG. Cada alteração exige evidência, proposta técnica e aprovação específica.
+- Não aprova a implementação imediata de um motor de inferência, grafo físico específico ou sistema de IA.
+
+Esta decisão complementa a direcção de produto e o plano de auditoria deste documento. Em caso de conflito sobre o estatuto deste objectivo, prevalece a decisão aprovada aqui e na referência canónica de decisões.
