@@ -368,3 +368,22 @@ A implementação aprovada foi concluída e integrada na `main` através da PR #
 
 A integração não altera os limites de âmbito aprovados em D-022. Qualquer expansão futura — em particular políticas semânticas de produção, normalização T-SQL, múltiplos artefactos ou alterações à recolha/SQLite/materialização — exige decisão própria.
 
+
+
+## 14. D-023 — Identidade e correspondência cross-installation
+
+**Data: 24-11-2026 — Estado: APROVADA.**
+
+O contrato normativo completo está em [D-023 — Identidade e correspondência cross-installation](d-023-cross-installation-identity-correspondence-contract.md).
+
+1. Cada instalação mantém as suas próprias `EntityIdentity`. Identidades de instalações diferentes nunca são fundidas, mesmo quando stamps, nomes, definições, estruturas ou origem histórica aparentam coincidir.
+2. O PHC Standard tem identidades de referência próprias num catálogo central, curado e versionado. Uma referência standard não substitui a identidade local do objecto observado.
+3. A correspondência é uma relação autónoma entre identidades, com evidências e histórico auditável. Não é merge e não implica igualdade de definições.
+4. A cardinalidade não é presumida como universalmente 1:1. Os tipos conceptuais incluem `SameStandardEntity`, `SameLogicalEntity`, `RenamedFrom/To`, `DerivedFrom`, `Replaces` e `RelatedTo`, sujeitos a validação por `objectKind`.
+5. Correspondências têm estados `Candidate`, `Confirmed`, `Rejected` e `Revoked`. Decisões conservam evidências, método, motivo/responsável quando humano, data e versões de política/catálogo. Não se introduzem scores numéricos sem calibração validada.
+6. Identidade, correspondência, comparação de definição e classificação são dimensões separadas. As classificações conceptuais são `StandardIntact`, `StandardModified`, `InstallationDevelopment` e `Unknown`; ausência no catálogo só sustenta desenvolvimento quando versão e cobertura forem suficientes.
+7. A correspondência com PHC Standard não autoriza automaticamente reutilização, publicação ou exposição de conteúdo de uma instalação. Proveniência, governação e permissões mantêm-se obrigatórias; o futuro RAG deve respeitar estes limites.
+8. Antes de qualquer implementação, é obrigatória uma matriz de reconhecimento por `objectKind` e validação com capturas reais CS default e dfblock, sem alterar os pacotes originais.
+9. D-023 aprova o contrato conceptual, mas não autoriza alterações ao Scanner, collectors, SQLite, schemas executáveis IKP, migrations/materialização SQL Server ou RAG. Essas alterações exigem proposta técnica e aprovação posterior.
+
+D-023 complementa D-015 a D-022 e prevalece em caso de conflito sobre identidade e correspondência entre instalações.
