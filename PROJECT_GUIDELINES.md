@@ -208,3 +208,31 @@ O procedimento de recolha está em `docs/architecture/scanner-functional-validat
 - No fim de cada etapa, actualizar README, este documento, roadmap e relatório conciso afectados; preservar documentos históricos e identificá-los como fotografias anteriores.
 - Não iniciar a fase seguinte automaticamente sem rever resultados, lacunas e autorização do responsável do projeto.
 
+
+## Estado vigente após comparação CS default / dfblock — 2026-11-24
+
+A validação prevista no protocolo Scanner foi concluída nas duas bases, com a mesma build. Os pacotes passaram as verificações de integridade e checksums; ambos usam IKP 0.1 e Object Index v2.
+
+Resultados agregados:
+- CS default: 17 182 objectos / 63 artefactos.
+- dfblock: 18 954 objectos / 881 artefactos, mais 10 kinds PHC e 598 campos físicos `u_*`.
+- 12 correspondências cross-capture com `phc.stamp`, em `formb`/`formc`.
+- `sqlserver.object_id` não atravessa bases de dados; correspondências por nome/`SourceObjectId` são observacionais, não identidade permanente.
+- D-022 está estruturalmente correcto, mas as duas capturas têm zero DefinitionFingerprints semânticos disponíveis (`NoValidatedPolicy`).
+- Procedures e triggers estão Partial nas duas capturas. A causa dos 540 triggers sem definição na dfblock permanece desconhecida.
+
+Relatório agregado: `docs/audits/identity-provenance-cross-capture-assessment-2026-11-24.md`. ZIP, workspaces e payload da dfblock permanecem exclusivamente locais e confidenciais.
+
+### Próxima fase de domínio — identidade e proveniência
+
+A prioridade passa a ser fechar os contratos operacionais de identidade/correspondência, proveniência/classificação e comparação de definições, antes do contrato físico e da materialização incremental SQL Server.
+
+Regras de interpretação:
+- `SourceObjectId` continua a ser referência dentro da captura, não identidade lógica permanente.
+- `SourceIdentity` só é evidência forte dentro do scheme e scope documentados.
+- `EntityIdentity` permanece no âmbito de uma Installation; correspondências entre instalações não fundem identidades nem históricos.
+- Nome ou ausência na CS default não bastam para provar identidade, novidade ou personalização.
+- A classificação PHC Standard depende do catálogo versionado previsto em D-015.
+- Fingerprint semântico indisponível não prova que duas definições são diferentes; integridade e comparação exacta são dimensões separadas.
+
+Não alterar código, collectors, schemas executáveis, SQLite, migrations ou materialização durante o fecho documental dos contratos. Qualquer implementação posterior exige decisão explícita e actualização da documentação canónica.
