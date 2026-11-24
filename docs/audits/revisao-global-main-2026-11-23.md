@@ -93,6 +93,8 @@ A revisão de 2026-11-23 foi uma fotografia correcta da main naquele momento, ma
 - **D-022:** continua integrada e preservada na baseline.
 - **Pendente:** validação D-022 com captura nova numa instalação PHC real; matriz collector/operation/ObjectKind; associação completa Cliente/Instalação/Captura; contrato e implementação de materialização persistente SQL Server; verificação e eliminação segura do ZIP.
 
+A primeira matriz estática do mapeamento collector/operation/ObjectKind foi registada em `docs/architecture/collector-operation-objectkind-matrix-2026-11-24.md`. Identifica o mapeamento no código e as lacunas, mas permanece pendente de validação com uma captura PHC nova.
+
 ### Correcção da sequência
 
 A primeira prioridade já não é reconciliar a PR #20. A sequência vigente passa a ser:
