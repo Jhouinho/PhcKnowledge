@@ -49,7 +49,7 @@ Em cada captura, todos os stamps destes dois kinds são únicos no respectivo sc
 
 Foram identificadas **7 933 tabelas candidatas** por `schemaName + name` (todas em `dbo`), sem duplicados locais: 361 existem apenas na CS e 1 668 apenas na dfblock. Os 7 933 pares têm `SourceObjectId` e `MetadataFingerprint` iguais.
 
-Contudo, apenas **3 028** pares têm o objecto `metadata` completo igual; **4 905** diferem em campos adicionais ou fora da projecção do fingerprint. O fingerprint coincide, mas a semântica da sua projecção ainda não foi investigada. Assim, os pares permanecem candidatos estruturais, não identidades nem equivalências confirmadas.
+Contudo, apenas **3 028** pares têm o objecto `metadata` completo igual. A investigação detalhada dos restantes **4 905** confirmou que diferem exclusivamente nas datas de catálogo SQL: **3 151** apenas em `modifyDate` e **1 754** em `createDate` + `modifyDate`. `typeDesc`, `isMsShipped`, `classification` e `namePrefixU` são iguais em todos os pares; não há qualquer caso de fingerprint igual com diferenças nos campos projectados. Estas diferenças de datas não demonstram alterações funcionais nem personalizações.
 
 ### 3.3 SourceObjectId
 
@@ -73,7 +73,7 @@ Consequências:
 - não se pode concluir que definições com conteúdos diferentes são semanticamente diferentes, nem que conteúdos iguais são semanticamente equivalentes;
 - MetadataFingerprint mantém-se uma dimensão separada e não substitui a comparação da definição.
 
-**Ponto adicional por investigar:** nas tabelas SQL, 7 933 candidatos têm MetadataFingerprint igual, mas apenas 3 028 têm metadata completa igual. É necessário documentar a projecção exacta do MetadataFingerprint (campos incluídos/excluídos e canonicalização) antes de o usar como critério de correspondência.
+**Investigação concluída — MetadataFingerprint de tabelas SQL:** a projecção inclui apenas `typeDesc` e `isMsShipped`; a canonicalização ordena propriedades dos objectos e o fingerprint é SHA-256 da projecção canónica. A metadata descritiva inclui ainda `objectId`, `classification`, `namePrefixU`, `createDate` e `modifyDate`, que não entram no fingerprint. Os testes `Table_Fingerprint_Ignores_Internal_Ids_Dates_And_Derived_Classification` e `Table_Descriptive_Metadata_And_Fingerprint_Use_Different_Field_Sets` confirmam intencionalmente esta separação. A projecção actual mantém-se; não incluir datas ou IDs internos no fingerprint.
 
 ## 5. Coverage e limitações
 
@@ -109,7 +109,7 @@ O modelo conceptual coloca `EntityIdentity` no âmbito de uma Installation. Inst
 
 1. A unicidade dos stamps `formb`/`formc` foi observada apenas nas duas capturas analisadas; estabilidade intra-installation e generalização continuam por validar.
 2. Não existe ainda evidência cross-installation suficiente para todas as famílias PHC; as restantes famílias com stamp não demonstraram correspondências comuns neste conjunto.
-3. A correspondência de 7 933 tabelas por schema+nome é candidata. A projecção de MetadataFingerprint carece de investigação porque 4 905 pares diferem na metadata completa.
+3. A correspondência de 7 933 tabelas por schema+nome continua a ser candidata estrutural, mas a lacuna sobre a MetadataFingerprint está fechada: as diferenças dos 4 905 pares são exclusivamente datas de catálogo SQL. Isto não confirma identidade nem correspondência cross-installation.
 4. A política de resolução de candidatos, desempate, confirmação, rejeição e histórico não está fechada em detalhe operacional.
 5. A classificação PHC Standard / desenvolvimento / standard alterado / origem desconhecida depende do catálogo standard versionado e da cobertura aplicável; nenhum objecto foi classificado individualmente.
 6. Não há fingerprints semânticos disponíveis nas capturas; não foi possível demonstrar diff semântico de definições.
@@ -134,12 +134,11 @@ O contrato seguinte deve manter separadas estas situações:
 
 A próxima etapa documental/técnica deve seguir esta ordem:
 
-1. **Investigar MetadataFingerprint SQL:** documentar campos incluídos/excluídos, canonicalização e intenção semântica da projecção; explicar os 4 905 pares com metadata completa diferente.
-2. **Validar estabilidade formb/formc:** comparar capturas sucessivas da mesma Installation e recolher evidência noutras instalações/versões, sem criar matching automático nesta fase.
-3. **Manter catálogo PHC Standard e classificação em aberto:** especificar versão/edição/cobertura antes de inferir StandardIntact, StandardModified ou InstallationDevelopment.
-4. **Tratar REL/DTL separadamente:** propor contrato de identidade/proveniência dos factos declarados, sem os converter em ObjectKinds.
-5. **Diagnosticar cobertura SQL:** investigar os triggers sem definição e as nove transições Available → Unavailable sem presumir causa.
-6. Só depois apresentar proposta técnica para Scanner, IKP, domínio e persistência SQL Server, sujeita a aprovação explícita.
+1. **Validar estabilidade formb/formc:** comparar capturas sucessivas da mesma Installation e recolher evidência noutras instalações/versões, sem criar matching automático nesta fase.
+2. **Manter catálogo PHC Standard e classificação em aberto:** especificar versão/edição/cobertura antes de inferir StandardIntact, StandardModified ou InstallationDevelopment.
+3. **Tratar REL/DTL separadamente:** propor contrato de identidade/proveniência dos factos declarados, sem os converter em ObjectKinds.
+4. **Diagnosticar cobertura SQL:** investigar os triggers sem definição e as nove transições Available → Unavailable sem presumir causa.
+5. Só depois apresentar proposta técnica para Scanner, IKP, domínio e persistência SQL Server, sujeita a aprovação explícita.
 
 A matriz D-023 v0.2 consolida a evidência e as limitações por ObjectKind; continua draft, não é política operacional.
 
