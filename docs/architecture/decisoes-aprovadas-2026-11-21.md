@@ -410,3 +410,24 @@ O PHC Knowledge deve permitir descobrir, construir, relacionar e validar progres
 O enquadramento funcional, as capacidades, o caso de referência e a sequência de evolução estão detalhados em [Novo rumo do produto e auditoria do Scanner](product-direction-and-scanner-knowledge-audit-2026-11-24.md).
 
 D-024 complementa as decisões anteriores. Não substitui D-015 a D-023 nem altera os respectivos contratos de identidade, proveniência, captura ou correspondência.
+
+
+## 16. D-025 — Camada independente de conhecimento funcional persistente
+
+**Data: 24-11-2026 — Estado: APROVADA.**
+
+1. O conhecimento funcional descoberto será mantido numa camada conceptual independente, persistida no SQL Server central do PHC Knowledge, sem alterar, substituir ou incorporar os artefactos originais recolhidos pelo Scanner.
+2. Evidências técnicas e conhecimento derivado são informação distinta. Cada descoberta deve manter referências rastreáveis aos objectos e evidências de origem, bem como ao âmbito, captura, instalação ou referência standard e versão aplicáveis.
+3. Factos observados, relações identificadas, hipóteses funcionais e conclusões validadas mantêm estados distintos. A validação e a sua proveniência são registadas; uma hipótese não é promovida automaticamente a conclusão.
+4. Conhecimento PHC Standard e conhecimento específico de uma instalação mantêm âmbitos separados. Não há promoção ou partilha automática entre âmbitos/instalações.
+5. Cursor, análise humana ou ferramentas futuras podem propor conhecimento, mas não são proprietários da persistência ou governação. Não fica autorizado acesso de escrita directo do Cursor à base de dados central.
+6. O fluxo conceptual prevê produção de descobertas estruturadas, validação pelo PHC Knowledge de referências, integridade, proveniência, âmbito, permissões e duplicações, registo com estado apropriado e navegação no Portal até às evidências originais.
+7. A persistência deverá aproveitar o SQL Server central previsto para o produto; não se decide criar uma base de dados paralela.
+8. Os conceitos investigação, descoberta, referência a objecto, relação, evidência, validação e âmbito são apenas conceitos de domínio preliminares. Não constituem schema físico, tabelas, entidades, APIs ou contrato de importação aprovados.
+9. Um pacote estruturado e versionado (por exemplo, JSON) é uma hipótese de transporte a avaliar, não um contrato aprovado.
+10. A primeira experiência será exploratória, com Cursor sobre artefactos reais da CS Default e resultados estruturados fora da base central. Só depois de avaliar a qualidade e utilidade das descobertas será apresentada proposta técnica para importação e persistência.
+11. D-025 não autoriza alterações a código, Scanner, collectors, queries, workspace SQLite, schemas executáveis IKP, migrations, materialização SQL Server ou RAG. Cada alteração exige proposta técnica e aprovação específica.
+
+O detalhe, o fluxo conceptual e os limites estão documentados em [Novo rumo do produto e auditoria do Scanner](product-direction-and-scanner-knowledge-audit-2026-11-24.md#12-decisao-aprovada--camada-independente-de-conhecimento-funcional-persistente).
+
+D-025 concretiza a acumulação de conhecimento prevista em D-024, sem alterar os contratos de identidade, proveniência, captura ou correspondência aprovados em D-015 a D-023.
