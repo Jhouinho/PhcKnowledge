@@ -459,3 +459,35 @@ Matriz estática inicial (código, ainda sem validação PHC real): [collector-o
 - A ausência só pode significar remoção quando a cobertura relevante é completa e comparável.
 - Não declarar a matriz fechada enquanto os casos que dependem de captura real não forem validados.
 
+
+## 11. Nova sequência de domínio após validação cross-capture — 2026-11-24
+
+A comparação prevista entre CS default e dfblock foi concluída com a mesma build do Scanner. A integridade dos pacotes e checksums foi confirmada. O relatório agregado está em [Avaliação de identidade e proveniência entre capturas](../audits/identity-provenance-cross-capture-assessment-2026-11-24.md).
+
+### O que a validação demonstrou
+
+- O Scanner produziu Object Index v2 válido nas duas instalações.
+- A CS default contém 17 182 objectos e 63 artefactos; a dfblock contém 18 954 objectos e 881 artefactos.
+- A dfblock apresenta mais 10 kinds PHC e 598 campos físicos `u_*`.
+- Foram encontradas 12 correspondências com `phc.stamp` em `formb`/`formc`.
+- `sqlserver.object_id` não atravessa bases de dados; correspondências por nome/`SourceObjectId` são observacionais.
+- Os envelopes D-022 estão correctos, mas não existem fingerprints semânticos disponíveis; a comparação semântica de definições não ficou demonstrada.
+- Procedures/triggers estão Partial nas duas capturas; a causa dos 540 triggers sem definição na dfblock não foi determinada.
+
+### Próxima sequência
+
+1. **Auditar e fechar identidade/correspondência:** distinguir continuidade entre capturas da mesma Installation de correspondências entre Installations; definir evidências, scopes, candidatos, estados e regras de confirmação sem fusão automática entre instalações.
+2. **Fechar proveniência e classificação:** especificar PHC Standard, desenvolvimento específico, alteração ao standard e origem desconhecida, dependentes do catálogo PHC Standard versionado de D-015.
+3. **Fechar comparação de definições:** manter integridade, comparação byte-a-byte e fingerprint semântico separados; definir políticas por kind apenas quando possam ser validadas.
+4. **Validar os contratos** com as duas capturas reais, sem modificar os pacotes originais.
+5. **Decidir a implementação** no Scanner/modelo de domínio e só depois fechar o contrato físico de materialização incremental SQL Server.
+
+### Regras e limites
+
+- A ausência na CS default não classifica automaticamente um objecto como personalizado.
+- Correspondência por nome/`SourceObjectId` não prova identidade permanente.
+- Uma correspondência entre instalações não funde EntityIdentity nem históricos.
+- Fingerprint semântico indisponível não significa definição ausente nem diferença semântica.
+- Não alterar collectors, SQLite, schemas executáveis ou materialização sem decisão explícita.
+- A materialização SQL Server continua necessária, mas fica depois do fecho dos contratos de identidade e proveniência.
+- RAG continua dependente de conhecimento estruturado, contextualizado e rastreável.
