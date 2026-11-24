@@ -125,7 +125,7 @@ A comparação de definições permanece subordinada a D-018 a D-022: original p
 
 ## 8. Matriz de reconhecimento por objectKind
 
-A primeira versão documental, com evidência estática e resultados agregados CS default/dfblock, está em [D-023 — Matriz de reconhecimento por ObjectKind (v0.1)](d-023-objectkind-recognition-matrix-2026-11-24.md). É um draft de critérios e lacunas, não uma política automática validada nem autorização de implementação. A distribuição individual dos stamps e a validação por objecto continuam pendentes.
+A matriz documental v0.2, actualizada com a análise comparativa por objecto das capturas CS default e dfblock, está em [D-023 — Matriz de reconhecimento por ObjectKind (v0.2)](d-023-objectkind-recognition-matrix-2026-11-24.md). A análise confirmou 1 par `formb` e 11 pares `formc` com `phc.stamp`, únicos 1:1 nestas duas capturas, e 7 933 candidatos de tabelas SQL por schema+nome. Para as tabelas, os 7 933 `MetadataFingerprint` coincidem, mas apenas 3 028 objectos `metadata` completos são iguais; a projecção do fingerprint carece de investigação. A matriz continua draft: estes resultados não criam automaticamente `Correspondence.Confirmed`, não demonstram `SameLogicalEntity` persistente ou `SameStandardEntity`, não validam classificação e não autorizam implementação.
 
 Antes de qualquer implementação, criar e validar uma matriz com, no mínimo:
 
