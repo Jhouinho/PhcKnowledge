@@ -406,3 +406,54 @@ Não integrar directamente nem assumir que o diff continua válido contra a main
 ### 10.5 Limites desta revisão
 
 A revisão consultou a main, a documentação, a árvore do repositório, a PR #20, o merge #27 e os workflows associados. Não executou build/testes localmente, não acedeu a uma instalação PHC real nem ao SQL Server do utilizador, e não alterou código, schemas executáveis, collectors, SQLite, migrations ou materialização.
+
+---
+
+## 10. Estado consolidado após merge do Incremento C — 2026-11-24
+
+Esta secção é a referência de estado mais recente e prevalece sobre as secções históricas anteriores sempre que exista divergência.
+
+### Baseline confirmada
+
+- Repositório: `Jhouinho/PhcKnowledge`.
+- Branch de referência: `main`.
+- Merge commit: `dfb44b5ce4370ccf5b43856c87328f1915c58a99`.
+- PR #28 — Incremento C: integrada em 2026-11-24.
+- PR #20 original: preservada; não é a candidata de integração nem a baseline actual.
+- D-022 / Object Index v2 / DefinitionFingerprint D-021 / PackageImportAnalysis 0.3: mantidos na baseline.
+
+### Estado por capacidade
+
+| Capacidade | Estado em 2026-11-24 | Limite / evidência |
+|---|---|---|
+| Scanner autónomo e exportação IKP 0.1 | Implementado | CI; captura PHC nova ainda necessária para validar D-022 |
+| Receive / Validate / Archive, receipts e recovery | Implementado | CI e harnesses anteriormente registados |
+| Análise IKP A+B persistida | Implementado | Mantém-se distinta da decisão |
+| Incremento C — confirmar/rejeitar análise | Integrado na main | PR #28; decisões append-only e endpoints |
+| UI React do Portal para decisão | Integrada na main | workflow Portal e testes/build/typecheck CI |
+| Associação Cliente/Instalação/Captura | Incompleta | Não confundir decisão da análise com associação de contexto |
+| Materialização persistente SQL Server | Por implementar | Não há ainda contrato físico fechado nem materialização final |
+| Verificação pós-materialização e eliminação ZIP | Por implementar | ZIP continua temporário; apagar apenas após verificação integral |
+| Comparação histórica e pesquisa contextual/RAG | Futuro | Depende de conhecimento materializado e rastreável |
+
+### Validação do merge
+
+Os quatro checks da cabeça da PR #28 terminaram com sucesso: `build-and-test`, `dotnet-tests`, `portal` e integração `SQL Server 2022 — receipt recovery and Scanner triggers`. Estes resultados comprovam os pipelines executados na PR; não comprovam deployment, validação numa instalação PHC real ou materialização persistente.
+
+### Próxima sequência
+
+1. **Revisão da baseline pós-merge:** confirmar que README, PROJECT_GUIDELINES, decisões, contratos e roadmap não se contradizem.
+2. **Matriz collector/operation/ObjectKind:** mapear o que cada operação declara, recolhe e projecta; separar inventário, definição/artefacto, cobertura e limitações de âmbito. Identificar explicitamente o que é evidência estática e o que requer captura real.
+3. **Validação com captura PHC actual:** validar a matriz e D-022 com uma captura nova; até lá, não alterar collectors, SQLite ou semântica de recolha.
+4. **Contrato físico de materialização SQL Server:** fechar entidades, chaves, proveniência, idempotência, transacções, armazenamento de artefactos, verificação e recuperação. A edição/versão SQL Server permanece por decidir.
+5. **Implementação da materialização:** só após contrato aprovado; materializar incrementalmente e eliminar ZIP/staging apenas depois de verificação integral.
+6. **Evolução do conhecimento:** comparação histórica, pesquisa contextual e, mais tarde, RAG.
+
+### Regras de rigor
+
+- Recepção não é análise; análise não é confirmação; confirmação não é materialização.
+- CI verde não é validação funcional em PHC real.
+- Uma operação bem-sucedida com zero resultados não equivale a falha; uma definição indisponível não equivale a objecto ausente.
+- A ausência só pode significar remoção quando a cobertura relevante é completa e comparável.
+- Não declarar a matriz fechada enquanto os casos que dependem de captura real não forem validados.
+
