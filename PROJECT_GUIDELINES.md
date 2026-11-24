@@ -182,3 +182,27 @@ Esta secção prevalece sobre as fotografias de estado anteriores deste document
 A sequência e o estado detalhado encontram-se em `docs/architecture/roadmap-visual-phc-knowledge-2026-11-06.md`; a decisão normativa encontra-se em `docs/architecture/decisoes-aprovadas-2026-11-21.md`. O relatório da revisão global está em `docs/audits/revisao-global-main-2026-11-23.md`.
 
 A revisão documental não executou build/testes localmente, não validou uma instalação PHC real e não alterou código, schemas executáveis, collectors, SQLite, migrations ou materialização SQL.
+
+---
+
+## Estado vigente após integração do Incremento C — 2026-11-24
+
+Esta secção prevalece sobre as fotografias de estado anteriores deste documento e sobre qualquer referência histórica que indique que o Incremento C ou a UI React estão fora da `main`.
+
+- Baseline da `main`: merge commit `dfb44b5ce4370ccf5b43856c87328f1915c58a99`, PR [#28](https://github.com/Jhouinho/PhcKnowledge/pull/28), integrado em 2026-11-24.
+- A PR #28 reconcilia o Incremento C sobre a baseline D-022. A PR #20 original foi preservada como histórico/candidata antiga; não é a referência de integração.
+- O Incremento C inclui o fluxo de decisão de `PackageImportAnalysis` (confirmar/rejeitar), persistência append-only das decisões, endpoints do Host e experiência React do Portal. A confirmação continua distinta da materialização.
+- Os quatro checks associados à cabeça da PR #28 terminaram com sucesso: build/testes .NET, testes/build/typecheck do Portal e integração SQL Server 2022/Scanner. Isto é validação CI; não é validação de deployment nem de instalação PHC real.
+- D-022 mantém-se: IKP 0.1, Object Index v2, DefinitionFingerprint D-021 e PackageImportAnalysis 0.3.
+- A base central continua a ser Microsoft SQL Server; edição/versão concreta e contrato físico de artefactos continuam por decidir. PostgreSQL está excluído.
+- Continuam por implementar: associação completa Cliente/Instalação/Captura, materialização persistente de Capture/Observation/REL/DTL/metadados/artefactos, verificação pós-materialização e eliminação segura do ZIP temporário.
+- Continua pendente validar D-022 com uma captura nova numa instalação PHC real. Não usar a captura anterior CSDefault202603 como prova dessa validação.
+- Próxima atividade de domínio: fechar a matriz collector/operation/ObjectKind/cobertura, usando código e evidência de captura real. A análise estática não substitui a validação com captura. Não alterar collectors, workspace SQLite ou semântica de recolha antes dessa validação e decisão explícita.
+
+### Governação do repositório
+
+- Decisões aprovadas e documentação canónica consolidam-se diretamente na `main`.
+- Branches de trabalho podem conter código temporário, mas não devem tornar-se fontes documentais concorrentes.
+- No fim de cada etapa, actualizar README, este documento, roadmap e relatório conciso afectados; preservar documentos históricos e identificá-los como fotografias anteriores.
+- Não iniciar a fase seguinte automaticamente sem rever resultados, lacunas e autorização do responsável do projeto.
+
