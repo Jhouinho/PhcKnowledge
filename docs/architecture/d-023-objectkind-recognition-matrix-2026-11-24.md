@@ -37,7 +37,7 @@ A comparação CS default / dfblock, realizada com a mesma build do Scanner, rep
 - 8 294 e 9 601 tabelas físicas;
 - 0 e 598 campos físicos `u_*`;
 - **12 pares `phc.stamp` únicos e 1:1:** 1 em `phc.custom_screen` (`formb`) e 11 em `phc.hidden_grid` (`formc`); em todos, mesmo kind, operationId, scope, scheme, nome, `SourceObjectId`, `MetadataFingerprint` SHA-256 e metadata projectada. Não houve stamps repetidos nestes kinds nas duas capturas;
-- **7 933 tabelas candidatas** por `schemaName + name` (todas `dbo`), sem duplicados locais; 361 só CS e 1 668 só dfblock. Os 7 933 pares têm `SourceObjectId` e `MetadataFingerprint` iguais, mas apenas 3 028 têm o objecto `metadata` completo igual; 4 905 diferem em campos adicionais/fora da projecção do fingerprint;
+- **7 933 tabelas candidatas** por `schemaName + name` (todas `dbo`), sem duplicados locais; 361 só CS e 1 668 só dfblock. Os 7 933 pares têm `SourceObjectId` e `MetadataFingerprint` iguais. A investigação posterior confirmou que os 4 905 pares cuja metadata completa diverge diferem exclusivamente nas datas de catálogo SQL: 3 151 apenas em `modifyDate` e 1 754 em `createDate` + `modifyDate`; `typeDesc`, `isMsShipped`, `classification` e `namePrefixU` são iguais em todos os pares;
 - `sqlserver.object_id` não coincide como triplo `scheme/value/scope` entre bases, porque o scope inclui o nome da base. Ignorando o scope, 6 179 valores numéricos coincidem e 1 754 diferem; a coincidência numérica não é identidade cross-installation;
 - Zero DefinitionFingerprints semânticos `Available`; os 60 envelopes elegíveis na CS e 280 na dfblock estão `Unavailable / NoValidatedPolicy`;
 - Procedures e triggers têm cobertura `Partial`; na dfblock, 540 triggers estão sem definição. Nove triggers com nome comum passam de `Available` na CS para `Unavailable` na dfblock; a causa permanece desconhecida.
@@ -51,18 +51,32 @@ A unicidade dos stamps está demonstrada apenas dentro destas duas capturas e de
 | ObjectKind | Evidência actual / scope | Continuidade na mesma Installation | Correspondência entre Installations | Comparação de definição | Classificação possível nesta fase | Estado |
 |---|---|---|---|---|---|---|
 | `database` | `databaseId` não projectado como SourceIdentity; falta scope inequívoco da instância SQL | Contexto de Installation é atribuído pela plataforma, não por databaseId | Não comparar por databaseId ou nome isolado | Não aplicável como definição de objecto | Unknown até catálogo/contexto e âmbito estarem estabelecidos | Não disponível |
-| `table` | `sqlserver.object_id`, scope `database:<database-name>`; nome/schema e estrutura são atributos | Candidato contextual dentro da mesma base; drop/recreate pode mudar object_id | `object_id` não atravessa bases. 7 933 pares por schema+nome são candidatos 1:1; 6 179 têm coincidência numérica de object_id ignorando scope, sem valor identitário | `MetadataFingerprint` igual nos 7 933 candidatos; metadata completa igual em 3 028 e diferente em 4 905. A projecção do fingerprint precisa de análise antes de qualquer política | Unknown; não classificar como standard ou desenvolvimento pelo nome/exclusividade | Candidato estrutural observado; política por validar |
+| `table` | `sqlserver.object_id`, scope `database:<database-name>`; nome/schema e estrutura são atributos | Candidato contextual dentro da mesma base; drop/recreate pode mudar object_id | `object_id` não atravessa bases. 7 933 pares por schema+nome são candidatos 1:1; 6 179 têm coincidência numérica de object_id ignorando scope, sem valor identitário | `MetadataFingerprint` igual nos 7 933 candidatos. Nos 4 905 pares com metadata completa diferente, as diferenças são exclusivamente `createDate`/`modifyDate`; os campos projectados (`typeDesc`, `isMsShipped`) são iguais | Unknown; não classificar como standard ou desenvolvimento pelo nome/exclusividade | Candidato estrutural observado; política de correspondência por validar |
 | `primary_key` | Nome, tabela, colunas e uniqueIndexId; sem SourceIdentity nativa aprovada | Comparação estrutural pode propor candidato; renomeação/recriação ambígua | Nome/tabela/colunas são candidatos, não identidade | Comparação estrutural ainda sem contrato de equivalência validado | Unknown | Não disponível como identidade nativa |
 | `foreign_key` | Nome, tabela pai/referenciada, colunas e acções; SELECT actual não recolhe object_id da FK | Relação estrutural pode ser comparada, sem provar continuidade | Não usar nome ou conjunto de colunas como identidade global | Comparação estrutural apenas descritiva | Unknown | Não disponível como identidade nativa |
 | `view` | Nome/schema; object_id não está no registo actual; definição pode estar disponível ou indisponível | Nome/schema geram candidato; continuidade não comprovada | Nome/schema/definição podem gerar candidato, não confirmação automática | DefinitionFingerprint semântico indisponível sem política validada | Unknown | Evidência insuficiente |
 | `stored_procedure` | Nome/schema; object_id não está no registo actual | Nome/schema geram candidato; não provam continuidade | Nome/schema/conteúdo não fundem identidades | Fingerprint semântico indisponível; cobertura Partial deve ser respeitada | Unknown | Evidência insuficiente |
 | `trigger` | Nome/schema/tabela; object_id não está no registo actual; operação cobre apenas triggers DML associadas a tabelas | Relação com tabela pai é contexto, não identidade | Não generalizar para triggers DDL ou triggers DML em views; nome é candidato | Fingerprint semântico indisponível; 540 definições ausentes na dfblock sem causa conhecida | Unknown | Parcial / âmbito restrito |
 
-### 3.2 MetadataFingerprint — limite observado nas tabelas
+### 3.2 MetadataFingerprint — contrato e validação das tabelas
 
-Nos 7 933 candidatos por `schemaName + name`, o `MetadataFingerprint` SHA-256 coincide em todos os pares. Contudo, o objecto `metadata` completo coincide apenas em 3 028 pares; nos restantes 4 905 há diferenças em campos adicionais ou fora da projecção usada pelo fingerprint.
+A projecção actual de `ObjectKind.Table` inclui exclusivamente `typeDesc` e `isMsShipped`. A canonicalização ordena as propriedades dos objectos antes da serialização e o fingerprint é SHA-256 da projecção canónica. A metadata descritiva mantém também `objectId`, `classification`, `namePrefixU`, `createDate` e `modifyDate`, mas estes campos não participam no fingerprint.
 
-Este resultado não demonstra que os 4 905 pares sejam semanticamente diferentes, nem que os campos excluídos sejam irrelevantes. Antes de usar o fingerprint como critério de correspondência SQL, é necessário documentar a projecção exacta (campos incluídos/excluídos), a canonicalização e a semântica pretendida. Até essa análise, o fingerprint igual é evidência comparativa observada, não confirmação de identidade ou equivalência.
+A investigação dos 7 933 pares por `schemaName + name` confirmou:
+
+| Resultado | Pares |
+|---|---:|
+| `MetadataFingerprint` igual | 7 933 |
+| `typeDesc` e `isMsShipped` iguais | 7 933 |
+| Metadata descritiva completa igual | 3 028 |
+| Metadata completa diferente apenas em `modifyDate` | 3 151 |
+| Metadata completa diferente em `createDate` + `modifyDate` | 1 754 |
+| Diferenças em `classification` ou `namePrefixU` | 0 |
+| Fingerprint igual com diferença nos campos projectados | 0 |
+
+O resultado é coerente com o contrato implementado e testado: o teste `Table_Fingerprint_Ignores_Internal_Ids_Dates_And_Derived_Classification` confirma que IDs internos, datas e classificação derivada não alteram o fingerprint; `Table_Descriptive_Metadata_And_Fingerprint_Use_Different_Field_Sets` confirma a separação dos conjuntos de campos. `TableInventoryClassification` também define `u_` como indicador de tabela candidata a customização, não como prova de origem personalizada.
+
+**Interpretação normativa:** as diferenças observadas nos 4 905 pares são diferenças de datas do catálogo SQL e não demonstram alteração funcional, personalização ou mudança de identidade. A projecção actual mantém-se adequada ao seu propósito estrutural. Não se recomenda alargá-la para incluir datas, `objectId` ou classificação derivada. `MetadataFingerprint` continua a ser evidência de comparação de metadata projectada, nunca prova isolada de identidade ou correspondência cross-installation.
 
 ### 3.1 Regras específicas SQL
 
@@ -176,7 +190,7 @@ Antes de promover uma linha a política operacional, recolher e documentar:
 - D-023 separa identidades locais, catálogo standard, correspondências, comparação e classificação.
 - O contrato P1.B define os schemes/scopes que o Scanner actual consegue projectar sem novas queries.
 - A comparação por objecto confirmou 1 par `formb` e 11 pares `formc`, únicos 1:1 nestas duas capturas, sem provar identidade global, continuidade ou correspondência standard.
-- Foram identificados 7 933 candidatos de tabela por schema+nome; os 7 933 têm MetadataFingerprint igual, mas só 3 028 têm metadata completa igual. `sqlserver.object_id` não atravessa bases de dados.
+- Foram identificados 7 933 candidatos de tabela por schema+nome. A investigação confirmou que as diferenças de metadata nos 4 905 pares são exclusivamente datas de catálogo SQL; `sqlserver.object_id` continua sem valor identitário cross-installation.
 - Não existem fingerprints semânticos disponíveis nas capturas analisadas.
 
 ### Ainda por validar
@@ -189,6 +203,6 @@ Antes de promover uma linha a política operacional, recolher e documentar:
 - Definições e causas das operações Partial, incluindo triggers sem definição.
 
 ### Próxima acção
-Investigar a projecção de `MetadataFingerprint` das tabelas SQL: identificar os campos incluídos/excluídos e avaliar se os 4 905 pares com metadata completa diferente representam diferenças semanticamente relevantes ou apenas campos fora da projecção. Em paralelo, validar estabilidade intra-installation e generalização dos stamps `formb`/`formc`; não criar correspondências persistentes nem políticas automáticas nesta fase.
+A investigação da MetadataFingerprint das tabelas SQL está concluída e registada na secção 3.2. A próxima validação é a estabilidade intra-installation e a generalização dos stamps `formb`/`formc`; não criar correspondências persistentes nem políticas automáticas nesta fase.
 
 Só após essa análise se decide se a matriz pode ser promovida a baseline operacional e se há necessidade de alterar Scanner, IKP ou o modelo persistido.
