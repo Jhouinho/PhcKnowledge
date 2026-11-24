@@ -136,3 +136,10 @@ A comparação real CS default / dfblock encontrou 12 correspondências cross-ca
 O `sqlserver.object_id` não corresponde entre bases de dados distintas, confirmando que o scope por base de dados é obrigatório. As correspondências de tabelas por nome/`SourceObjectId` (cerca de 7 933) permanecem observacionais; não devem ser promovidas a identidade lógica nem provocar fusão automática.
 
 Não foram recolhidos novos identificadores, alterados scopes ou modificados collectors. A política de matching e a distinção entre continuidade dentro da Installation e correspondência entre Installations continuam a exigir contrato próprio. Ver [avaliação de identidade e proveniência entre capturas](../audits/identity-provenance-cross-capture-assessment-2026-11-24.md).
+
+
+## Aditamento — D-023 e matriz de reconhecimento por ObjectKind (2026-11-24)
+
+Esta matriz continua a definir apenas os schemes/scopes de SourceIdentity que o Scanner actual consegue projectar. Não define, por si só, identidade lógica, correspondência cross-installation ou classificação PHC Standard. Essas dimensões são regidas por [D-023](d-023-cross-installation-identity-correspondence-contract.md) e pela [matriz de reconhecimento por ObjectKind v0.1](d-023-objectkind-recognition-matrix-2026-11-24.md).
+
+A evidência agregada CS default/dfblock confirmou 12 correspondências com `phc.stamp` nos kinds formb/formc, mas não disponibiliza neste relatório a distribuição individual nem a análise de duplicados. Para as restantes famílias, a presença de stamp no contrato de emissão não equivale a unicidade/estabilidade cross-installation demonstrada. Não ampliar scopes nem recolher novos identificadores sem validação e aprovação.
