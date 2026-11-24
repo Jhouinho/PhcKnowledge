@@ -12,7 +12,7 @@
 | Implementação | Documento conceptual de 2026-11-06; Scanner e exportador IKP evoluíram posteriormente |
 | Relação | Complementa `ikp-0.1-specification.md` e `collector-coverage-investigation-2026-11-06.md` |
 
-Este documento conserva o contexto arquitetural e as decisões de alto nível sobre cobertura, identidade, observações, compatibilidade entre capacidades e linhagem. A semântica normativa detalhada de identidade da origem, estados de definição e fingerprints está agora em [P1 — Contrato de identidade, proveniência e fingerprints](p1-identity-provenance-contract.md). A especificação IKP 0.1 define a serialização do pacote e referencia esse contrato.
+Este documento conserva o contexto arquitetural e as decisões de alto nível sobre cobertura, identidade, observações, compatibilidade entre capacidades e linhagem. A identidade cross-installation, o catálogo standard e as correspondências são normativamente clarificados por [D-023](d-023-cross-installation-identity-correspondence-contract.md), que prevalece sobre formulações conceptuais anteriores deste documento. A semântica normativa detalhada de identidade da origem, estados de definição e fingerprints está agora em [P1 — Contrato de identidade, proveniência e fingerprints](p1-identity-provenance-contract.md). A especificação IKP 0.1 define a serialização do pacote e referencia esse contrato.
 
 ## 1. Fronteiras de responsabilidade
 
@@ -112,7 +112,7 @@ O reconhecimento deve distinguir identidade de correspondência:
 3. atributos estruturais e relações como evidência de continuidade;
 4. semelhança de nome ou conteúdo apenas como sugestão.
 
-Correspondências sem evidência forte não devem fundir entidades automaticamente. O PHC Knowledge deve poder manter candidatos/correspondências pendentes, com evidências, confiança, decisão e proveniência.
+Correspondências não fundem identidades. O modelo de estados, evidências, decisões auditáveis, tipos de relação e cardinalidades é o definido em D-023. Não usar scores numéricos de confiança sem política calibrada; a qualidade da evidência é descrita semanticamente.
 
 Quando uma renomeação ou correspondência for confirmada, a plataforma preserva identificadores antigos e novos e o acontecimento de identidade; não reescreve observações históricas.
 
@@ -162,6 +162,9 @@ A plataforma deve distinguir alterações de metadados e alterações de defini�
 A confirmação de remoções pode, se necessário, ser reforçada por mais do que uma captura completa. Esta regra operacional ainda será avaliada no desenho do comparador.
 
 ## 8. Instalações e linhagem
+
+> **Leitura vinculativa — D-023:** a linhagem entre instalações e a correspondência entre objectos são relações distintas. Cada instalação mantém EntityIdentity próprias. A antiga formulação «IdentityMatch» não deve ser interpretada como cardinalidade máxima universal de um match activo por observação: cardinalidade e tipos dependem do tipo de relação e da matriz por objectKind. Consultar D-023 antes de qualquer desenho físico.
+
 
 Cada base de dados PHC registada tem o seu próprio `InstallationId` e histórico. Bases de dados diferentes são instalações diferentes, mesmo que pertençam ao mesmo cliente ou tenham sido copiadas uma da outra.
 
