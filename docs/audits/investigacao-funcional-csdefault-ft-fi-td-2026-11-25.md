@@ -807,3 +807,132 @@ A combinação de `lancasl=1` com os códigos 75, 76 e 77 é coerente com os mov
 A Nota de Débito apresenta `cmsl=78`, mas `lancasl=0`; por isso, o valor configurado não basta para concluir que o documento lança movimentos de stock. O mesmo cuidado aplica-se ao Orçamento, que apresenta `cmsl=1` com `lancasl=0`.
 
 **Conclusão provisória:** os dados confirmam a distinção entre o código de movimento físico configurado em `cmsl` e o código de movimento em valor configurado em `cmsv`, bem como a necessidade de considerar o indicador `lancasl` e as condições adicionais dos triggers. A análise descreve exclusivamente a configuração e o comportamento observados na CSDefault202603.
+
+
+## 19. Fecho da investigação de tesouraria de FT, CH e CHL
+
+**Âmbito desta passagem:** comportamento dos triggers standard relacionados com os documentos de faturação e cheques, cruzado com a configuração e os resultados read-only comunicados para `CSDefault202603`. Esta secção fecha a análise do percurso de tesouraria; não constitui validação transaccional, porque FT, FT2, FT3, OL, CH e CHL não tinham registos na base no momento das consultas.
+
+### 19.1 Configuração efectiva de TD para Fatura-Recibo e Fatura Simplificada
+
+O utilizador consultou directamente `dbo.TD` para `ndoc IN (3,8)` e obteve:
+
+| Campo | ndoc 3 — Fatura Recibo | ndoc 8 — Fatura Simplificada |
+|---|---:|---:|
+| `tipodoc` | 1 | 1 |
+| `lancaol` | 1 | 1 |
+| `altollocal` | 0 | 0 |
+| `olcodigo` | R10001 | R10001 |
+| `vdollocal` | Caixa | Caixa |
+| `vdcontado` | 0 | 0 |
+| `vdlocal` | C | C |
+| `olmoeda` | EURO | EURO |
+
+É essencial distinguir `ndoc` de `tipodoc`: a Fatura-Recibo tem `ndoc=3`, mas `tipodoc=1`. A regra especial do código de cheque condicionada por `TD.tipodoc=3` não se aplica a nenhum dos dois documentos.
+
+### 19.2 Código de tesouraria OC
+
+A consulta read-only a `dbo.OC` confirmou exactamente um registo para `olcodigo='R10001'`:
+
+| Campo | Valor |
+|---|---|
+| `olcodigo` | R10001 |
+| `olgrupo` | Actividades Operacionais |
+| `olsgrupo` | Recebimentos de Clientes |
+| `oltipo` | 1 |
+| `marcada` | 0 |
+
+Não há duplicação do código R10001 em OC na configuração consultada. O trigger de FT usa a correspondência de OC para a criação do movimento OL; a unicidade observada afasta, nesta configuração, a hipótese de multiplicação de linhas causada por várias correspondências em OC.
+
+### 19.3 Criação do movimento OL a partir de FT
+
+No código standard de `tr_ft_insert`, a criação de OL está condicionada por `TD.lancaol=1` e por correspondências em TD, FT2, FT3 e OC. O código de tesouraria é obtido de TD; como `altollocal=0`, os dados de local/contado/moeda são seleccionados da configuração TD, não da configuração alternativa em FT2.
+
+Para os dois tipos consultados, os valores de configuração a transportar são:
+- código: `R10001`;
+- local: `Caixa`;
+- contado: `0`;
+- indicador de local: `C`;
+- moeda: `EURO`.
+
+O valor financeiro do movimento é calculado a partir dos valores da FT, com deduções de devoluções/valores de IRS e, no ramo de INSERT inicial, dos valores de IVA activado provenientes de FT3.
+
+**Diferença observada no código:** no ramo de INSERT inicial, `OL.entr` e `OL.eentr` subtraem também `FT3.ivacativado` e `FT3.eivacativado`. Nos ramos correspondentes de UPDATE/recuperação de OL em falta, essas parcelas não aparecem. A diferença fica registada como facto do código standard; não se atribui intenção nem se classifica como defeito sem teste funcional/versionamento do código.
+
+No `tr_ft_update`, a criação/actualização de OL continua dependente de `TD.lancaol=1`. O trigger também elimina o OL associado quando a FT é anulada (`anulado=1`). O trigger de eliminação física de FT remove os movimentos OL associados pelo `ftstamp`.
+
+**Mudança da configuração TD:** a análise do `tr_td_update` no script standard encontrou sincronização do nome do documento (`nmdoc`) em estruturas auxiliares, mas não um ramo de reconciliação/eliminação de OL quando mudam `lancaol`, `olcodigo`, `altollocal`, `vdollocal`, `vdcontado`, `vdlocal` ou `olmoeda`. Assim, o código analisado não demonstra uma limpeza automática dos OL existentes quando se altera a configuração TD.
+
+### 19.4 Criação de CH a partir de FT
+
+O código standard de `tr_ft_insert` cria CH quando `FT.multi=0 AND FT.cheque=1`. Este ramo é distinto do ramo de criação de OL:
+- a existência de CH não depende de `TD.lancaol=1`;
+- a criação de CH exige correspondência em TD e FT2;
+- não exige a correspondência em FT3 nem em OC que é necessária no ramo de OL.
+
+A configuração TD condiciona, contudo, campos de localização/contado do CH. Para os documentos 3 e 8 consultados, `lancaol=1` e `altollocal=0`, pelo que os valores de referência são `contado=0` e `ollocal='Caixa'`.
+
+O código contém uma condição especial baseada em `TD.tipodoc=3` para os valores financeiros do cheque. Como ambos os documentos têm `tipodoc=1`, essa condição não coloca a zero os valores de cheque destes dois tipos. Não se deve inferir a condição a partir de `ndoc=3`.
+
+### 19.5 Percurso CH → CHL
+
+O trigger standard `tr_ch_insert` cria o movimento de histórico de aceitação quando o cheque é inserido com origem diferente de CH e estado inicial zero. O movimento criado em `CHL` usa `cm=1` e a descrição `Aceite`, actualizando também o estado do cheque.
+
+A análise do trigger `tr_chl_insert` não encontrou criação de OL para este movimento de aceitação (`cm=1`). Portanto, a aceitação inicial do cheque não duplica o movimento OL da FT.
+
+O código de `tr_chl_insert` contém ramos de criação de OL para movimentos `cm=3), sujeitos a condições próprias:
+- um ramo para despesas/imposto de selo, com correspondência do código de tesouraria `P10001`;
+- um ramo relacionado com transferência, que depende das relações entre OL, OX, OY, CH e CHL.
+
+Estes ramos não permitem atribuir, sem validação adicional, uma designação funcional universal a `cm=3`. Nesta investigação regista-se o código e as condições técnicas, deixando a semântica funcional do código pendente.
+
+O trigger `tr_chl_update` não foi identificado como mecanismo de actualização dos movimentos OL descritos. O trigger `tr_chl_delete` contém eliminação de OL ligado ao movimento CHL através de `chlstamp`. Esta ligação deve ser entendida no âmbito dos movimentos CHL que originaram OL, não como eliminação indiscriminada do movimento OL principal da FT.
+
+### 19.6 Matriz consolidada
+
+| Evento | Efeito confirmado no código standard |
+|---|---|
+| Inserção de FT com `TD.lancaol=1` | Pode criar OL, exigindo correspondências TD, FT2, FT3 e OC |
+| Inserção de FT com `multi=0` e `cheque=1` | Cria CH, exigindo correspondências TD e FT2 |
+| Inserção do CH em estado inicial zero e origem diferente de CH | Cria movimento CHL de aceitação (`cm=1)); não cria OL |
+| Inserção de CHL com `cm=3` e condições de despesas/imposto de selo | Pode criar OL próprio, associado ao CHL |
+| Inserção de CHL com `cm=3` e condições de transferência | Pode criar OL associado ao circuito de transferência |
+| Actualização da FT para anulada | Elimina OL associado e trata CH conforme as condições do trigger |
+| Eliminação física da FT | Elimina CH, CC e OL associados à FT |
+| Alteração de `TD.lancaol` | Não foi encontrado mecanismo standard em `tr_td_update` que reconcilie automaticamente OL existentes |
+
+### 19.7 Estado empírico da CSDefault202603
+
+As consultas read-only devolvidas pelo utilizador apresentaram:
+
+| Tabela | Registos |
+|---|---:|
+| FT | 0 |
+| FT2 | 0 |
+| FT3 | 0 |
+| OL | 0 |
+| CH | 0 |
+
+As consultas anteriores também não identificaram movimentos de origem FT em OL ou CH. Os triggers instalados `tr_ft_insert`, `tr_ft_update` e `tr_ft_delete` foram observados como activos e encriptados na base; as respectivas definições não estavam disponíveis em `sys.sql_modules`.
+
+Consequentemente:
+- os dados de TD e OC estão confirmados por consultas à instalação;
+- o comportamento descrito dos triggers é evidência do script standard legível em `docs/sources/triggers phc.sql`;
+- não foi possível comparar o texto dos triggers instalados com o script, nem executar validação transaccional com documentos reais;
+- não se afirma que a instalação executa necessariamente, em todos os detalhes, a mesma versão do código presente no script.
+
+### 19.8 Conclusão e limites
+
+A investigação do circuito de tesouraria fica fechada ao nível da leitura do código standard e da configuração consultada na CSDefault202603.
+
+Conclusões principais:
+1. Fatura-Recibo e Fatura Simplificada estão configuradas para lançar OL através de R10001, classificado em OC como recebimento de clientes.
+2. A criação de OL a partir da FT e a criação de CH são ramos independentes, com dependências diferentes.
+3. A aceitação inicial do cheque gera CHL (`cm=1`), mas não gera OL.
+4. Outros movimentos CHL (`cm=3`) podem originar OL sob condições específicas; a semântica funcional geral de `cm=3` permanece por validar.
+5. O código standard analisado não mostra reconciliação automática de OL quando se altera a configuração de tesouraria em TD.
+6. Existe uma diferença entre o cálculo de `OL.entr/eentr` no INSERT inicial e nos ramos de UPDATE/recuperação, cuja intenção não foi determinada.
+7. Não houve validação transaccional na CSDefault202603, por ausência de documentos e movimentos nas tabelas relevantes.
+
+**Estado:** fechado para esta passagem de análise estática/configuracional. Reabrir apenas se surgir uma captura com documentos reais, uma versão/build identificável dos triggers instalados, ou evidência funcional que permita resolver as questões explicitamente pendentes.
+
