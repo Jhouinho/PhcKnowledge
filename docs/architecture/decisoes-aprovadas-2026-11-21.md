@@ -411,10 +411,17 @@ O enquadramento funcional, as capacidades, o caso de referência e a sequência 
 
 D-024 complementa as decisões anteriores. Não substitui D-015 a D-023 nem altera os respectivos contratos de identidade, proveniência, captura ou correspondência.
 
-12. A investigação inicial do PHC Standard na CS Default cruza obrigatoriamente três fontes: (a) a base de dados PHC, incluindo estrutura, metadados, relações e objectos disponíveis; (b) o ficheiro existente de triggers PHC encriptados e a informação nele acessível através do processo de leitura/desencriptação disponível; e (c) a Enciclopédia PHC. A pesquisa não fica concluída pela consulta isolada da base de dados.
-13. Cada evidência e cada afirmação derivada identificam a fonte concreta, referência/localização, versão ou contexto disponível e limitações. A mesma informação encontrada em fontes diferentes mantém referências separadas; divergências entre fontes são registadas, não resolvidas por suposição.
-14. O conhecimento resultante distingue conteúdo directamente observado em cada fonte, relações técnicas identificadas, interpretação/hipótese funcional e conclusão validada. Informação da Enciclopédia PHC é evidência documental externa à base de dados; não deve ser apresentada como comportamento observado na instalação. O conteúdo dos triggers só pode ser usado na medida em que esteja efectivamente acessível e legível; não se presume que todo o ficheiro encriptado foi desencriptado ou pesquisado.
-15. A sequência inicial privilegia compreender primeiro o PHC Standard com a CS Default. A investigação de instalações de clientes e personalizações é uma etapa posterior, mantendo âmbitos e proveniências separados. Esta metodologia orienta a experiência exploratória; não aprova alterações ao Scanner, collectors, queries, dados da CS Default, schemas executáveis ou persistência.
+### Metodologia inicial de investigação — três fontes
+
+A investigação do PHC Standard na CS Default cruza obrigatoriamente três fontes: (a) a base de dados PHC, incluindo estrutura, metadados, relações e objectos disponíveis; (b) o ficheiro existente de triggers PHC encriptados, usando o processo de leitura/desencriptação disponível; e (c) a Enciclopédia PHC. A pesquisa não fica concluída pela consulta isolada da base de dados.
+
+- Cada evidência e afirmação derivada identifica a fonte concreta, referência/localização, versão ou contexto disponível e limitações. A mesma informação encontrada em fontes diferentes mantém referências separadas.
+- Divergências entre fontes são registadas e investigadas, não resolvidas por suposição.
+- Informação da Enciclopédia PHC é evidência documental externa à base de dados; não deve ser apresentada como comportamento observado na CS Default.
+- O conteúdo dos triggers só pode ser usado na medida em que esteja efectivamente acessível e legível; não se presume que todo o ficheiro encriptado foi desencriptado ou pesquisado.
+- O conhecimento distingue conteúdo directamente observado, relações técnicas identificadas, hipóteses funcionais e conclusões validadas.
+- A sequência inicial privilegia compreender primeiro o PHC Standard com a CS Default. A investigação de instalações de clientes e personalizações é uma etapa posterior, mantendo âmbitos e proveniências separados.
+- Esta metodologia orienta a experiência exploratória; não aprova alterações ao Scanner, collectors, queries, dados da CS Default, schemas executáveis ou persistência.
 
 
 ## 16. D-025 — Camada independente de conhecimento funcional persistente
