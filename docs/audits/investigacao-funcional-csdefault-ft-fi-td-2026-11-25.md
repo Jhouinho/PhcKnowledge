@@ -880,7 +880,7 @@ O trigger standard `tr_ch_insert` cria o movimento de histórico de aceitação 
 
 A análise do trigger `tr_chl_insert` não encontrou criação de OL para este movimento de aceitação (`cm=1`). Portanto, a aceitação inicial do cheque não duplica o movimento OL da FT.
 
-O código de `tr_chl_insert` contém ramos de criação de OL para movimentos `cm=3), sujeitos a condições próprias:
+O código de `tr_chl_insert` contém ramos de criação de OL para movimentos `cm=3`, sujeitos a condições próprias:
 - um ramo para despesas/imposto de selo, com correspondência do código de tesouraria `P10001`;
 - um ramo relacionado com transferência, que depende das relações entre OL, OX, OY, CH e CHL.
 
@@ -894,7 +894,7 @@ O trigger `tr_chl_update` não foi identificado como mecanismo de actualização
 |---|---|
 | Inserção de FT com `TD.lancaol=1` | Pode criar OL, exigindo correspondências TD, FT2, FT3 e OC |
 | Inserção de FT com `multi=0` e `cheque=1` | Cria CH, exigindo correspondências TD e FT2 |
-| Inserção do CH em estado inicial zero e origem diferente de CH | Cria movimento CHL de aceitação (`cm=1)); não cria OL |
+| Inserção do CH em estado inicial zero e origem diferente de CH | Cria movimento CHL de aceitação (`cm=1`); não cria OL |
 | Inserção de CHL com `cm=3` e condições de despesas/imposto de selo | Pode criar OL próprio, associado ao CHL |
 | Inserção de CHL com `cm=3` e condições de transferência | Pode criar OL associado ao circuito de transferência |
 | Actualização da FT para anulada | Elimina OL associado e trata CH conforme as condições do trigger |
