@@ -658,12 +658,12 @@ Esta secção cruza os valores de códigos comunicados para TD com a descrição
 | Nota de Crédito | 57 | N/Nt. Crédito | 0 | 0 |
 | Fatura Proforma | 0 | vazio | 0 | 0 |
 | Fatura Simplificada | 1 | N/Factura | 0 | 0 |
-| Orçamento | 9 | vazio | 0 | 1 |
-| Nota de Débito | 2 | N/Nt. Débito | 0 | 1 |
+| Orçamento | 9 | vazio | 0 | 0 |
+| Nota de Débito | 2 | N/Nt. Débito | 0 | 0 |
 | N/C Adiantamento | 0 | vazio | 0 | 0 |
 | Consulta de Mesa | 0 | vazio | 0 | 0 |
 
-**Nota de leitura:** a coluna cmmcc é o código de movimento de C/C de multi-pagamento; a descrição da Enciclopédia confirma essa finalidade. O valor 1 no Orçamento e na Nota de Débito é apenas o valor recebido e carece de explicação funcional, pois a flag lancacc desses documentos não tem o mesmo valor (Orçamento 0; Nota de Débito 1). Não inferir que cmmcc seja usado sem um percurso de multi-pagamento.
+**Nota de leitura:** a coluna cmmcc é o código de movimento de C/C de multi-pagamento; a descrição da Enciclopédia confirma essa finalidade. Todos os registos recebidos têm cmmcc=0. Os valores 9 (Orçamento) e 2 (Nota de Débito) pertencem a cmcc, não a cmmcc.
 
 Os códigos cmcc e respectivas descrições são passados pelo trigger para movimentos CC em ramos específicos. A Enciclopédia explica que os códigos de Conta-Corrente classificam movimentos de débito/crédito e que a disponibilidade para regularizações é uma propriedade do próprio código. Não recebemos, contudo, o registo integral do catálogo de códigos CC; por isso não se conclui, apenas pelo número, a natureza débito/crédito de cada código.
 
