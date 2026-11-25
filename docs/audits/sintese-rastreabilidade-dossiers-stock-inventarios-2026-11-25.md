@@ -80,7 +80,7 @@ A tabela seguinte é um mapa de leitura e não uma especificação exaustiva de 
 | Funcionamento cativo/pré-cativo | Enciclopédia PHC: funcionamento, Monitor e coluna informativa | Triggers BI/BO2 e referências BIPRECAT | Criação e conversão técnica de pré-cativo não identificadas |
 | Modelo ST/SA/SL/CM2/STIC/STIL | Esquemas e consultas nas bases analisadas | Reconciliação do inventário Digicanola | Resultados específicos das bases consultadas |
 | Inventários blivo2026 | Dados da base blivo2026 | Relações STIC/STIL/SL | Não generalizar para outras instalações |
-| Reconstrução Digicanola | Dados Digicanola, SL e CM2 | Cadeia documental FN/\`fnstamp\` | Um inventário concreto; depende da integridade histórica |
+| Reconstrução Digicanola | Dados Digicanola, SL e CM2 | Cadeia documental FN/`fnstamp` | Um inventário concreto; depende da integridade histórica |
 | Comportamentos de assistência | Registos de assistência citados no relatório de dossiers | Enciclopédia e código quando aplicável | Casos concretos, não regras standard |
 | Cobertura Scanner | Documentação/auditoria de capabilities e contratos de captura | Conteúdo real das capturas | Capability declarada não prova recolha completa |
 
