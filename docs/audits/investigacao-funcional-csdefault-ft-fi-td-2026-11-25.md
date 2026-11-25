@@ -318,3 +318,218 @@ Continuar pela análise integral dos oito triggers de FT/FI/TD, construindo a ma
 - Script: `docs/sources/triggers phc.sql` (fonte já existente no repositório).
 - Enciclopédia: `enciclopedia.zip` (artefacto oficial PHC, local, não versionado).
 - Ficheiros da captura analisados: `manifest.json`, `coverage.json`, `object-index.json`, `payload/relations/declared-relations.json`.
+
+
+## 12. Segunda passagem — matriz detalhada dos triggers (25-11-2026)
+
+Esta secção aprofunda a leitura integral dos oito blocos `CREATE TRIGGER` do script versionado. As linhas abaixo são **linhas absolutas do ficheiro** `docs/sources/triggers phc.sql`. Os nomes de tabelas e condições foram lidos no código; a interpretação funcional mantém-se limitada à CS Default/script fornecido.
+
+### 12.1 Matriz de operações observadas
+
+| Evento | Destino | Condição principal observada no código | Efeito |
+|---|---|---|---|
+| FT INSERT | CL | `tipodoc IN (1,3)`, `TD.regrd=0`, documento não anulado | Soma `ttiliq/ettiliq` a `CL.acmfact/eacmfact`; a identificação do cliente pode vir de FT ou FT2 conforme `TD.lancacli`. |
+| FT INSERT | CH | `multi=0` e `cheque=1` | Cria título associado ao documento; valores são zero para `tipodoc=3`. |
+| FT INSERT | CC | `TD.lancacc=1` e `multi=0` | Cria movimento de conta-corrente; para `tipodoc=3` o valor é lançado como crédito com sinal negativo nas expressões do trigger. |
+| FT INSERT | CC | `TD.lancacc=1`, `TD.ccautoreg=1`, `multi=0` | Actualiza o movimento principal e cria movimento adicional de auto-regularização com stamp iniciado por `R`. |
+| FT INSERT | OL | `TD.lancaol=1` | Cria movimento em OL com dados de local, contado, moeda e meios de pagamento provenientes de TD/FT2. |
+| FT INSERT | CC | `TD.lancacc=0`, `rdtotal<>0`, `tipodoc=1`, `multi=0` | Cria movimento CC para o valor de regularizações indicado em `rdtotal`. |
+| FT INSERT | LR / LP | Stamp de ligação não vazio | Acrescenta valores do documento aos acumulados `edebi/eedebi` da estrutura associada. |
+| FT INSERT | MR | `mrstamp<>''` e `idft=1` | Marca `MR.ftpes=1`. |
+| FT INSERT | CSUP | FT2 tem `csupstamp` | Actualiza em CSUP a referência ao documento emitido (stamp, nome, número e data). |
+| FT UPDATE | CL | Alteração de `ndoc/no/tipodoc/ttiliq/ettiliq/anulado` | Reverte valores anteriores e reaplica os novos acumulados, respeitando `TD.regrd=0` e estado de anulação. |
+| FT UPDATE | CH | Alteração de campos de título, cliente, moeda, tipo ou multi-pagamento | Remove/recria ou actualiza CH, conforme a combinação de campos e se o documento continua a ser título único. |
+| FT UPDATE | CC | Alteração de campos de cabeçalho/valores e `TD.lancacc=1` | Remove/recria ou actualiza o movimento principal e o movimento de auto-regularização. |
+| FT UPDATE | OL | Alteração de dados do documento e `TD.lancaol=1` | Actualiza OL; se ainda não existir, pode inserir o movimento. |
+| FT UPDATE | LR / LP | Ligação anterior ou nova não vazia | Subtrai os valores de `deleted` e soma os valores de `inserted`, evitando acrescentar ao acumulado quando o novo documento está anulado. |
+| FT UPDATE | SL / SV | Transição de `anulado=0` para `anulado=1` | Elimina movimentos de stock e valorização ligados às linhas FI do documento. |
+| FT UPDATE | BI | Transição para anulado | Repõe referências/documento e ajusta quantidades/partes ligadas às linhas, condicionado por FI2/TS. |
+| FT UPDATE | FTREG | Transição para anulado, linhas de tipo 3 ligadas a FTREG | Reverte valores acumulados e limpa a referência do último documento. |
+| FT UPDATE | PN | Transição para anulado | Elimina os registos de produtos vendidos associados às linhas FI. |
+| FT UPDATE | AGSTC / OPG / FMIN / BE / MR / RVP | Transição para anulado | Repõe estados de facturação/processamento e valores associados às origens correspondentes. |
+| FT UPDATE | CC / FTRD / RD | Transição para anulado | Anula valores em conta-corrente, remove movimentos automáticos ligados e actualiza estado de integração das regularizações. |
+| FT UPDATE | FT3 / FI | Transição para anulado | Limpa sinalização de arquivo digital e referências de documento facturador/origem em determinadas relações. |
+| FT DELETE | CL | `tipodoc IN (1,3)`, `TD.lancacli=0`, `TD.regrd=0`, documento não anulado | Subtrai acumulados do cliente. |
+| FT DELETE | CH / CC / OL / FTCC / FTT | Eliminação física de FT | Apaga os registos associados pelo `ftstamp`. |
+| FT DELETE | LR / LP | Stamp de ligação não vazio | Reverte acumulados do documento eliminado. |
+| FT DELETE | MR | `mrstamp<>''` e `idft=1` | Repõe `MR.ftpes=0`. |
+| FI INSERT | SL | `TD.lancasl=1` e `ref` não vazia | Cria movimento de stock por linha, com quantidade invertida para `tipodoc=3`; usa configuração de código, custo e descrição de movimento em TD. |
+| FI INSERT | SV | `lancasl=1`, `cmsl>50`, `cmsv<>0`, `tipodoc=3`, `qtt<>0`, referência não vazia e custo diferente | Cria movimento de valorização com diferença entre custo e preço/custo ponderado. |
+| FI INSERT | FTREG | `tipodoc=3` e `ftregstamp` não vazio | Cria FTREG se ainda não existir e actualiza acumulados associados à regularização de IVA/valores. |
+| FI INSERT | BI | `bistamp<>''` | Actualiza data/número/documento de origem, quantidades e partes; quantidade respeita sinal de tipo 3 e flags de FI2/TS. |
+| FI INSERT | FT | `ndocft/fnoft` preenchidos e correspondência com documento de origem | Marca documento de origem como facturado e guarda identificação do documento facturador. |
+| FI INSERT | PN | `TD.coms=1`, `qtt<>0`, `composto=0` | Cria registo de produto vendido por linha, com valores e sinal dependentes do tipo de documento. |
+| FI INSERT | AGSTC / OPG / FMIN / BE / MR | Stamps/refs de origem preenchidos | Marca origens como facturadas/processadas e actualiza valores de venda ou estados de entrega/pesagem. |
+| FI INSERT | FT | Linha não composta e documento não anulado | Acrescenta custo total da linha aos acumulados de custo em FT, com sinal invertido para tipo 3. |
+| FI UPDATE | PN | Campos comerciais/custo alterados e `TD.coms=1`, `qtt<>0`, `composto=0` | Actualiza ou recria PN; remove PN quando a quantidade passa a zero. |
+| FI UPDATE | SL | Campos de artigo, quantidade, custo, lote, armazém ou ligação alterados; `TD.lancasl=1` | Actualiza o movimento existente; elimina SL se a referência fica vazia; cria se não existir e o documento não estiver anulado. |
+| FI UPDATE | SV | Mesmas condições específicas de valorização de nota de crédito | Remove SV se deixa de haver referência/diferença de custo; actualiza ou cria SV quando as condições se mantêm. |
+| FI UPDATE | FTREG | Alteração de linha ligada a nota de crédito | Reverte valores de `deleted`, cria FTREG quando necessário e soma valores de `inserted`. |
+| FI UPDATE | BI | `qtt`, `ftstamp` ou `bistamp` alterados | Retira o contributo anterior e aplica o novo, incluindo quantidade e partes conforme FI2/TS. |
+| FI UPDATE | FT | `ndocft/fnoft` preenchidos | Marca documento de origem como facturado quando a correspondência existe e o documento de origem não está anulado. |
+| FI UPDATE | FT | `qtt`, `custo` ou `ecusto` alterados | Subtrai o custo antigo e acrescenta o novo ao acumulado de custo do cabeçalho, para linhas não compostas. |
+| FI UPDATE | BE / MR | Alteração da linha e referências associadas | Actualiza valor de venda/data em BE e estados de entrega/pesagem em MR. |
+| FI DELETE | SL / SV | Eliminação de FI | Apaga movimentos de stock/valorização por `fistamp`. |
+| FI DELETE | BI | `bistamp<>''` e TS usa partes | Subtrai partes associadas à linha. |
+| FI DELETE | FTREG | Linha tipo 3 ligada a FTREG | Reverte acumulados de IVA/valores e limpa último documento. |
+| FI DELETE | FT | Linha ligada a documento de origem e sem outras linhas equivalentes | Repõe `facturada=0` e limpa identificação do documento facturador. |
+| FI DELETE | PN | Eliminação de FI | Apaga PN pelo `fistamp`. |
+| FI DELETE | FT | Linha não composta | Subtrai custo da linha aos acumulados do cabeçalho. |
+| FI DELETE | AGSTC / OPG / FMIN / BE / MR / RVP | Stamps/refs associados | Repõe estados de facturação/processamento/entrega e valores associados. |
+| TD UPDATE | WKDOCS / WK / POSTD | `UPDATE(nmdoc)` | Sincroniza o nome do documento nas estruturas de configuração/uso de documentos e POS identificadas no trigger. |
+| TD DELETE | TD2 | Eliminação de TD | Apaga TD2 pelo stamp de ligação. |
+
+**Nota:** a matriz sintetiza os ramos encontrados, não constitui uma lista exaustiva de todas as colunas copiadas ou de todas as condições secundárias. Os triggers são multi-row (usam `inserted`/`deleted`); a matriz descreve efeitos lógicos observados, sem afirmar que cada ramo foi validado com execução em runtime.
+
+### 12.2 Condições de assinatura digital em FT
+
+Tanto `tr_ft_insert` como `tr_ft_update` incluem uma validação que provoca `RAISERROR` e `ROLLBACK` quando a assinatura em FT2 está vazia, em documentos que satisfaçam as condições do trigger:
+- `TD.assinadoc=1` ou `TD.tipodoc` entre 1 e 4;
+- `TD.assinaimp=0`;
+- `TD.docsext=0`;
+- `TD.docsimport=0`;
+- `FT.fno>0`;
+- `TD.fechada=0`.
+
+O código constrói uma mensagem a indicar que a assinatura digital do documento está vazia. Esta é uma validação explícita no script; não se deve generalizar para todos os documentos ou instalações sem confirmar a configuração TD e a versão.
+
+### 12.3 Contexto de execução e guardas
+
+- `tr_ft_update` lê `Context_Info()` e termina imediatamente se for `0x55555`. Isto é uma guarda explícita contra reentrada em determinado contexto de execução.
+- `tr_fi_update` tem um bloco de sincronização de PN condicionado a `Context_Info() = 0x88888`; há também blocos de PN fora desse bloco, com as suas próprias condições.
+- `tr_fi_insert` define `Context_Info 0x55555` antes de actualizar custos acumulados em FT e repõe `0x66666` depois dessa operação. Este detalhe é relevante para compreender por que razão nem todas as alterações a FT originam necessariamente o mesmo percurso de trigger.
+
+A semântica global dos valores de `Context_Info` depende dos restantes triggers e caminhos da aplicação. O que fica confirmado é a presença destas guardas e atribuições no código analisado; não se atribui ainda uma finalidade universal a cada constante.
+
+### 12.4 Enciclopédia — artigos adicionais lidos nesta passagem
+
+Foram também lidos os seguintes artigos do ZIP local:
+- `movimentosdestocks.htm` — descreve a opção de movimentos de stocks como registo de entradas e saídas, indicando que a maioria dos movimentos é originada noutros programas, como faturação e compras.
+- `constituiçãodatabelademovimentosdestocks.htm` — descreve a tabela de movimentos de stocks como sendo actualizada automaticamente pelos vários programas e identifica campos como referência, data, documento, quantidade, valor, armazém, lote e contabilizado.
+- `códigosdemovimentaçãodestocks.htm` — descreve códigos de movimentos de stock, a sua relação com actualização de preço de custo ponderado e códigos de interligação contabilística; refere a convenção de códigos 1–49 para entradas e 50–99 para saídas, com restrições.
+- `movimentosdetesouraria.htm` — descreve movimentos reais de tesouraria introduzidos directamente ou provenientes de documentos oficiais, incluindo documentos de faturação, compras, recibos e pagamentos.
+- `documentosdefaturação-dadosdetesouraria.htm` — descreve título único, número e banco do título, valor, data, cobrança, cobrador/rota, tipo de título, forma de pagamento e campos de referências de pagamento.
+- `códigosdetesouraria.htm` — descreve códigos de classificação de tesouraria, a distinção entre recebimentos e pagamentos e a utilização em movimentos e análises.
+- `códigosdeconta-corrente.htm` — descreve códigos de movimentos de conta-corrente, débito/crédito e opções de lançamento/regularização.
+- `funcionamentodafaturação.htm` — confirma que o formato e o funcionamento dos documentos de faturação são parametrizáveis individualmente.
+- `configuraçãodedocumentosdefaturação.htm` — apresenta exemplos de comportamento por tipo, incluindo que uma fatura pode movimentar stock, que uma guia de remessa pode não movimentar, e que a nota de crédito é configurada para entrada de stock e valor total negativo.
+- `configuraçãodedocumentosdefaturação-integração.htm` — enumera opções independentes de integração em stock, produtos vendidos, conta-corrente e tesouraria.
+
+A documentação confirma o enquadramento funcional geral, mas não prova que cada opção esteja activa em cada registo TD da CS Default. Para isso é necessário consultar os valores efectivos da tabela TD e, quando relevante, os dados FT/FT2/FI.
+
+### 12.5 Referências exactas no script
+
+| Trigger | Linhas absolutas |
+|---|---:|
+| `tr_td_update` | 2350–2366 |
+| `tr_ft_delete` | 5864–5887 |
+| `tr_td_delete` | 6744–6748 |
+| `tr_ft_insert` | 10098–10333 |
+| `tr_fi_update` | 14086–14626 |
+| `tr_ft_update` | 17747–18311 |
+| `tr_fi_insert` | 20407–20585 |
+| `tr_fi_delete` | 20589–20649 |
+
+### 12.6 Revisão de precisão da síntese anterior
+
+A primeira passagem dizia que FI INSERT “pode criar SV para diferenças de custo em determinadas notas de crédito”. A leitura integral confirma a formulação, mas acrescenta as condições exactas: `TD.lancasl=1`, `TD.cmsl>50`, `TD.cmsv<>0`, `TD.tipodoc=3`, quantidade não nula, referência não vazia e diferença entre `pcp/ecp` e `custo/ecusto`.
+
+A primeira passagem também resumia a anulação em FT UPDATE como remoção de SL/SV e actualização de BI. A leitura integral mostra que o ramo de anulação tem um alcance mais amplo, incluindo FTREG, PN, AGSTC, OPG, FMIN, BE, MR, RVP, CC, OL, FT3 e referências de facturação entre documentos. Esta lista fica agora registada para evitar que a anulação seja descrita como simples eliminação de stock.
+
+## 13. Consulta read-only proposta para fechar a estrutura física
+
+A captura IKP não contém colunas, tipos e índices. A consulta seguinte é proposta para execução manual na base `CSDefault202603`, por alguém com acesso SQL Server. É apenas leitura dos catálogos do sistema e não consulta dados comerciais nem altera objectos.
+
+```sql
+/* Executar com CSDefault202603 seleccionada.
+   Apenas leitura de metadados de FT, FI e TD. */
+
+DECLARE @Targets TABLE (TableName sysname PRIMARY KEY);
+INSERT INTO @Targets (TableName) VALUES (N'FT'), (N'FI'), (N'TD');
+
+-- 1. Colunas, tipos, nulabilidade, identidade, computed e defaults
+SELECT
+    s.name AS SchemaName,
+    t.name AS TableName,
+    c.column_id AS ColumnOrdinal,
+    c.name AS ColumnName,
+    ty.name AS TypeName,
+    c.max_length,
+    c.precision,
+    c.scale,
+    c.is_nullable,
+    c.is_identity,
+    c.is_computed,
+    dc.definition AS DefaultDefinition,
+    cc.definition AS ComputedDefinition,
+    c.collation_name
+FROM sys.tables AS t
+JOIN sys.schemas AS s ON s.schema_id = t.schema_id
+JOIN @Targets AS x ON x.TableName = t.name
+JOIN sys.columns AS c ON c.object_id = t.object_id
+JOIN sys.types AS ty ON ty.user_type_id = c.user_type_id
+LEFT JOIN sys.default_constraints AS dc
+    ON dc.object_id = c.default_object_id
+LEFT JOIN sys.computed_columns AS cc
+    ON cc.object_id = c.object_id AND cc.column_id = c.column_id
+ORDER BY t.name, c.column_id;
+
+-- 2. Índices e ordem das colunas
+SELECT
+    s.name AS SchemaName,
+    t.name AS TableName,
+    i.name AS IndexName,
+    i.type_desc,
+    i.is_primary_key,
+    i.is_unique,
+    i.is_disabled,
+    ic.key_ordinal,
+    ic.is_included_column,
+    c.name AS ColumnName,
+    ic.is_descending_key
+FROM sys.tables AS t
+JOIN sys.schemas AS s ON s.schema_id = t.schema_id
+JOIN @Targets AS x ON x.TableName = t.name
+JOIN sys.indexes AS i ON i.object_id = t.object_id
+JOIN sys.index_columns AS ic
+    ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+JOIN sys.columns AS c
+    ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+WHERE i.index_id > 0
+ORDER BY t.name, i.name, ic.key_ordinal, ic.index_column_id;
+
+-- 3. Foreign keys físicas com origem ou destino em FT/FI/TD
+SELECT
+    fk.name AS ForeignKeyName,
+    OBJECT_SCHEMA_NAME(fkc.parent_object_id) AS ParentSchema,
+    OBJECT_NAME(fkc.parent_object_id) AS ParentTable,
+    pc.name AS ParentColumn,
+    OBJECT_SCHEMA_NAME(fkc.referenced_object_id) AS ReferencedSchema,
+    OBJECT_NAME(fkc.referenced_object_id) AS ReferencedTable,
+    rc.name AS ReferencedColumn,
+    fk.is_disabled,
+    fk.is_not_trusted
+FROM sys.foreign_keys AS fk
+JOIN sys.foreign_key_columns AS fkc
+    ON fkc.constraint_object_id = fk.object_id
+JOIN sys.columns AS pc
+    ON pc.object_id = fkc.parent_object_id
+   AND pc.column_id = fkc.parent_column_id
+JOIN sys.columns AS rc
+    ON rc.object_id = fkc.referenced_object_id
+   AND rc.column_id = fkc.referenced_column_id
+WHERE OBJECT_NAME(fkc.parent_object_id) IN (N'FT', N'FI', N'TD')
+   OR OBJECT_NAME(fkc.referenced_object_id) IN (N'FT', N'FI', N'TD')
+ORDER BY ParentTable, fk.name, fkc.constraint_column_id;
+```
+
+Esta consulta não substitui a análise das relações PHC REL/DTL: devolve apenas constraints físicas SQL Server. Os resultados devem ser revistos antes de serem incorporados no relatório. Não executar qualquer operação de escrita na CS Default.
+
+## 14. Próxima etapa
+
+1. Obter e rever os resultados da consulta de metadados para FT/FI/TD.
+2. Consultar, em modo read-only, os registos de configuração TD relevantes para as flags já identificadas (`tipodoc`, `lancasl`, `cmsl`, `cmsv`, `lancacc`, `ccautoreg`, `lancaol`, `regrd`, `lancacli`, `coms`, entre outras), sem expor dados de clientes.
+3. Com esses valores, construir a matriz de tipos de documento e integrações efectivamente configuradas na CS Default.
+4. Só depois aprofundar os triggers auxiliares (`FTCC`, `FTRD`, `FI2`, etc.) que forem necessários para explicar regularizações, multi-pagamento e ligações a dossiers.
+
+A investigação continua exploratória e não autoriza alterações à base de dados, Scanner, Portal, schemas ou persistência central.
