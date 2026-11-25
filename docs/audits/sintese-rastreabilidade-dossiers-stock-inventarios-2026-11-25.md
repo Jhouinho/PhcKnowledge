@@ -11,8 +11,13 @@ Este documento funciona como ponto de entrada para a investigação funcional co
 
 1. [Dossiers internos, stock cativo e pré-cativo](investigacao-funcional-dossiers-internos-stock-cativo-precativo-2026-11-25.md).
 2. [Stock e inventários físicos](investigacao-funcional-stock-inventarios-2026-11-25.md).
+3. [Grafos PHC — modelo funcional e relações estruturais observadas](grafos-phc-funcional-e-estrutural-2026-11-25.md).
 
 Não substitui esses relatórios nem cria uma terceira descrição integral dos mesmos temas. Resume o modelo conjunto, identifica as ligações entre operações e dados, regista a proveniência das conclusões e organiza o trabalho que falta.
+
+## 2.1 Grafos de leitura
+
+O documento [Grafos PHC — modelo funcional e relações estruturais observadas](grafos-phc-funcional-e-estrutural-2026-11-25.md) apresenta duas vistas complementares: o grafo funcional dos processos e o grafo estrutural mínimo dos predicados de ligação efectivamente observados. O segundo não é um ERD físico completo: as foreign keys, chaves e relações ainda não verificadas permanecem explicitamente por validar.
 
 ## 2. Modelo funcional conjunto
 
