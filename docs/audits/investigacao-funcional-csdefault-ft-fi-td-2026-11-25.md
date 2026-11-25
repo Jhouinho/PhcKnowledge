@@ -766,3 +766,44 @@ A consulta deve usar `dbo.CM2`, não `CM1` nem `CM`. Os campos relevantes inclue
 ### 18.5 Proveniência e limites
 
 As estruturas e linhas de dados desta secção foram fornecidas pelo utilizador a partir da base CSDefault202603. Não foram consultadas directamente pelo assistente. A identificação de CM1, CM2 e OC resulta dos nomes e tipos de colunas apresentados; as interpretações de códigos ficam limitadas aos valores efectivamente devolvidos.
+
+
+### 18.6 Resultado dos códigos de movimento de stock em CM2
+
+O utilizador forneceu os seguintes registos de `dbo.CM2`, filtrados pelos códigos 4, 75, 76, 77 e 78:
+
+| cm | cmdesc | entrada | mudapcpond | mudapcult | obrigacpsl |
+|---:|---|---:|---:|---:|---:|
+| 4 | Entrada p/ Devolução | 1 | 1 | 1 | 0 |
+| 75 | N/Factura | 0 | 0 | 0 | 0 |
+| 76 | N/Fatura Recibo | 0 | 0 | 0 | 0 |
+| 77 | N/Nt.Crédito | 0 | 0 | 0 | 0 |
+| 78 | N/Nt.Débito | 0 | 0 | 0 | 0 |
+
+Leitura limitada aos dados observados:
+
+- Os códigos 75, 76, 77 e 78 estão classificados com `entrada=0`; no catálogo desta instalação, são movimentos de saída.
+- O código 4, `Entrada p/ Devolução`, está classificado com `entrada=1` e tem `mudapcpond=1` e `mudapcult=1`. Assim, a configuração indica que este movimento altera tanto o preço de custo ponderado como o último custo.
+- Todos os cinco registos têm `obrigacpsl=0`; não se deve inferir uma obrigação de criar um movimento SL a partir desta propriedade.
+- A estrutura de CM2 não contém a coluna `inactivo`; não usar esse campo em consultas a esta tabela.
+
+Cruzamento com a configuração TD anteriormente fornecida:
+
+| Documento | tipodoc | lancasl | cmsl | cmsv |
+|---|---:|---:|---:|---:|
+| Fatura | 1 | 1 | 75 | 0 |
+| Guia de Remessa | 4 | 0 | 0 | 0 |
+| Fatura Recibo | 1 | 1 | 76 | 0 |
+| Nota de Crédito | 3 | 1 | 77 | 4 |
+| Fatura Proforma | 5 | 0 | 0 | 0 |
+| Fatura Simplificada | 1 | 1 | 76 | 0 |
+| Orçamento | 5 | 0 | 1 | 0 |
+| Nota de Débito | 2 | 0 | 78 | 0 |
+| N/C Adiantamento | 3 | 0 | 0 | 0 |
+| Consulta de Mesa | 5 | 0 | 0 | 0 |
+
+A combinação de `lancasl=1` com os códigos 75, 76 e 77 é coerente com os movimentos de saída configurados para Fatura, Fatura-Recibo, Fatura Simplificada e Nota de Crédito nesta base. A Nota de Crédito também tem `cmsv=4`; o trigger `tr_fi_insert` condiciona a criação de SV à configuração `lancasl=1`, `cmsl>50`, `cmsv<>0`, tipo de documento 3 e outras condições por linha (quantidade, referência e diferença de custo). O código 4 de CM2 é, portanto, o código associado ao movimento de entrada para devolução em valor, mas a confirmação do seu efeito em cada linha depende das condições do trigger.
+
+A Nota de Débito apresenta `cmsl=78`, mas `lancasl=0`; por isso, o valor configurado não basta para concluir que o documento lança movimentos de stock. O mesmo cuidado aplica-se ao Orçamento, que apresenta `cmsl=1` com `lancasl=0`.
+
+**Conclusão provisória:** os dados confirmam a distinção entre o código de movimento físico configurado em `cmsl` e o código de movimento em valor configurado em `cmsv`, bem como a necessidade de considerar o indicador `lancasl` e as condições adicionais dos triggers. A análise descreve exclusivamente a configuração e o comportamento observados na CSDefault202603.
