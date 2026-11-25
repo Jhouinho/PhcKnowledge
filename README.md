@@ -119,3 +119,8 @@ Antes da materialização incremental, fechar os contratos operacionais de:
 A identidade lógica continua scoped à Installation. Correspondências entre instalações não fundem automaticamente entidades ou históricos. A ausência na CS default, isoladamente, não prova que um objecto seja personalizado. O catálogo PHC Standard versionado de D-015 continua a ser uma dependência.
 
 A análise não autoriza alterações a código, collectors, schemas executáveis, SQLite, migrations ou materialização. A avaliação detalhada e as limitações estão no relatório ligado acima.
+
+
+## Investigação funcional PHC — CS Default
+
+A investigação exploratória das tabelas FT, FI e TD, cruzando a captura CSDefault202603, o script de triggers e a Enciclopédia PHC, está consolidada em [Investigação funcional PHC — CS Default: FT, FI e TD](docs/audits/investigacao-funcional-csdefault-ft-fi-td-2026-11-25.md). O relatório regista fontes, proveniência, relações REL/DTL, triggers, conclusões provisórias, lacunas e próximos passos. Os ZIP da captura e da Enciclopédia não são versionados; o material oficial PHC não é copiado para o repositório.
