@@ -711,3 +711,58 @@ Para fechar a matriz sem inferências, falta obter apenas os registos de catálo
 4. Definição física e/ou documentação aplicacional dos campos tipomov e refarm.
 
 Até esses registos serem consultados, a matriz apresenta códigos configurados e evidência de utilização no trigger, mas não uma explicação completa da semântica de cada código.
+
+
+## 18. Identificação dos catálogos físicos e validação do código de tesouraria
+
+Esta passagem corrige a identificação inicial dos catálogos, com base nos metadados físicos e nos registos devolvidos pelo utilizador a partir da CSDefault202603.
+
+### 18.1 Catálogos de movimentos
+
+A estrutura física confirma a separação seguinte:
+
+- **CM1 — movimentos de Conta-Corrente:** contém `cm` (código), `cmdesc` (descrição), `debito`, `regulariza`, associações de tesouraria e várias propriedades de integração. Os registos consultados para os códigos 1, 2, 4 e 57 foram devolvidos por esta tabela.
+- **CM2 — movimentos de stock:** contém `cm` (código), `cmdesc` (descrição), `entrada`, `mudapcpond`, `mudapcult` e `obrigacpsl`. A estrutura identifica esta tabela como o catálogo a consultar para os códigos de stock configurados em TD.
+- **OC — códigos de tesouraria:** contém `olcodigo`, `olgrupo`, `olsgrupo` e `oltipo`.
+
+A tabela `CM` não é o catálogo de códigos procurado nesta análise: a estrutura apresentada contém `cmstamp`, `ano`, `valor` e campos de auditoria.
+
+### 18.2 Registos CM1 efectivamente devolvidos
+
+A consulta `dbo.CM1 WHERE cm IN (1, 2, 4, 9, 57, 75, 76, 77, 78)` devolveu quatro registos:
+
+| cm | cmdesc | olcl | clgrupo | clsgrupo | olfl | flgrupo | flsgrupo | debito | fosl |
+|---:|---|---|---|---|---|---|---|---:|---:|
+| 1 | N/Factura | R10001 | Actividades Operacionais | Recebimentos de Clientes | vazio | vazio | vazio | 1 | 0 |
+| 2 | N/Nt. Débito | R10001 | Actividades Operacionais | Recebimentos de Clientes | vazio | vazio | vazio | 1 | 0 |
+| 4 | V/Av.Lançamen | vazio | vazio | vazio | P10004 | Actividades Operacionais | Outros pagamentos | 0 | 90 |
+| 57 | N/Nt. Crédito | R10001 | Actividades Operacionais | Recebimentos de Clientes | vazio | vazio | vazio | 0 | 0 |
+
+Os quatro registos devolvidos apresentam `inactivo=0`. O código 4 tem `fosl=90`; este valor é registado como observado, sem lhe atribuir significado funcional adicional nesta fase.
+
+A consulta não devolveu registos CM1 para 9, 75, 76, 77 ou 78. Não se conclui que esses códigos não existam noutros catálogos: os códigos de stock devem ser procurados em CM2.
+
+### 18.3 Código de tesouraria utilizado: R10001
+
+A configuração TD recebida apresenta `olcodigo=R10001` e `vdollocal=Caixa`. A consulta a OC não devolveu qualquer registo para `olcodigo='Caixa'`, mas a listagem integral de OC fornecida pelo utilizador contém:
+
+| olcodigo | olgrupo | olsgrupo | oltipo |
+|---|---|---|---:|
+| R10001 | Actividades Operacionais | Recebimentos de Clientes | 1 |
+
+Fica assim esclarecida a distinção entre os campos: **R10001 é o código de tesouraria; Caixa é o valor de vdollocal**, isto é, o local indicado na configuração recebida. Não devem ser tratados como o mesmo identificador.
+
+A classificação de R10001 como recebimento de clientes é sustentada pelo registo OC apresentado. O significado interno de cada valor possível de `oltipo` não é generalizado para além deste registo.
+
+### 18.4 Próxima consulta necessária
+
+Para fechar a leitura dos movimentos de stock, falta consultar em CM2 os códigos que aparecem na configuração TD:
+
+- `TD.cmsl`: 75, 76, 77 e 78;
+- `TD.cmsv`: 4.
+
+A consulta deve usar `dbo.CM2`, não `CM1` nem `CM`. Os campos relevantes incluem `cm`, `cmdesc`, `entrada`, `mudapcpond`, `mudapcult` e `obrigacpsl`.
+
+### 18.5 Proveniência e limites
+
+As estruturas e linhas de dados desta secção foram fornecidas pelo utilizador a partir da base CSDefault202603. Não foram consultadas directamente pelo assistente. A identificação de CM1, CM2 e OC resulta dos nomes e tipos de colunas apresentados; as interpretações de códigos ficam limitadas aos valores efectivamente devolvidos.
