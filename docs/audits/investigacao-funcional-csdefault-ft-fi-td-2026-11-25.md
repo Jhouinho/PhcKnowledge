@@ -533,3 +533,112 @@ Esta consulta não substitui a análise das relações PHC REL/DTL: devolve apen
 4. Só depois aprofundar os triggers auxiliares (`FTCC`, `FTRD`, `FI2`, etc.) que forem necessários para explicar regularizações, multi-pagamento e ligações a dossiers.
 
 A investigação continua exploratória e não autoriza alterações à base de dados, Scanner, Portal, schemas ou persistência central.
+
+
+## 15. Terceira passagem — tesouraria, armazém e regularizações (25-11-2026)
+
+Esta passagem alarga a análise aos triggers auxiliares que participam nos fluxos de faturação e recibos. As referências de linha são do script docs/sources/triggers phc.sql, com 21 713 linhas. A pesquisa textual foi feita sobre o ficheiro integral, não apenas sobre os oito triggers directamente associados a FT/FI/TD.
+
+### 15.1 Origem dos dados de tesouraria: TD ou FT2
+
+Nos blocos de tr_ft_insert e tr_ft_update, o código escolhe os valores de tesouraria conforme TD.altollocal:
+
+| Campo de TD | Campo de FT2 quando altollocal=1 | Campo de OL/CH | Leitura suportada |
+|---|---|---|---|
+| vdollocal | vdollocal | OL.ollocal / CH.ollocal | Local de tesouraria |
+| vdcontado | vdcontado | OL.contado / CH.contado | Campo contado |
+| vdlocal | vdlocal | OL.local | Campo local do movimento |
+| olmoeda | olmoeda | OL.moeda | Moeda do movimento |
+
+Com TD.altollocal=1, os valores são lidos de FT2; caso contrário, são lidos de TD. A escolha é explícita nas atribuições de OL (linhas 18018–18021) e na criação de OL (linhas 10285–10288). O trigger de FT também usa a selecção para preencher dados do título CH (linhas 10154–10155 e 17832–17833).
+
+**Condição adicional:** os ramos que criam OL em FT estão condicionados a TD.lancaol=1 (por exemplo, linhas 10297–10299). A presença de dados de local/moeda não significa, por si só, que seja criado um movimento OL.
+
+O trigger tr_cc_insert contém ainda uma lógica de fallback para recibos: quando FT2.vdollocal está vazio ou TD.altollocal=0, usa valores de contexto do recibo (@m_banchab, @m_contado) e determina o campo local entre 'B' e 'C'; quando usa os dados FT2, passa também FT2.olmoeda (linhas 2940–2944). Esta lógica é específica do caminho de recibos e não deve ser confundida com a regra simples de selecção em FT.
+
+A Enciclopédia, em documentosdefaturação-dadosdetesouraria.htm, confirma que o ecrã de dados de tesouraria apresenta o local do movimento quando o tipo de documento permite alterá-lo; por defeito apresenta o local definido na configuração, podendo o utilizador escolher outro. O artigo também distingue título único, número, banco, valor, data, cobrança, tipo de título e forma de pagamento.
+
+### 15.2 TD.regrd não é TSRD.regrd
+
+A pesquisa identificou o mesmo nome de campo em tabelas diferentes. A interpretação deve manter o alias/tabela explícito:
+
+- **TD.regrd:** nos triggers de FT, condiciona a actualização dos acumulados de facturação em CL. O código filtra TD.regrd=0 nos ramos de inserção, alteração e eliminação (por exemplo, tr_ft_insert, linhas 10132–10137; tr_ft_update, linhas 17793–17800; tr_ft_delete, linhas 5867–5872). A evidência disponível não permite atribuir-lhe uma designação funcional mais ampla.
+- **TSRD.regrd:** nos triggers de RD, controla a distribuição do valor entre crédito e débito nos movimentos CC e entre entrada e saída nos movimentos OL. Em tr_rd_insert, linhas 11606–11614 e 11657–11662, os valores são lançados em lados diferentes conforme o valor do campo. O mesmo trigger só cria CH no ramo TSRD.regrd=0 (linhas 11668–11682). tr_rd_update mantém esta distinção (a partir da linha 15578).
+
+Assim, a observação anterior sobre regrd fica restringida: o comportamento descrito para recibos pertence a TSRD.regrd, não deve ser atribuído automaticamente a TD.regrd.
+
+### 15.3 Armazém: origem efectiva no movimento de stock
+
+Em tr_fi_insert, quando TD.lancasl=1 e a linha tem referência não vazia, o trigger cria SL e transfere directamente FI.armazem para SL.armazem (linhas 20411–20445). O mesmo campo da linha é usado na criação/actualização de SV para notas de crédito com diferença de custo (linhas 20446–20463; actualização em tr_fi_update, linhas 14210–14252).
+
+A Enciclopédia, em constituiçãodatabelademovimentosdestocks.htm, descreve o armazém como parte dos dados de cada movimento de stock.
+
+**Limite da conclusão:** não foi encontrada a expressão TD.armazem no script integral, nem refarm. Portanto, o código analisado confirma a transferência de FI.armazem para os movimentos; não confirma como a aplicação preenche previamente o armazém das linhas a partir da configuração TD, nem qual o papel funcional de TD.refarm.
+
+### 15.4 Campos sem ocorrência no script
+
+A pesquisa literal ao script integral não encontrou ocorrências de:
+- tipomov;
+- refarm;
+- TD.armazem / td.armazem.
+
+Isto é apenas uma ausência no script fornecido. Não prova ausência de utilização na aplicação, em Xbase, procedimentos, outros scripts ou mecanismos fora do âmbito desta fonte.
+
+### 15.5 Referências do código e documentação consultada
+
+| Evidência | Referência |
+|---|---|
+| Selecção TD/FT2 para local, contado e moeda na criação de OL | tr_ft_insert, linhas 10281–10299 |
+| Actualização de OL com os campos de TD/FT2 | tr_ft_update, linhas 18014–18025 |
+| Dados de CH condicionados por lancaol e altollocal | tr_ft_insert, linhas 10152–10157; tr_ft_update, linhas 17830–17834 |
+| Fallback de local/contado/moeda no fluxo de recibos | tr_cc_insert, linhas 2940–2944 |
+| TD.regrd nos acumulados CL | tr_ft_insert 10132–10137; tr_ft_update 17793–17800; tr_ft_delete 5867–5872 |
+| TSRD.regrd nos movimentos de recibo | tr_rd_insert, linhas 11606–11614, 11637–11643, 11657–11682; tr_rd_update, a partir da linha 15578 |
+| FI.armazem transferido para SL/SV | tr_fi_insert, linhas 20411–20445 e 20446–20463; tr_fi_update, linhas 14210–14252 |
+| Local de tesouraria configurado e alterável no documento | Enciclopédia: documentosdefaturação-dadosdetesouraria.htm |
+| Conteúdo dos movimentos de stock, incluindo armazém | Enciclopédia: constituiçãodatabelademovimentosdestocks.htm |
+
+Os artigos da Enciclopédia são referenciados apenas pelo título/nome de ficheiro e por síntese própria. O ZIP oficial não foi adicionado ao repositório.
+
+## 16. Matriz da configuração TD recebida — primeira leitura
+
+A tabela seguinte regista os valores comunicados pelo utilizador para os 11 tipos de documento da CSDefault202603. É uma fotografia da configuração desta base, não uma definição universal do PHC.
+
+| ndoc | Documento | tipodoc | coms | lancacc | lancasl | lancaol | regrd | lancacli | ccautoreg |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | Fatura | 1 | 1 | 1 | 1 | 0 | 0 | 0 | 0 |
+| 2 | Guia de Remessa | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 3 | Fatura Recibo | 1 | 1 | 0 | 1 | 1 | 0 | 0 | 0 |
+| 4 | Nota de Crédito | 3 | 1 | 1 | 1 | 0 | 0 | 0 | 0 |
+| 7 | Fatura Proforma | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 8 | Fatura Simplificada | 1 | 1 | 0 | 1 | 1 | 0 | 0 | 0 |
+| 9 | Orçamento | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 10 | Nota de Débito | 2 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| 11 | N/C Adiantamento | 3 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
+| 12 | Consulta de Mesa | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+### 16.1 Leitura limitada às flags observadas
+
+- **Stock:** Fatura, Fatura Recibo, Nota de Crédito e Fatura Simplificada têm lancasl=1. A criação de SL continua dependente de cada FI ter referência não vazia. A criação de SV aplica-se apenas às condições específicas de nota de crédito descritas em 6.4 e 15.3.
+- **Produtos vendidos:** os mesmos quatro documentos têm coms=1. O trigger de FI cria/actualiza PN apenas para linhas com quantidade não nula e não compostas (tr_fi_insert, linhas 20550–20552). A Enciclopédia produtosvendidos.htm explica que o lançamento pela faturação é opcional, mas necessário para o funcionamento correcto de vendedores e comissões.
+- **Tesouraria real:** Fatura Recibo e Fatura Simplificada têm lancaol=1; os restantes registos apresentados têm zero. A criação de OL no trigger FT está condicionada por esta flag. A existência de títulos CH é um ramo distinto e depende de multi=0 e cheque=1, não devendo ser confundida com a criação de OL.
+- **Conta-Corrente:** Fatura, Nota de Crédito e Nota de Débito têm lancacc=1. Fatura Recibo e Fatura Simplificada têm lancacc=0, mas o trigger mantém o ramo especial de CC para tipodoc=1 quando rdtotal<>0 e multi=0 (linhas 10300 em diante). Logo, o valor zero não permite concluir ausência absoluta de movimentos CC em todos os cenários.
+- **Auto-regularização:** todos os registos apresentados têm ccautoreg=0. Não há, nesta configuração recebida, documentos com auto-regularização automática activa através desta flag.
+- **Segundo cliente:** todos os registos apresentados têm lancacli=0; a configuração recebida não activa a utilização do segundo cliente nestes tipos.
+- **regrd:** todos os registos apresentados têm zero excepto N/C Adiantamento (ndoc 11), com valor 1. A consequência específica de TD.regrd=1 neste tipo de documento ainda não está funcionalmente explicada; não inferir o comportamento de TSRD.regrd.
+
+### 16.2 Limites e validações pendentes
+
+Esta matriz usa apenas as colunas recebidas e as flags já cruzadas com triggers. Ainda não avalia:
+- códigos e descrições de movimento (cmcc, cmccn, cmccautoreg, cmccautoregn, cmmcc, cmmccn, cmsl, cmsv, cmsvn, olcodigo);
+- valores de local, moeda e contado (vdollocal, vdcontado, vdlocal, olmoeda, altollocal);
+- configuração de armazém e referências (armazem, refarm) fora dos triggers;
+- a semântica de tipomov;
+- parâmetros de assinatura, fecho, rascunho, autofaturação e validações;
+- diferenças entre o comportamento do trigger e o comportamento executado pela aplicação antes/depois da gravação.
+
+Os valores desta secção foram fornecidos pelo utilizador e não foram consultados directamente na base de dados pelo assistente. A matriz é, por isso, identificada como configuração comunicada, ainda sem validação independente por consulta read-only.
+
+### 16.3 Próximo passo
+
+Continuar a matriz por documento, cruzando os códigos de movimento com os catálogos de códigos de stock, Conta-Corrente e tesouraria e com os triggers auxiliares relevantes. Depois, rever os campos ainda sem interpretação e preparar uma consulta read-only específica para confirmar a configuração actual na base, se o utilizador a puder executar.
