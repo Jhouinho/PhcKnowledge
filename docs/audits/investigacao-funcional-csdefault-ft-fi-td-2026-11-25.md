@@ -642,3 +642,72 @@ Os valores desta secção foram fornecidos pelo utilizador e não foram consulta
 ### 16.3 Próximo passo
 
 Continuar a matriz por documento, cruzando os códigos de movimento com os catálogos de códigos de stock, Conta-Corrente e tesouraria e com os triggers auxiliares relevantes. Depois, rever os campos ainda sem interpretação e preparar uma consulta read-only específica para confirmar a configuração actual na base, se o utilizador a puder executar.
+
+
+## 17. Códigos de integração configurados — segunda leitura da matriz
+
+Esta secção cruza os valores de códigos comunicados para TD com a descrição dos campos na Enciclopédia e com a utilização encontrada nos triggers. Os números e designações abaixo são os valores da configuração recebida da CSDefault202603; não foram consultados directamente à base nesta sessão.
+
+### 17.1 Conta-Corrente
+
+| Documento | cmcc | cmccn | cmccautoreg | cmmcc |
+|---|---:|---|---:|---:|
+| Fatura | 1 | N/Factura | 0 | 0 |
+| Guia de Remessa | 0 | vazio | 0 | 0 |
+| Fatura Recibo | 1 | N/Factura | 0 | 0 |
+| Nota de Crédito | 57 | N/Nt. Crédito | 0 | 0 |
+| Fatura Proforma | 0 | vazio | 0 | 0 |
+| Fatura Simplificada | 1 | N/Factura | 0 | 0 |
+| Orçamento | 9 | vazio | 0 | 1 |
+| Nota de Débito | 2 | N/Nt. Débito | 0 | 1 |
+| N/C Adiantamento | 0 | vazio | 0 | 0 |
+| Consulta de Mesa | 0 | vazio | 0 | 0 |
+
+**Nota de leitura:** a coluna cmmcc é o código de movimento de C/C de multi-pagamento; a descrição da Enciclopédia confirma essa finalidade. O valor 1 no Orçamento e na Nota de Débito é apenas o valor recebido e carece de explicação funcional, pois a flag lancacc desses documentos não tem o mesmo valor (Orçamento 0; Nota de Débito 1). Não inferir que cmmcc seja usado sem um percurso de multi-pagamento.
+
+Os códigos cmcc e respectivas descrições são passados pelo trigger para movimentos CC em ramos específicos. A Enciclopédia explica que os códigos de Conta-Corrente classificam movimentos de débito/crédito e que a disponibilidade para regularizações é uma propriedade do próprio código. Não recebemos, contudo, o registo integral do catálogo de códigos CC; por isso não se conclui, apenas pelo número, a natureza débito/crédito de cada código.
+
+### 17.2 Stock
+
+| Documento | lancasl | cmsl | cmsv | cmsvn |
+|---|---:|---:|---:|---|
+| Fatura | 1 | 75 | 0 | vazio |
+| Guia de Remessa | 0 | 0 | 0 | vazio |
+| Fatura Recibo | 1 | 76 | 0 | vazio |
+| Nota de Crédito | 1 | 77 | 4 | Entrada p/ Devolução |
+| Fatura Proforma | 0 | 0 | 0 | vazio |
+| Fatura Simplificada | 1 | 76 | 0 | vazio |
+| Orçamento | 0 | 0 | 0 | vazio |
+| Nota de Débito | 0 | 78 | 0 | vazio |
+| N/C Adiantamento | 0 | 0 | 0 | vazio |
+| Consulta de Mesa | 0 | 0 | 0 | vazio |
+
+A Enciclopédia descreve cmsl como o código de movimento de stock e cmsv como o código de movimento em valor de stocks para notas de crédito. O trigger de FI usa cmsl/cmsln para criar SL e, no ramo especial de SV, usa cmsv/cmsvn (tr_fi_insert, linhas 20437 e 20448–20463).
+
+A Enciclopédia dos Códigos de Movimentação de Stocks indica a convenção numérica 1–49 para entradas e 50–99 para saídas, com a ressalva de que o código 50 não é permitido. Os códigos cmsl recebidos (75, 76, 77 e 78) pertencem, portanto, à gama documental de códigos de saída. **Não se deve deduzir o sentido líquido do movimento apenas deste intervalo**, porque o trigger também ajusta o sinal da quantidade em documentos do tipo 3 e a semântica final depende do código configurado e da operação. O registo do catálogo desses códigos não foi fornecido.
+
+No caso da Nota de Crédito, cmsv=4 e cmsvn="Entrada p/ Devolução" são os valores recebidos para o movimento em valor SV. Não confundir este código com cmsl=77, que é o código usado no movimento SL.
+
+### 17.3 Tesouraria
+
+O valor recebido para olcodigo é "Caixa" nos documentos 1, 3, 4, 7, 8, 9, 10, 11 e 12; no documento 2 (Guia de Remessa) o campo foi fornecido vazio. O trigger usa TD.olcodigo para criar OL e associa o código ao grupo/subgrupo da tabela OC (tr_ft_insert, linhas 10281 e 10297–10299).
+
+A Enciclopédia descreve os códigos de tesouraria como classificações configuráveis pelo utilizador, com grupo, subgrupo e tipo (Recebimentos/Pagamentos). O texto recebido não inclui o registo da tabela OC para o código "Caixa"; por isso não se afirma se, nesta base, está classificado como recebimento, pagamento, exploração ou extraexploração.
+
+### 17.4 Campos que continuam sem interpretação
+
+- **tipomov:** foram recebidos valores diferentes entre documentos, mas não há ocorrência literal no script de triggers. A função permanece por apurar na aplicação ou em documentação específica.
+- **refarm:** o valor R10001 aparece em vários registos, mas não foi encontrado no script. Não atribuir significado sem consultar a definição do campo ou o código aplicacional.
+- **armazem:** o valor recebido não explica, por si só, como é preenchido FI.armazem; os triggers apenas confirmam a transferência do valor de FI para SL/SV.
+- **olcodigo:** o texto "Caixa" identifica o código configurado, mas a classificação efectiva requer o registo OC correspondente.
+- **cmcc/cmmcc:** os códigos foram recebidos, mas falta o catálogo CC para confirmar propriedades de débito/crédito e disponibilidade para regularização.
+
+### 17.5 Próximo passo
+
+Para fechar a matriz sem inferências, falta obter apenas os registos de catálogo referenciados pelos códigos presentes nesta configuração:
+1. Códigos de movimentos de stock: 75, 76, 77, 78 e 4, incluindo descrição, entrada/saída, actualização de preço de custo ponderado e último preço de custo.
+2. Códigos de Conta-Corrente: 1, 2, 9 e 57, incluindo descrição, débito/crédito e disponibilidade para regularizações.
+3. Código de tesouraria "Caixa": grupo, subgrupo e tipo Recebimento/Pagamento.
+4. Definição física e/ou documentação aplicacional dos campos tipomov e refarm.
+
+Até esses registos serem consultados, a matriz apresenta códigos configurados e evidência de utilização no trigger, mas não uma explicação completa da semântica de cada código.
