@@ -300,6 +300,30 @@ Outros estudos anteriores, como BRULE, ecrãs personalizados e grelhas ocultas, 
 
 A IA não é pré-requisito para esta capacidade nem substitui validação. A primeira fundação deve ser um conhecimento estruturado, pesquisável, rastreável e útil sem IA.
 
+### Metodologia obrigatória de investigação — três fontes
+
+A experiência inicial de PHC Standard deve cruzar três fontes complementares. A investigação de uma tabela, começando pela FT, não se limita à consulta directa da base de dados:
+
+1. **Base de dados PHC (CS Default):** consultar estrutura física, campos e metadados PHC disponíveis, relações declaradas, triggers SQL e restantes objectos existentes que ajudem a explicar o comportamento. Registar as consultas, objectos e resultados relevantes.
+2. **Ficheiro existente de triggers encriptados:** pesquisar o ficheiro de triggers que já está disponível no projecto/contexto de trabalho. Utilizar apenas o conteúdo que esteja efectivamente acessível através do processo de leitura ou desencriptação disponível. Registar o identificador/localização do ficheiro, o trigger e a referência concreta encontrada. Se o conteúdo não puder ser lido ou desencriptado, registar essa limitação; não inferir o seu conteúdo.
+3. **Enciclopédia PHC:** pesquisar a documentação relevante para a tabela, campos, funcionalidade, regras ou processo em análise. Registar artigo/entrada, título, URL ou outra localização, versão/data quando disponíveis e o excerto ou conceito que suporta a descoberta.
+
+#### Regras de cruzamento e proveniência
+
+- Cada evidência deve identificar a fonte: base de dados, ficheiro de triggers ou Enciclopédia PHC. Sempre que possível, guardar referência precisa ao objecto/consulta, ficheiro/trigger ou artigo/secção.
+- Não fundir as três fontes numa explicação sem rastreabilidade. A conclusão deve permitir perceber que parte foi observada na CS Default, que parte resulta de código de trigger e que parte é explicada pela documentação PHC.
+- Se as fontes concordarem, registar a corroboração com as referências independentes. Se divergirem, registar a divergência e deixá-la por resolver até existir evidência suficiente.
+- A Enciclopédia PHC fornece evidência documental sobre o produto, mas não prova, por si só, que determinado comportamento ocorre na CS Default analisada.
+- Uma instrução encontrada num trigger pode demonstrar comportamento técnico, mas não prova automaticamente a intenção funcional nem a causalidade completa do processo.
+- Manter a distinção D-024 entre facto observado, relação identificada, hipótese funcional e conclusão validada. Toda a conclusão deve indicar âmbito, limitações e evidências que a sustentam.
+- A pesquisa deve começar pelo objecto em investigação e expandir-se apenas para dependências relevantes, actualizando o índice e os documentos especializados sem duplicar objectos ou perder referências anteriores.
+
+#### Sequência inicial
+
+A primeira fase de descoberta funcional concentra-se no PHC Standard, usando a CS Default como referência concreta e identificada. Só depois de consolidada e avaliada essa base se avança para capturas de instalações de clientes e personalizações, mantendo PHC Standard Knowledge e Installation Knowledge separados. A CS Default não é tratada como definição universal de todas as versões, builds ou módulos.
+
+Esta metodologia define como conduzir a experiência com Cursor; não autoriza alterações à base de dados, ao Scanner, aos collectors, às queries, aos artefactos originais, aos contratos executáveis ou à persistência central. A organização física do conhecimento (índice global e documentos especializados) permanece uma proposta a validar com a investigação real da FT.
+
 ### Implicações e limites
 
 - As decisões futuras sobre Scanner, modelo de conhecimento e Portal devem considerar se preservam as fundações necessárias à descoberta e explicação funcional.
