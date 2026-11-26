@@ -359,3 +359,24 @@ Ao continuar:
 - Nenhuma query executada na base de dados nesta sessão.
 - Nenhum comportamento validado em runtime.
 - Próximo passo: revisão da fonte SQL e confirmação de transferências.
+
+
+## 16. Continuação — stock por grelha (SX/SXX), 26-11-2026
+
+Foi criada uma investigação técnica específica em:
+
+`docs/audits/investigacao-tecnica-stock-grelhas-sx-sxx-2026-11-26.md`
+
+Resumo do estado:
+- `SX` é fonte de saldo por artigo/armazém/cor/tamanho na view `V_WS_STKARTIGOS_GRELHAS`; a view sem grelhas consulta `SA`.
+- `SL` transporta cor e tamanho nos circuitos analisados.
+- Os triggers `tr_sl_insert`, `tr_sl_update` e `tr_sl_delete` analisados escrevem em `ST`/`SA`, mas não demonstram escrita de saldos em `SX` ou `SXX`.
+- Os triggers `tr_sgc_*` e `tr_sgt_*` encontrados alteram/eliminam referências de cor/tamanho em SX; não foi demonstrado que actualizem `SX.stock`.
+- `SXX` continua apenas parcialmente identificada; não foi demonstrada sincronização SX→SXX.
+- `usp_stinvclc` calcula quantidades/custos no circuito analisado, mas não contém referências a SX/SXX ou STIC/STIL; não foi demonstrada como rotina de lançamento de inventário.
+- `ST.textteis` permanece uma pista por validar; não foi demonstrado que controle a manutenção de SX.
+- O mecanismo que mantém `SX.stock` continua por localizar.
+
+A investigação é estática. Não houve testes na instalação, alterações a dados PHC nem alterações a código/contratos do produto. Para a evidência, limitações e plano de continuação completos, consultar o documento específico acima.
+
+**Regra de continuidade:** não assumir que SX/SXX são actualizadas pelos triggers SL nem que SXX é uma agregação de SX. Continuar a procurar definições SQL adicionais, Schema Snapshot, rotinas de aplicação e documentação de recálculo de grelhas.
