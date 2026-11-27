@@ -119,3 +119,66 @@ A consolidação só será considerada concluída quando:
 **Feito:** leitura da árvore actual de `main`; identificação das fontes brutas, dos seis relatórios de auditoria, da documentação de camadas de conhecimento e da fixture/modelos de snapshot do Scanner; criação de branch isolada para a consolidação.
 
 **Ainda não feito:** extração integral da conversa histórica, análise exaustiva do SQL, cruzamento completo com a Enciclopédia e construção final das matrizes. Não declarar estes trabalhos concluídos nesta fase.
+
+
+## 10. Segunda passagem — recuperação do histórico e reconciliação das fontes (27-11-2026)
+
+### 10.1 Exportação histórica percorrida
+
+A exportação `analisar-base-phc-2026-11.txt` foi recuperada integralmente nesta passagem: 415 625 caracteres, organizados em 338 páginas. A leitura confirma que o histórico abrange muito mais do que a investigação de stock actualmente em curso: inclui Scanner, dicionário PHC, REL/DTL, inventário estrutural, FT/FI/TD, tesouraria, movimentos de stock, dossiers e outros circuitos.
+
+A exportação é material de recuperação e navegação, não fonte normativa. As conclusões recuperadas têm de ser confirmadas contra relatórios, código e capturas identificáveis.
+
+### 10.2 Evidência REL/DTL recuperada do histórico
+
+A auditoria histórica da base `interh` regista:
+- `dbo.rel`: 260 registos;
+- `dbo.dtl`: 459 registos;
+- 719 declarações persistidas pelo Scanner;
+- 253 grupos de correspondência Exact;
+- 211 registos sem correspondência;
+- 0 relações derivadas de FK SQL nessa recolha.
+
+A investigação também documenta que `rel.tori` / `rel.tdes` identificam tabelas de origem/destino e `rel.tliga` preserva a expressão de ligação. REL/DTL são factos declarados pelo PHC; FK SQL é outra fonte; interpretação/parsing da expressão é uma camada derivada. Estes números pertencem à base `interh` e à execução histórica descrita, não à captura `CSDefault202603`.
+
+### 10.3 Confirmação no código actual do Scanner
+
+Foram consultados os ficheiros actuais:
+- `PhcKnowledgeScanner/src/PhcKnowledgeScanner.Collectors/Phc/PhcDeclaredRelationsCollector.cs`: recolhe `dbo.rel` e `dbo.dtl) como factos e não faz parsing das expressões durante a recolha.
+- `PhcKnowledgeScanner/src/PhcKnowledgeScanner.Analysis/DeclaredRelations/DeclaredRelationInterpretationService.cs`: interpreta expressões numa camada separada e regista estado de parsing, confiança e diagnósticos.
+- `PhcKnowledgeScanner/docs/decisions/0008-relational-knowledge-projection-v1.md`: define a projecção de evidências FK, REL, DTL e interpretação sem as confundir.
+- `PhcKnowledgeScanner/docs/database-schema-snapshot.md` e ADR 0014: descrevem snapshot estrutural via catálogos `sys.*`, incluindo tabelas, colunas, PK/FK, índices, views, triggers, procedures, functions, UDT e synonyms, com modo seguro por omissão.
+
+Isto confirma que a arquitectura do Scanner já distingue recolha de factos, interpretação e projecção de conhecimento. A documentação da consolidação PHC deve preservar a mesma separação.
+
+### 10.4 Reconciliação crítica dos ficheiros de triggers
+
+Foi detectada uma discrepância que impede tratar os ficheiros de triggers como uma única fonte:
+- O relatório FT/FI/TD declara ter analisado um script de 1 215 789 bytes, 21 713 linhas, 552 declarações `CREATE TRIGGER`, SHA-256 `ca947c507249a19f4b848ed05a03f321294a8ef81eff223f3cd1b98d0b4d6c08`.
+- O ficheiro actualmente acessível em `PhcKnowledgeScanner/triggers phc.sql` tem 957 619 caracteres no conteúdo devolvido e 353 declarações/nome únicos `CREATE TRIGGER`; o blob Git tem SHA `4ab635747718a8bee1e4243a0a9fcbb7d3ae0f39`.
+- O caminho `docs/sources/triggers phc.sql` também existe na árvore, mas a leitura através do conector devolveu conteúdo vazio; não foi possível confirmar que seja o mesmo artefacto.
+
+**Conclusão:** há pelo menos duas proveniências/versões a reconciliar. Não usar o ficheiro de 353 triggers para reproduzir automaticamente as conclusões obtidas com o script de 552 triggers. Antes de qualquer análise exaustiva, identificar a cópia exacta usada em cada relatório, comparar hashes e determinar se houve filtragem, truncagem ou diferença de versão.
+
+### 10.5 Aprofundamento já persistido de FT/FI/TD e tesouraria
+
+O relatório `investigacao-funcional-csdefault-ft-fi-td-2026-11-25.md` contém 19 secções principais e várias matrizes detalhadas. Inclui:
+- proveniência da captura `CSDefault202603` (17 182 objectos, 8 294 tabelas, 8 268 PK, 564 triggers, 36 procedures e 921 relações PHC declaradas: 295 REL + 626 DTL);
+- relações FT→CL/FT2/FT3/TD, FI→FT/FI2/BI/SL/TD e TD→TD2;
+- triggers FT/FI/TD, incluindo INSERT/UPDATE/DELETE e a distinção entre anulação lógica e eliminação física;
+- integração de stock e valorização ao nível das linhas FI;
+- distinção entre configuração TD e dados de tesouraria complementares;
+- código de integração de tesouraria observado (`R10001`) e circuitos FT→OL, FT→CH e CH→CHL;
+- limites empíricos: as tabelas transaccionais consultadas não continham documentos para ensaio, pelo que a análise é estática e de configuração, não validação de execução com documentos reais.
+
+O relatório de recuperação de VO/dossiers internos confirma, por sua vez, que FT/FI/TD e OL/CH/CHL estão documentados, mas que a investigação integral de VO e dossiers internos não está comprovadamente persistida. Essa lacuna deve permanecer explícita.
+
+### 10.6 Próxima acção concreta
+
+1. Comparar e identificar os dois artefactos de triggers e recuperar a cópia exacta de 1 215 789 bytes / 552 triggers usada na análise FT/FI/TD.
+2. Extrair da exportação histórica um índice por página/tema com referências a tabelas, campos, relações, triggers, circuitos e decisões.
+3. Criar uma matriz mestre de objectos e dependências, começando por FT/FI/TD, stock e tesouraria, com origem e estado de evidência.
+4. Recuperar as fontes originais do dicionário/Enciclopédia e as consultas read-only, distinguindo o que foi observado em `interh` do que foi observado em `CSDefault202603`.
+5. Só depois consolidar os circuitos de produção, transferências, SAL/SX, VO e dossiers internos.
+
+**Estado desta passagem:** histórico de 338 páginas recuperado; REL/DTL e arquitectura actual do Scanner cruzados; discrepância material entre cópias do script de triggers detectada e registada. A auditoria global continua aberta.
