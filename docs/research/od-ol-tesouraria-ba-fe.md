@@ -168,7 +168,7 @@ flowchart TD
     OL -->|local = C| FE[Saldos diários FE]
 ```
 
-**Importante:** este diagrama representa relações e efeitos demonstrados pelos triggers analisados. Ainda não demonstra uma transformação genérica e automática `OD → OL`. A passagem de previsão a movimento efectivo pode ocorrer por operações de utilizador, rotinas PHC ou triggers específicos, que ainda têm de ser localizados.
+**Importante:** este diagrama representa relações e efeitos demonstrados pelos triggers analisados. Não representa uma transformação genérica `OD → OL`: a análise transversal posterior não encontrou triggers que leiam OD para criar OL. Os movimentos OL são gerados directamente por documentos/operações de origem.
 
 ## 7. Estado das validações
 
@@ -181,7 +181,7 @@ flowchart TD
 | Operações multi-linha em OL | Requerem auditoria de código/testes |
 | Regras de fecho diário FE | Por localizar |
 | Reconciliação bancária BA | Fluxo completo por investigar |
-| Mecanismo concreto de passagem OD → OL | Por localizar |
+| Conversão genérica OD → OL em triggers | Não identificada; evidência aponta para geração paralela a partir da operação/documento |
 | Validação em execução com documentos reais | Pendente |
 
 ## 8. Próximos passos da investigação
@@ -191,11 +191,11 @@ A investigação deve prosseguir sem voltar a pedir queries de estrutura quando 
 Ordem recomendada:
 
 1. Cruzar `DIC`, `REL` e Enciclopédia PHC para confirmar semântica e relações de OD, OL, BA e FE.
-2. Localizar no conjunto completo de triggers, procedures e código PHC todas as escritas em `OL`, especialmente operações que também leiam ou eliminem `OD`.
+2. Continuar a análise das rotinas/código PHC que iniciam as operações de liquidação; nos triggers SQL analisados, OD não é a fonte directa de OL.
 3. Investigar operações de utilizador/rotinas PHC que concretizam previsões em recebimentos e pagamentos.
 4. Localizar as regras de fecho de FE e o circuito de reconciliação de BA.
 5. Auditar os triggers OL para operações multi-linha, com atenção a datas diferentes.
-6. Só depois desenhar o fluxo integral Documento → Conta Corrente / Título → OD → OL → BA / FE, distinguindo caminhos directos e alternativos.
+6. Desenhar o fluxo integral por circuitos paralelos: Documento / título → OD (previsão) e Documento / operação de liquidação → OL (movimento efectivo) → BA / FE.
 
 ## 9. Regra metodológica para esta investigação
 
