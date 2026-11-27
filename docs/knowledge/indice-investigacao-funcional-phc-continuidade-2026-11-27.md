@@ -1,237 +1,261 @@
-# PHC Gestão — índice de investigação funcional e continuidade
+# PHC Gestão — índice de conhecimento funcional e plano de continuidade
 
 **Data de consolidação:** 27-11-2026  
-**Base de referência:** `CSDefault202603`, salvo indicação em contrário  
-**Finalidade:** organizar as investigações funcionais realizadas nos últimos dias e permitir a sua continuação sem depender de um único histórico de conversa.  
-**Estado:** índice de continuidade; não substitui os relatórios técnicos de cada circuito.
+**Base principal:** `CSDefault202603`, salvo indicação em contrário  
+**Finalidade:** ponto único de entrada para o conhecimento funcional PHC documentado nos últimos dias e preparação das próximas investigações.  
+**Estado:** índice de continuidade; os relatórios específicos continuam a ser as fontes de detalhe.
 
-## 1. Regras de leitura e evidência
+## 1. Princípios de leitura e método
 
-Este documento é um mapa de navegação e estado. Não transforma notas incompletas em conclusões técnicas.
+Este índice organiza o conhecimento; não converte notas incompletas em conclusões.
 
-Manter sempre separadas:
+Em cada investigação, separar sempre:
 
-1. **Estrutura/documentação:** Dic, Rel, Enciclopédia e documentação oficial.
+1. **Estrutura/documentação:** Dic, Rel (REL/DTL), Enciclopédia e documentação oficial.
 2. **Código:** comportamento expresso em triggers, procedures, funções, views e código aplicacional.
-3. **Dados da instalação:** resultados concretos de consultas read-only à CSDefault202603.
-4. **Interpretação funcional:** explicação que resulta do cruzamento das fontes.
+3. **Dados da instalação:** resultados concretos de consultas read-only, com base e contexto identificados.
+4. **Interpretação funcional:** explicação resultante do cruzamento das fontes.
 5. **Por confirmar:** hipóteses, lacunas e resultados ainda não recuperados.
 
-As relações PHC declaradas (REL/DTL) não são foreign keys SQL. A ausência de uma escrita num ficheiro de triggers não prova que a aplicação PHC ou outro processo não a execute. A análise estática não equivale a validação em runtime.
+### Regras metodológicas obrigatórias
 
-**Metodologia acordada:** consultar primeiro Dic, Rel, triggers, Enciclopédia e fontes públicas verificáveis. Pedir consultas SQL apenas para responder a dúvidas concretas sobre dados, configuração ou comportamento físico da instalação; não pedir novamente estrutura que já possa ser obtida dos recursos existentes.
+- Consultar primeiro Dic, Rel, triggers, Enciclopédia e fontes públicas oficiais verificáveis.
+- O utilizador já disponibilizou Dic e Rel; não voltar a pedir queries genéricas para redescobrir campos ou relações declaradas.
+- Pedir consultas SQL apenas para responder a dúvidas concretas que não possam ser resolvidas documentalmente — por exemplo, confirmar dados, configuração ou comportamento físico de uma instalação.
+- REL/DTL não são foreign keys SQL. A existência de uma relação declarada não prova que existam registos relacionados.
+- A ausência de uma escrita num ficheiro de triggers não prova que a aplicação PHC ou outro objecto/processo não a execute.
+- Código standard analisado não prova que a instalação tenha exactamente a mesma versão de trigger.
+- Contagens zero limitam a validação empírica; não provam que a tabela ou funcionalidade seja inútil.
+- Não generalizar comportamentos de uma base, versão ou módulo para todo o PHC.
+- Não alterar dados PHC nem executar testes destrutivos. A investigação documental é read-only.
+- Não versionar ZIPs de capturas ou da Enciclopédia, nem conteúdo proprietário de clientes.
 
-## 2. Estado do GitHub em 27-11-2026
+## 2. Estado do conhecimento no GitHub
 
-A `main` consultada está no commit:
+A última `main` consultada está no commit:
 
 `3e4c2b980531abb63006c0427d5d19950bbac470` — `docs(readme): link VO and internal dossier recovery audit`.
 
-### 2.1 Conteúdo já integrado na main
+### 2.1 Já integrado na main
 
-| Área | Documento | Estado |
+| Domínio | Documento | Conclusão/limite |
 |---|---|---|
-| Tesouraria de faturação e cheques | [Investigação funcional CSDefault — FT, FI e TD](../audits/investigacao-funcional-csdefault-ft-fi-td-2026-11-25.md) | Integrado; análise estática e configuração consultada |
-| Lacunas de VO e dossiers internos | [Recuperação da investigação funcional — VO e dossiers internos](../audits/recuperacao-investigacao-funcional-vo-dossiers-2026-11-25.md) | Integrado; regista explicitamente o que ainda não estava demonstrado |
+| FT / FI / TD / OL / CH / CHL | [Investigação funcional FT/FI/TD](../audits/investigacao-funcional-csdefault-ft-fi-td-2026-11-25.md) | Leitura estática dos triggers standard e configuração consultada. Não houve validação transaccional com documentos reais. |
+| VO / dossiers internos | [Auditoria de recuperação VO e dossiers](../audits/recuperacao-investigacao-funcional-vo-dossiers-2026-11-25.md) | Confirma a lacuna documental: não existe evidência recuperável suficiente para fechar VO nem o circuito integral dos dossiers internos. |
 
-O relatório FT/FI/TD fecha uma passagem de leitura estática/configuracional do circuito FT → OL e dos ramos de cheques CH/CHL. Não declara validação transaccional: as tabelas transaccionais relevantes estavam sem registos na consulta reportada e os triggers instalados não puderam ser comparados com o texto do script standard.
+### 2.2 Documentação em PRs — ainda não integrada
 
-### 2.2 Trabalho documentado em pull requests abertos
+| PR | Área | Conteúdo | Estado observado em 27-11-2026 |
+|---|---|---|---|
+| [#32 — dossiers, stock cativo e grafo](https://github.com/Jhouinho/PhcKnowledge/pull/32) | Dossiers / BI / BO / inventários / pré-cativação / grafo | Relatórios funcionais e grafo revisto funcional + estrutural | Aberto, não merged |
+| [#34 — stocks, transferências e produção](https://github.com/Jhouinho/PhcKnowledge/pull/34) | BI / FI / FN / SL / ST / SA / SX / SXX | Handoff funcional e investigação técnica SX/SXX | Aberto, não merged |
+| [#35 — investigação inicial BO](https://github.com/Jhouinho/PhcKnowledge/pull/35) | BO / BO2 / TS / TS2 / BOTXT | Primeira passagem de triggers e validações | Aberto, não merged |
+| [#36 — índice de continuidade](https://github.com/Jhouinho/PhcKnowledge/pull/36) | Governação do conhecimento | Este índice e referência no README | Aberto, não merged |
 
-| PR | Conteúdo | Estado observado |
-|---|---|---|
-| [#34 — Stocks, transferências, produção e SX/SXX](https://github.com/Jhouinho/PhcKnowledge/pull/34) | Handoff funcional de BI/FI/FN, SL, ST/SA, transferências, produção, reservas e investigação de grelhas SX/SXX | Aberto, não merged |
-| [#35 — Investigação inicial de BO](https://github.com/Jhouinho/PhcKnowledge/pull/35) | Primeira passagem de BO, validações de assinatura/importação e limpeza de BOTXT | Aberto, não merged |
+Os PRs são trabalho documental separado. Não declarar os respectivos documentos como integrados na main até ocorrer merge. A actualização do grafo neste PR #32 não integra automaticamente os conteúdos dos PRs #34 e #35.
 
-O PR #34 contém:
-- `docs/knowledge/phc-stock-production-investigation-handoff-2026-11-25.md`;
-- `docs/audits/investigacao-tecnica-stock-grelhas-sx-sxx-2026-11-26.md`.
+## 3. Mapa consolidado por domínio
 
-O PR #35 contém:
-- `docs/audits/investigacao-funcional-csdefault-bo-2026-11-26.md`;
-- actualização do README para indexar o relatório BO.
-
-O PR #33 foi fechado sem merge. O PR #34 é a versão posterior da consolidação de stocks e acrescenta a investigação SX/SXX; não tratar o PR #33 como conteúdo integrado na main.
-
-**Regra de estado:** os documentos dos PRs #34 e #35 são conteúdo disponível para revisão, mas não fazem parte da main enquanto os PRs não forem integrados. Não declarar esses trabalhos publicados na main.
-
-## 3. Mapa dos circuitos investigados
-
-### 3.1 Tesouraria — FT/FI/TD, OL e cheques
+### 3.1 Tesouraria de faturação — FT / FI / TD / OL
 
 **Fonte canónica:** relatório FT/FI/TD integrado na main.
 
-Elementos registados:
-- `TD.lancaol` condiciona o ramo de criação de OL a partir de FT.
-- O ramo de criação de OL depende de correspondências em TD, FT2, FT3 e OC.
-- A criação de CH a partir de FT é um ramo distinto, com condições próprias.
-- A aceitação inicial do cheque cria histórico CHL (`cm=1`) e não cria, nesse ramo, um segundo OL.
-- Outros movimentos CHL (`cm=3`) podem originar OL sob condições específicas; a semântica funcional geral de `cm=3` permanece por confirmar.
-- Na CSDefault202603, a configuração consultada para Fatura-Recibo e Fatura Simplificada aponta para `olcodigo=R10001`, local `Caixa`, moeda EURO e contado 0. O registo OC identifica R10001 como Recebimentos de Clientes.
-- A análise do script não demonstrou reconciliação automática dos OL existentes quando se altera a configuração TD.
+Conclusões documentadas:
+- FT é o cabeçalho de faturação; FI contém as linhas; TD configura o comportamento por tipo de documento.
+- O ramo FT → OL depende de `TD.lancaol=1` e das correspondências necessárias em TD, FT2, FT3 e OC.
+- A criação de CH a partir de FT é um ramo independente, com condições próprias.
+- Na configuração consultada de `CSDefault202603`, Fatura-Recibo (`ndoc=3`) e Fatura Simplificada (`ndoc=8`) usam `olcodigo=R10001`, local Caixa, moeda EURO e contado 0. OC classifica R10001 como Recebimentos de Clientes.
+- A aceitação inicial de CH gera CHL (`cm=1`) e não cria, nesse ramo, um segundo OL.
+- Alguns ramos CHL (`cm=3`) podem criar OL sob condições específicas; não generalizar a semântica de cm=3.
+- O código standard analisado não demonstra reconciliação automática dos OL existentes quando se altera a configuração TD.
+- Foi observada uma diferença no cálculo de OL.entr/eentr entre INSERT inicial e UPDATE/recuperação; não foi classificada como defeito.
 
-**Limites:** leitura de código standard e configuração comunicada pelo utilizador; não houve validação transaccional com documentos reais nem comparação integral com os triggers instalados.
+Limites:
+- FT, FT2, FT3, OL e CH não tinham registos na consulta reportada.
+- Os triggers instalados estavam encriptados e não foram comparados integralmente com o script standard.
+- Conclusões fechadas apenas para leitura estática/configuracional, não para validação transaccional.
 
-### 3.2 Tesouraria — OD, BA e FE
+### 3.2 Tesouraria — OD / OL / BA / FE
 
-**Estado:** investigação recuperada parcialmente do histórico de conversa; ainda não existe relatório correspondente na main nem nos PRs recentes aqui identificados.
+**Estado:** conhecimento recuperado parcialmente do histórico; falta relatório técnico completo e confirmação das fontes originais.
 
-A informação disponível nesta consolidação é:
-
-| Tabela | Leitura actual | Limite |
+| Tabela | Conhecimento actual | Lacuna principal |
 |---|---|---|
-| `OD` | Movimentos previstos de tesouraria | O mecanismo concreto de passagem de OD para OL não está identificado |
-| `OL` | Movimentos efectivos de tesouraria | A origem pode variar conforme o circuito; não assumir que todos os OL vêm de OD |
-| `BA` | Estrutura auxiliar associada a movimentos OL e a operações bancárias/reconciliação | Não é uma réplica integral de OL |
-| `FE` | Estrutura de saldos diários de caixa | O efeito operacional do fecho e as regras de bloqueio continuam por esclarecer |
+| OD | Movimentos previstos | Mecanismo concreto OD → OL não identificado |
+| OL | Movimentos efectivos de tesouraria | Não assumir que todos os OL vêm de OD |
+| BA | Estrutura auxiliar associada a movimentos OL e reconciliação | Sincronização observada é parcial; ciclo de reconciliação por fechar |
+| FE | Saldos diários de caixa | Regra operacional de bloqueio em dias fechados por esclarecer |
 
-#### BA — observações recuperadas
+BA:
+- Foram identificados campos como `extracto`, `reco`, `marcada`, `brstamp`, `olcodigo` e `olstamp`.
+- O trigger OL analisado sincroniza BA em condições como `contado > 0`, mas não actualiza todos os campos.
+- BA não é réplica integral de OL.
 
-Foram identificados na estrutura os campos `extracto`, `reco`, `marcada`, `brstamp`, `olcodigo` e `olstamp`, e índices para a chave própria, ligação a OL, extracto, contado e data.
+FE:
+- Estrutura diária com `data`, `festamp`, `saldof`, `esaldof`, `fechado` e `quemfechou`.
+- O trigger OL analisado actualiza FE para movimentos com `local='C'`.
+- Falta localizar onde o PHC impede ou permite alterações em dias fechados.
 
-A leitura do trigger `tr_ol_*` disponível na conversa indica sincronização de BA com OL sob a condição `contado > 0`. O trigger analisado não preenche nem sincroniza todas as colunas BA, incluindo `olcodigo`, `extracto`, `reco`, `brstamp` e `marcada`.
+OD:
+- As notas recuperadas divergem quanto às origens: uma lista menciona CC, FC, LM, LO e VY; outra menciona CC, FC, LR, LP, VY e CHF.
+- Não consolidar qualquer lista até rever Dic/Rel, triggers e Enciclopédia.
+- A ausência de dependências em `sys.sql_expression_dependencies` não excluiria código aplicacional, SQL dinâmico ou rotinas não detectadas.
 
-**Não concluir:** que os triggers OL implementam todo o processo de reconciliação bancária, ou que BA seja uma cópia integral de OL.
+**Próxima pergunta central:** qual é o mecanismo concreto que transforma uma previsão OD num movimento OL?
 
-#### FE — observações recuperadas
+### 3.3 Dossiers internos — BO / BO2 / BI / BOTXT
 
-A estrutura analisada indica:
-- `data` como chave primária;
-- índice único em `festamp`;
-- campos `saldof` e `esaldof` para saldos;
-- campos `fechado` e `quemfechou` relacionados com o fecho;
-- registo organizado por dia, não por movimento.
+**Fonte:** primeira passagem no PR #35; grafo e investigação de dossiers no PR #32.
 
-A leitura do trigger `tr_ol_*` indica actualização dos saldos FE a partir de movimentos OL com `local = 'C'`.
+Conclusões iniciais:
+- A contagem comunicada de `dbo.BO` em `CSDefault202603` foi zero.
+- Foram identificados `tr_bo_insert`, `tr_bo_update` e `tr_bo_delete`.
+- INSERT/UPDATE incluem validações relacionadas com assinatura digital/documentos importados, envolvendo BO, BO2, TS e TS2.
+- Campos observados na leitura inicial: `TS2.assinaimp`, `TS2.docsimport`, `TS2.assinadoc`, `BO2.assinatura` e `BO.obrano`.
+- `tr_bo_delete` limpa BOTXT por `bostamp`.
 
-**Por confirmar:** se e onde o PHC impede alterações a movimentos de caixa de dias fechados, e se o controlo é feito noutros triggers, procedures ou código aplicacional.
+Limites:
+- A expressão integral das validações e as mensagens devem ser reconfirmadas no script.
+- O circuito funcional de BO não está fechado.
+- Não está demonstrado que BO origine BI, SL, SV, OL ou outros documentos.
+- A contagem zero limita a observação de dados, mas não prova inutilização da tabela.
 
-#### OD — origens e passagem para OL por resolver
+Próxima abordagem: Dic → Rel → leitura integral dos três triggers → Enciclopédia → apenas depois consultas específicas, se necessárias.
 
-Os apontamentos recuperados não são consistentes quanto ao inventário das origens de OD:
-- uma nota refere `CC`, `FC`, `LM`, `LO` e `VY`;
-- outra referência histórica menciona `CC`, `FC`, `LR`, `LP`, `VY` e `CHF`.
+### 3.4 Stock — BI / FI / FN / SL / ST / SA
 
-Não consolidar nenhuma das listas como inventário final até rever os triggers e as fontes originais.
-
-O ponto de investigação em aberto é identificar o mecanismo concreto que transforma uma previsão em OD num movimento efectivo em OL. Foram propostas consultas para:
-1. listar triggers directamente associados a OD;
-2. procurar triggers com dependências simultâneas de OD e OL.
-
-**Não há resultados dessas consultas registados no contexto recuperado.** A ausência de dependências em `sys.sql_expression_dependencies`, se ocorrer, não exclui código aplicacional, SQL dinâmico, procedures ou triggers sem dependências detectáveis.
-
-**Próximo passo:** rever Dic/Rel, triggers e Enciclopédia; confirmar a lista de origens; só depois pedir/executar consultas read-only dirigidas às lacunas concretas.
-
-### 3.3 Stocks — movimentos, saldos e reservas
-
-**Fonte de continuidade:** documento de handoff no PR #34.
+**Fonte:** handoff funcional no PR #34.
 
 Modelo de trabalho:
-- `SL`: movimentos de stock;
-- `ST`: informação base do artigo e acumulados globais;
-- `SA`: saldos por artigo/armazém;
-- reservas/cativações e quantidades auxiliares: compromissos ou estados quantitativos que não devem ser confundidos com movimentos físicos.
+- SL: movimentos de stock.
+- ST: ficha e acumulados globais do artigo.
+- SA: saldos por artigo/armazém.
+- Reservas/cativações: compromissos quantitativos, não movimentos físicos.
 
-Circuitos de origem identificados no SQL analisado:
-- BI pode originar SL, condicionado pela configuração do dossier em TS/TS2 e pelo estado da linha;
-- FI pode originar SL segundo `TD.lancasl` e códigos configurados;
-- FN pode originar SL segundo `CM1.folansl`;
-- a valorização SV é um circuito distinto, embora relacionado com SL.
+Origens identificadas no SQL analisado:
+- BI pode originar SL, condicionado por TS/TS2 e estado da linha.
+- FI pode originar SL segundo TD.lancasl e códigos configurados.
+- FN pode originar SL segundo CM1.folansl.
+- SV é um circuito de valorização distinto, embora relacionado com stock.
 
-Transferências BI:
-- a lógica analisada pode criar dois movimentos SL, um para o armazém de origem e outro para o de destino;
-- `SL.trfa` recebe tratamento específico nos acumulados;
-- os códigos e sentidos devem ser lidos em conjunto com CM2 e a configuração TS/TS2, não apenas pelo nome dos campos.
+Transferências:
+- A lógica BI analisada pode criar dois movimentos SL, um para o armazém de origem e outro para o destino.
+- `SL.trfa` tem tratamento próprio nos acumulados.
+- Interpretar os códigos em conjunto com CM2 e TS/TS2.
 
 Produção:
-- condições de produção influenciam a selecção do código de movimento;
-- a documentação Manufactor consultada dá contexto funcional, mas não pode ser generalizada automaticamente ao PHC Gestão/CS;
-- não está demonstrado o circuito completo de consumo de componentes e entrada de produto acabado;
-- as tabelas auxiliares OFC, OCI, OMI, OCP e OPT não devem ser classificadas apenas pelo nome.
+- Condições de produção influenciam o código de movimento.
+- A documentação Manufactor consultada é contexto específico e não deve ser generalizada ao PHC Gestão/CS.
+- O circuito completo de consumo de componentes e entrada de acabado não está demonstrado.
+- OFC, OCI, OMI, OCP e OPT não devem ser classificados apenas pelo nome.
 
-Reservas/cativações não são saídas físicas: procurar o movimento SL para demonstrar consumo/entrada física.
-
-### 3.4 Stocks por grelha — SX/SXX e inventário
+### 3.5 SX / SXX — stock por grelha
 
 **Fonte:** relatório técnico SX/SXX no PR #34.
 
-Elementos identificados:
-- a view `V_WS_STKARTIGOS_GRELHAS` consulta SX para apresentar saldo por artigo/armazém/cor/tamanho;
-- a view `V_WS_STKARTIGOS` consulta SA para stock por artigo/armazém;
-- os triggers SL analisados actualizam ST/SA, mas não demonstram escrita de saldos em SX/SXX;
-- os triggers SGC/SGT encontrados alteram/eliminam referências de cor/tamanho em SX, sem demonstrar cálculo de `SX.stock`;
-- STIC/STIL contêm dados do inventário físico, mas a rotina que transforma o inventário em movimentos e actualiza SX não foi localizada;
-- `usp_stinvclc` não foi demonstrada como responsável por SX/SXX;
-- SXX continua parcialmente identificada; não assumir que é agregação ou cópia de SX;
-- `ST.textteis` é uma pista cuja influência operacional permanece por demonstrar.
+Confirmado:
+- `V_WS_STKARTIGOS_GRELHAS` consulta SX e apresenta saldo por artigo/armazém/cor/tamanho.
+- `V_WS_STKARTIGOS` consulta SA.
+- Triggers SL analisados actualizam ST/SA, mas não demonstram escrita em SX/SXX.
+- SGC/SGT alteram ou eliminam referências de cor/tamanho em SX, sem demonstrar cálculo de `SX.stock`.
+- STIC/STIL contêm dados de inventário físico; rotina de lançamento para SL e actualização de SX não localizada.
+- `usp_stinvclc` não foi demonstrada como responsável por SX/SXX.
+- SXX é descrita em Rel como stock global por armazém/cor/tamanho, mas o papel operacional permanece por provar.
+- `ST.textteis` é uma pista; influência operacional por demonstrar.
 
-**Questão principal em aberto:** quem cria e mantém efectivamente as combinações e os saldos de SX, e qual o papel operacional de SXX?
+**Pergunta central:** quem cria as combinações e mantém efectivamente `SX.stock`, e qual é o papel operacional de SXX?
 
-### 3.5 Dossiers internos — BO
+### 3.6 Inventário físico — STIC / STIL
 
-**Fonte:** primeira passagem no PR #35.
+- STIC identifica o cabeçalho do inventário; STIL contém contagens e dimensões como referência, armazém, lote, cor e tamanho.
+- Foi observada a ligação de SL ao cabeçalho STIC através de `SL.sticstamp = STIC.sticstamp`.
+- Não está demonstrada uma relação directa entre cada linha STIL e um SL.
+- Falta localizar a rotina que transforma as contagens em movimentos e mantém os saldos de grelha.
 
-Elementos registados:
-- a contagem comunicada de `dbo.BO` na CSDefault202603 foi zero;
-- foram identificados no script `tr_bo_insert`, `tr_bo_update` e `tr_bo_delete`;
-- INSERT/UPDATE incluem validações relacionadas com assinatura digital/documentos importados, envolvendo BO, BO2, TS e TS2;
-- DELETE limpa registos BOTXT associados por `bostamp`.
+### 3.7 Pré-cativação — BIPRECAT
 
-**Limites:** o circuito BO não está fechado. A expressão completa da validação de assinatura/importação deve ser reconfirmada no script. Faltam o cruzamento integral com Dic/Rel e Enciclopédia, a leitura completa dos triggers e a identificação dos efeitos sobre BI, stock, tesouraria e dossiers relacionados. A contagem zero limita a validação empírica nesta captura, mas não prova inutilização da tabela.
+- BIPRECAT e os campos `biprecatstamp` e `bostamp` foram identificados.
+- O Monitor de Cativação constitui o processo funcional de referência.
+- A criação, associação e conversão técnica para BI/SA continuam por localizar.
+- Não confundir pré-cativo, cativo/reserva e saída física.
 
-## 4. Lacunas transversais e regras para evitar conclusões erradas
+### 3.8 VO — recuperação pendente
 
-1. **Script vs instalação:** o script standard legível não foi comparado integralmente com os triggers instalados, alguns dos quais estão encriptados.
-2. **Ausência de dados:** contagens zero em tabelas transaccionais impedem validar percursos reais; não provam ausência de funcionalidade.
-3. **Relações PHC:** REL/DTL são relações declaradas, não prova automática de FK SQL nem de existência de registos relacionados.
-4. **OD:** as listas de origens recuperadas divergem; não consolidar sem nova verificação.
-5. **BA:** sincronização parcial pelo trigger OL não prova o ciclo completo de reconciliação.
-6. **FE:** a existência de campos de fecho não demonstra, por si só, a regra de bloqueio de movimentos em dias fechados.
-7. **SX/SXX:** não atribuir a manutenção de SX aos triggers SL nem classificar SXX como totalização sem prova.
-8. **Produção:** não generalizar documentação Manufactor para PHC CS.
-9. **BO:** a primeira passagem não prova transformação de BO em BI nem efeitos em stock/tesouraria.
-10. **Autofacturação:** o caso observado é específico; não o generalizar a todos os documentos FN.
+O relatório de recuperação na main confirma que a análise de VO não ficou persistida com evidência suficiente. Não assumir que VO é sinónimo de BI nem que a análise de BI substitui a análise de VO.
 
-## 5. Sequência de continuação recomendada
+Para recuperar:
+1. obter as evidências originais da conversa/consultas;
+2. identificar tabela, campos, REL/DTL e stamps;
+3. rever triggers e operações;
+4. cruzar Enciclopédia e dados da instalação;
+5. produzir matriz de ciclo de vida apenas depois de confirmar as fontes.
 
-### Prioridade 1 — recuperar e fechar a investigação OD/BA/FE
+## 4. Grafo e modelo de relações
 
-1. Recuperar a conversa integral/exportada e preservar os resultados SQL originais.
-2. Rever Dic/Rel, Enciclopédia e triggers relativos a OD, OL, BA e FE.
-3. Confirmar o inventário de origens de OD e corrigir a divergência dos apontamentos.
-4. Identificar procedures, funções, views, triggers e código aplicacional que possam criar OL a partir de OD.
-5. Confirmar o papel de BA na reconciliação e o comportamento de FE em dias fechados.
-6. Só pedir consultas read-only específicas para as questões que não sejam resolvidas documentalmente.
+O grafo revisto está em [Grafo funcional PHC e relações estruturais observadas](../audits/grafos-phc-funcional-e-estrutural-2026-11-25.md), actualizado no PR #32.
 
-### Prioridade 2 — rever e integrar a investigação de stocks
+O documento mantém duas vistas:
+- **Funcional:** BO/BO2/BI, stock, reservas, inventário, grelhas e tesouraria.
+- **Estrutural:** apenas os predicados observados `BO.bostamp = BO2.bo2stamp`, `BI.bostamp = BO.bostamp`, `SL.bistamp = BI.bistamp`, `BI.obistamp` como referência à linha de origem, `SL.sticstamp = STIC.sticstamp` e a limpeza BOTXT por `bostamp`.
 
-1. Rever o PR #34 e confirmar as fontes/referências do handoff.
-2. Fechar transferências com TS/TS2, CM2, BI e SL.
-3. Continuar a procura da rotina que mantém SX.stock e esclarecer SXX.
-4. Separar consumo físico, reservas/cativações e valorização.
-5. Aprofundar produção apenas com fontes específicas da versão/módulo PHC em análise.
+O grafo não é ERD físico e não afirma FKs SQL. Relações funcionais e mecanismos pendentes estão identificados separadamente.
 
-### Prioridade 3 — aprofundar BO
+## 5. Prioridades para a próxima investigação
 
-1. Consultar Dic e Rel antes de novas queries de estrutura.
-2. Revalidar integralmente os triggers BO no ficheiro actual do repositório.
-3. Cruzar as validações de assinatura/importação com a Enciclopédia.
-4. Identificar, com evidência, os efeitos sobre linhas, stock, tesouraria e dossiers relacionados.
-5. Manter a investigação aberta até haver evidência suficiente.
+### Prioridade 1 — OD → OL / BA / FE
+1. Rever Dic e Rel de OD, OL, BA e FE.
+2. Localizar triggers, procedures, funções, views e referências na Enciclopédia.
+3. Confirmar as origens de OD e resolver a divergência das listas.
+4. Identificar a operação que cria/converte OD em OL.
+5. Fechar a sincronização BA e o comportamento de FE em dias fechados.
+6. Só depois pedir consultas read-only específicas para lacunas concretas.
 
-## 6. Governação documental
+### Prioridade 2 — SX / SXX e inventário com grelhas
+1. Procurar todas as rotinas SQL que escrevem em SX/SXX, não apenas triggers SL.
+2. Rever Dic/Rel e definições completas de SX/SXX.
+3. Localizar a rotina de lançamento STIC/STIL.
+4. Encontrar a cadeia de chamada de `usp_stinvclc`, sem a assumir como lançador.
+5. Esclarecer o papel de `ST.textteis`.
+6. Separar evidência SQL, aplicação PHC e documentação/registos de assistência.
 
-- Este índice aponta para os relatórios específicos; não os substitui nem duplica o seu detalhe técnico.
-- Novas conclusões devem indicar fonte, versão/commit, proveniência e nível de evidência.
-- Uma hipótese só passa a conclusão quando houver evidência suficiente.
-- Não alterar código PHC, dados da instalação ou contratos do produto no âmbito desta investigação documental.
-- Não integrar PRs automaticamente: cada PR deve ser revisto e integrado segundo o fluxo normal do repositório.
-- Quando a exportação da conversa estiver disponível, actualizar este índice com a cronologia, resultados SQL exactos e referências originais em falta.
+### Prioridade 3 — BO e dossiers internos
+1. Consultar Dic e Rel antes de novas queries.
+2. Revalidar integralmente `tr_bo_insert/update/delete`.
+3. Cruzar assinatura/importação com Enciclopédia.
+4. Identificar efeitos em BI, stock, tesouraria e dossiers relacionados apenas se houver evidência.
+5. Manter a investigação aberta enquanto o circuito não estiver demonstrado.
+
+### Prioridade 4 — produção e movimentos
+1. Fechar a semântica de OFC/OCI/OMI/OCP/OPT com fontes PHC Gestão/CS.
+2. Distinguir reservas, consumo físico, produção e valorização.
+3. Identificar o circuito completo de componentes e produto acabado.
+4. Não extrapolar documentação Manufactor.
+
+### Prioridade 5 — VO
+Recuperar evidências originais antes de reconstruir ou documentar conclusões.
+
+## 6. Regras para actualizar o conhecimento
+
+Cada novo relatório deve conter:
+- pergunta de investigação;
+- base/versão e âmbito;
+- fontes consultadas e proveniência;
+- factos observados em Dic/Rel;
+- código e condições exactas;
+- dados da instalação, quando existam;
+- interpretação funcional;
+- hipóteses explicitamente separadas;
+- questões não resolvidas;
+- próximos passos concretos.
+
+O grafo só recebe uma aresta estrutural quando existir predicado observado. O grafo funcional pode conter relações documentadas/condicionais, mas deve marcá-las como tal.
+
+Não reescrever relatórios antigos como se tivessem sido produzidos com evidência posterior. Registar a evolução e a data da revisão.
 
 ## 7. Ponto exacto de retoma
 
-A próxima investigação funcional a retomar é **OD → OL**, incluindo a relação de OL com BA e FE. O mecanismo de concretização de OD em OL ainda não está identificado e as consultas propostas no histórico não têm resultados recuperados.
+A próxima investigação recomendada é **OD → OL**, incluindo BA e FE. É a lacuna mais transversal no circuito de tesouraria e está explicitamente assinalada no grafo.
 
-Em paralelo, PR #34 contém a consolidação de stocks e PR #35 a primeira passagem de BO. Ambos permanecem fora da main até revisão e merge explícitos.
+Em paralelo, PR #34 mantém a investigação SX/SXX aberta e PR #35 mantém BO como primeira passagem. O PR #32 contém o grafo actualizado. Todos permanecem fora da main até revisão e integração explícita.
 
-Este documento é uma fotografia de continuidade em 27-11-2026, não uma declaração de que todos os circuitos PHC estão fechados.
+**Este índice é uma fotografia de continuidade em 27-11-2026. Não significa que os circuitos PHC estejam todos fechados nem que os PRs tenham sido integrados.**
