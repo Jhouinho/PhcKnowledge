@@ -208,3 +208,96 @@ Usar as fontes por esta ordem:
 - Testes controlados numa base adequada: comportamento em execução.
 
 Não pedir novamente consultas de estrutura já cobertas por DIC/REL. Quando for necessária uma query, explicitar qual a incerteza concreta que ela resolve e por que razão não pode ser respondida pelas fontes existentes.
+
+
+## 10. Descoberta adicional: OD não é convertido genericamente em OL
+
+Foi feita uma leitura transversal do ficheiro completo `docs/sources/triggers phc.sql` (552 triggers no ficheiro). A pesquisa incidiu sobre triggers que escrevem em `OL` e sobre referências a `OD`.
+
+**Resultado principal:** nos triggers analisados que escrevem em `OL`, não foi encontrada uma operação que leia um registo de `OD` e o transforme directamente em `OL`. As referências a OD nos triggers de LM/LO correspondem à manutenção paralela dos movimentos previstos; não são a origem dos valores inseridos em OL.
+
+Isto corrige a hipótese inicial de uma passagem técnica genérica `OD → OL`. O modelo mais consistente com o código é: o documento/operação de liquidação gera ou actualiza, no mesmo circuito, o movimento previsto OD (quando aplicável) e o movimento efectivo OL. São registos relacionados pela origem documental e pelos stamps, mas não se observou uma conversão do próprio registo OD.
+
+### 10.1 Facturas de venda — FT
+
+Em `tr_ft_insert`, a criação de OL depende de `TD.lancaol = 1`. O trigger constrói o movimento a partir de `FT`, `FT2`, `FT3`, `TD` e `OC`:
+- origem `FT`, ligação por `ftstamp`;
+- valor de entrada calculado a partir de `total - rdtotal - virs`, com dedução do IVA de caixa activado em `FT3`;
+- classificação `TD.olcodigo`, grupos/subgrupos de `OC`;
+- local, contado e moeda determinados por `TD` ou, quando `TD.altollocal = 1`, por `FT2`;
+- dados de pagamento, dinheiro, acertos e cheques também transportados de `FT2` / `FT`.
+
+Em `tr_ft_update`, o movimento OL existente é actualizado e, quando necessário, inserido; a anulação da FT elimina o OL associado. Portanto, para documentos FT configurados com `TD.lancaol=1`, o trigger cria o movimento efectivo directamente a partir do documento e dos dados de pagamento, não a partir de OD.
+
+### 10.2 Recibos — RE
+
+`tr_re_insert` cria movimentos OL directamente a partir do recibo. O código contempla mais do que uma componente:
+- movimento principal, com origem `RE`, associado por `restamp`;
+- componente adicional associada a `substring('2' + restamp, 1, 25)`, quando existem valores nos campos de tesouraria secundária (`totol2`, `etotol2`, `valor2m3`);
+- cálculo de entradas/saídas condicionado pelos totais, arredondamentos, valores transferidos e configuração `TSRE`.
+
+Isto mostra que um recibo pode originar mais do que um movimento OL. `tr_re_update` actualiza/reconcilia essas componentes e `tr_re_delete` elimina os movimentos associados.
+
+### 10.3 Títulos de recebimento — LM / LR
+
+`tr_lm_insert` e `tr_lm_update` mantêm dois resultados distintos:
+- **OD**, com origem `LR`, para o valor ainda pendente do título: `LR.valor - LR.regvalor` e equivalente em moeda alternativa;
+- **OL**, com origem `LR`, para operações concretas de cobrança/liquidação seleccionadas por tipos de movimento `LM.cm`.
+
+A criação de OL ocorre para os tipos `cm` 11, 26, 13, 3, 5 e 23 no INSERT; no UPDATE o conjunto inclui também `cm=18`, e exige `currec=1`. Os valores de OL são calculados a partir dos valores recebidos e de despesas, juros e imposto de selo, repartindo os montantes entre entradas e saídas. O trigger não consulta o valor do OD para calcular o OL.
+
+Conclusão: no circuito de títulos de recebimento, o movimento efectivo é criado pela operação registada em LM; OD continua a representar o saldo pendente do título.
+
+### 10.4 Títulos de pagamento — LO / LP
+
+`tr_lo_insert` e `tr_lo_update` seguem uma lógica equivalente:
+- **OD**, com origem `LP`, para o valor por pagar ainda pendente: `LP.valor - LP.regvalor` e equivalente em moeda alternativa;
+- **OL**, com origem `LP`, para os tipos de operação `LO.cm` 4, 29 e 6, com valores calculados a partir do pagamento e de despesas/juros.
+
+O trigger `tr_lo_insert` também cria FC para `cm=22`, isto é, há operações que alimentam a conta corrente de fornecedores além de OD/OL. O trigger de eliminação remove os registos relacionados.
+
+### 10.5 Outros circuitos directos identificados
+
+A varredura encontrou também triggers que escrevem directamente em OL a partir de outras tabelas, sem depender de OD, incluindo:
+- `RD`, `PD`, `FO`, `PO`, `PR`, `VY/VZ`, `OX`, `OLBB`, `OW/OWLI`, `GPC`, `FACA/FACC/FACD`, `CHL`, `CHF`, entre outras.
+- Alguns destes circuitos actualizam ou eliminam OL em operações posteriores.
+
+A lista deve ser tratada como inventário de triggers com operações sobre OL, não como uma classificação funcional final. Cada circuito deve ser interpretado com DIC/REL e Enciclopédia PHC antes de se fechar a semântica.
+
+## 11. Modelo conceptual revisto
+
+O fluxo não deve ser representado como uma cadeia obrigatória `OD → OL`. Deve distinguir:
+- **Previsão:** OD mantém o montante ainda previsto/pendente de determinadas origens.
+- **Liquidação/operação:** o documento de recebimento, pagamento ou movimento (por exemplo, RE, LM, LO ou FT) regista a operação concreta.
+- **Efeito de tesouraria:** triggers desse documento criam/actualizam OL directamente com base nos dados da operação.
+- **Efeitos derivados:** OL actualiza BA quando `contado > 0` e FE quando `local = 'C'`.
+
+```mermaid
+flowchart TD
+    FT[Factura FT] -->|TD.lancaol = 1| OLFT[OL origem FT]
+    RE[Recibo RE] -->|valores recebidos / meios| OLRE[OL origem RE]
+    LR[ título de recebimento LR ] --> LM[Operação LM]
+    LM -->|saldo ainda pendente| ODLR[OD origem LR]
+    LM -->|cobrança / liquidação, CM elegível| OLLR[OL origem LR]
+    LP[Título de pagamento LP] --> LO[Operação LO]
+    LO -->|saldo ainda pendente| ODLP[OD origem LP]
+    LO -->|pagamento / liquidação, CM elegível| OLLP[OL origem LP]
+    OLFT --> BA[BA se contado > 0]
+    OLRE --> BA
+    OLLR --> BA
+    OLLP --> BA
+    OLFT --> FE[FE se local = C]
+    OLRE --> FE
+    OLLR --> FE
+    OLLP --> FE
+```
+
+Este modelo é mais fiel à implementação observada: **OD e OL são resultados paralelos de operações/documentos em determinados circuitos**, e não etapas obrigatórias de uma conversão entre tabelas.
+
+## 12. Próxima investigação
+
+1. Confirmar no DIC/REL os campos de ligação e semântica de `FT`, `FT2`, `FT3`, `RE`, `LM`, `LR`, `LO` e `LP`.
+2. Mapear os códigos `CM` de LM/LO através de `CM1` e da Enciclopédia PHC, sem inferir a descrição funcional apenas pelo número.
+3. Seguir o circuito de `RE` e os campos `totol2` / `valor2m3` para perceber pagamentos mistos e múltiplos movimentos OL.
+4. Confirmar a configuração de `TD.lancaol`, `TD.olcodigo`, `TD.altollocal` e os campos `FT2` que determinam o meio/local de recebimento.
+5. Só depois fechar o diagrama completo e actualizar a documentação canónica, se a análise justificar alteração de conceitos.
