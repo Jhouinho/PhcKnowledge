@@ -1,272 +1,243 @@
-# Grafos PHC — modelo funcional e relações estruturais observadas
+# Grafo funcional PHC e relações estruturais observadas
 
-**Data de criação:** 25-11-2026  
-**Última actualização:** 27-11-2026  
-**Estado:** representação demonstrativa baseada na investigação consolidada; não é um esquema físico completo nem uma especificação universal do PHC.  
-**Âmbito:** dossiers internos, stock, reservas, pré-cativação, inventários físicos, grelhas e tesouraria.  
-**Repositório:** `Jhouinho/PhcKnowledge`.
+**Criação:** 25-11-2026  
+**Revisão:** 27-11-2026  
+**Base principal de análise:** `CSDefault202603`, com fontes complementares identificadas por relatório  
+**Estado:** grafo de conhecimento em evolução; não é ERD físico nem especificação universal do PHC.
 
-## 1. Objectivo e convenções
+## 1. Para que serve este grafo
 
-Este documento mantém dois grafos separados porque respondem a perguntas diferentes:
+O grafo organiza o conhecimento funcional recolhido nos últimos dias e ajuda a escolher a próxima investigação. Mantém duas vistas independentes:
 
-1. **Grafo funcional:** que tabelas participam nos processos e que efeitos/conexões funcionais foram identificados.
-2. **Grafo estrutural:** que predicados de ligação entre colunas foram efectivamente observados na evidência consultada.
+- **Grafo funcional:** processos, origens, efeitos e dependências de configuração.
+- **Grafo estrutural:** apenas predicados de ligação concretamente observados em código ou dados.
 
-A separação é importante: uma relação funcional não prova a existência de uma foreign key SQL, e uma coluna com nome sugestivo não prova, por si só, a sua tabela de destino.
+Uma relação REL/DTL não é automaticamente uma FK SQL. Uma ligação funcional não prova uma relação física. Uma tabela sem registos na captura não é uma tabela sem função.
 
-### Legenda
+### Classificação das arestas
 
-- **Linha contínua:** associação/predicado directamente observado ou estrutura funcional documentada.
-- **Linha tracejada:** efeito funcional, dependência de configuração, associação indirecta ou mecanismo ainda por validar.
-- **Caixa isolada no grafo estrutural:** tabela/colunas identificadas, mas sem predicado de junção suficientemente demonstrado nesta investigação.
+| Marca | Significado |
+|---|---|
+| **Observado** | Predicado, chamada ou efeito directamente identificado numa fonte concreta |
+| **Condicional** | O efeito depende de configuração, estado ou condições do trigger |
+| **Declarado/documentado** | Relação ou processo descrito em Dic/Rel/Enciclopédia, sem prova de FK SQL |
+| **Pendente** | Pergunta de investigação; não deve ser interpretada como relação confirmada |
 
-As setas indicam a direcção de leitura do grafo, não necessariamente cardinalidade. Não são inferidas cardinalidades 1:1, 1:N ou N:N sem evidência.
+As setas mostram a direcção de leitura do processo, não cardinalidade. Não se inferem relações 1:1, 1:N ou N:N sem evidência.
 
-## 2. Grafo funcional — processos PHC
+## 2. Grafo funcional — processos e efeitos
 
-Este grafo mostra como os elementos participam nos processos de dossiers, stock e inventários. Não representa exclusivamente relações PK/FK.
+O diagrama representa os circuitos identificados e assinala explicitamente as áreas ainda abertas.
 
 ```mermaid
 flowchart TB
-  subgraph D["Dossiers internos"]
-    BO["BO — cabeçalho"]
-    BO2["BO2 — dados complementares / estado"]
-    BI["BI — linhas"]
-    BO -->|"cabeçalho associado"| BO2
-    BO -->|"BI.bostamp"| BI
-    BI -.->|"BI.obistamp: linha de origem"| BI
-  end
-
-  subgraph S["Stock e movimentos"]
-    SL["SL — movimentos de stock"]
-    ST["ST — ficha do artigo"]
-    SA["SA — acumulados por artigo/armazém"]
-    TS["TS / TS2 — configuração dos dossiers"]
-    CM2["CM2 — configuração dos movimentos"]
-  end
-
-  BI -->|"SL.bistamp associa à linha BI"| SL
-  BI -.->|"flags, qtt e qtt2 afectam acumulados"| ST
-  BI -.->|"reservas / cativo / quantidades"| SA
-  TS -.->|"condições de movimentação e reservas"| BI
-  TS -.->|"configuração usada pelo processo"| SL
-  CM2 -.->|"CM2.entrada interpreta o sinal"| SL
-
-  subgraph I["Inventários físicos"]
-    STIC["STIC — cabeçalho do inventário"]
-    STIL["STIL — linhas e contagens"]
-  end
-  STIC -->|"contém linhas do inventário"| STIL
-  STIC -->|"SL.sticstamp associa ao cabeçalho"| SL
-  STIL -.->|"não foi demonstrada ligação directa 1:1"| SL
-
-  subgraph P["Pré-cativação"]
-    BIPRECAT["BIPRECAT — registos de pré-cativação"]
-    MON["Monitor de Cativação — processo funcional"]
-  end
-  MON -.->|"consulta / operação documentada"| BIPRECAT
-  BIPRECAT -.->|"bostamp identificado; destino exacto por validar"| BO
-  BIPRECAT -.->|"criação e conversão técnica por identificar"| BI
-  MON -.->|"conversão pré-cativo → cativo"| SA
-
-  subgraph T["Tesouraria"]
-    FT["FT — cabeçalho de faturação"]
+  subgraph DOC["Dossiers e documentos"]
+    BO["BO — cabeçalho de dossier"]
+    BO2["BO2 — dados complementares"]
+    BI["BI — linhas de dossier"]
     FI["FI — linhas de faturação"]
+    FT["FT — cabeçalho de faturação"]
+    FN["FN — documentos de compra"]
     TD["TD — configuração de documentos"]
-    OL["OL — movimentos efectivos de tesouraria"]
+    TS["TS / TS2 — configuração de dossiers"]
+    BO -->|"associação BO / BO2 observada"| BO2
+    BO -->|"BI.bostamp"| BI
+    BI -.->|"BI.obistamp: referência de origem"| BI
+    FT --> FI
+  end
+
+  subgraph STOCK["Movimentos e saldos de stock"]
+    SL["SL — movimentos físicos de stock"]
+    ST["ST — ficha e acumulados globais"]
+    SA["SA — saldos por artigo/armazém"]
+    CM1["CM1 — configuração de movimentos FN"]
+    CM2["CM2 — configuração/sentido do movimento"]
+    SV["SV — movimentos de valorização"]
+    BI -->|"condicional: dossier / linha / TS-TS2"| SL
+    FI -->|"condicional: TD.lancasl e cmsl"| SL
+    FN -->|"condicional: CM1.folansl"| SL
+    SL -->|"tr_sl_* actualiza/reverte"| ST
+    SL -->|"tr_sl_* actualiza/reverte"| SA
+    FI -.->|"SV condicionado por TD e regras por linha"| SV
+    CM1 -.->|"configuração"| FN
+    CM2 -.->|"interpreta entrada e efeitos do movimento"| SL
+    TS -.->|"configuração e estado do dossier"| BI
+    TD -.->|"lancasl / cmsl / cmsv"| FI
+  end
+
+  subgraph GRID["Grelhas e inventário físico"]
+    SX["SX — saldo por artigo/armazém/cor/tamanho"]
+    SXX["SXX — papel operacional por esclarecer"]
+    SGC["SGC / SGT — catálogo de cores e tamanhos"]
+    STIC["STIC — cabeçalho do inventário"]
+    STIL["STIL — contagens do inventário"]
+    VGRID["V_WS_STKARTIGOS_GRELHAS"]
+    VSTOCK["V_WS_STKARTIGOS"]
+    VGRID -.->|"consulta SX.stock"| SX
+    VSTOCK -.->|"consulta SA"| SA
+    SGC -.->|"altera/elimina referências em SX"| SX
+    STIC -.->|"inventário contém linhas"| STIL
+    STIC -.->|"SL.sticstamp"| SL
+    STIL -.->|"lançamento em SL por localizar"| SL
+    SL -.->|"actualização de SX não demonstrada"| SX
+    SX -.->|"relação operacional por esclarecer"| SXX
+  end
+
+  subgraph TREASURY["Tesouraria"]
+    OL["OL — movimentos efectivos"]
+    OD["OD — movimentos previstos"]
     CH["CH — cheques"]
     CHL["CHL — histórico de movimentos de cheque"]
-    OD["OD — movimentos previstos"]
-    BA["BA — movimentos auxiliares / reconciliação"]
+    OC["OC — códigos de tesouraria"]
+    BA["BA — apoio a reconciliação bancária"]
     FE["FE — saldos diários de caixa"]
-    FT -->|"FT / FI e configuração TD; condições do trigger"| OL
-    FT -.->|"ramo distinto de emissão de cheque"| CH
+    FT -->|"condicional: TD.lancaol + TD/FT2/FT3/OC"| OL
+    TD -.->|"lancaol / códigos / local / moeda"| OL
+    OC -.->|"código de tesouraria configurado"| OL
+    FT -.->|"ramo independente: multi=0 e cheque=1"| CH
     CH -->|"aceitação inicial: CHL cm=1"| CHL
-    CHL -.->|"cm=3 e condições específicas podem criar OL"| OL
-    OD -.->|"concretização OD → OL ainda não identificada"| OL
-    OL -.->|"sincronização parcial quando contado > 0"| BA
-    OL -.->|"actualização de saldos para local = C"| FE
-    TD -.->|"lancaol / códigos e parâmetros"| OL
+    CHL -.->|"cm=3 e condições específicas"| OL
+    OD -.->|"concretização OD → OL não identificada"| OL
+    OL -.->|"sincronização parcial se contado > 0"| BA
+    OL -.->|"actualiza saldos quando local = C"| FE
   end
 
-  subgraph G["Stock por grelha"]
-    SX["SX — saldos por artigo / armazém / cor / tamanho"]
-    SXX["SXX — papel por esclarecer"]
-    VSG["V_WS_STKARTIGOS_GRELHAS"]
-    VS["V_WS_STKARTIGOS"]
-    SGC["SGC / SGT — operações sobre grelhas"]
-    VSG -.->|"consulta SX"| SX
-    VS -.->|"consulta SA"| SA
-    SGC -.->|"altera / elimina referências em SX"| SX
+  subgraph PRE["Pré-cativação e reservas"]
+    BIPRECAT["BIPRECAT — pré-cativação"]
+    MON["Monitor de Cativação"]
+    MON -.->|"consulta/operação documentada"| BIPRECAT
+    BIPRECAT -.->|"bostamp identificado; destino por confirmar"| BO
+    BIPRECAT -.->|"criação/conversão técnica por localizar"| BI
+    MON -.->|"conversão funcional pré-cativo → cativo"| SA
   end
 
-  SV["SV — valorização (circuito por fechar)"]
-  SE["SE — lotes (relações por validar)"]
-  SV -.->|"circuito por identificar"| SL
-  SE -.->|"impacto no inventário por validar"| STIL
+  BO -.->|"assinatura/importação: validações em triggers"| TS
+  BO -.->|"assinatura em BO2 e condições de TS2"| BO2
 ```
 
-### 2.1 Leitura do grafo funcional
+### 2.1 Leitura por domínio
 
-- **BO / BO2 / BI:** cabeçalho, estado complementar e linhas do dossier. A linha BI pode manter referência à linha de origem através de `obistamp`.
-- **BI / SL:** o código consultado associa movimentos de stock a linhas BI através de `SL.bistamp`. A criação de SL depende de condições e configuração; não é garantida para todas as linhas.
-- **BI / ST / SA:** flags de reserva/cativo e quantidades, incluindo `qtt - qtt2`, participam na actualização de acumulados. Reserva/cativo não deve ser confundido com saída física.
-- **TS / TS2 / CM2:** são elementos de configuração que condicionam ou permitem interpretar os processos. As linhas tracejadas não afirmam uma FK.
-- **STIC / STIL / SL:** STIC identifica o inventário e STIL conserva as contagens. SL pode associar-se ao cabeçalho através de `sticstamp`; não foi encontrada uma ligação directa demonstrada entre cada STIL e um SL.
-- **BIPRECAT:** a tabela e os campos `biprecatstamp` e `bostamp` foram identificados. A criação e conversão técnica do pré-cativo continuam por localizar.
-- **SV / SE:** foram identificadas no âmbito do stock/inventário, mas o circuito de valorização e as relações de lotes não estão fechados.
+#### Dossiers internos — BO, BO2 e BI
+- BO é o foco de uma primeira passagem estática; a contagem comunicada em `CSDefault202603` foi zero.
+- Foram identificados `tr_bo_insert`, `tr_bo_update` e `tr_bo_delete`.
+- INSERT/UPDATE incluem validações de assinatura digital/documentos importados envolvendo BO, BO2, TS e TS2. A expressão integral deve ser reconfirmada no script antes de detalhar a regra.
+- `tr_bo_delete` elimina BOTXT por correspondência de `bostamp`.
+- Não está demonstrado que BO origine BI, SL, SV ou outros documentos. A análise BO permanece incompleta.
 
-### 2.2 Tesouraria — relações funcionais e lacunas
+#### Stock, movimentos e reservas
+- SL representa movimentos de stock; ST e SA são actualizados/revertidos pelos triggers SL analisados.
+- BI pode originar SL, condicionado por configuração TS/TS2 e estado da linha.
+- FI pode originar SL segundo TD.lancasl e cmsl; FN pode originar SL segundo CM1.folansl.
+- Transferências BI podem produzir dois movimentos SL, um por armazém; `SL.trfa` tem tratamento próprio nos acumulados.
+- Reservas/cativações não são saídas físicas. A existência de uma reserva não prova consumo nem movimento SL.
+- SV é um circuito de valorização distinto, condicionado por regras próprias; não o confundir com movimento físico SL.
+- O ciclo completo de produção — consumo de componentes e entrada de acabado — ainda não está demonstrado. A documentação Manufactor é contexto específico e não deve ser generalizada ao PHC Gestão/CS.
 
-O subgrafo de tesouraria cruza a análise FT/FI/TD já integrada na `main` com as observações recuperadas sobre OD, OL, BA e FE. Não se deve ler como um ERD físico.
+#### SX/SXX e inventário físico
+- `V_WS_STKARTIGOS_GRELHAS` consulta SX e apresenta saldo por artigo/armazém/cor/tamanho.
+- `V_WS_STKARTIGOS` consulta SA.
+- Os triggers SL analisados actualizam ST/SA, mas não demonstram escrita em SX/SXX.
+- SGC/SGT alteram ou eliminam referências de cor/tamanho em SX; não demonstram cálculo de `SX.stock`.
+- STIC/STIL contêm dados do inventário físico; a rotina que transforma as contagens em movimentos SL e actualiza SX não foi localizada.
+- `usp_stinvclc` não foi demonstrada como responsável por SX/SXX.
+- SXX é descrita em Rel como stock global por armazém/cor/tamanho, mas o seu papel operacional não está provado.
 
-- **FT/FI/TD → OL:** o script standard analisado contém criação de OL a partir de FT condicionada por `TD.lancaol=1` e por correspondências em TD, FT2, FT3 e OC. A criação de CH é um ramo separado.
-- **FT → CH → CHL:** o trigger de FT pode criar CH em condições próprias; a aceitação inicial gera CHL com `cm=1` e não gera OL. Alguns ramos `cm=3` de CHL podem criar OL sob condições específicas.
-- **OD → OL:** permanece uma pergunta em aberto. A seta tracejada é deliberadamente uma ligação por investigar, não uma conversão demonstrada.
-- **OL → BA:** o trigger OL analisado sincroniza BA apenas em condições como `contado > 0`; BA não é réplica integral de OL e o processo completo de reconciliação não está demonstrado.
-- **OL → FE:** o trigger OL actualiza saldos diários FE para movimentos com `local = 'C'`. O controlo operacional de dias fechados permanece por esclarecer.
-- **TD:** representa configuração que condiciona o lançamento; não é uma relação estrutural inferida com OL.
+#### Tesouraria — FT, CH, CHL, OD, OL, BA e FE
+- FT pode criar OL quando `TD.lancaol=1` e existem correspondências necessárias em TD, FT2, FT3 e OC.
+- A criação de CH a partir de FT é um ramo separado. A aceitação inicial do cheque cria CHL (`cm=1)) e não cria, nesse ramo, OL.
+- Alguns ramos CHL (`cm=3)) podem criar OL sob condições específicas; não generalizar a semântica de cm=3.
+- Na configuração consultada, Fatura-Recibo e Fatura Simplificada usam `olcodigo=R10001`, local Caixa, moeda EURO e contado 0; OC classifica R10001 como Recebimentos de Clientes.
+- A passagem OD → OL continua por identificar. Existem apontamentos divergentes sobre as origens de OD; nenhuma lista deve ser tratada como final.
+- BA recebe sincronização parcial de OL sob condições como `contado > 0`; não é uma réplica integral nem prova o processo completo de reconciliação.
+- FE é actualizado por movimentos OL com `local='C'`; o controlo efectivo de movimentos em dias fechados permanece por esclarecer.
 
-O detalhe de configuração e as limitações do circuito FT/CH/CHL estão no relatório [FT/FI/TD](investigacao-funcional-csdefault-ft-fi-td-2026-11-25.md). A investigação OD/BA/FE ainda carece de relatório técnico completo e de confirmação das consultas propostas.
+#### Pré-cativação
+- BIPRECAT e os campos `biprecatstamp` e `bostamp` foram identificados.
+- O processo funcional de pré-cativação está associado ao Monitor de Cativação, mas o ciclo técnico de criação, conversão e ligação a BI/SA ainda não está fechado.
+- Não converter as setas pendentes em relações estruturais.
 
-### 2.3 Grelhas SX/SXX
+## 3. Grafo estrutural — apenas predicados observados
 
-O subgrafo de grelhas acrescenta a evidência disponível no PR #34:
-- `V_WS_STKARTIGOS_GRELHAS` consulta SX para apresentar saldos por artigo/armazém/cor/tamanho;
-- `V_WS_STKARTIGOS` consulta SA;
-- os triggers SL analisados não demonstram escrita de saldos em SX/SXX;
-- SGC/SGT alteram ou eliminam referências de cor/tamanho em SX, mas não demonstram o cálculo de `SX.stock`;
-- o papel de SXX e a rotina de manutenção dos saldos SX continuam por identificar.
-
-As setas são funcionais/de leitura. Não representam predicados PK/FK.
-
-### 2.4 BO e BOTXT
-
-A investigação inicial de BO no PR #35 identificou validações de assinatura/importação envolvendo BO, BO2, TS e TS2, e uma limpeza de BOTXT por `bostamp` no trigger de eliminação. O grafo estrutural inclui apenas o predicado de limpeza observado; não inventa as chaves de associação entre BO/BO2/TS/TS2 usadas nas validações.
-
-## 3. Grafo estrutural — predicados de ligação observados
-
-Este segundo grafo é deliberadamente mais restrito. Só inclui ligações cuja expressão foi registada na análise do script ou dos dados. **Não afirma que estas colunas estejam declaradas como PK/FK no SQL Server.**
+Este grafo é intencionalmente pequeno. Inclui apenas predicados de ligação identificados no material analisado. Não afirma que sejam constraints FK declaradas no SQL Server.
 
 ```mermaid
 flowchart LR
-  BO["BO<br/>bostamp"]
-  BO2["BO2<br/>bo2stamp"]
-  BI["BI<br/>bostamp<br/>bistamp<br/>obistamp"]
-  SL["SL<br/>bistamp<br/>sticstamp"]
-  STIC["STIC<br/>sticstamp"]
+  BO["BO.bostamp"]
+  BO2["BO2.bo2stamp"]
+  BI["BI.bostamp / BI.bistamp / BI.obistamp"]
+  SL["SL.bistamp / SL.sticstamp"]
+  STIC["STIC.sticstamp"]
+  BOTXT["BOTXT.bostamp"]
 
   BO2 -->|"BO.bostamp = BO2.bo2stamp"| BO
   BI -->|"BI.bostamp = BO.bostamp"| BO
   SL -->|"SL.bistamp = BI.bistamp"| BI
-  BI -.->|"BI.obistamp aponta para bistamp<br/>da linha de origem"| BI
+  BI -.->|"obistamp referencia bistamp da linha de origem"| BI
   SL -->|"SL.sticstamp = STIC.sticstamp"| STIC
-
-  BIP["BIPRECAT<br/>biprecatstamp<br/>bostamp"]
-  BOTXT["BOTXT<br/>bostamp"]
-  STIL["STIL<br/>campos de linha / contagem"]
-  ST["ST<br/>ficha de artigo"]
-  SA["SA<br/>acumulados"]
-  CM2["CM2<br/>configuração de movimento"]
-  TS["TS / TS2<br/>configuração de dossier"]
-  SV["SV<br/>valorização"]
-  SE["SE<br/>lotes"]
-  FT["FT<br/>ftstamp"]
-  FI["FI<br/>fistamp / ftstamp"]
-  TD["TD<br/>ndoc / configuração"]
-  OL["OL<br/>olstamp / ftstamp"]
-  CH["CH<br/>chstamp"]
-  CHL["CHL<br/>chlstamp"]
-  OD["OD<br/>campos por validar"]
-  BA["BA<br/>bastamp / olstamp"]
-  FE["FE<br/>data / festamp"]
-  SX["SX<br/>chaves e saldo por validar"]
-  SXX["SXX<br/>estrutura por validar"]
-  SGC["SGC / SGT"]
-  VIEWS["V_WS_STKARTIGOS_GRELHAS<br/>V_WS_STKARTIGOS"]
-
-  BO -->|"DELETE BOTXT WHERE BOTXT.bostamp = deleted.bostamp"| BOTXT
-
-  classDef observed fill:#173d32,stroke:#48a77b,color:#fff
-  classDef unresolved fill:#49391c,stroke:#d6a64c,color:#fff
-  class BO,BO2,BI,SL,STIC,BOTXT observed
-  class BIP,STIL,ST,SA,CM2,TS,SV,SE,FT,FI,TD,OL,CH,CHL,OD,BA,FE,SX,SXX,SGC,VIEWS unresolved
+  BO -->|"tr_bo_delete: BOTXT.bostamp = deleted.bostamp"| BOTXT
 ```
 
-### 3.1 Predicados efectivamente observados
+### 3.1 Registo dos predicados
 
-| Origem | Predicado / coluna | Destino | Interpretação permitida |
-|---|---|---|---|
-| BO2 | `BO.bostamp = BO2.bo2stamp` | BO | Associação entre BO e BO2 usada no código consultado |
-| BI | `BI.bostamp = BO.bostamp` | BO | Linha BI associada ao cabeçalho BO |
-| SL | `SL.bistamp = BI.bistamp` | BI | Movimento SL associado a uma linha BI |
-| BI | `BI.obistamp` aponta para `BI.bistamp` de origem | BI (auto-relação funcional) | Ligação da linha de destino à linha de origem; não classificar como REL/DTL sem validar |
-| SL | `SL.sticstamp = STIC.sticstamp` | STIC | Movimento associado ao cabeçalho do inventário |
-| BOTXT | `BOTXT.bostamp = deleted.bostamp` no trigger de eliminação BO | BO (registo eliminado) | Predicado de limpeza executado por `tr_bo_delete`; não afirmar FK declarada |
+| # | Predicado observado | Fonte / contexto | Classificação e limite |
+|---:|---|---|---|
+| 1 | `BO.bostamp = BO2.bo2stamp` | Associação BO/BO2 observada na análise estrutural/código | Predicado observado; não afirmar FK declarada sem catálogo SQL |
+| 2 | `BI.bostamp = BO.bostamp` | Relação de linha BI com cabeçalho BO | Predicado observado |
+| 3 | `SL.bistamp = BI.bistamp` | Associação do movimento SL à linha BI | Predicado observado; criação de SL é condicional |
+| 4 | `BI.obistamp` referencia `BI.bistamp` de uma linha de origem | Auto-relação funcional de BI | Predicado de origem identificado; validar contexto e cardinalidade |
+| 5 | `SL.sticstamp = STIC.sticstamp` | Associação do movimento ao cabeçalho de inventário | Predicado observado |
+| 6 | `BOTXT.bostamp = deleted.bostamp` | `tr_bo_delete` | Predicado de limpeza no trigger; não prova FK nem ciclo de vida completo de BOTXT |
 
-A direcção das setas no Mermaid foi escolhida para facilitar a leitura; a igualdade indicada na tabela é a referência principal para interpretar cada associação.
+### 3.2 Elementos conhecidos sem aresta estrutural demonstrada
 
-### 3.2 Elementos identificados sem ligação estrutural fechada
-
-| Tabela | O que está identificado | O que não se deve ainda afirmar |
+| Elementos | Conhecimento disponível | Não afirmar ainda |
 |---|---|---|
-| BIPRECAT | Colunas `biprecatstamp` e `bostamp` | Não afirmar qual a tabela/coluna de destino de `bostamp`, nem o ciclo de escrita, sem validar o esquema e o código |
-| STIL | Linhas de inventário e campos de contagem | Não afirmar a coluna exacta de junção a STIC nem uma ligação a SL sem evidência estrutural adicional |
-| ST / SA | Ficha e acumulados por artigo/armazém | Não representar chaves de artigo/armazém como confirmadas neste grafo |
-| CM2 | Configuração que determina o sentido do movimento através de `entrada` | Não inventar o predicado usado para chegar a CM2 a partir de SL |
-| TS / TS2 | Configuração de tipos de dossier e opções | Não representar relações físicas às linhas BI sem identificar os campos e predicados concretos |
-| SV | Elementos de valorização identificados | Não afirmar a ligação exacta a SL, STIC ou documentos |
-| SE | Tabela de lotes identificada; na amostra blivo2026 não tinha registos | Não inferir as ligações de lote a artigo, armazém ou movimento |
-| OD / OL / BA / FE | Tabelas e funções funcionais identificadas parcialmente | Não inferir a chave de passagem OD→OL, a relação estrutural OL–BA nem a ligação por data OL–FE sem predicado verificado |
-| FT / FI / TD / CH / CHL | Circuito funcional descrito pelos triggers standard | Não inferir PK/FK entre estes elementos apenas a partir do fluxo |
-| SX / SXX | SX consultada por view; SGC/SGT operam sobre referências de grelha; SXX por esclarecer | Não inferir junção SX/SXX nem a rotina de cálculo do saldo |
-| BOTXT | Limpeza por `bostamp` no trigger de eliminação BO | Não classificar o predicado do trigger como FK declarada |
+| BO / TS / TS2 / BO2 | Validações de assinatura/importação nos triggers BO | Junções físicas ou cardinalidades sem rever Dic/Rel e expressão integral |
+| FT / FI / TD / OL | Circuito funcional condicional descrito nos triggers standard | FK entre documentos, linhas, configuração e OL |
+| FT / CH / CHL | Ramos funcionais de criação e histórico de cheques | Relações físicas completas ou semântica universal de cm=3 |
+| OD / OL / BA / FE | Funções parciais e efeitos dos triggers OL | Chave OD→OL, relação estrutural OL–BA e chave temporal OL–FE |
+| BI / FI / FN / SL | Origens condicionais de movimentos de stock | Uma ligação universal para todos os tipos de documento |
+| SL / ST / SA | Actualização de acumulados nos triggers SL | Chaves físicas completas de artigo/armazém neste grafo |
+| SX / SXX / SGC / SGT | Views e operações de manutenção de dimensões em SX | Junção SX/SXX, rotina de saldo e relação directa SL→SX |
+| STIC / STIL | Cabeçalho e linhas de inventário | Predicado estrutural STIC–STIL e ligação de cada STIL a SL |
+| BIPRECAT | Campos e processo de pré-cativação parcialmente identificados | Destino de `bostamp`, criação/conversão e relações físicas |
+| SV / SE | Objectos identificados em stock/valorização/lotes | Relações completas com documentos, SL, STIC ou STIL |
 
-## 4. O que este grafo não representa
+## 4. O que falta para um ERD físico
 
-- Não é um diagrama ERD completo nem uma exportação do catálogo SQL Server.
-- Não enumera todas as colunas, índices, constraints, PKs, FKs, views, procedures, functions ou triggers.
-- Não garante que os predicados observados sejam iguais em todas as versões, módulos ou instalações PHC.
-- Não transforma dependências funcionais em relações físicas.
-- Não representa cardinalidades quando estas não foram medidas.
-- Não prova que a ausência de uma ligação no grafo signifique que ela não exista na base de dados.
+O grafo estrutural acima não é um ERD físico. Para produzir um ERD por instalação, é necessário recolher e manter separados:
+1. schemas e tabelas;
+2. colunas, tipos, nulabilidade e ordem;
+3. PKs e unique constraints;
+4. FKs declaradas e colunas de origem/destino;
+5. índices relevantes;
+6. views, triggers, procedures e funções que implementem ligações lógicas;
+7. predicados usados pela aplicação PHC quando não exista FK.
 
-## 5. Próxima recolha necessária para um ERD físico completo
+Cada ligação futura deve ser classificada como:
+- FK declarada;
+- PK/UK mais predicado observado;
+- predicado de código;
+- associação funcional documentada;
+- hipótese (fora do grafo confirmado).
 
-Para passar do grafo estrutural mínimo para um ERD físico por instalação, a recolha read-only deverá obter, para cada base de dados e schema:
+## 5. Prioridades para continuar a investigação
 
-1. Tabelas e schemas existentes.
-2. Colunas, tipos, nulabilidade e ordem.
-3. Primary keys e unique constraints.
-4. Foreign keys declaradas, incluindo colunas de origem/destino.
-5. Índices relevantes.
-6. Views, procedures, functions e triggers que implementem relações lógicas não declaradas como FK.
-7. Predicados de junção usados nos processos PHC, quando não exista constraint física.
+1. **OD → OL / BA / FE:** resolver primeiro o mecanismo de concretização e a divergência das origens de OD.
+2. **SX/SXX:** localizar quem cria e actualiza `SX.stock`, esclarecer SXX e o circuito do inventário com grelhas.
+3. **BO / dossiers internos:** cruzar Dic, Rel, triggers integrais e Enciclopédia; determinar apenas depois os efeitos em BI, stock e tesouraria.
+4. **Produção:** fechar o percurso real de consumo/entrada no PHC Gestão/CS, sem extrapolar Manufactor.
+5. **VO:** recuperar as evidências originais; não assumir equivalência com BI.
 
-A recolha deve manter os resultados separados por base de dados — por exemplo, `CSDefault202603`, `blivo2026`, `Digicanola` e `dfblock` — sem assumir que o esquema ou a configuração são idênticos.
+## 6. Fontes de continuidade e proveniência
 
-### 5.1 Critérios de classificação futura
+- [FT/FI/TD e tesouraria — relatório integrado na main](investigacao-funcional-csdefault-ft-fi-td-2026-11-25.md).
+- [Recuperação da investigação VO e dossiers internos — main](recuperacao-investigacao-funcional-vo-dossiers-2026-11-25.md).
+- [PR #32 — dossiers, stock cativo e grafo](https://github.com/Jhouinho/PhcKnowledge/pull/32).
+- [PR #34 — stocks, produção, transferências e SX/SXX](https://github.com/Jhouinho/PhcKnowledge/pull/34).
+- [PR #35 — primeira passagem BO](https://github.com/Jhouinho/PhcKnowledge/pull/35).
+- [PR #36 — índice de continuidade](https://github.com/Jhouinho/PhcKnowledge/pull/36).
 
-Cada aresta do grafo estrutural deverá receber uma classificação:
+O script `docs/sources/triggers phc.sql` é uma fonte standard legível, não prova automática de que as definições instaladas em cada base sejam idênticas. A análise estática não equivale a execução em runtime. Os ZIP da Enciclopédia e das capturas não devem ser adicionados ao repositório.
 
-- **FK declarada:** constraint encontrada no catálogo SQL Server.
-- **PK/UK + predicado observado:** ligação lógica sustentada por chave/índice e consulta/código.
-- **Predicado de código:** igualdade ou condição encontrada em trigger, procedure, view ou código aplicacional.
-- **Associação funcional:** relação descrita pela Enciclopédia ou comportamento observado, sem predicado estrutural demonstrado.
-- **Hipótese:** possibilidade ainda sem evidência suficiente; deve ficar fora do grafo de relações confirmadas.
-
-## 6. Fontes e limites
-
-Este documento deriva da investigação consolidada nos seguintes documentos:
-
-- [Dossiers internos, stock cativo e pré-cativo](investigacao-funcional-dossiers-internos-stock-cativo-precativo-2026-11-25.md).
-- [Stock e inventários físicos](investigacao-funcional-stock-inventarios-2026-11-25.md).
-- [Síntese e rastreabilidade — dossiers, stock e inventários](sintese-rastreabilidade-dossiers-stock-inventarios-2026-11-25.md).
-- [Investigação FT/FI/TD e tesouraria](investigacao-funcional-csdefault-ft-fi-td-2026-11-25.md).
-- [Investigação técnica de SX/SXX — PR #34](https://github.com/Jhouinho/PhcKnowledge/pull/34) — ainda não integrado na main.
-- [Investigação inicial de BO — PR #35](https://github.com/Jhouinho/PhcKnowledge/pull/35) — ainda não integrado na main.
-
-A evidência estrutural actualmente disponível é parcial. Em particular, a identificação de nomes de colunas não equivale a uma inspecção integral do catálogo SQL Server. O grafo deve ser actualizado quando forem obtidos os metadados físicos de cada base.
-
-**Estado:** grafo funcional demonstrativo criado; grafo estrutural mínimo limitado aos predicados observados; ERD físico completo pendente de recolha de metadados read-only.
+**Estado final desta revisão:** grafo funcional reorganizado por domínio; grafo estrutural reduzido aos predicados registados; relações pendentes explicitamente isoladas; ERD físico completo continua dependente de recolha própria.
