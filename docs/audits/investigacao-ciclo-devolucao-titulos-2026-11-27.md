@@ -210,7 +210,7 @@ O código standard contém eliminação de movimentos `CC` e `OL` quando um regi
 
 ## 8. Questões em aberto e próximos passos
 
-1. **Confirmar o efeito em CC:** pesquisar movimentos do cliente KEENFINITY na data do teste, com critérios que não dependam apenas de `nrdoc`, para identificar eventual movimento compensatório.
+1. **Confirmar o efeito em CC:** pesquisar movimentos do cliente Cliente B na data do teste, com critérios que não dependam apenas de `nrdoc`, para identificar eventual movimento compensatório.
 2. **Confirmar o UPDATE de RE:** se necessário, repetir o teste com auditoria SQL/Extended Events ou outro mecanismo de captura numa cópia descartável, para observar a instrução que actualiza `RE` e a ordem dos triggers.
 3. **Comparar triggers instalados:** obter os corpos dos triggers instalados em `cópia de testes do cliente` por um mecanismo autorizado (a consulta anterior a `OBJECT_DEFINITION` devolveu NULL) e compará-los com o ficheiro standard do GitHub.
 4. **Investigar `contado`:** explicar a diferença observada no `CHL.cm=3` entre os cenários (`contado=1) no cenário A e `contado=3) no cenário B).
