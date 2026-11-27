@@ -86,11 +86,11 @@ O modelo foi corrigido: **OD não é convertido genericamente em OL**. OD manté
 |---|---|---|
 | OD | Movimentos previstos, manuais ou automáticos; ligações/circuitos identificados com CC, FC, LR/LM, LP/LO, VY e CHF (criação e eliminação devem ser distinguidas por trigger) | Valores/configuração reais e validação transaccional |
 | OL | Movimentos efectivos gerados directamente por FT, RE, LM, LO e outros circuitos | Inventário completo de origens e validação runtime |
-| BA | Movimentos bancários derivados de OL quando existe conta bancária (`contado>0` | Índices/cardinalidades completas e validação do circuito |
-| BL | Contas bancárias e saldos totais/reconciliados actualizados por BA | Confirmar estrutura/índices e regras adicionais |
-| BX | Cabeçalho do extrato bancário importado | Confirmar estrutura/índices e sequência de actualização |
-| BR | Movimentos importados que pertencem a BX | Confirmar estrutura/índices e associação a BABR |
-| BABR | Associação entre BA e BR; triggers marcam/desmarcam ambos como reconciliados | Cardinalidade física e fluxo aplicacional de criação/remoção |
+| BA | Movimentos bancários derivados de OL quando existe conta bancária (`contado>0`); PK `bastamp`, índice não único em `olstamp` | Validar fluxo aplicacional e comportamento com dados reais |
+| BL | Contas bancárias e saldos totais/reconciliados actualizados por BA; PK `noconta`, UNIQUE `blstamp` | Regras adicionais e validação transaccional |
+| BX | Cabeçalho do extrato bancário importado; PK composta `(contado, extracto)`, UNIQUE `bxstamp` | Sequência de actualização e validação transaccional |
+| BR | Movimentos importados que pertencem a BX; PK `brstamp`; sem índice específico em `bxstamp`/ `bastamp` no resultado | Associação funcional via BABR e validação transaccional |
+| BABR | Associação entre BA e BR; PK `babrstamp`, índices não únicos em `bastamp` e `brstamp`; sem FK | Fluxo aplicacional de criação/remoção e cardinalidade usada em runtime |
 | FE | Saldos diários da tesouraria em Caixa; fecha dias e regista utilizador | Localizar/validar a autorização aplicacional em dias fechados |
 
 **RD / PD / PO / FO**
@@ -236,7 +236,7 @@ O grafo não é ERD físico e não afirma FKs SQL. O facto de uma ligação esta
 ## 5. Prioridades para a próxima investigação
 
 ### Prioridade 1 — configuração e validação de tesouraria
-1. Confirmar no catálogo SQL as colunas, nulabilidade, PK/UK, índices e FKs de BA, BL, BR, BX e BABR. O extracto stamp disponível apenas lista campos terminados em `stamp` e não contém índices/constraints; não apresenta BABR, apesar dos triggers `tr_babr_*`.
+1. Estrutura física de BA, BL, BR, BX e BABR confirmada no catálogo SQL de `CSDefault202603`: PK, índices e ausência de FKs estão registados no relatório PR #38.
 2. Localizar no código aplicacional a criação/remoção de BABR e a autorização de fecho FE.
 3. Auditar operações multi-linha nos triggers OL/BA e validar em ambiente descartável.
 
@@ -289,7 +289,7 @@ Não reescrever relatórios antigos como se tivessem sido produzidos com evidên
 
 ## 7. Ponto exacto de retoma
 
-A investigação de OD/OL e da reconciliação bancária já tem uma primeira síntese no PR #38. A validação read-only de TSRE, TSRD e CM1 em `CSDefault202603` está concluída e registada no relatório. A próxima acção concreta é confirmar no catálogo SQL a estrutura física e os índices/constraints de BA/BL/BR/BX/BABR; o extracto stamp disponível não é suficiente. Depois, localizar o fluxo aplicacional de BABR/FE.
+A investigação de OD/OL e da reconciliação bancária já tem uma primeira síntese no PR #38. A validação read-only de TSRE, TSRD e CM1 em `CSDefault202603` está concluída e registada no relatório. A validação do catálogo SQL de BA/BL/BR/BX/BABR está concluída e registada no PR #38. A próxima acção concreta é localizar o fluxo aplicacional de criação/remoção de BABR e a autorização de fecho FE.
 
 Em paralelo, PR #34 mantém SX/SXX e produção em aberto, PR #35 mantém BO como primeira passagem e PR #32 contém o grafo actualizado. Todos permanecem fora da main até revisão e integração explícita.
 
