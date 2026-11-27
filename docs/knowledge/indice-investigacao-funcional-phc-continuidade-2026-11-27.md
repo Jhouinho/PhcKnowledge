@@ -47,14 +47,29 @@ A última `main` consultada está no commit:
 
 | PR | Área | Conteúdo | Estado observado em 27-11-2026 |
 |---|---|---|---|
+| [#31 — BO, BI e movimentos de stock](https://github.com/Jhouinho/PhcKnowledge/pull/31) | BO / BO2 / BI / SL / ST / SA / reservas / anulação | Investigação funcional aprofundada, incluindo `obistamp`, `qtt2`, reservas e reversões; PR actualmente não mergeável | Aberto, requer reconciliação |
 | [#32 — dossiers, stock cativo e grafo](https://github.com/Jhouinho/PhcKnowledge/pull/32) | Dossiers / BI / BO / inventários / pré-cativação / grafo | Relatórios funcionais e grafo revisto funcional + estrutural | Aberto, não merged |
-| [#34 — stocks, transferências e produção](https://github.com/Jhouinho/PhcKnowledge/pull/34) | BI / FI / FN / SL / ST / SA / SX / SXX | Handoff funcional e investigação técnica SX/SXX | Aberto, não merged |
-| [#35 — investigação inicial BO](https://github.com/Jhouinho/PhcKnowledge/pull/35) | BO / BO2 / TS / TS2 / BOTXT | Primeira passagem de triggers e validações | Aberto, não merged |
+| [#34 — stocks, transferências e produção](https://github.com/Jhouinho/PhcKnowledge/pull/34) | BI / FI / FN / SL / ST / SA / SX / SXX | Handoff, investigação SX/SXX e ficheiro SQL de verificações pendentes | Aberto, não merged |
+| [#35 — investigação inicial BO](https://github.com/Jhouinho/PhcKnowledge/pull/35) | BO / BO2 / TS / TS2 / BOTXT | Primeira passagem de triggers e validações; sobrepõe-se parcialmente ao #31 | Aberto, requer comparação |
 | [#36 — índice de continuidade](https://github.com/Jhouinho/PhcKnowledge/pull/36) | Governação do conhecimento | Este índice e referência no README | Aberto, não merged |
+| [#37 — stock, transferências e produção](https://github.com/Jhouinho/PhcKnowledge/pull/37) | BI / FN / FI / SL / ST / SA / Manufactor / SAL / SX | Relatório adicional com síntese de circuitos; sobrepõe-se parcialmente ao #34 e deve ser preservado na consolidação | Aberto, requer integração no #34 ou decisão equivalente |
 | [#38 — OD/OL, reconciliação bancária e FE](https://github.com/Jhouinho/PhcKnowledge/pull/38) | Tesouraria / letras / reconciliação / caixa | Investigação OD/OL, LM/LO/RE, BA/BL/BR/BX/BABR e FE | Aberto, Draft, não merged |
 | [#39 — ciclo de devolução de títulos](https://github.com/Jhouinho/PhcKnowledge/pull/39) | Títulos de clientes / CH / CHL / OL / CC | Dois cenários de devolução, movimentos observados e correlação com triggers | Aberto, não merged |
 
-Os PRs são trabalho documental separado. Não declarar os respectivos documentos como integrados na main até ocorrer merge. A actualização do grafo no PR #32 incorpora novas relações bancárias observadas, mas não integra automaticamente os relatórios dos PRs #34, #35 e #38.
+Os PRs são trabalho documental separado. Não declarar os respectivos documentos como integrados na main até ocorrer merge. A actualização do grafo no PR #32 incorpora novas relações bancárias observadas, mas não integra automaticamente os relatórios dos PRs #31, #34, #35, #37, #38 e #39.
+
+### 2.3 Auditoria de sobreposição e estratégia de consolidação (27-11-2026)
+
+A revisão dos ficheiros alterados identificou os seguintes pontos de atenção:
+
+- **#31 e #35 — BO:** o #31 contém a investigação mais profunda de BO/BI/BO2, incluindo movimentos SL, reservas, `obistamp`, `qtt2` e anulação lógica. O #35 regista a primeira passagem focada nos triggers do cabeçalho BO e na validação de assinatura. Não eliminar conteúdo de nenhum dos dois antes de comparar os factos exclusivos; o #31 está actualmente não mergeável e exige reconciliação.
+- **#32 — dossiers e grafo:** contém a investigação de dossiers, stock cativo/pré-cativo, inventários e o grafo funcional/estrutural. Deve ser preservado como peça central do domínio, sem o tratar como substituto automático do relatório técnico #31.
+- **#34 e #37 — stock:** o #34 contém o handoff, a investigação SX/SXX e `docs/sql/pendentes-transferencias-stock-phc-gestao-2026-11-27.sql`, que preserva verificações SQL pendentes. O #37 acrescenta uma síntese funcional de BI/FN/FI, transferências, produção, Manufactor e lacunas SAL/SX. O conteúdo exclusivo do #37 deve ser incorporado ou referenciado no conjunto documental do #34 antes de fechar qualquer dos PRs.
+- **#38 — tesouraria:** contém a investigação detalhada OD/OL, origens directas de OL, BA/BL/BR/BX/BABR e FE, incluindo riscos estáticos multi-linha. Mantém-se Draft até revisão do conteúdo e coerência com o grafo #32.
+- **#39 — devolução de títulos:** investigação empírica separada na cópia `dfblock_teste`; deve manter proveniência própria e não ser fundida conceptualmente com a baseline `CSDefault202603`.
+- **#36 — índice:** este PR é o ponto de entrada e deve ser actualizado depois da consolidação dos restantes documentos, não antecipar merges nem declarar investigações fechadas.
+
+**Regra de integração:** preservar os relatórios técnicos que contenham evidência exclusiva; remover duplicação apenas depois de confirmar que a informação exclusiva foi transferida; actualizar README e índice; só então integrar em `main`. Não criar novas branches de consolidação enquanto for possível reutilizar as branches/PRs existentes.
 
 ## 3. Mapa consolidado por domínio
 
