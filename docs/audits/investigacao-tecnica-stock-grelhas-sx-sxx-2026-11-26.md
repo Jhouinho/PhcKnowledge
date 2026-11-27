@@ -253,3 +253,12 @@ Estes campos representam compromissos/reservas e não devem ser confundidos com 
 4. Quando existir uma cópia descartável, testar statements multi-linha com combinações SX já existentes e em falta; testar também várias linhas BI para a mesma combinação, em especial `rescat`.
 5. Localizar a rotina que transforma STIC/STIL em movimentos e esclarecer se a criação de linhas SX é feita antes, durante ou depois do lançamento.
 6. Manter SXX como questão independente até obter schema e evidência de leitura/escrita.
+
+
+### Recolha pendente de schema SX/SXX
+
+Foi preparado um guião SQL exclusivamente de leitura para a `CSDefault202603`, que recolhe existência e schema de `SX`/`SXX`, colunas e defaults, índices/chaves, constraints, FKs, triggers associados, dependências declaradas e módulos SQL que mencionem estas tabelas. O guião procura os objectos em todos os schemas, não apenas em `dbo`.
+
+Ficheiro: [`docs/sql/inspeccao-schema-sx-sxx-phc-gestao-2026-11-27.sql`](../sql/inspeccao-schema-sx-sxx-phc-gestao-2026-11-27.sql).
+
+**Estado:** preparado e revisto estaticamente; ainda não executado. Quando for executado, exportar todos os conjuntos de resultados. A pesquisa textual de módulos pode devolver falsos positivos e não cobre SQL dinâmico nem processos externos.
