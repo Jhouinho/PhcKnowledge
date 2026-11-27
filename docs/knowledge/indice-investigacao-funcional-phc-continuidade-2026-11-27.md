@@ -197,14 +197,16 @@ Produção:
 Confirmado:
 - `V_WS_STKARTIGOS_GRELHAS` consulta SX e apresenta saldo por artigo/armazém/cor/tamanho.
 - `V_WS_STKARTIGOS` consulta SA.
-- Triggers SL analisados actualizam ST/SA, mas não demonstram escrita em SX/SXX.
-- SGC/SGT alteram ou eliminam referências de cor/tamanho em SX, sem demonstrar cálculo de `SX.stock`.
-- STIC/STIL contêm dados de inventário físico; rotina de lançamento para SL e actualização de SX não localizada.
+- A manutenção de `SX.stock` diverge entre duas exportações SQL: não aparece nos triggers SL da Fonte A (`docs/sources/triggers phc.sql`, baseline `CSDefault202603`); aparece em `tr_sl_insert/update/delete` da Fonte B (`PhcKnowledgeScanner/triggers phc.sql`). A diferença está documentada no relatório comparativo.
+- Na Fonte B, `trfa=0` condiciona ST, mas não as actualizações de SA/SX; o padrão é compatível com transferência entre armazéns sem alteração do total global.
+- Na Fonte B, BI/BO2 mantêm `SX.rescli`, `SX.resfor`, `SX.rescat` e `SX.qttrec`, distintos de `SX.stock`.
+- A documentação PHC confirma criação de SX por combinação para o armazém 1 e uma rotina para criar combinações em vários armazéns.
+- Há riscos estáticos multi-linha a validar na criação SX por SL e no ramo `rescat`; não são bugs reproduzidos.
+- SGC/SGT mantêm dimensões de cor/tamanho. STIC/STIL e a rotina de lançamento continuam por investigar.
 - `usp_stinvclc` não foi demonstrada como responsável por SX/SXX.
-- SXX é descrita em Rel como stock global por armazém/cor/tamanho, mas o papel operacional permanece por provar.
-- `ST.textteis` é uma pista; influência operacional por demonstrar.
+- SXX não aparece nos triggers comparados; o papel operacional permanece por provar.
 
-**Pergunta central:** quem cria as combinações e mantém efectivamente `SX.stock`, e qual é o papel operacional de SXX?
+**Pergunta central:** que objectos/processos completam a manutenção de SX/SXX em cada origem, e o que explica a divergência entre exportações?
 
 ### 3.6 Inventário físico — STIC / STIL
 
@@ -280,12 +282,12 @@ Consulta de configuração executada em `CSDefault202603`; os resultados estão 
 3. Cruzar cada circuito com a Enciclopédia antes de classificar a função.
 
 ### Prioridade 3 — SX / SXX e inventário com grelhas
-1. Procurar todas as rotinas SQL que escrevem em SX/SXX, não apenas triggers SL.
-2. Rever Dic/Rel e definições completas de SX/SXX.
-3. Localizar a rotina de lançamento STIC/STIL.
-4. Encontrar a cadeia de chamada de `usp_stinvclc`, sem a assumir como lançador.
-5. Esclarecer o papel de `ST.textteis`.
-6. Separar evidência SQL, aplicação PHC e documentação/registos de assistência.
+1. Obter schema, defaults, PKs e índices de SX/SXX nas origens comparáveis.
+2. Identificar versão/build e configuração dos triggers de cada origem, sem publicar identificadores de clientes.
+3. Procurar procedures, funções, views, tarefas SQL Agent e processos aplicacionais que escrevam em SX/SXX.
+4. Validar em cópia descartável os riscos multi-linha identificados em `tr_sl_insert/update` e no ramo `rescat` de BI.
+5. Localizar a rotina de lançamento STIC/STIL e a cadeia de chamada de `usp_stinvclc`.
+6. Esclarecer o papel de SXX e a influência operacional de `ST.textteis`.
 
 ### Prioridade 4 — BO e dossiers internos
 1. Revalidar integralmente `tr_bo_insert/update/delete`.
@@ -325,6 +327,6 @@ A investigação de OD/OL e da reconciliação bancária está integrada em [Inv
 
 O conhecimento de stock e as pendências SQL estão integrados em [Ponto de continuidade — investigação de stocks PHC Gestão](continuity-stock-phc-gestao-2026-11-27.md). O guião de leitura está em `docs/sql/pendentes-transferencias-stock-phc-gestao-2026-11-27.sql`; executar apenas quando houver acesso à base indicada e guardar os quatro conjuntos de resultados. Não repetir consultas já respondidas.
 
-**Próxima prioridade global:** localizar os fluxos aplicacionais de reconciliação bancária e fecho FE; preparar testes controlados multi-linha/multi-data numa cópia descartável; fechar a matriz de origens directas de OL; e retomar a investigação de SX/SXX, inventário físico e produção com a evidência já preservada. VO continua como lacuna documental independente.
+**Próxima prioridade no circuito de stock:** obter schema e defaults de SX/SXX, identificar a origem/versão das duas exportações de triggers e preparar validações multi-linha numa cópia descartável. O guião SQL de transferências TS/TS2/CM2 continua preparado e por executar quando houver acesso à CSDefault202603. VO continua como lacuna documental independente.
 
 **Este índice é uma fotografia de continuidade em 27-11-2026, actualizada após os merges #31, #32, #38, #39 e #40. A integração documental não significa que os circuitos PHC estejam todos fechados ou validados em runtime.**
