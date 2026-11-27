@@ -16,6 +16,11 @@ Uma relação REL/DTL não é automaticamente uma FK SQL. Uma ligação funciona
 
 ### Classificação das arestas
 
+Além do tipo de relação, o grafo usa estado de conhecimento:
+- **Amarelo:** tabela já investigada, mas ainda com lacunas.
+- **Vermelho:** tabela encontrada no inventário/código, mas sem investigação funcional.
+- **Verde:** conhecimento funcional fechado. Ainda não há tabelas verdes; os ciclos analisados continuam com limites por validar.
+
 | Marca | Significado |
 |---|---|
 | **Observado** | Predicado, chamada ou efeito directamente identificado numa fonte concreta |
@@ -29,6 +34,11 @@ As setas mostram a direcção de leitura do processo, não cardinalidade. Não s
 
 O diagrama representa os circuitos identificados e assinala explicitamente as áreas ainda abertas.
 
+
+  classDef partial fill:#FDE68A,stroke:#B45309,color:#713F12,stroke-width:1.5px;
+  classDef untouched fill:#FCA5A5,stroke:#B91C1C,color:#7F1D1D,stroke-width:1.5px;
+  class BO,BO2,BI,BOTXT,FT,FI,TD,FT2,FT3,TS,TS2,FN,CM1,CM2,SL,ST,SA,SV,SX,SXX,SGC,SGT,STIC,STIL,OC,OD,OL,CH,CHL,CC,FC,RE,TSRE,RD,TSRD,PD,PO,FO,LR,LM,LP,LO,VY,CHF,BA,BL,BX,BR,BABR,ML,FE,BIPRECAT partial;
+  class PR,VZ,OX,OLBB,OW,OWLI,GPC,FACA,FACC,FACD,SE,OFC,OCI,OMI,OCP,OPT untouched;
 ```mermaid
 flowchart TB
   subgraph DOC["Dossiers e documentos"]
@@ -152,6 +162,30 @@ flowchart TB
     BA -.->|"reco / extracto por bastamp"| ML
     OL -->|"local = C"| FE
   end
+  subgraph OL_PENDING["Outras tabelas com efeitos em OL — por estudar"]
+    PR["PR — função por estudar"]
+    VZ["VZ — função por estudar"]
+    OX["OX — função por estudar"]
+    OLBB["OLBB — função por estudar"]
+    OW["OW — função por estudar"]
+    OWLI["OWLI — função por estudar"]
+    GPC["GPC — função por estudar"]
+    FACA["FACA — função por estudar"]
+    FACC["FACC — função por estudar"]
+    FACD["FACD — função por estudar"]
+  end
+  PR -.->|"trigger scan: escreve em OL; semântica pendente"| OL
+  VZ -.->|"trigger scan: escreve em OL; semântica pendente"| OL
+  OX -.->|"trigger scan: escreve em OL; semântica pendente"| OL
+  OLBB -.->|"trigger scan: escreve em OL; semântica pendente"| OL
+  OW -.->|"trigger scan: escreve em OL; semântica pendente"| OL
+  OWLI -.->|"trigger scan: escreve em OL; semântica pendente"| OL
+  GPC -.->|"trigger scan: escreve em OL; semântica pendente"| OL
+  FACA -.->|"trigger scan: escreve em OL; semântica pendente"| OL
+  FACC -.->|"trigger scan: escreve em OL; semântica pendente"| OL
+  FACD -.->|"trigger scan: escreve em OL; semântica pendente"| OL
+
+
   subgraph PRE["Pré-cativação e reservas"]
     BIPRECAT["BIPRECAT — pré-cativação"]
     MON["Monitor de Cativação"]
