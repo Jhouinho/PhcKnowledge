@@ -248,6 +248,10 @@ SELECT ndoc, movinc, cmcc, cmccn
 FROM dbo.tsre
 ORDER BY ndoc;
 
+SELECT ndoc, regrd
+FROM dbo.tsrd
+ORDER BY ndoc;
+
 SELECT cm, cmdesc
 FROM dbo.cm1
 WHERE cm IN (30, 81)
