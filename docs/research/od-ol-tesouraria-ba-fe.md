@@ -449,11 +449,15 @@ Não foi encontrado `tr_fe_*` nem validação de `FE.fechado` nos triggers SQL s
 
 ## 16. Próxima validação read-only
 
-A única validação de dados/configuração imediata que falta para fechar o ramo de recibos e as contabilizações associadas é confirmar as linhas de configuração de TSRE e as descrições efectivas dos códigos CM1 30/81.
+A única validação de dados/configuração imediata que falta para fechar o ramo de recibos e as contabilizações associadas é confirmar as linhas de configuração de TSRE e TSRD e as descrições efectivas dos códigos CM1 30/81.
 
 ```sql
 SELECT ndoc, movinc, cmcc, cmccn
 FROM dbo.tsre
+ORDER BY ndoc;
+
+SELECT ndoc, regrd
+FROM dbo.tsrd
 ORDER BY ndoc;
 
 SELECT cm, cmdesc
