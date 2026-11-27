@@ -514,7 +514,7 @@ Os triggers `tr_rd_insert/update/delete` mostram:
 - Se `cheque=1` e `regrd=0`, o trigger cria CH.
 - A eliminação/anulação do RD limpa CC, CH e OL associados.
 
-O campo `regrd` é consistente com a opção documental de série para devolução de recibos de adiantamento. O valor efectivo da configuração TSRD ainda não foi consultado.
+O campo `regrd` é consistente com a opção documental de série para devolução de recibos de adiantamento. Na configuração consultada de `CSDefault202603`, `TSRD.ndoc=1` tem `regrd=0` e `TSRD.ndoc=2` tem `regrd=1`; estes valores confirmam a existência de uma série normal e de uma série de devolução nesta base.
 
 ### 19.2 PD — Adiantamentos a Fornecedores
 
