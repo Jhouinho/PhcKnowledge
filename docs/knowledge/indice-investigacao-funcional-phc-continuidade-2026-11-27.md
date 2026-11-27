@@ -86,7 +86,7 @@ O modelo foi corrigido: **OD não é convertido genericamente em OL**. OD manté
 |---|---|---|
 | OD | Movimentos previstos, manuais ou automáticos; origens CC, FC, LR/LM, LP/LO, VY e CHF identificadas no código | Valores/configuração reais e validação transaccional |
 | OL | Movimentos efectivos gerados directamente por FT, RE, LM, LO e outros circuitos | Inventário completo de origens e validação runtime |
-| BA | Movimentos bancários derivados de OL quando existe conta bancária (`contado>0)) | Índices/cardinalidades completas e validação do circuito |
+| BA | Movimentos bancários derivados de OL quando existe conta bancária (`contado>0` | Índices/cardinalidades completas e validação do circuito |
 | BL | Contas bancárias e saldos totais/reconciliados actualizados por BA | Confirmar estrutura/índices e regras adicionais |
 | BX | Cabeçalho do extrato bancário importado | Confirmar estrutura/índices e sequência de actualização |
 | BR | Movimentos importados que pertencem a BX | Confirmar estrutura/índices e associação a BABR |
@@ -103,7 +103,7 @@ O modelo foi corrigido: **OD não é convertido genericamente em OL**. OD manté
 **BA / BL / BR / BX / BABR**
 - `OL.contado` corresponde a `BL.noconta`; não é um indicador booleano de reconciliação.
 - `tr_ol_*` cria/actualiza/elimina BA para OL com conta bancária indicada.
-- `tr_ba_*` mantém em BL saldos totais e reconciliados (`reco=1)).
+- `tr_ba_*` mantém em BL saldos totais e reconciliados (`reco=1`.
 - `tr_babr_insert/delete` liga BA a BR e marca/desmarca ambos como reconciliados.
 - BR contém movimentos importados; BX é o cabeçalho do extrato. `tr_br_*` chama `usp_Act_Extratos_Bancarios` para recalcular os saldos do BX.
 - `tr_ba_update` propaga `reco` e `extracto` para ML pelo `bastamp`.
