@@ -84,7 +84,7 @@ O modelo foi corrigido: **OD não é convertido genericamente em OL**. OD manté
 
 | Tabela | Conhecimento actual | Lacuna principal |
 |---|---|---|
-| OD | Movimentos previstos, manuais ou automáticos; origens CC, FC, LR/LM, LP/LO, VY e CHF identificadas no código | Valores/configuração reais e validação transaccional |
+| OD | Movimentos previstos, manuais ou automáticos; ligações/circuitos identificados com CC, FC, LR/LM, LP/LO, VY e CHF (criação e eliminação devem ser distinguidas por trigger) | Valores/configuração reais e validação transaccional |
 | OL | Movimentos efectivos gerados directamente por FT, RE, LM, LO e outros circuitos | Inventário completo de origens e validação runtime |
 | BA | Movimentos bancários derivados de OL quando existe conta bancária (`contado>0` | Índices/cardinalidades completas e validação do circuito |
 | BL | Contas bancárias e saldos totais/reconciliados actualizados por BA | Confirmar estrutura/índices e regras adicionais |
