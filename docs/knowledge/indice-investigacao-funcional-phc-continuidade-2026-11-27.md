@@ -107,9 +107,9 @@ O modelo foi corrigido: **OD não é convertido genericamente em OL**. OD manté
 - Os códigos LM/LO são mapeados pelo artigo PHC **Códigos das Letras**; não confundir esses códigos de operação com CM1. CM1 é usado para os movimentos de C/C gerados em alguns ramos (códigos 30 e 81). Na configuração consultada de `CSDefault202603`, ambos têm `cmdesc='Anula. Letra'`; CM1=30 surge no ramo de CC associado a determinadas operações LM/LO e CM1=81 no ramo LO `cm=22`, que cria FC.
 
 **BA / BL / BR / BX / BABR**
-- `OL.contado` corresponde a `BL.noconta`; não é um indicador booleano de reconciliação.
+- `BA.contado` é usado pelos triggers BA para localizar `BL.noconta`; não é um indicador booleano de reconciliação. `tr_ol_*` transporta `OL.contado` para BA. `tr_bl_update` actualiza `ollocal` nas tabelas dependentes quando mudam banco/conta; não preenche `OL.contado`.
 - `tr_ol_*` cria/actualiza/elimina BA para OL com conta bancária indicada.
-- `tr_ba_*` mantém em BL saldos totais e reconciliados (`reco=1`.
+- `tr_ba_*` mantém em BL saldos totais e reconciliados (`reco=1`).
 - `tr_babr_insert/delete` liga BA a BR e marca/desmarca ambos como reconciliados.
 - BR contém movimentos importados; BX é o cabeçalho do extrato. `tr_br_*` chama `usp_Act_Extratos_Bancarios` para recalcular os saldos do BX.
 - `tr_ba_update` propaga `reco` e `extracto` para ML pelo `bastamp`.
@@ -236,7 +236,7 @@ O grafo não é ERD físico e não afirma FKs SQL. O facto de uma ligação esta
 ## 5. Prioridades para a próxima investigação
 
 ### Prioridade 1 — configuração e validação de tesouraria
-1. Rever estrutura/índices de BA, BL, BR, BX e BABR.
+1. Confirmar no catálogo SQL as colunas, nulabilidade, PK/UK, índices e FKs de BA, BL, BR, BX e BABR. O extracto stamp disponível apenas lista campos terminados em `stamp` e não contém índices/constraints; não apresenta BABR, apesar dos triggers `tr_babr_*`.
 2. Localizar no código aplicacional a criação/remoção de BABR e a autorização de fecho FE.
 3. Auditar operações multi-linha nos triggers OL/BA e validar em ambiente descartável.
 
@@ -289,7 +289,7 @@ Não reescrever relatórios antigos como se tivessem sido produzidos com evidên
 
 ## 7. Ponto exacto de retoma
 
-A investigação de OD/OL e da reconciliação bancária já tem uma primeira síntese no PR #38. A validação read-only de TSRE, TSRD e CM1 em `CSDefault202603` está concluída e registada no relatório. A próxima acção concreta é avançar para índices/cardinalidades BA/BL/BR/BX/BABR e validação da aplicação.
+A investigação de OD/OL e da reconciliação bancária já tem uma primeira síntese no PR #38. A validação read-only de TSRE, TSRD e CM1 em `CSDefault202603` está concluída e registada no relatório. A próxima acção concreta é confirmar no catálogo SQL a estrutura física e os índices/constraints de BA/BL/BR/BX/BABR; o extracto stamp disponível não é suficiente. Depois, localizar o fluxo aplicacional de BABR/FE.
 
 Em paralelo, PR #34 mantém SX/SXX e produção em aberto, PR #35 mantém BO como primeira passagem e PR #32 contém o grafo actualizado. Todos permanecem fora da main até revisão e integração explícita.
 
