@@ -50,7 +50,7 @@ flowchart TB
     SL["SL — movimentos físicos de stock"]
     ST["ST — ficha e acumulados globais"]
     SA["SA — saldos por artigo/armazém"]
-    CM1["CM1 — configuração de movimentos FN"]
+    CM1["CM1 — códigos de C/C; inclui folansl usado em FN"]
     CM2["CM2 — configuração/sentido do movimento"]
     SV["SV — movimentos de valorização"]
     BI -->|"condicional: dossier / linha / TS-TS2"| SL
@@ -59,7 +59,7 @@ flowchart TB
     SL -->|"tr_sl_* actualiza/reverte"| ST
     SL -->|"tr_sl_* actualiza/reverte"| SA
     FI -.->|"SV condicionado por TD e regras por linha"| SV
-    CM1 -.->|"configuração"| FN
+    CM1 -.->|"folansl / configuração de lançamento"| FN
     CM2 -.->|"interpreta entrada e efeitos do movimento"| SL
     TS -.->|"configuração e estado do dossier"| BI
     TD -.->|"lancasl / cmsl / cmsv"| FI
