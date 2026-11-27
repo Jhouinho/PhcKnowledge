@@ -223,7 +223,11 @@ flowchart LR
   SL["SL.bistamp / SL.sticstamp"]
   STIC["STIC.sticstamp"]
   BOTXT["BOTXT.bostamp"]
-  OL["OL.olstamp"]
+  OL["OL.olstamp / rdstamp / pdstamp / postamp / fostamp"]
+  RD["RD.rdstamp"]
+  PD["PD.pdstamp"]
+  PO["PO.postamp"]
+  FO["FO.fostamp"]
   BA["BA.bastamp / BA.olstamp"]
   BL["BL.noconta"]
   BX["BX.bxstamp"]
@@ -237,6 +241,10 @@ flowchart LR
   BI -.->|"obistamp referencia bistamp da linha de origem"| BI
   SL -->|"SL.sticstamp = STIC.sticstamp"| STIC
   BO -->|"tr_bo_delete: BOTXT.bostamp = deleted.bostamp"| BOTXT
+  RD -->|"OL.rdstamp = RD.rdstamp"| OL
+  PD -->|"OL.pdstamp = PD.pdstamp"| OL
+  PO -->|"OL.postamp = PO.postamp"| OL
+  FO -.->|"OL.fostamp = FO.fostamp (limpeza em tr_fo_delete)"| OL
   OL -->|"OL.olstamp = BA.olstamp (tr_ol_*)"| BA
   BA -->|"BA.contado = BL.noconta (tr_ba_*)"| BL
   BR -->|"BR.bxstamp = BX.bxstamp (tr_br_* / procedure)"| BX
