@@ -6,8 +6,8 @@
   IMPORTANTE:
   - Script exclusivamente de leitura (SELECT / metadados).
   - Não cria, altera nem elimina dados ou objectos.
-  - Não assumir que os campos CM2 têm nomes específicos: confirmar no 1.º resultado.
-  - Guardar/exportar os resultados dos 3 blocos para fechar a análise.
+  - Não assumir nomes de colunas ainda não confirmados: consultar primeiro o esquema.
+  - Guardar/exportar os resultados para fechar a análise.
 */
 
 SET NOCOUNT ON;
@@ -36,23 +36,17 @@ FROM dbo.TS
 WHERE ndos = 5;
 
 PRINT '3) CONFIGURAÇÃO ASSOCIADA — TS2';
-SELECT
-    ts.ndos,
-    ts.tsstamp,
-    ts.stocks,
-    ts.trfa,
-    ts.producao,
-    ts.cmstocks,
-    ts.cm2stocks,
-    ts2.*
+-- A ligação TS.tsstamp = TS2.ts2stamp já foi observada na recolha anterior.
+-- TS.* e TS2.* evitam presumir nomes de campos ainda por validar.
+SELECT ts.*, ts2.*
 FROM dbo.TS AS ts
 LEFT JOIN dbo.TS2 AS ts2
     ON ts.tsstamp = ts2.ts2stamp
 WHERE ts.ndos = 5;
 
 PRINT '4) CONFIGURAÇÃO CM2 — TODOS OS REGISTOS';
--- CM2 é uma tabela de configuração; devolver os registos permite localizar
--- os códigos 98 e 48 sem presumir o nome da coluna que identifica o código.
+-- Devolve a tabela de configuração para localizar os códigos 98 e 48
+-- sem presumir o nome da coluna que identifica o código.
 SELECT *
 FROM dbo.CM2
 ORDER BY 1;
