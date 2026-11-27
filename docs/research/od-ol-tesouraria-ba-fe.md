@@ -588,73 +588,30 @@ Assim, FO não deve ser classificado como origem directa de criação de OL com 
 
 
 
-### 20. Revisão estrutural BA / BL / BR / BX / BABR — 2026-11-27
+### 20. Revisão estrutural e comportamental BA / BL / BR / BX / BABR — 2026-11-27
 
-O inventário stamp consultado confirma as colunas listadas na secção 4.5, mas não contém metadados suficientes para avaliar PK/UK, índices ou FKs. A leitura dos triggers permite, no entanto, afirmar:
+A consulta ao catálogo SQL de `CSDefault202603` fechou as colunas, tipos, nulabilidade, PK, índices e FKs destas cinco tabelas. Os resultados completos estão na secção 4.5. Em síntese:
+- BA PK `bastamp`; índice não único em `olstamp`.
+- BABR PK `babrstamp`; índices não únicos em `bastamp` e `brstamp`.
+- BL PK `noconta`; UNIQUE em `blstamp`; índice `(banco, conta)` não único.
+- BR PK `brstamp`; sem índice específico em `bastamp` ou `bxstamp` no resultado.
+- BX PK composta `(contado, extracto)`; UNIQUE em `bxstamp`.
+- Não foram devolvidas FKs envolvendo BA/BL/BR/BX/BABR.
 
-- `BA` é criado por `tr_ol_insert` quando `OL.contado > 0`, com `BA.bastamp = BA.olstamp = OL.olstamp`.
-- `BA.contado` é usado para localizar `BL.noconta` nos triggers BA; não é o indicador de reconciliação.
-- `tr_ba_insert/update/delete` mantêm saldos totais e reconciliados em BL através do predicado `BL.noconta = BA.contado`.
-- `BR.bxstamp` liga cada movimento importado ao cabeçalho BX nos triggers de BR; estes chamam `usp_Act_Extratos_Bancarios` para recalcular os totais do extrato.
-- `BABR` é a associação operacional: INSERT marca BA e BR como `reco=1`; DELETE repõe `reco=0`. A documentação PHC descreve associação muitos-para-muitos. Sem índices/constraints e sem dados transaccionais, não se deve declarar cardinalidade física nem exclusividade.
-- O inventário inclui `BA.brstamp` e `BR.bastamp`, mas os triggers standard pesquisados não usam esses campos como predicados de ligação; não os representar como caminho principal sem outra evidência.
+**Comportamento dos triggers BABR**
+- `tr_babr_insert` (script standard, linha 873) actualiza `BA.reco=1` para os `bastamp` inseridos e `BR.reco=1` para os `brstamp` inseridos.
+- `tr_babr_delete` (linha 1642) actualiza incondicionalmente `BR.reco=0` e `BA.reco=0` para os stamps presentes em `deleted`.
+- Não foi encontrado `tr_babr_update` no script consultado.
+- Os triggers de insert/delete operam sobre as tabelas lógicas `inserted`/`deleted`, pelo que suportam statements com várias linhas em termos de conjunto; contudo, a lógica de DELETE não verifica se continuam a existir outras associações BABR para o mesmo BA ou BR.
+- Como os índices BABR em `bastamp` e `brstamp` não são únicos e a reconciliação PHC admite associações múltiplas, existe um risco lógico: apagar apenas uma associação de um movimento que ainda conserva outras pode deixar o respectivo `reco=0` apesar de ainda existirem ligações. A ocorrência efectiva depende do fluxo aplicacional e da forma como os deletes são agrupados.
+- A confirmação deste risco em dados reais requer comparar `BA.reco`/`BR.reco` com a existência de linhas BABR e identificar movimentos com mais de uma associação. Não foram assumidos dados transaccionais na base sem os consultar.
 
-A consulta de catálogo proposta para fechar a estrutura física é:
+**Relações e limites**
+- `BABR` é o mecanismo de associação activa demonstrado pelos triggers. A presença de `BA.brstamp` e `BR.bastamp` não demonstra que sejam caminhos activos.
+- `tr_ba_insert/update/delete` mantêm saldos totais e reconciliados em BL através de `BL.noconta = BA.contado`; `BA.contado` identifica a conta bancária, não é um booleano.
+- Os triggers de BR usam `BR.bxstamp` para localizar BX e chamam `usp_Act_Extratos_Bancarios` para recalcular os totais do extrato.
+- A ausência de FKs não invalida relações mantidas por triggers, procedures ou aplicação.
+- Estas propriedades foram observadas em `CSDefault202603` e no script standard consultado; não generalizar automaticamente a outras instalações/versões.
 
-```sql
-DECLARE @tables TABLE (name sysname PRIMARY KEY);
-INSERT INTO @tables (name) VALUES (N'BA'), (N'BL'), (N'BR'), (N'BX'), (N'BABR');
-
--- Colunas, tipos e nulabilidade
-SELECT
-    t.name AS table_name,
-    c.column_id,
-    c.name AS column_name,
-    ty.name AS type_name,
-    c.max_length,
-    c.precision,
-    c.scale,
-    c.is_nullable
-FROM sys.tables AS t
-JOIN @tables AS x ON x.name = t.name
-JOIN sys.columns AS c ON c.object_id = t.object_id
-JOIN sys.types AS ty ON ty.user_type_id = c.user_type_id
-ORDER BY t.name, c.column_id;
-
--- Índices, PK/UK e ordem das colunas
-SELECT
-    t.name AS table_name,
-    i.name AS index_name,
-    i.type_desc,
-    i.is_primary_key,
-    i.is_unique,
-    i.is_unique_constraint,
-    i.is_disabled,
-    ic.key_ordinal,
-    ic.is_included_column,
-    c.name AS column_name
-FROM sys.tables AS t
-JOIN @tables AS x ON x.name = t.name
-JOIN sys.indexes AS i ON i.object_id = t.object_id
-JOIN sys.index_columns AS ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
-JOIN sys.columns AS c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
-WHERE i.index_id > 0
-ORDER BY t.name, i.name, ic.key_ordinal, ic.index_column_id;
-
--- Foreign keys físicas (se existirem)
-SELECT
-    fk.name AS fk_name,
-    tp.name AS parent_table,
-    cp.name AS parent_column,
-    tr.name AS referenced_table,
-    cr.name AS referenced_column
-FROM sys.foreign_keys AS fk
-JOIN sys.foreign_key_columns AS fkc ON fkc.constraint_object_id = fk.object_id
-JOIN sys.tables AS tp ON tp.object_id = fkc.parent_object_id
-JOIN sys.columns AS cp ON cp.object_id = fkc.parent_object_id AND cp.column_id = fkc.parent_column_id
-JOIN sys.tables AS tr ON tr.object_id = fkc.referenced_object_id
-JOIN sys.columns AS cr ON cr.object_id = fkc.referenced_object_id AND cr.column_id = fkc.referenced_column_id
-WHERE tp.name IN (N'BA',N'BL',N'BR',N'BX',N'BABR')
-   OR tr.name IN (N'BA',N'BL',N'BR',N'BX',N'BABR')
-ORDER BY tp.name, fk.name, fkc.constraint_column_id;
-```
+**Próxima validação**
+Executar uma consulta read-only que compare os flags `reco` com as associações BABR existentes e liste movimentos BA/BR com mais de uma associação. Depois, localizar o fluxo aplicacional que cria e elimina BABR para perceber se a remoção é sempre feita em bloco ou pode ser individual.
