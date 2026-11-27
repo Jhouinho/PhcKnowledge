@@ -89,6 +89,11 @@ flowchart TB
     FT2["FT2 / FT3 — dados de pagamento e IVA"]
     RE["RE — recibos"]
     TSRE["TSRE — configuração de recibos"]
+    RD["RD — recibos de adiantamento"]
+    TSRD["TSRD — configuração de recibos de adiantamento"]
+    PD["PD — adiantamentos a fornecedores"]
+    PO["PO — pagamentos a fornecedores"]
+    FO["FO — compras a fornecedores"]
     LR["LR — títulos a receber"]
     LM["LM — operações de títulos a receber"]
     LP["LP — títulos a pagar"]
@@ -112,6 +117,16 @@ flowchart TB
     FT2 -.->|"dados de pagamento / local / moeda"| OL
     RE -->|"process=1 e TSRE.movinc=0"| OL
     TSRE -.->|"configuração da série / movimentos incobráveis"| RE
+    RD -->|"tr_rd_*; TSRD.regrd define entrada/devolução"| OL
+    TSRD -.->|"regrd / série de devolução"| RD
+    RD --> CC
+    RD -.->|"se cheque=1"| CH
+    PD -->|"tr_pd_*"| OL
+    PD --> FC
+    PO -->|"process=1; pode gerar segundo local"| OL
+    PO --> FC
+    FO --> FC
+    FO -.->|"tr_fo_delete: limpeza associada; não cria OL"| OL
     LR --> LM
     LM -->|"saldo pendente do título"| OD
     LM -->|"CM de cobrança / liquidação"| OL
@@ -177,9 +192,13 @@ flowchart TB
 - `usp_stinvclc` não foi demonstrada como responsável por SX/SXX.
 - SXX é descrita em Rel como stock global por armazém/cor/tamanho, mas o seu papel operacional não está provado.
 
-#### Tesouraria — FT, RE, LM/LR, LO/LP, OD, OL, BA/BL e reconciliação
+#### Tesouraria — FT, RE, RD, PD, PO, LM/LR, LO/LP, OD, OL, BA/BL e reconciliação
 - FT pode criar OL quando `TD.lancaol=1` e existem correspondências necessárias em TD, FT2, FT3 e OC.
-- RE cria/actualiza OL quando fica processado e a série não está configurada para movimentos incobráveis (`TSRE.movinc=0`); pode gerar uma segunda componente quando o segundo local de tesouraria tem valor.
+- RE cria/actualiza OL quando fica processado e a série não está configurada para movimentos incobráveis (`TSRE.movinc=0)); pode gerar uma segunda componente.
+- RD (Recibos de Adiantamento) cria/actualiza OL directamente; `TSRD.regrd` distingue recibo normal de devolução. Pode também criar CH quando o recibo é por cheque.
+- PD (Adiantamentos a Fornecedores) cria/actualiza OL e FC directamente.
+- PO (Pagamentos a Fornecedores) cria/actualiza OL e FC quando `process=1`; pode gerar uma segunda componente de tesouraria.
+- FO cria/actualiza FC; no script consultado, o trigger FO de eliminação limpa OL por `fostamp`, mas não foi encontrado INSERT/UPDATE de OL em FO.
 - LM/LR e LO/LP mantêm OD como saldo pendente do título e criam OL directamente nas operações de liquidação elegíveis. Não existe conversão genérica OD → OL.
 - A Enciclopédia mapeia os códigos de operação das letras; não os confundir com os códigos CM1 de conta-corrente.
 - BA é criado a partir de OL quando `contado>0`. `contado` é o número da conta bancária, correspondente a `BL.noconta`, e não um booleano de reconciliação.
@@ -242,6 +261,10 @@ flowchart LR
 | 10 | `BABR.bastamp = BA.bastamp` | `tr_babr_insert/delete` | Associação de reconciliação |
 | 11 | `BABR.brstamp = BR.brstamp` | `tr_babr_insert/delete` | Associação de reconciliação; cardinalidade deve ser confirmada por índices |
 | 12 | `ML.bastamp = BA.bastamp` | `tr_ba_update` | Propagação de `reco` e `extracto` para movimentos contabilísticos |
+| 13 | `OL.rdstamp = RD.rdstamp` | `tr_rd_insert/update/delete` | Movimento de tesouraria criado/actualizado/limpo pelo recibo de adiantamento |
+| 14 | `OL.pdstamp = PD.pdstamp` | `tr_pd_insert/update/delete` | Movimento de tesouraria criado/actualizado/limpo pelo adiantamento a fornecedor |
+| 15 | `OL.postamp = PO.postamp` | `tr_po_insert/update/delete` | Movimento de tesouraria criado/actualizado/limpo pelo pagamento a fornecedor |
+| 16 | `OL.fostamp = FO.fostamp` | `tr_fo_delete` | Apenas predicado de limpeza observado; não foi encontrado trigger de criação de OL em FO |
 
 ### 3.2 Elementos conhecidos sem aresta estrutural demonstrada
 
@@ -280,13 +303,14 @@ Cada ligação futura deve ser classificada como:
 
 ## 5. Prioridades para continuar a investigação
 
-1. **Tesouraria — configuração e validação:** confirmar valores TSRE (`movinc`, `cmcc`, `cmccn`) e descrições CM1 30/81; depois validar em ambiente descartável os circuitos RE/LM/LO.
+1. **Tesouraria — configuração e validação:** confirmar valores TSRE (`movinc`, `cmcc`, `cmccn`), TSRD (`regrd`) e descrições CM1 30/81; validar em ambiente descartável os circuitos RE/RD/PD/PO/LM/LO.
 2. **Reconciliação bancária:** confirmar estrutura, índices e cardinalidades de BA/BL/BR/BX/BABR; localizar no código aplicacional a criação/remoção das associações BABR.
-3. **Fecho FE:** localizar a validação aplicacional que exige password em dias fechados e confirmar a configuração efectiva.
-4. **SX/SXX:** localizar quem cria e actualiza `SX.stock`, esclarecer SXX e o circuito do inventário com grelhas.
-5. **BO / dossiers internos:** cruzar Dic, Rel, triggers integrais e Enciclopédia; determinar apenas depois os efeitos em BI, stock e tesouraria.
-6. **Produção:** fechar o percurso real de consumo/entrada no PHC Gestão/CS, sem extrapolar Manufactor.
-7. **VO:** recuperar as evidências originais; não assumir equivalência com BI.
+3. **Outras origens directas de OL:** aprofundar PR, VY/VZ, OX, OLBB, OW/OWLI, GPC e FACA/FACC/FACD. Distinguir criação, actualização e limpeza.
+4. **Fecho FE:** localizar a validação aplicacional que exige password em dias fechados e confirmar a configuração efectiva.
+5. **SX/SXX:** localizar quem cria e actualiza `SX.stock`, esclarecer SXX e o circuito do inventário com grelhas.
+6. **BO / dossiers internos:** cruzar Dic, Rel, triggers integrais e Enciclopédia; determinar apenas depois os efeitos em BI, stock e tesouraria.
+7. **Produção:** fechar o percurso real de consumo/entrada no PHC Gestão/CS, sem extrapolar Manufactor.
+8. **VO:** recuperar as evidências originais; não assumir equivalência com BI.
 
 ## 6. Fontes de continuidade e proveniência
 
@@ -300,4 +324,4 @@ Cada ligação futura deve ser classificada como:
 
 O script `docs/sources/triggers phc.sql` é uma fonte standard legível, não prova automática de que as definições instaladas em cada base sejam idênticas. A análise estática não equivale a execução em runtime. Os ZIP da Enciclopédia e das capturas não devem ser adicionados ao repositório.
 
-**Estado final desta revisão:** grafo funcional reorganizado por domínio e actualizado com BA/BL/BR/BX/BABR; grafo estrutural inclui predicados observados em código; OD→OL genérico removido; relações pendentes explicitamente isoladas; ERD físico completo continua dependente de recolha própria.
+**Estado final desta revisão:** grafo funcional reorganizado por domínio e actualizado com RD/PD/PO, BA/BL/BR/BX/BABR e FE; grafo estrutural inclui predicados observados em código; OD→OL genérico removido; relações pendentes explicitamente isoladas; ERD físico completo continua dependente de recolha própria.
