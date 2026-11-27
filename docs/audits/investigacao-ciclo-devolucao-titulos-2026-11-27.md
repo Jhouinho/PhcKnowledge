@@ -232,3 +232,57 @@ Base de testes: `dfblock_teste`.
 ---
 
 **Nota de proveniência:** este documento regista uma investigação realizada sobre uma base de testes de um cliente. Os dados identificativos e os valores são mantidos apenas para permitir a reprodução e rastreabilidade desta análise; não devem ser tratados como dados de referência PHC universais nem como conteúdo do baseline standard CSDefault.
+
+
+## 10. Verificação adicional — origem de CHL.contado na devolução
+
+Esta secção regista a continuação da análise efectuada após a primeira versão deste dossier. Todas as verificações SQL foram realizadas na cópia `dfblock_teste), e a análise dos triggers usou o ficheiro standard versionado no GitHub.
+
+### 10.1 Triggers instalados em CH e CHL
+
+A consulta a `sys.triggers` confirmou exactamente os seis triggers seguintes, todos activos e do tipo AFTER (não INSTEAD OF):
+
+| Tabela | Trigger | Estado |
+|---|---|---|
+| CH | `tr_ch_delete` | Activo |
+| CH | `tr_ch_insert` | Activo |
+| CH | `tr_ch_update` | Activo |
+| CHL | `tr_chl_delete` | Activo |
+| CHL | `tr_chl_insert` | Activo |
+| CHL | `tr_chl_update` | Activo |
+
+Não foram encontrados triggers adicionais em `CH) ou `CHL) na cópia testada.
+
+### 10.2 Comparação do campo contado no cenário B
+
+Consulta ao título `ADM26112757265,9580000-1` e aos respectivos registos de histórico:
+
+| Histórico | cm | Descrição | CH.contado | CHL.contado |
+|---|---:|---|---:|---:|
+| Aceitação | 1 | Aceite | 0 | 0 |
+| Devolução | 3 | Devolução do Título | 0 | 3 |
+
+O título principal permaneceu com `CH.contado=0). O registo de aceitação também permaneceu com `CHL.contado=0). O valor 3 aparece apenas no novo registo de devolução.
+
+### 10.3 Análise dos triggers standard
+
+Foi consultado o conteúdo do blob `f9949635b32e265129f2aed3803d12307633c842` do ficheiro `docs/sources/triggers phc.sql` na branch `main`.
+
+- `tr_chl_insert): no bloco `cm=3`, cria os movimentos inversos em `OL`, copiando `contado` de `inserted). Não calcula nem actualiza `CHL.contado`.
+- `tr_chl_update): trata alterações ao campo `plano`; não altera `contado`.
+- `tr_ch_update): pode copiar `CH.contado` para `CHL.contado` apenas no bloco de substituição, quando `CH.choristamp` está preenchido e o histórico tem `cm=4`. Não abrange a devolução observada (`cm=3), nem os títulos testados com `choristamp` vazio.
+- `tr_ch_insert): cria históricos de aceitação (`cm=1)) ou substituição (`cm=4)); não cria o histórico de devolução.
+- `tr_chl_delete): não participa na inserção observada do histórico de devolução.
+
+A consulta de inventário aos módulos SQL instalados que continham referências simultâneas a `CHL` e `contado` não devolveu resultados. A pesquisa anterior por módulos com referências a `CHL` e operações de escrita devolveu apenas procedimentos internos de controlo de versões do SQL Server, sem relação demonstrada com o circuito de títulos.
+
+### 10.4 Conclusão e limite
+
+Na cópia testada, os seis triggers instalados em `CH` e `CHL` coincidem em nome e estado com o conjunto standard consultado. A análise dos corpos standard não identificou lógica que calcule o valor `CHL.contado=3` no registo de devolução.
+
+A evidência permite concluir que o valor 3 já está presente em `inserted.contado` quando `tr_chl_insert` executa. Não permite identificar definitivamente quem o atribui. A aplicação PHC é uma origem possível, mas não foi inspeccionado o código da aplicação nem capturada a instrução SQL que insere o registo.
+
+**Questão não resolvida:** significado funcional e origem exacta dos valores `CHL.contado=1` e `CHL.contado=3` nos dois cenários.
+
+**Decisão de encerramento desta linha de análise:** não continuar a percorrer triggers, procedimentos ou módulos SQL sem uma nova evidência concreta que indique um ponto de entrada. A investigação fica documentada com a conclusão limitada acima; não se deve transformar a hipótese sobre a aplicação PHC num facto confirmado.
+
