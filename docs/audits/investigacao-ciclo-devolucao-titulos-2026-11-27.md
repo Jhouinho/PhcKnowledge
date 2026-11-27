@@ -1,7 +1,7 @@
 # Investigação funcional — ciclo de vida e devolução de títulos (2026-11-27)
 
 > **Natureza:** dossier de investigação funcional, não especificação canónica do produto PHC Knowledge.  
-> **Âmbito:** observações efectuadas numa cópia de testes PHC CS, base `dfblock_teste`.  
+> **Âmbito:** observações efectuadas numa cópia de testes PHC CS, base `cópia de testes do cliente`.  
 > **Data dos testes:** 27-11-2026.  
 > **Estado:** evidência empírica recolhida em dois cenários; mecanismo standard correlacionado com os resultados; ainda há validações pendentes.
 
@@ -14,13 +14,13 @@ Compreender o ciclo de vida de um cheque/título de cliente e os seus reflexos n
 3. devolução;
 4. reflexo em conta corrente e tesouraria.
 
-Todos os testes descritos foram efectuados pelo utilizador na interface PHC, sobre a cópia `dfblock_teste`, nunca sobre a base original/produção.
+Todos os testes descritos foram efectuados pelo utilizador na interface PHC, sobre a cópia `cópia de testes do cliente`, nunca sobre a base original/produção.
 
 ## 2. Regras de interpretação
 
 - Os valores `valor` e `evalor` foram preservados tal como devolvidos pelo SQL. Não se deve assumir que `valor` representa euros directos: os testes mostram também um valor em moeda estrangeira.
 - Distinguir sempre dados observados na base, comportamento encontrado no ficheiro de triggers standard e inferências sobre a sequência funcional.
-- O ficheiro de triggers do GitHub é uma fonte de código standard de referência. Os corpos dos triggers instalados em `dfblock_teste` ainda não foram comparados integralmente com essa fonte.
+- O ficheiro de triggers do GitHub é uma fonte de código standard de referência. Os corpos dos triggers instalados em `cópia de testes do cliente` ainda não foram comparados integralmente com essa fonte.
 - A ausência de linhas numa pesquisa específica não prova ausência de qualquer reflexo noutro local/tabela.
 - Não assumir que os dois cenários esgotam todas as variantes de configuração PHC.
 
@@ -29,33 +29,33 @@ Todos os testes descritos foram efectuados pelo utilizador na interface PHC, sob
 ### 3.1 Título e aceitação
 
 Título:
-- `CH.chstamp = ADM26112755424,487737808`
-- Cliente: SECILTEK S.A.
-- Cheque: `125254`, banco Abanca.
-- `valor = 200482`; `evalor = 1000`.
+- `CH.chstamp = CH-CENARIO-A`
+- Cliente: Cliente A
+- Cheque: `CHEQUE-A`, banco Abanca.
+- `valor = [valor do título]`; `evalor = [equivalente do título]`.
 - `origem = 'CH'`.
 - Após devolução: `devol = 1`, `status = 3`.
 - Após depósito: `jadepo = 1`, `contado = 1`.
 - `restamp`, `ftstamp`, `ftccstamp` e `rdstamp` vazios.
 
 Histórico `CHL`:
-1. `cm=1`, descrição `Aceite`, valor 200482 / evalor 1000, `contado=1`, origem CH.
+1. `cm=1`, descrição `Aceite`, valor [valor do título] / evalor [equivalente do título], `contado=1`, origem CH.
 2. `cm=3`, descrição `Devolução do Título`, valor 0 / evalor 0, `contado=1`, origem CH, `olxorigem='Caixa'`.
 
 ### 3.2 Depósito
 
 O depósito criou:
 - um registo `OY` ligado ao título por `chstamp` e ao movimento `OX` por `oxstamp`;
-- um registo `OX` com `cm=2`, `chope='Depósito do Título'`, valor 200482 / evalor 1000;
+- um registo `OX` com `cm=2`, `chope='Depósito do Título'`, valor [valor do título] / evalor [equivalente do título];
 - dois movimentos `OL` de origem OX:
-  - entrada no BCP: 200482 / 1000;
-  - saída da Caixa: 200482 / 1000.
+  - entrada no BCP: [valor do título] / [equivalente do título];
+  - saída da Caixa: [valor do título] / [equivalente do título].
 
 ### 3.3 Devolução
 
 A devolução criou dois movimentos `OL` ligados ao movimento `CHL` de devolução através de `chlstamp`:
-- entrada na Caixa: 200482 / 1000;
-- saída do BCP: 200482 / 1000.
+- entrada na Caixa: [valor do título] / [equivalente do título];
+- saída do BCP: [valor do título] / [equivalente do título].
 
 Os movimentos de devolução têm `origem='CH'`, `olcodigo='Trf'`, grupo/subgrupo `Transferências`, `transf=1`, sem `oxstamp` e sem `restamp`. São a inversão dos dois movimentos de depósito observados.
 
@@ -66,21 +66,21 @@ Não foram encontradas linhas em `CC) através das pesquisas efectuadas por `chs
 ### 4.1 Recibo e título
 
 Recibo:
-- `RE.restamp = ADM26112757258,063000001`
+- `RE.restamp = RE-CENARIO-B`
 - `rno = 551`, data 27-11-2026.
-- Cliente: KEENFINITY, S.A.
-- `total = 314490.09894`; `etotal = 1568.670000`.
-- `chtotal = 200482`; `echtotal = 1000`.
+- Cliente: Cliente B
+- `total = [total do recibo]`; `etotal = [equivalente do recibo]`.
+- `chtotal = [valor do título]`; `echtotal = [equivalente do título]`.
 - `temch = 1).
-- `olcodigo='R10001'`; `ollocal='Caixa'`.
+- `olcodigo='R[equivalente do título]1'`; `ollocal='Caixa'`.
 - `contado=0).
 - `process=0), `revdata=1900-01-01), `anulado=0).
 
 Título criado pelo recibo:
-- `CH.chstamp = ADM26112757265,9580000-1`
-- Cheque `321567).
-- `valor=200482); `evalor=1000).
-- `origem='RE'`; `restamp=ADM26112757258,063000001`.
+- `CH.chstamp = CH-CENARIO-B`
+- Cheque `CHEQUE-B).
+- `valor=[valor do título]); `evalor=[equivalente do título]).
+- `origem='RE'`; `restamp=RE-CENARIO-B`.
 - Antes do depósito: `devol=0), `status=1), `jadepo=0).
 - Após depósito: `jadepo=1), `dataoy=2026-11-27), `status=2), `devol=0).
 
@@ -91,28 +91,28 @@ O registo `RECH` do cheque tinha `rechstamp) igual a `CH.chstamp), e ligava o ch
 Antes da devolução foram observados:
 
 **Conta corrente (`CC`):**
-- `ccstamp = ADM26112757258,063000001`
-- `restamp = ADM26112757258,063000001`
+- `ccstamp = RE-CENARIO-B`
+- `restamp = RE-CENARIO-B`
 - `origem='RE'`, `cmdesc='N/Recibo'`, `nrdoc=551).
-- Crédito 314490.09894 / 1568.67.
+- Crédito [total do recibo] / 1568.67.
 
 **Tesouraria (`OL`):**
-- `olstamp = ADM26112757258,063000001`
-- `restamp = ADM26112757258,063000001`
-- `origem='RE'), entrada 314490.09894 / 1568.67.
+- `olstamp = RE-CENARIO-B`
+- `restamp = RE-CENARIO-B`
+- `origem='RE'), entrada [total do recibo] / 1568.67.
 - `ollocal='Caixa'`, `local='C'`.
-- Grupo `Actividades Operacionais`, subgrupo `Recebimentos de Clientes`, código `R10001).
+- Grupo `Actividades Operacionais`, subgrupo `Recebimentos de Clientes`, código `R[equivalente do título]1).
 
 Estes movimentos reflectiam o total do recibo, não apenas o valor individual do cheque. A diferença entre o total do recibo e o cheque não foi explicada pelos campos de pagamento consultados; não se deve inferir a sua composição.
 
 ### 4.3 Depósito
 
 O depósito criou:
-- `OY.oystamp = ADM26112757851,5450000-2`, com número 321567, valor 200482 / evalor 1000, `chstamp` do título, `restamp` do recibo e `oxstamp` do movimento OX.
-- `OX.oxstamp = ADM26112757851,529645181`, `cm=2), operação `Depósito do Título`, origem/localização Caixa → BCP.
+- `OY.oystamp = OY-CENARIO-B`, com número CHEQUE-B, valor [valor do título] / evalor [equivalente do título], `chstamp` do título, `restamp` do recibo e `oxstamp` do movimento OX.
+- `OX.oxstamp = OX-CENARIO-B`, `cm=2), operação `Depósito do Título`, origem/localização Caixa → BCP.
 - Dois movimentos `OL` com `origem='OX'`, `olcodigo='Trf'`, grupo/subgrupo `Transferências`, `transf=1):
-  - entrada no BCP: 200482 / 1000, `contado=1);
-  - saída da Caixa: 200482 / 1000, `contado=0).
+  - entrada no BCP: [valor do título] / [equivalente do título], `contado=1);
+  - saída da Caixa: [valor do título] / [equivalente do título], `contado=0).
 
 O histórico `CHL` não recebeu um movimento adicional de depósito; manteve apenas o movimento de aceitação (`cm=1), origem RE.
 
@@ -122,15 +122,15 @@ Após a devolução:
 - `CH.devol=1), `CH.status=3), `CH.jadepo=1), `CH.contado=0).
 - O título manteve `origem='RE'` e o `restamp` do recibo.
 - Foi criado `CHL`:
-  - `chlstamp = ADM26112758032,828106314`;
+  - `chlstamp = CHL-DEVOLUCAO-CENARIO-B`;
   - `cm=3), descrição `Devolução do Título`;
   - valor 0 / evalor 0;
   - `contado=3), `origem='CH'), `olxorigem='Caixa'`.
-- O movimento de aceitação anterior manteve `cm=1), valor 200482 / evalor 1000, `origem='RE'`.
+- O movimento de aceitação anterior manteve `cm=1), valor [valor do título] / evalor [equivalente do título], `origem='RE'`.
 
 A devolução criou dois movimentos `OL` ligados pelo `chlstamp` da devolução:
-- entrada na Caixa: 200482 / 1000, `contado=0);
-- saída do BCP: 200482 / 1000, `contado=1).
+- entrada na Caixa: [valor do título] / [equivalente do título], `contado=0);
+- saída do BCP: [valor do título] / [equivalente do título], `contado=1).
 
 Ambos têm `origem='CH'`, `olcodigo='Trf'`, grupo/subgrupo `Transferências`, `transf=1), sem `oxstamp` e sem `restamp`. Também neste cenário os movimentos invertem a transferência do depósito.
 
@@ -147,15 +147,15 @@ Uma pesquisa adicional em `CC` por `nrdoc=551) devolveu documentos de vários an
 ### 5.1 Evidência temporal
 
 Auditoria do recibo:
-- criação: `RE.ousrdata=2026-11-27), `RE.ousrhora=15:55:02), utilizador ADM;
-- última alteração: `RE.usrdata=2026-11-27), `RE.usrhora=16:07:12), utilizador ADM.
+- criação: `RE.ousrdata=2026-11-27), `RE.ousrhora=15:55:02), utilizador de teste;
+- última alteração: `RE.usrdata=2026-11-27), `RE.usrhora=16:07:12), utilizador de teste.
 
 Auditoria do depósito:
 - `OY.ousrhora=16:04:11).
 
 Auditoria do movimento CHL de devolução:
-- `CHL.ousrdata=2026-11-27), `CHL.ousrhora=16:07:12), utilizador ADM;
-- `CHL.usrdata=2026-11-27), `CHL.usrhora=16:07:12), utilizador ADM.
+- `CHL.ousrdata=2026-11-27), `CHL.ousrhora=16:07:12), utilizador de teste;
+- `CHL.usrdata=2026-11-27), `CHL.usrhora=16:07:12), utilizador de teste.
 
 A coincidência exacta entre a última alteração do recibo e a criação do movimento de devolução é evidência temporal forte de que ambas fazem parte da mesma operação funcional. Não constitui, isoladamente, prova da ordem interna das instruções SQL.
 
@@ -190,7 +190,7 @@ O trigger contém ainda lógica de criação/actualização de movimentos quando
 
 ### 6.3 Triggers `tr_cc_*`
 
-Na cópia `dfblock_teste` foram encontrados os triggers activos `tr_cc_delete`, `tr_cc_insert) e `tr_cc_update`. A consulta a `OBJECT_DEFINITION` devolveu NULL, pelo que os corpos instalados não ficaram disponíveis nessa consulta.
+Na cópia `cópia de testes do cliente` foram encontrados os triggers activos `tr_cc_delete`, `tr_cc_insert) e `tr_cc_update`. A consulta a `OBJECT_DEFINITION` devolveu NULL, pelo que os corpos instalados não ficaram disponíveis nessa consulta.
 
 No ficheiro standard, os triggers `tr_cc_*` não foram identificados como origem da decisão de apagar os movimentos do recibo. `tr_cc_delete` reage a eliminações em CC; não é, por si, a instrução que determina a eliminação do registo.
 
@@ -212,22 +212,22 @@ O código standard contém eliminação de movimentos `CC` e `OL` quando um regi
 
 1. **Confirmar o efeito em CC:** pesquisar movimentos do cliente KEENFINITY na data do teste, com critérios que não dependam apenas de `nrdoc`, para identificar eventual movimento compensatório.
 2. **Confirmar o UPDATE de RE:** se necessário, repetir o teste com auditoria SQL/Extended Events ou outro mecanismo de captura numa cópia descartável, para observar a instrução que actualiza `RE` e a ordem dos triggers.
-3. **Comparar triggers instalados:** obter os corpos dos triggers instalados em `dfblock_teste` por um mecanismo autorizado (a consulta anterior a `OBJECT_DEFINITION` devolveu NULL) e compará-los com o ficheiro standard do GitHub.
+3. **Comparar triggers instalados:** obter os corpos dos triggers instalados em `cópia de testes do cliente` por um mecanismo autorizado (a consulta anterior a `OBJECT_DEFINITION` devolveu NULL) e compará-los com o ficheiro standard do GitHub.
 4. **Investigar `contado`:** explicar a diferença observada no `CHL.cm=3` entre os cenários (`contado=1) no cenário A e `contado=3) no cenário B).
-5. **Explicar a composição do recibo:** determinar a origem da diferença entre o total do recibo (314490.09894 / 1568.67) e o cheque (200482 / 1000), sem inferir meios de pagamento não observados.
+5. **Explicar a composição do recibo:** determinar a origem da diferença entre o total do recibo ([total do recibo] / 1568.67) e o cheque ([valor do título] / [equivalente do título]), sem inferir meios de pagamento não observados.
 
 ## 9. Consultas e identificadores de referência
 
-Base de testes: `dfblock_teste`.
+Base de testes: `cópia de testes do cliente`.
 
 | Elemento | Identificador |
 |---|---|
-| Cenário A — CH | `ADM26112755424,487737808` |
-| Cenário B — RE | `ADM26112757258,063000001` |
-| Cenário B — CH | `ADM26112757265,9580000-1` |
-| Cenário B — OY | `ADM26112757851,5450000-2` |
-| Cenário B — OX | `ADM26112757851,529645181` |
-| Cenário B — CHL devolução | `ADM26112758032,828106314` |
+| Cenário A — CH | `CH-CENARIO-A` |
+| Cenário B — RE | `RE-CENARIO-B` |
+| Cenário B — CH | `CH-CENARIO-B` |
+| Cenário B — OY | `OY-CENARIO-B` |
+| Cenário B — OX | `OX-CENARIO-B` |
+| Cenário B — CHL devolução | `CHL-DEVOLUCAO-CENARIO-B` |
 
 ---
 
@@ -236,7 +236,7 @@ Base de testes: `dfblock_teste`.
 
 ## 10. Verificação adicional — origem de CHL.contado na devolução
 
-Esta secção regista a continuação da análise efectuada após a primeira versão deste dossier. Todas as verificações SQL foram realizadas na cópia `dfblock_teste), e a análise dos triggers usou o ficheiro standard versionado no GitHub.
+Esta secção regista a continuação da análise efectuada após a primeira versão deste dossier. Todas as verificações SQL foram realizadas na cópia `cópia de testes do cliente), e a análise dos triggers usou o ficheiro standard versionado no GitHub.
 
 ### 10.1 Triggers instalados em CH e CHL
 
@@ -255,7 +255,7 @@ Não foram encontrados triggers adicionais em `CH) ou `CHL) na cópia testada.
 
 ### 10.2 Comparação do campo contado no cenário B
 
-Consulta ao título `ADM26112757265,9580000-1` e aos respectivos registos de histórico:
+Consulta ao título `CH-CENARIO-B` e aos respectivos registos de histórico:
 
 | Histórico | cm | Descrição | CH.contado | CHL.contado |
 |---|---:|---|---:|---:|
