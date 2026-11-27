@@ -279,7 +279,7 @@ A leitura dos triggers corrige a versão anterior desta secção:
 - Pode criar um movimento OL principal e uma segunda componente, com stamp derivado de `restamp`, quando existem valores no segundo local (`totol2`, `etotol2`, `valor2m3`).
 - `tr_re_delete` elimina os movimentos associados.
 
-A Enciclopédia explica que um recibo apenas gravado não altera a conta-corrente; quando é processado, é lançado em C/C. A configuração de recibos também distingue as séries normais das séries para movimentos incobráveis, nas quais ficam inibidos os campos de lançamento na tesouraria. Esta descrição é consistente com a condição `TSRE.movinc=0` do trigger. A semântica exacta do campo deve, ainda assim, ser validada pelos valores da configuração TSRE.
+A Enciclopédia explica que um recibo apenas gravado não altera a conta-corrente; quando é processado, é lançado em C/C. A configuração de recibos também distingue as séries normais das séries para movimentos incobráveis, nas quais ficam inibidos os campos de lançamento na tesouraria. Esta descrição é consistente com a condição `TSRE.movinc=0` do trigger.\n\n**Validação de configuração em `CSDefault202603` (consulta read-only):** foram devolvidas duas linhas em TSRE: `ndoc=1` e `ndoc=2`, ambas com `movinc=0` e `cmcc=0`; `cmccn` está vazio/NULL nas duas. Assim, os dois tipos de recibo existentes na configuração consultada passam a condição `movinc=0`. Isto não prova que todas as séries ou instalações tenham a mesma configuração, nem que a criação de OL ocorra sem as restantes condições do trigger. O significado operacional de `cmcc=0` e `cmccn=NULL` não é inferido nesta análise.
 
 ### 10.3 Títulos de recebimento — LM / LR
 
@@ -402,7 +402,7 @@ No UPDATE, a manutenção de OD e a criação/actualização de OL exigem `curre
 
 No UPDATE, os ramos de OD e OL exigem `currec=1`. A criação de OL usa `P10001`; OD representa o saldo pendente do título e usa a mesma classificação de pagamentos.
 
-Os códigos CM1=30 e CM1=81 são usados nos movimentos CC/FC gerados por determinadas operações de letras. A descrição desses dois códigos depende da configuração efectiva em CM1; não se deve confundir essa tabela com o catálogo de operações de letras.
+**Validação de configuração em `CSDefault202603`:** a consulta a `CM1` devolveu `cm=30, cmdesc='Anula. Letra'` e `cm=81, cmdesc='Anula. Letra'`. Portanto, ambos os códigos têm a mesma descrição nesta base. Mantém-se a distinção dos contextos de utilização observados nos triggers: CM1=30 no ramo de criação de CC associado a determinadas operações LM/LO; CM1=81 no ramo LO `cm=22`, que cria FC. CM1 é o catálogo de movimentos de conta-corrente e não deve ser confundido com os códigos operacionais `LM.cm`/`LO.cm`.
 
 ### 13.3 RE — configuração e processamento
 
@@ -449,7 +449,7 @@ Não foi encontrado `tr_fe_*` nem validação de `FE.fechado` nos triggers SQL s
 
 ## 16. Próxima validação read-only
 
-A única validação de dados/configuração imediata que falta para fechar o ramo de recibos e as contabilizações associadas é confirmar as linhas de configuração de TSRE e TSRD e as descrições efectivas dos códigos CM1 30/81.
+A consulta de configuração foi executada em `CSDefault202603`; os resultados estão registados abaixo. Permanecem por validar a configuração de outras instalações e a execução transaccional dos circuitos.
 
 ```sql
 SELECT ndoc, movinc, cmcc, cmccn
@@ -466,7 +466,7 @@ WHERE cm IN (30, 81)
 ORDER BY cm;
 ```
 
-Esta consulta não procura redescobrir estrutura: os campos já foram confirmados no schema. Serve apenas para validar a configuração existente em `CSDefault202603`. Se TSRE não tiver linhas, isso também é um resultado relevante.
+Resultado observado em `CSDefault202603` (não generalizar a outras instalações):\n\n| Origem | ndoc | Campo | Valor |\n|---|---:|---|---|\n| TSRE | 1 | movinc | 0 |\n| TSRE | 1 | cmcc | 0 |\n| TSRE | 1 | cmccn | NULL/vazio |\n| TSRE | 2 | movinc | 0 |\n| TSRE | 2 | cmcc | 0 |\n| TSRE | 2 | cmccn | NULL/vazio |\n| TSRD | 1 | regrd | 0 |\n| TSRD | 2 | regrd | 1 |\n| CM1 | 30 | cmdesc | Anula. Letra |\n| CM1 | 81 | cmdesc | Anula. Letra |\n\nInterpretação de `TSRD.regrd`: 0 corresponde a recibo normal/entrada; 1 corresponde a devolução/saída, de acordo com a lógica dos triggers RD e a configuração documental de séries de devolução.\n\nA consulta não procura redescobrir estrutura: os campos já estavam confirmados no schema. Serve para validar os valores concretos da configuração desta base.
 
 ## 17. Estado revisto
 
@@ -475,8 +475,8 @@ Esta consulta não procura redescobrir estrutura: os campos já foram confirmado
 | OD: origens e diferença previsão/real | Compreendido estaticamente; sem validação transaccional |
 | LM/LR: códigos e efeitos OD/OL | Mapeados com triggers e Enciclopédia; código 17 por esclarecer |
 | LO/LP: códigos e efeitos OD/OL/FC | Mapeados com triggers e Enciclopédia; código 17 por esclarecer |
-| RE: processamento e geração de OL | Mapeado; configuração efectiva TSRE por confirmar |
-| RD: recibo/devolução de adiantamento | Mapeado; valores TSRD.regrd por confirmar |
+| RE: processamento e geração de OL | Mapeado; TSRE `ndoc=1,2` com `movinc=0` em CSDefault202603; execução transaccional pendente |
+| RD: recibo/devolução de adiantamento | Mapeado; TSRD `ndoc=1/regrd=0` e `ndoc=2/regrd=1` em CSDefault202603; execução transaccional pendente |
 | PD / PO: adiantamentos e pagamentos a fornecedores | Mapeados estaticamente; validação de configuração/runtime pendente |
 | FO | FC criado/actualizado; apenas limpeza OL em delete encontrada |
 | Outras origens directas de OL | Inventário de triggers feito; semântica funcional ainda por estudar |
