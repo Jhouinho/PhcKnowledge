@@ -236,10 +236,9 @@ O grafo não é ERD físico e não afirma FKs SQL. O facto de uma ligação esta
 ## 5. Prioridades para a próxima investigação
 
 ### Prioridade 1 — configuração e validação de tesouraria
-1. Confirmar valores TSRE (`ndoc`, `movinc`, `cmcc`, `cmccn`) e descrições CM1 para os códigos 30 e 81.
-2. Rever estrutura/índices de BA, BL, BR, BX e BABR.
-3. Localizar no código aplicacional a criação/remoção de BABR e a autorização de fecho FE.
-4. Auditar operações multi-linha nos triggers OL/BA e validar em ambiente descartável.
+1. Rever estrutura/índices de BA, BL, BR, BX e BABR.
+2. Localizar no código aplicacional a criação/remoção de BABR e a autorização de fecho FE.
+3. Auditar operações multi-linha nos triggers OL/BA e validar em ambiente descartável.
 
 Consulta de configuração executada em `CSDefault202603`; os resultados foram incorporados no relatório do [PR #38](https://github.com/Jhouinho/PhcKnowledge/pull/38): TSRE ndoc 1/2 têm `movinc=0`, `cmcc=0`, `cmccn=NULL`; TSRD ndoc 1 tem `regrd=0` e ndoc 2 tem `regrd=1`; CM1 30 e 81 têm ambos a descrição `Anula. Letra`.
 
