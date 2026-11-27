@@ -128,3 +128,15 @@ A investigação exploratória das tabelas FT, FI e TD, cruzando a captura CSDef
 A investigação dos dossiers internos está consolidada em [Investigação funcional PHC — BO, BI e movimentos de stock](docs/audits/investigacao-funcional-bo-bi-sl-2026-11-25.md). Cruza os triggers BO/BO2/BI, as relações e configurações já inventariadas e os artigos relevantes da Enciclopédia PHC. O circuito BO → BI → SL, as reservas ST/SA, a satisfação de linhas por `obistamp` e a anulação lógica por BO2 estão parcialmente reconstruídos; a validação campo a campo de TS/TS2 e os ensaios funcionais continuam pendentes.
 
 A nota de recuperação e estado documental está em [Recuperação e estado da investigação funcional — BO e dossiers internos](docs/audits/recuperacao-investigacao-funcional-bo-dossiers-2026-11-25.md). Os ZIP da captura e da Enciclopédia não são versionados; o material oficial PHC não é copiado para o repositório.
+
+
+## Investigação funcional PHC — stock e transferências
+
+A investigação de stocks, transferências e grelhas está organizada nos seguintes documentos:
+
+- [Handoff funcional de stock e produção](docs/knowledge/phc-stock-production-investigation-handoff-2026-11-25.md).
+- [Ponto de continuidade — stock PHC Gestão](docs/knowledge/continuity-stock-phc-gestao-2026-11-27.md).
+- [Investigação técnica — SX/SXX e stock por grelha](docs/audits/investigacao-tecnica-stock-grelhas-sx-sxx-2026-11-26.md).
+- [Síntese funcional — circuitos de stock, transferências e produção](docs/audits/investigacao-funcional-phc-stock-transferencias-producao-2026-11-27.md).
+
+As verificações SQL pendentes de transferências estão em [pendentes-transferencias-stock-phc-gestao-2026-11-27.sql](docs/sql/pendentes-transferencias-stock-phc-gestao-2026-11-27.sql). O guião é exclusivamente read-only e deve ser executado apenas na base indicada no próprio ficheiro.
