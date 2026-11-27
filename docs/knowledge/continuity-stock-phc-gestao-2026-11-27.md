@@ -2,7 +2,8 @@
 
 **Data:** 27-11-2026  
 **Repositório:** `Jhouinho/PhcKnowledge`  
-**Branch de documentação:** `docs/stock-production-handoff-main-2026-11-25`  
+**Branch de trabalho:** `docs/stock-production-handoff-main-2026-11-25`  
+**PR associada:** #34 (destino `main`)  
 **Documento-base:** `docs/knowledge/phc-stock-production-investigation-handoff-2026-11-25.md`  
 **Investigação complementar:** `docs/audits/investigacao-tecnica-stock-grelhas-sx-sxx-2026-11-26.md`
 
@@ -18,11 +19,36 @@ A continuação desta investigação deve concentrar-se no **PHC Gestão** e no 
 - O tratamento de `SL.trfa` nos triggers de stock distingue os acumulados globais dos saldos por armazém. A interpretação funcional é que a transferência redistribui stock entre armazéns sem alterar o total global, mas os sinais/códigos CM2 ainda têm de ser confirmados.
 - Reservas/cativações e quantidades especiais não devem ser confundidas com movimentos físicos.
 - A investigação de `SX/SXX` concluiu que o mecanismo de actualização de `SX.stock` continua por localizar; não assumir que os triggers SL o actualizam.
+- A configuração previamente observada para o dossier `TS.ndos = 5` inclui `TS.stocks = 1`, `TS.cmstocks = 98` e `TS.cm2stocks = 48`. Foi também observada a ligação `TS.tsstamp = TS2.ts2stamp`. Estes valores são evidência já recolhida, não devem ser novamente pedidos sem necessidade.
+
+## Pendências SQL — executar quando houver acesso à CSDefault202603
+
+O guião de leitura está guardado no próprio repositório, nesta branch de trabalho:
+
+[`docs/sql/pendentes-transferencias-stock-phc-gestao-2026-11-27.sql`](../sql/pendentes-transferencias-stock-phc-gestao-2026-11-27.sql)
+
+O guião não altera dados nem objectos. Executa quatro blocos:
+
+1. Inventaria as colunas reais de `TS`, `TS2` e `CM2`, sem presumir campos ainda não confirmados.
+2. Devolve a configuração dos registos `TS` com `ndos = 5`.
+3. Devolve `TS` e o registo associado de `TS2`, usando a ligação já observada `TS.tsstamp = TS2.ts2stamp`.
+4. Devolve os registos de `CM2`, para localizar os códigos 98 e 48 e os respectivos parâmetros de valorização.
+
+**Perguntas a fechar com os resultados:**
+
+- Qual é o valor efectivo de `TS.trfa` no dossier 5?
+- Qual é o valor efectivo de `TS.producao` no dossier 5?
+- Qual é o valor efectivo de `TS2.trocaequi` associado?
+- Que campos de `CM2` identificam os códigos 98 e 48?
+- Quais são os valores de `mudapcpond` e `mudapcult` para ambos os códigos, caso esses campos existam?
+- Com esses valores, que movimento usa cada código CM2 e como se reflecte em `SL`, `SA` e `ST`?
+
+**Procedimento quando houver acesso:** executar o ficheiro completo na base `CSDefault202603`, guardar os quatro conjuntos de resultados (ou exportá-los para CSV) e partilhá-los aqui. A análise continuará a partir desses resultados; não será necessário repetir consultas já respondidas. Se o bloco 3 falhar por alguma coluna de ligação inexistente, usar o resultado do bloco 1 para ajustar a ligação antes de prosseguir.
 
 ## Próxima sequência de trabalho
 
 1. Confirmar a versão exacta do ficheiro de triggers SQL no GitHub e reconfirmar a evidência citada no documento-base.
-2. Inspeccionar o esquema e a configuração de `CM2`, `TS` e `TS2`, sem presumir nomes de colunas; usar `sys.columns` quando houver acesso à base de dados.
+2. Fechar as pendências SQL acima, começando pelo esquema real de `CM2`, `TS` e `TS2`.
 3. Fechar o sentido e os sinais de `TS.cmstocks` e `TS.cm2stocks`.
 4. Seguir uma transferência concreta: `TS → BI → SL` (dois movimentos) e reconciliar os efeitos em `SA` e `ST`.
 5. Analisar update, delete e anulação do dossier, confirmando reversões dos dois movimentos.
@@ -37,10 +63,10 @@ A continuação desta investigação deve concentrar-se no **PHC Gestão** e no 
 - Não executar alterações em produção; testes de alteração/anulação exigem ambiente controlado.
 - Actualizar a documentação canónica e o grafo de relações quando uma conclusão for demonstrada.
 
-## Estado do repositório e ressalva
+## Estado do repositório
 
-O documento-base e a auditoria SX/SXX foram localizados na branch indicada acima. Este apontamento é um guia de retoma, não significa que a documentação esteja integrada na `main`. Antes de declarar integração, verificar o estado efectivo da Pull Request e da branch.
+A investigação e as pendências SQL estão concentradas na branch de trabalho `docs/stock-production-handoff-main-2026-11-25`, associada à PR #34 para `main`. Não criar uma branch específica para cada conjunto de pendências. A `main` mantém-se inalterada até revisão e integração da PR.
 
 ## Como retomar num chat novo
 
-Começar por ler este documento e os dois documentos referidos no cabeçalho. Não repetir a investigação desde o início. A primeira tarefa é auditar a fonte SQL actual e fechar as transferências no PHC Gestão, começando pela configuração CM2.
+Começar por ler este documento e o documento-base/auditoria referidos no cabeçalho. Não repetir a investigação desde o início. Se ainda não houver acesso ao SQL Server, continuar a análise estática dos triggers. Quando houver acesso, executar o guião SQL indicado em “Pendências SQL” e fechar apenas as lacunas com os resultados reais.
