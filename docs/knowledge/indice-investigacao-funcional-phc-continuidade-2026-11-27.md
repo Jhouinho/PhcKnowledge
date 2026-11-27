@@ -94,7 +94,7 @@ O modelo foi corrigido: **OD não é convertido genericamente em OL**. OD manté
 | FE | Saldos diários da tesouraria em Caixa; fecha dias e regista utilizador | Localizar/validar a autorização aplicacional em dias fechados |
 
 **RD / PD / PO / FO**
-- RD (Recibos de Adiantamento) cria/actualiza OL directamente; TSRD.regrd distingue recibo normal de devolução e pode criar CH quando pago por cheque.
+- RD (Recibos de Adiantamento) cria/actualiza OL directamente; em `CSDefault202603`, `TSRD.ndoc=1/regrd=0` (normal/entrada) e `TSRD.ndoc=2/regrd=1` (devolução/saída). Pode criar CH quando pago por cheque.
 - PD (Adiantamentos a Fornecedores) cria/actualiza FC e OL directamente; se houver cheque, associa CHF ao documento.
 - PO (Pagamentos a Fornecedores) cria/actualiza FC e OL quando processado; pode criar um segundo movimento OL para o segundo local.
 - FO (Compras a Fornecedores) cria/actualiza FC. O trigger FO de eliminação limpa OL por fostamp, mas não foi encontrado INSERT/UPDATE de OL em FO; não o classificar como origem de criação.
@@ -103,8 +103,8 @@ O modelo foi corrigido: **OD não é convertido genericamente em OL**. OD manté
 - A Enciclopédia descreve OD como movimentos previsionais manuais ou automáticos provenientes de documentos.
 - A opção **Dar como realizada a previsão** só transforma movimentos directos e movimentos constantes; não os que vêm de outros documentos.
 - LM/LR e LO/LP mantêm OD pelo saldo pendente do título e criam OL directamente nas operações elegíveis.
-- RE cria/actualiza OL quando fica processado e a série não está configurada para movimentos incobráveis (`TSRE.movinc=0`). Pode gerar uma segunda componente para o segundo local de tesouraria.
-- Os códigos LM/LO são mapeados pelo artigo PHC **Códigos das Letras**; não confundir esses códigos de operação com CM1. CM1 é usado para os movimentos de C/C gerados em alguns ramos (códigos 30 e 81).
+- RE cria/actualiza OL quando fica processado e a série não está configurada para movimentos incobráveis (`TSRE.movinc=0`). Pode gerar uma segunda componente para o segundo local de tesouraria. Em `CSDefault202603`, TSRE tem `ndoc=1` e `ndoc=2`, ambos com `movinc=0` e `cmcc=0`; `cmccn` é NULL/vazio.
+- Os códigos LM/LO são mapeados pelo artigo PHC **Códigos das Letras**; não confundir esses códigos de operação com CM1. CM1 é usado para os movimentos de C/C gerados em alguns ramos (códigos 30 e 81). Na configuração consultada de `CSDefault202603`, ambos têm `cmdesc='Anula. Letra'`; CM1=30 surge no ramo de CC associado a determinadas operações LM/LO e CM1=81 no ramo LO `cm=22`, que cria FC.
 
 **BA / BL / BR / BX / BABR**
 - `OL.contado` corresponde a `BL.noconta`; não é um indicador booleano de reconciliação.
@@ -241,22 +241,7 @@ O grafo não é ERD físico e não afirma FKs SQL. O facto de uma ligação esta
 3. Localizar no código aplicacional a criação/remoção de BABR e a autorização de fecho FE.
 4. Auditar operações multi-linha nos triggers OL/BA e validar em ambiente descartável.
 
-Consulta específica pendente (não é uma query de estrutura; serve apenas para confirmar configuração e descrições efectivas):
-
-```sql
-SELECT ndoc, movinc, cmcc, cmccn
-FROM dbo.tsre
-ORDER BY ndoc;
-
-SELECT ndoc, regrd
-FROM dbo.tsrd
-ORDER BY ndoc;
-
-SELECT cm, cmdesc
-FROM dbo.cm1
-WHERE cm IN (30, 81)
-ORDER BY cm;
-```
+Consulta de configuração executada em `CSDefault202603`; os resultados foram incorporados no relatório do [PR #38](https://github.com/Jhouinho/PhcKnowledge/pull/38): TSRE ndoc 1/2 têm `movinc=0`, `cmcc=0`, `cmccn=NULL`; TSRD ndoc 1 tem `regrd=0` e ndoc 2 tem `regrd=1`; CM1 30 e 81 têm ambos a descrição `Anula. Letra`.
 
 ### Prioridade 2 — outras origens directas de OL
 1. Aprofundar PR, VY/VZ, OX, OLBB, OW/OWLI, GPC e FACA/FACC/FACD.
@@ -305,7 +290,7 @@ Não reescrever relatórios antigos como se tivessem sido produzidos com evidên
 
 ## 7. Ponto exacto de retoma
 
-A investigação de OD/OL e da reconciliação bancária já tem uma primeira síntese no PR #38. A próxima acção concreta é confirmar os valores de configuração TSRE e as descrições CM1 30/81 com a consulta específica acima. Depois disso, avançar para índices/cardinalidades BA/BL/BR/BX/BABR e validação da aplicação.
+A investigação de OD/OL e da reconciliação bancária já tem uma primeira síntese no PR #38. A validação read-only de TSRE, TSRD e CM1 em `CSDefault202603` está concluída e registada no relatório. A próxima acção concreta é avançar para índices/cardinalidades BA/BL/BR/BX/BABR e validação da aplicação.
 
 Em paralelo, PR #34 mantém SX/SXX e produção em aberto, PR #35 mantém BO como primeira passagem e PR #32 contém o grafo actualizado. Todos permanecem fora da main até revisão e integração explícita.
 
