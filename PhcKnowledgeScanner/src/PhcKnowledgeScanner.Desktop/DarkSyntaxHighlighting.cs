@@ -17,17 +17,17 @@ internal static class DarkSyntaxHighlighting
     {
         ArgumentNullException.ThrowIfNull(editor);
 
-        editor.Background = BrushFrom("#0F1218");
-        editor.Foreground = BrushFrom("#E8E6E1");
-        editor.LineNumbersForeground = BrushFrom("#8B93A7");
-        editor.TextArea.SelectionBrush = new SolidColorBrush(Color.FromArgb(140, 232, 168, 56));
-        editor.TextArea.SelectionForeground = BrushFrom("#1A1205");
+        editor.Background = BrushFrom("#101316");
+        editor.Foreground = BrushFrom("#E5EAED");
+        editor.LineNumbersForeground = BrushFrom("#818E96");
+        editor.TextArea.SelectionBrush = new SolidColorBrush(Color.FromArgb(120, 145, 166, 177));
+        editor.TextArea.SelectionForeground = BrushFrom("#101316");
         editor.TextArea.SelectionBorder = null;
         editor.Options.HighlightCurrentLine = true;
         editor.TextArea.TextView.CurrentLineBackground =
-            new SolidColorBrush(Color.FromArgb(40, 42, 49, 64));
+            new SolidColorBrush(Color.FromArgb(48, 32, 40, 45));
         editor.TextArea.TextView.CurrentLineBorder = null;
-        editor.TextArea.TextView.LinkTextForegroundBrush = BrushFrom("#E8A838");
+        editor.TextArea.TextView.LinkTextForegroundBrush = BrushFrom("#B8C8D0");
         // Scrollbars do AvalonEdit herdam o estilo da app quando possível.
         editor.ApplyTemplate();
 
