@@ -1,7 +1,8 @@
 # Investigação técnica PHC — stock por grelha (SX/SXX)
 
-**Data:** 26-11-2026  
-**Estado:** investigação documental/estática; mecanismo de actualização de SX.stock ainda não identificado.  
+**Data inicial:** 26-11-2026  
+**Revisão comparativa:** 27-11-2026  
+**Estado:** investigação documental/estática; manutenção de SX.stock identificada numa das exportações de triggers, mas divergente entre fontes. Não validada em runtime.  
 **Âmbito:** relação entre movimentos de stock, grelhas, inventário físico e tabelas SX/SXX.  
 **Repositório:** `Jhouinho/PhcKnowledge`.
 
@@ -44,7 +45,12 @@ Isto confirma que, neste interface de consulta, `SX` é fonte de saldo por combi
 
 ## 3. O que os triggers de movimentos demonstram
 
-Foi revisto o ficheiro de triggers PHC disponibilizado para análise, incluindo `tr_sl_insert`, `tr_sl_update` e `tr_sl_delete`.
+Esta revisão compara duas exportações SQL distintas, que não devem ser misturadas:
+
+- **Fonte A — baseline `CSDefault202603`:** `docs/sources/triggers phc.sql`, blob SHA `f9949635b32e265129f2aed3803d12307633c842`. A pesquisa integral anteriormente efectuada não encontrou referências a `SX` ou `SXX` neste ficheiro.
+- **Fonte B — exportação independente:** `PhcKnowledgeScanner/triggers phc.sql`, blob SHA `4ab635747718a8bee1e4243a0a9fcbb7d3ae0f39`. É uma exportação de outra origem PHC; a identidade da instalação não é reproduzida nesta documentação pública.
+
+Os resultados de cada fonte são apresentados separadamente. A diferença pode decorrer de versão, configuração, módulos ou personalizações, mas a evidência actual não permite escolher uma explicação.
 
 ### 3.1 Origem dos movimentos
 
@@ -54,27 +60,22 @@ No caso das transferências BI, a criação dos dois movimentos SL conserva a di
 
 ### 3.2 Actualização dos acumulados
 
-Nos corpos dos triggers `tr_sl_insert`, `tr_sl_update` e `tr_sl_delete` analisados:
-- existem operações de actualização/reversão sobre `ST` e `SA`;
-- não foi encontrada escrita de quantidades em `SX`;
-- não foi encontrada escrita em `SXX`.
+**Fonte A — `CSDefault202603`:** nos triggers SL analisados (`tr_sl_insert`, `tr_sl_update` e `tr_sl_delete`) existem operações sobre `ST` e `SA`, mas não foi encontrada escrita em `SX` ou `SXX`. Esta conclusão é exclusiva desta exportação.
 
-A pesquisa textual no ficheiro também não encontrou `INSERT INTO SX`, `UPDATE SX`, `INSERT INTO SXX` ou `UPDATE SXX` nos triggers de movimentos.
+**Fonte B — exportação independente:** os três triggers SL contêm escrita em `SX.stock`. `tr_sl_insert` cria combinações em falta e aplica o movimento; `tr_sl_update` desfaz o efeito de `deleted`, garante a combinação para `inserted` e aplica o novo efeito; `tr_sl_delete` desfaz o efeito do movimento eliminado.
 
-**Conclusão limitada à fonte:** o ficheiro de triggers analisado não demonstra que os triggers SL mantenham os saldos de grelha. Isto não exclui actualização directa pela aplicação PHC, procedures não incluídas, outros triggers ou outros processos.
+Em ambas as fontes, a ausência de escrita em `SXX` nos triggers analisados não demonstra que nenhum outro objecto ou processo mantenha SXX.
 
 ## 4. Operações sobre SX que foram encontradas
 
-No ficheiro de triggers foram identificadas operações de manutenção das dimensões de catálogo:
+Na Fonte A foram identificadas operações de manutenção das dimensões de catálogo:
 
-- `tr_sgc_update`: actualiza o código de cor em linhas SX quando a cor correspondente é alterada em SGC.
-- `tr_sgc_delete`: elimina de SX as linhas da cor removida.
-- `tr_sgt_update`: actualiza o tamanho em linhas SX quando o tamanho correspondente é alterado em SGT.
-- `tr_sgt_delete`: elimina de SX as linhas do tamanho removido.
+- `tr_sgc_update` / `tr_sgc_delete`: actualizam ou eliminam a cor nas linhas SX.
+- `tr_sgt_update` / `tr_sgt_delete`: actualizam ou eliminam o tamanho nas linhas SX.
 
-Estas operações mantêm a coerência das dimensões de catálogo. Não constituem evidência de cálculo ou actualização de `SX.stock`.
+Estas operações não demonstram cálculo de `SX.stock`.
 
-Não foi encontrada, no SQL de triggers analisado, uma rotina que crie as combinações SX em resposta a movimentos SL.
+Na Fonte B, para além da manutenção de catálogo, `tr_sl_insert` e `tr_sl_update` criam combinações SX em falta quando referência, armazém, cor e tamanho estão preenchidos. O `INSERT INTO SX` não indica explicitamente a coluna `stock`; o valor inicial depende, portanto, do schema/default da instalação, que ainda não foi consultado. Não se deve afirmar que começa necessariamente em zero.
 
 ## 5. SXX — estado do conhecimento
 
@@ -164,8 +165,91 @@ Não preparar nem executar testes na instalação de produção. Não executar p
 
 ## 12. Conclusão actual
 
-Está confirmado que `SX` fornece o saldo por artigo/armazém/cor/tamanho nas views consultadas e que os movimentos SL transportam cor e tamanho. Também está confirmado que os triggers SL analisados actualizam ST/SA, mas não contêm escrita de saldos em SX/SXX.
+Está confirmado que `SX` fornece o saldo por artigo/armazém/cor/tamanho na view de grelhas. Os movimentos SL transportam cor e tamanho.
 
-O mecanismo que mantém `SX.stock` permanece **não identificado**. A função de `SXX` permanece **parcialmente identificada**. `usp_stinvclc` não foi demonstrada como responsável por qualquer uma dessas actualizações.
+A manutenção de `SX.stock` diverge entre as fontes:
+- na Fonte A (`CSDefault202603`), os triggers SL exportados não escrevem em SX;
+- na Fonte B, `tr_sl_insert`, `tr_sl_update` e `tr_sl_delete` mantêm `SX.stock` por combinação de artigo/armazém/cor/tamanho.
 
-Esta investigação permanece aberta e não altera código nem contratos do PHC Knowledge.
+Por isso, a conclusão correcta não é que o PHC nunca mantém SX através de SL, mas sim que **o mecanismo varia entre as exportações analisadas**. Não está explicado se a diferença decorre de versão, configuração, módulos ou personalização.
+
+A função operacional de `SXX` permanece por demonstrar. `usp_stinvclc` não foi demonstrada como responsável pela manutenção de SX/SXX.
+
+Esta investigação permanece aberta; não foram alterados dados PHC nem executados testes em runtime.
+
+## 13. Comparação dos triggers nas duas fontes — 27-11-2026
+
+### 13.1. Movimentos SL: ST, SA e SX
+
+Na Fonte B, os triggers `tr_sl_insert`, `tr_sl_update` e `tr_sl_delete` mantêm três níveis:
+
+| Nível | Chave funcional observada | Comportamento na Fonte B |
+|---|---|---|
+| `ST` | Artigo | Stock global e acumulados de entrada/saída; condicionado por `trfa=0`. |
+| `SA` | Artigo + armazém | Stock por armazém; não exclui `trfa=1`. |
+| `SX` | Artigo + armazém + cor + tamanho | Stock por combinação de grelha; não exclui `trfa=1`. |
+
+A classificação observada mantém `CM < 50` como entrada e `CM >= 50` como saída. O movimento é aplicado com sinal positivo nas entradas e negativo nas saídas; nos triggers de update/delete, o efeito anterior é revertido.
+
+O padrão é compatível com uma transferência que redistribui stock entre armazéns: altera SA e SX nos armazéns envolvidos, mas não altera o total global ST. É uma interpretação coerente com o código da Fonte B, não uma regra universal provada para todas as versões PHC.
+
+Os triggers também usam uma data-limite derivada de STIC (`@@STICLASTDATE`); os movimentos anteriores ao corte são excluídos dos ramos de manutenção analisados.
+
+### 13.2. Criação das combinações SX
+
+Na Fonte B:
+- `tr_sl_insert` cria uma linha SX em falta quando `ref`, `armazem`, `cor` e `tam` estão preenchidos.
+- `tr_sl_update` aplica o mesmo mecanismo às combinações presentes em `inserted`, depois de reverter o estado anterior.
+- `tr_sl_delete` não cria combinações; apenas reverte o saldo na linha SX correspondente.
+- O INSERT em SX não lista a coluna `stock`. Sem schema e defaults não é possível determinar o valor inicial da coluna.
+
+A documentação oficial PHC «Stocks e Serviços — Opções com Grelhas» confirma que a criação de cores e tamanhos para um artigo gera uma linha SX por combinação para o armazém 1, e que a rotina «Criar dados de cores e tamanhos» permite gerar combinações para vários armazéns. Isto demonstra uma via funcional de criação de linhas SX independente dos triggers SL.
+Fonte: [manual PHC — Opções com Grelhas](https://phc.pt/portal/sug/ptxview.aspx?ptxid=20345476).
+
+### 13.3. BI/BO2: quantidades comprometidas por grelha
+
+Na Fonte B, os triggers BI/BO2 mantêm campos de compromisso em SX, distintos de `SX.stock`:
+
+| Campo SX | Condição de negócio observada |
+|---|---|
+| `rescli` | `BI.rescli=1`: reserva de cliente. |
+| `resfor` | `BI.resfor=1`: reserva de fornecedor. |
+| `rescat` | `BI.cativo=1`: quantidade cativada. |
+| `qttrec` | `BI.resrec=1`: quantidade em recepção. |
+
+- `tr_bi_insert` acrescenta quantidades pendentes com base em `qtt - qtt2`, desde que o dossier não esteja anulado e a linha não esteja fechada/confirmada nos ramos aplicáveis.
+- `tr_bi_update` reverte e reaplica os compromissos quando a linha muda de estado ou de valores; trata, entre outros, a passagem entre não confirmada e confirmada.
+- `tr_bi_delete` retira os compromissos da linha eliminada.
+- `tr_bo2_update`, quando o dossier passa de não anulado para anulado, retira os compromissos das linhas BI associadas.
+- A manutenção usa a combinação de referência, armazém, cor e tamanho. Existem verificações com condição OR e inserts que exigem ambos os campos, pelo que o tratamento de linhas com apenas uma dimensão preenchida não deve ser generalizado.
+
+Estes campos representam compromissos/reservas e não devem ser confundidos com stock físico em `SX.stock`.
+
+### 13.4. Diferenças e riscos estáticos a validar
+
+1. **Criação SX em statements multi-linha (SL):** em `tr_sl_insert` e `tr_sl_update`, a condição exterior usa `IF NOT EXISTS` sobre o conjunto `inserted`. Se existir SX para pelo menos uma das combinações do statement, o INSERT de combinações em falta pode não executar para as restantes. É um risco estático de lógica multi-linha, não um bug reproduzido.
+2. **Actualização de cativação em BI:** os ramos de `rescat` em `tr_bi_insert`/`tr_bi_update` usam actualizações directas a partir de `inserted`, ao contrário dos ramos de `rescli`, `resfor` e `qttrec`, que agregam quantidades por combinação. Várias linhas da mesma combinação no mesmo statement justificam validação específica; não está demonstrado que exista erro em execução.
+3. **Dimensões parciais:** alguns testes de existência usam `cor<>'' OR tam<>''`, enquanto a criação de SX e alguns updates exigem ambos os campos preenchidos. O comportamento para grelhas incompletas carece de confirmação funcional.
+4. **Divergência entre fontes:** a Fonte A não contém escrita SX/SXX nos triggers SL analisados; a Fonte B contém manutenção de SX. Não inferir versão, módulo ou personalização como causa sem metadados comparáveis.
+5. **SXX:** não aparece nos triggers SL/BI/BO2 aqui comparados. O seu papel continua sem prova operacional.
+
+### 13.5. Matriz de conclusão
+
+| Pergunta | Resultado | Estado |
+|---|---|---|
+| SL actualiza SX? | Sim na Fonte B; não nos triggers SL da Fonte A. | Divergência confirmada entre fontes |
+| SL actualiza SX em transferências (`trfa=1`)? | Na Fonte B, SA/SX são actualizadas sem filtro `trfa=0`; ST é filtrada. | Confirmado no código; sem validação runtime |
+| SL cria SX em falta? | Sim na Fonte B, para cor e tamanho preenchidos. | Confirmado no código |
+| BI mantém compromissos em SX? | Sim na Fonte B: rescli, resfor, rescat e qttrec. | Confirmado no código |
+| BO2 anulado reverte compromissos? | Sim na Fonte B, através das linhas BI. | Confirmado no código |
+| SXX é mantida por estes triggers? | Não foi encontrada escrita em SXX. | Não demonstrado |
+| A diferença entre exportações tem causa conhecida? | Não. | Por investigar |
+
+## 14. Próximos passos
+
+1. Obter schema, defaults, PKs e índices de SX/SXX na instalação de referência e, se possível, na origem da Fonte B.
+2. Procurar todas as rotinas SQL e processos aplicacionais que escrevam em SX/SXX, sem limitar a pesquisa aos triggers.
+3. Confirmar no SQL a configuração dos triggers efectivamente instalados e a versão/build PHC de cada origem, sem expor identificadores de clientes no repositório público.
+4. Quando existir uma cópia descartável, testar statements multi-linha com combinações SX já existentes e em falta; testar também várias linhas BI para a mesma combinação, em especial `rescat`.
+5. Localizar a rotina que transforma STIC/STIL em movimentos e esclarecer se a criação de linhas SX é feita antes, durante ou depois do lançamento.
+6. Manter SXX como questão independente até obter schema e evidência de leitura/escrita.
