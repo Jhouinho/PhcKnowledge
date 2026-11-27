@@ -220,7 +220,7 @@ Confirmado:
 - A criação, associação e conversão técnica para BI/SA continuam por localizar.
 - Não confundir pré-cativo, cativo/reserva e saída física.
 
-### 3.9 Devolução de títulos de clientes — CH / CHL / OY / OX / OL / CC
+### 3.8 Devolução de títulos de clientes — CH / CHL / OY / OX / OL / CC
 
 **Fonte canónica:** [auditoria do ciclo de devolução de títulos](../audits/investigacao-ciclo-devolucao-titulos-2026-11-27.md), executada em 27-11-2026 sobre uma cópia de testes anonimizada.
 
@@ -229,11 +229,11 @@ Confirmado:
 - A inversão de tesouraria foi correlacionada com `tr_chl_insert`; a limpeza dos movimentos originais foi correlacionada com as condições de `tr_re_update` no script standard versionado.
 - A eventual compensação em CC permanece por confirmar.
 - Não foi demonstrada equivalência integral entre os triggers instalados e o script standard.
-- Os resultados pertencem à cópia de testes `dfblock_teste`; não constituem baseline universal PHC.
+- Os resultados pertencem à cópia de testes uma cópia de testes do cliente; não constituem baseline universal PHC.
 
 **Estado:** relatório integrado na `main`; manter separadas observações, correlação com código e questões em aberto.
 
-### 3.8 VO — recuperação pendente
+### 3.9 VO — recuperação pendente
 
 O relatório de recuperação na main confirma que a análise de VO não ficou persistida com evidência suficiente. Não assumir que VO é sinónimo de BI nem que a análise de BI substitui a análise de VO.
 
