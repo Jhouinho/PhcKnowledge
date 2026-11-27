@@ -643,3 +643,28 @@ A auditoria estática identifica duas áreas prioritárias para teste controlado
 Não executar testes de escrita na base standard. Reproduzir apenas numa cópia descartável, com valores e datas controlados, e comparar os saldos FE/BL esperados com os resultados dos triggers. Antes de qualquer correcção, localizar o fluxo aplicacional e confirmar a forma real dos statements.
 
 **Estado dos dados em CSDefault202603:** BA=0, BR=0, BABR=0; reconciliação em runtime não validável nesta base.
+
+
+### 22. Inventário inicial de outras origens directas de OL — 2026-11-27
+
+Leitura estática adicional dos triggers standard, sem extrapolar para outras versões:
+
+| Origem | Comportamento observado | Estado |
+|---|---|---|
+| VY | `tr_vy_insert/update` cria/repõe OD; não foi encontrado INSERT directo de OL nestes triggers | Origem de previsão, não classificada como origem directa de OL |
+| VZ | `tr_vz_insert` cria OL quando `process=1`; update elimina quando deixa de processar, actualiza ou cria quando processado; delete limpa OL | Origem directa de OL confirmada |
+| OX | insert cria movimentos OL de transferência; update actualiza os movimentos identificados pelos stamps; delete limpa OL | Origem directa de OL confirmada; dois lados condicionados pela configuração das contas |
+| OW | cria OL de cabeçalho quando não está ligado a OZ/PO/RE e a configuração determina lançamento ao nível do cabeçalho | Origem directa condicional |
+| OWLI | cria OL por linha quando OW está em modo de lançamento por linhas; update sincroniza/recria conforme a configuração; delete limpa OL da linha | Origem directa condicional |
+| GPC | cria OL quando `olbancos=1`; update sincroniza a activação/desactivação e os valores; delete limpa OL | Origem directa condicional |
+| FACA | cria OL quando valor ou equivalente não é zero; update encontrado apenas faz UPDATE de OL existente; delete limpa OL | Origem directa; verificar transição de zero para valor não zero após criação |
+| FACC | cria OL quando totalcom/etotalcom não são zero; update elimina e recria OL; delete limpa OL | Origem directa confirmada |
+| FACD | cria OL quando totalcust/etotalcust não são zero; update elimina e recria OL; delete limpa OL | Origem directa confirmada |
+
+**Pontos de atenção para validação posterior**
+- FACA: o trigger de UPDATE consultado actualiza OL, mas não contém INSERT de reposição. Se um registo FACA tiver sido criado sem OL por ter valores zero e depois passar a valor não zero, o trigger mostrado não cria o movimento. É uma hipótese de lacuna dependente de o PHC permitir essa transição.
+- OX: os movimentos são identificados por `oxstamp` e por `substring('C'+oxstamp,1,25)`; validar os dois lados e as transições de configuração em cópia descartável.
+- OW/OWLI: não tratar como duplicação; o nível de lançamento (cabeçalho ou linhas) depende de `ollinhas` e `owliolcod`, além de OW não estar ligado a OZ/PO/RE.
+- VY: o trigger de update recria OD e usa condição `valornp<>0 AND evalornp<>0`, enquanto o insert usa OR. Registar como assimetria de condição, sem concluir erro funcional sem conhecer a semântica dos valores e a regra de negócio.
+
+Este inventário é uma primeira leitura dos triggers de origem. Ainda falta percorrer todos os ramos, verificar triggers de delete/update complementares e cruzar com a Enciclopédia PHC. Não é ainda um fecho funcional das origens de OL.
