@@ -177,21 +177,40 @@ A Enciclopédia descreve reconciliação de um movimento importado com vários m
 
 
 
-### 4.5 Inventário de colunas stamp e limites da evidência estrutural
+### 4.5 Estrutura física, índices e constraints — validação em CSDefault202603
 
-Foi cruzado o extracto disponível com cabeçalho `TABLE_NAME / COLUMN_NAME`, que lista colunas de identidade/referência terminadas em `stamp`. Para as tabelas em análise, o extracto apresenta:
+Foi executada uma consulta ao catálogo SQL Server para as tabelas BA, BL, BR, BX e BABR, cobrindo colunas/tipos/nulabilidade, índices/PK/UK e foreign keys.
 
-| Tabela | Colunas stamp presentes no extracto |
-|---|---|
-| BA | `bastamp`, `brstamp`, `olstamp` |
-| BL | `blstamp` |
-| BR | `bastamp`, `brstamp`, `bxstamp` |
-| BX | `bxstamp` |
-| BABR | Sem entrada encontrada no extracto |
+**Resultado sobre constraints físicas**
+- A consulta não devolveu foreign keys envolvendo estas cinco tabelas.
+- Todas as tabelas surgem como HEAP, com índices NONCLUSTERED; não foi identificado índice clustered.
+- As PK são:
+  - BA: `bastamp`.
+  - BABR: `babrstamp`.
+  - BL: `noconta`.
+  - BR: `brstamp`.
+  - BX: chave composta `(contado, extracto)`.
+- Existem também índices UNIQUE não-PK em BL(`blstamp`) e BX(`bxstamp`). Assim, `blstamp` e `bxstamp` são únicos nesta base, embora não sejam as PK declaradas.
+- BABR tem índices não únicos separados em `bastamp` e `brstamp`; não existe unicidade física individual em nenhum dos dois campos. Isto é consistente com a associação de múltiplos movimentos BA e BR, conforme descrito na Enciclopédia e nos triggers.
+- BA tem índice não único em `olstamp`; o índice não impõe unicidade física de OL→BA, embora o trigger `tr_ol_*` use `BA.bastamp = BA.olstamp = OL.olstamp` na criação.
+- BL tem PK em `noconta` e índice UNIQUE separado em `blstamp`. O índice `(banco, conta)` não é único.
+- BR contém as colunas `bastamp` e `bxstamp`, mas não há índices específicos sobre elas no inventário devolvido. A existência dessas colunas não demonstra uma relação física com BA/BX.
+- BX tem PK composta `(contado, extracto)` e índice UNIQUE separado em `bxstamp`.
 
-Este extracto não contém tipos, nulabilidade, índices, PK/UK ou FKs; também não contém uma entrada para BABR, apesar de existirem triggers `tr_babr_insert/delete`. Por isso, não é suficiente para concluir cardinalidades físicas. A presença de `BA.brstamp` e `BR.bastamp` no inventário também não prova que sejam as ligações activas no circuito de reconciliação: nos triggers standard pesquisados não foram encontradas referências qualificadas `BA.brstamp` ou `BR.bastamp`; o mecanismo demonstrado é a tabela de associação BABR, pelos campos `bastamp` e `brstamp`.
+**Colunas de ligação relevantes**
+| Tabela | Colunas | Observação |
+|---|---|---|
+| BA | `bastamp`, `olstamp`, `brstamp`, `contado` | `bastamp` PK; `olstamp` indexado sem unicidade; `brstamp` sem índice próprio no resultado; `contado` indexado |
+| BABR | `babrstamp`, `bastamp`, `brstamp` | PK em `babrstamp`; índices independentes não únicos nos dois stamps associados |
+| BL | `blstamp`, `noconta`, `banco`, `conta` | PK em `noconta`; UNIQUE em `blstamp`; `(banco, conta)` não único |
+| BR | `brstamp`, `bastamp`, `bxstamp` | PK em `brstamp`; sem índice específico em `bastamp` ou `bxstamp` no resultado |
+| BX | `bxstamp`, `contado`, `extracto` | PK composta `(contado, extracto)`; UNIQUE em `bxstamp` |
 
-O trigger `tr_ol_insert` cria BA com `BA.bastamp = OL.olstamp` e `BA.olstamp = OL.olstamp`; a condição é `OL.contado > 0`. Isto demonstra a identidade usada pelo código para o movimento bancário derivado, mas não demonstra por si só uma restrição UNIQUE/PK sobre `BA.olstamp` nem uma FK física. A cardinalidade física continua por confirmar nos índices/constraints.
+**Limites da conclusão**
+- A ausência de FKs significa que o SQL Server não declara estas ligações como constraints referenciais nesta base. Não invalida as relações mantidas por triggers, procedures ou aplicação.
+- Os índices de BABR permitem múltiplas linhas por `bastamp` e por `brstamp`; a cardinalidade muitos-para-muitos é, portanto, compatível com a estrutura física. A cardinalidade efectivamente usada em cada reconciliação continua dependente dos dados e do fluxo aplicacional.
+- `BA.brstamp` e `BR.bastamp` existem, mas a evidência de código disponível aponta para BABR como mecanismo de associação activa. Não os tratar como ligações directas sem encontrar operações que os utilizem.
+- Estas propriedades foram observadas em `CSDefault202603`; não generalizar automaticamente a outras instalações/versões.
 
 ## 5. FE — saldos diários de caixa e fecho
 
@@ -234,11 +253,11 @@ flowchart TD
 |---|---|
 | Origens de OD em triggers analisados | Identificadas estaticamente |
 | Efeitos de OL sobre BA e FE | Identificados estaticamente |
-| Estrutura e índices de BA / FE | FE consultada anteriormente; índices/constraints de BA/BL/BR/BX/BABR ainda por confirmar |
+| Estrutura e índices de BA/BL/BR/BX/BABR | Confirmados no catálogo de CSDefault202603; sem FKs; PK/índices descritos na secção 4.5 |
 | Dados transaccionais para validação | Inexistentes nas tabelas consultadas |
 | Operações multi-linha em OL | Requerem auditoria de código/testes |
 | Regras de fecho diário FE | Por localizar |
-| Reconciliação bancária BA | Fluxo completo por investigar |
+| Reconciliação bancária BA | Estrutura física confirmada; fluxo aplicacional de criação/remoção de BABR ainda por investigar |
 | Conversão genérica OD → OL em triggers | Não identificada; evidência aponta para geração paralela a partir da operação/documento |
 | Validação em execução com documentos reais | Pendente |
 
