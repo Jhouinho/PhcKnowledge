@@ -194,9 +194,10 @@ flowchart TB
 
   BO -.->|"assinatura/importação: validações em triggers"| TS
   BO -.->|"assinatura em BO2 e condições de TS2"| BO2
+  classDef complete fill:#86EFAC,stroke:#15803D,color:#14532D,stroke-width:2px;
   classDef partial fill:#FDE68A,stroke:#B45309,color:#713F12,stroke-width:1.5px;
   classDef untouched fill:#FCA5A5,stroke:#B91C1C,color:#7F1D1D,stroke-width:1.5px;
-  class BO,BO2,BI,BOTXT,FT,FI,TD,FT2,FT3,TS,TS2,FN,CM1,CM2,SL,ST,SA,SV,SX,SXX,SGC,SGT,STIC,STIL,OC,OD,OL,CH,CHL,CC,FC,RE,TSRE,RD,TSRD,PD,PO,FO,LR,LM,LP,LO,VY,CHF,BA,BL,BX,BR,BABR,ML,FE,BIPRECAT partial;
+  class BO,BO2,BI,FT,FI,TD,FT2,TS,FN,CM1,CM2,SL,ST,SA,SV,SX,SXX,SGC,SGT,STIC,STIL,OC,OD,OL,CH,CHL,CC,FC,RE,TSRE,RD,TSRD,PD,PO,FO,LR,LM,LP,LO,VY,CHF,BA,BL,BX,BR,BABR,ML,FE,BIPRECAT partial;
   class PR,VZ,OX,OLBB,OW,OWLI,GPC,FACA,FACC,FACD,SE,OFC,OCI,OMI,OCP,OPT untouched;
 ```
 
