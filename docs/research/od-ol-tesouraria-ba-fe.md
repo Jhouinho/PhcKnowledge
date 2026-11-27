@@ -476,6 +476,10 @@ Esta consulta não procura redescobrir estrutura: os campos já foram confirmado
 | LM/LR: códigos e efeitos OD/OL | Mapeados com triggers e Enciclopédia; código 17 por esclarecer |
 | LO/LP: códigos e efeitos OD/OL/FC | Mapeados com triggers e Enciclopédia; código 17 por esclarecer |
 | RE: processamento e geração de OL | Mapeado; configuração efectiva TSRE por confirmar |
+| RD: recibo/devolução de adiantamento | Mapeado; valores TSRD.regrd por confirmar |
+| PD / PO: adiantamentos e pagamentos a fornecedores | Mapeados estaticamente; validação de configuração/runtime pendente |
+| FO | FC criado/actualizado; apenas limpeza OL em delete encontrada |
+| Outras origens directas de OL | Inventário de triggers feito; semântica funcional ainda por estudar |
 | BA/BL: movimentos e saldos bancários | Mapeados estaticamente |
 | BX/BR/BABR: importação e reconciliação | Mapeados funcionalmente; cardinalidade/índices a confirmar |
 | FE: saldo diário e fecho | Regra funcional documentada; controlo de aplicação não localizado no SQL |
@@ -488,7 +492,7 @@ Esta consulta não procura redescobrir estrutura: os campos já foram confirmado
 
 - Script standard `docs/sources/triggers phc.sql` (552 definições CREATE TRIGGER; SHA-256 `ca947c507249a19f4b848ed05a03f321294a8ef81eff223f3cd1b98d0b4d6c08`). A análise não prova que a instalação tenha definições idênticas.
 - Exportação REL PHC consultada (260 relações), sem relação declarada encontrada para BA, BL, BR, BX ou BABR.
-- Esquema consultado de `CSDefault202603`: TSRE tem `ndoc`, `movinc`, `cmcc`, `cmccn`; RE tem `ndoc`, `olcodigo`, `totol2`, `valor2m3`; TSRE não tem `olcodigo`.
+- Esquema consultado de `CSDefault202603`: TSRE tem `ndoc`, `movinc`, `cmcc`, `cmccn`; TSRD usa `ndoc`, `regrd`; RE tem `ndoc`, `olcodigo`, `totol2`, `valor2m3`; TSRE não tem `olcodigo`.
 - Enciclopédia PHC: **Códigos das Letras**; **Movimentos de Letras a Receber**; **Movimentos de Letras a Pagar**; **Constituição da Tabela de Previsões**; **Previsões de Tesouraria**; **Opções disponíveis no ecrã da tabela de previsões**; **Extratos Bancários**; **Reconciliação Automática de Movimentos**; **Fechar a Caixa**; **Parâmetros de Tesouraria**; **Configuração de recibos de C/C para clientes**; **Integrar os Recibos para Clientes**.
 
 Os ZIP da Enciclopédia e as capturas não são adicionados ao Git. Os títulos dos artigos são registados para rastreabilidade sem duplicar o corpus de origem.
