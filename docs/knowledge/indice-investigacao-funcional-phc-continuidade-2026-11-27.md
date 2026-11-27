@@ -281,6 +281,8 @@ Consulta de configuração executada em `CSDefault202603`; os resultados estão 
 2. Distinguir criação, actualização e limpeza em cada trigger.
 3. Cruzar cada circuito com a Enciclopédia antes de classificar a função.
 
+
+**Guião de recolha preparado:** [`inspeccao-schema-sx-sxx-phc-gestao-2026-11-27.sql`](../sql/inspeccao-schema-sx-sxx-phc-gestao-2026-11-27.sql). É read-only e ainda não foi executado. Devolve schema/defaults, índices, constraints, FKs, triggers, dependências e referências em módulos SQL.
 ### Prioridade 3 — SX / SXX e inventário com grelhas
 1. Obter schema, defaults, PKs e índices de SX/SXX nas origens comparáveis.
 2. Identificar versão/build e configuração dos triggers de cada origem, sem publicar identificadores de clientes.
