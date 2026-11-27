@@ -615,3 +615,31 @@ A consulta ao catálogo SQL de `CSDefault202603` fechou as colunas, tipos, nulab
 
 **Próxima validação**
 Executar uma consulta read-only que compare os flags `reco` com as associações BABR existentes e liste movimentos BA/BR com mais de uma associação. Depois, localizar o fluxo aplicacional que cria e elimina BABR para perceber se a remoção é sempre feita em bloco ou pode ser individual.
+
+
+### 21. Auditoria de operações multi-linha em BA e OL — 2026-11-27
+
+**Âmbito e limitação dos dados**
+A consulta de contagens à base `CSDefault202603` devolveu BA=0, BR=0 e BABR=0. Portanto, não foi possível validar flags de reconciliação, associações múltiplas ou divergências em dados. As conclusões seguintes são exclusivamente análise estática do script standard, não observação de falha em execução.
+
+**BA → BL: risco de actualização não agregada por conta**
+- `tr_ba_insert` (linha 1892), `tr_ba_update` (linha 1818) e `tr_ba_delete` (linha 2627) actualizam BL através de `UPDATE ... FROM inserted/deleted`, usando `BL.noconta = BA.contado`.
+- A origem pode conter várias linhas BA para a mesma conta. Não há agregação prévia por `contado` antes do UPDATE à linha BL.
+- No SQL Server, quando um UPDATE ... FROM oferece várias linhas de origem para a mesma linha de destino, o valor aplicado não é determinístico. Assim, um statement que insira/actualize/apague vários BA da mesma conta pode não reflectir a soma de todos os movimentos nos saldos de BL.
+- É um risco estático de código. A frequência e ocorrência em utilização não foram validadas; a base standard consultada não contém linhas BA.
+
+**OL → FE: risco mais forte em statements multi-data**
+- `tr_ol_insert` (linha 5182), `tr_ol_update` (linha 5178) e `tr_ol_delete` (linha 1822) mantêm FE para movimentos com `local='C'`.
+- Nos três caminhos, o UPDATE de FE liga a tabela FE a `inserted` ou `deleted` com condição `FE.data >= movimento.data`, mas o valor somado/subtraído é uma subconsulta que agrega todos os movimentos do statement com `local='C'`, sem restringir a soma à data de cada linha FE.
+- Se o mesmo statement afectar movimentos de várias datas, cada linha FE desde a primeira data elegível pode receber/subtrair a soma total de todas as datas, incluindo movimentos posteriores à própria data FE. O comportamento esperado de saldo diário acumulado exige considerar apenas movimentos cuja data seja menor ou igual à data do saldo.
+- Nos INSERTs de FE para datas em falta, a inicialização do saldo procura o FE anterior já existente. Quando várias datas novas são inseridas no mesmo statement, a subconsulta não demonstra que o FE criado para uma data anterior no mesmo statement seja usado como saldo anterior para a data seguinte.
+- Esta leitura identifica risco de lógica multi-linha/multi-data, mas não confirma que a aplicação emita statements desse tipo nem o resultado em runtime.
+
+**Conclusão e prioridade**
+A auditoria estática identifica duas áreas prioritárias para teste controlado:
+1. BA: múltiplos movimentos na mesma conta no mesmo INSERT/UPDATE/DELETE.
+2. OL/FE: múltiplos movimentos em datas diferentes no mesmo INSERT/UPDATE/DELETE, incluindo criação de dias FE em falta.
+
+Não executar testes de escrita na base standard. Reproduzir apenas numa cópia descartável, com valores e datas controlados, e comparar os saldos FE/BL esperados com os resultados dos triggers. Antes de qualquer correcção, localizar o fluxo aplicacional e confirmar a forma real dos statements.
+
+**Estado dos dados em CSDefault202603:** BA=0, BR=0, BABR=0; reconciliação em runtime não validável nesta base.
