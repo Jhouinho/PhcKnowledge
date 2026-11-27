@@ -299,13 +299,14 @@ Conclusão: no circuito de títulos de recebimento, o movimento efectivo é cria
 
 O trigger `tr_lo_insert` também cria FC para `cm=22`, isto é, há operações que alimentam a conta corrente de fornecedores além de OD/OL. O trigger de eliminação remove os registos relacionados.
 
-### 10.5 Outros circuitos directos identificados
+### 10.5 Outros circuitos com efeitos directos em OL
 
-A varredura encontrou também triggers que escrevem directamente em OL a partir de outras tabelas, sem depender de OD, incluindo:
-- `RD`, `PD`, `FO`, `PO`, `PR`, `VY/VZ`, `OX`, `OLBB`, `OW/OWLI`, `GPC`, `FACA/FACC/FACD`, `CHL`, `CHF`, entre outras.
-- Alguns destes circuitos actualizam ou eliminam OL em operações posteriores.
+A varredura de `INSERT/UPDATE/DELETE FROM OL` encontrou outros documentos com efeitos directos. É necessário distinguir criação, actualização e limpeza:
 
-A lista deve ser tratada como inventário de triggers com operações sobre OL, não como uma classificação funcional final. Cada circuito deve ser interpretado com DIC/REL e Enciclopédia PHC antes de se fechar a semântica.
+- **Criação/actualização confirmada:** RD, PD, PO, PR, VY/VZ, OX, OLBB, OW/OWLI, GPC, FACA/FACC/FACD, CHL, CHF, entre outros.
+- **Limpeza sem criação demonstrada:** FO — `tr_fo_delete` elimina OL por `fostamp`, mas não foi encontrado INSERT/UPDATE de OL em `tr_fo_insert/update`.
+- A lista é um inventário de operações sobre OL; não é uma lista de origens de criação uniforme. Cada documento exige análise funcional própria.
+
 
 ## 11. Modelo conceptual revisto
 
@@ -487,3 +488,56 @@ Esta consulta não procura redescobrir estrutura: os campos já foram confirmado
 - Enciclopédia PHC: **Códigos das Letras**; **Movimentos de Letras a Receber**; **Movimentos de Letras a Pagar**; **Constituição da Tabela de Previsões**; **Previsões de Tesouraria**; **Opções disponíveis no ecrã da tabela de previsões**; **Extratos Bancários**; **Reconciliação Automática de Movimentos**; **Fechar a Caixa**; **Parâmetros de Tesouraria**; **Configuração de recibos de C/C para clientes**; **Integrar os Recibos para Clientes**.
 
 Os ZIP da Enciclopédia e as capturas não são adicionados ao Git. Os títulos dos artigos são registados para rastreabilidade sem duplicar o corpus de origem.
+
+
+## 19. Recibos de adiantamento, pagamentos e adiantamentos a fornecedores
+
+A revisão adicional dos triggers e da Enciclopédia permitiu fechar a primeira classificação de três origens directas de OL e corrigir a classificação de FO.
+
+### 19.1 RD — Recibos de Adiantamento a Clientes
+
+A Enciclopédia identifica RD como **Recibos de Adiantamento**: registo de valores recebidos antecipadamente. A configuração de séries distingue recibos normais e séries de devolução de adiantamentos.
+
+Os triggers `tr_rd_insert/update/delete` mostram:
+- RD cria/actualiza CC com origem RD.
+- RD cria/actualiza OL directamente, usando `RD.olcodigo` e a classificação OC.
+- `TSRD.regrd=0`: o movimento OL é tratado como entrada, com valores baseados em `total - ivacativado` e equivalentes.
+- `TSRD.regrd=1`: o movimento OL é tratado como saída/devolução, com valores baseados em `-total + ivacativado` e equivalentes.
+- Se `cheque=1` e `regrd=0`, o trigger cria CH.
+- A eliminação/anulação do RD limpa CC, CH e OL associados.
+
+O campo `regrd` é consistente com a opção documental de série para devolução de recibos de adiantamento. O valor efectivo da configuração TSRD ainda não foi consultado.
+
+### 19.2 PD — Adiantamentos a Fornecedores
+
+A Enciclopédia descreve PD como **Adiantamentos a Fornecedores**.
+
+Os triggers `tr_pd_insert/update/delete` mostram:
+- PD cria/actualiza FC com origem PD.
+- PD cria/actualiza OL directamente, usando `PD.olcodigo` e OC.
+- O valor de tesouraria usa `total - ivacativado`, `etotal - eivacativado` e `valorm2`.
+- Quando existe cheque, o trigger associa o cheque CHF ao documento PD (`destino='PD'`, `deststamp=PD.pdstamp`).
+- A eliminação do PD limpa FC e OL associados.
+
+A criação de OL não depende de conversão de OD; é efeito directo do documento de adiantamento.
+
+### 19.3 PO — Pagamentos a Fornecedores
+
+A Enciclopédia descreve PO como **Pagamentos a Fornecedores**.
+
+Os triggers `tr_po_insert/update/delete` mostram:
+- A criação dos movimentos FC e OL ocorre quando `PO.process=1`.
+- O trigger pode criar FC adicionais para desconto financeiro e IRS, com códigos CM1 próprios.
+- O trigger cria um OL principal e pode criar um segundo OL quando `totol2` ou `etotol2` têm valor.
+- O movimento OL usa `PO.olcodigo`, conta bancária (`contado`), local de tesouraria e campos de segunda localização.
+- UPDATE actualiza ou remove os movimentos OL conforme o estado `process` e os valores do segundo local.
+- DELETE limpa FC e OL associados.
+
+O pagamento é, portanto, uma origem directa de OL quando processado. O eventual efeito adicional de FC sobre OD depende das condições do trigger FC e não deve ser assumido sem cruzar os valores concretos.
+
+### 19.4 FO — Compras a Fornecedores: distinção necessária
+
+A Enciclopédia identifica FO como **Compras a Fornecedores**. Os triggers FO analisados criam/actualizam FC, mas não foi encontrado INSERT/UPDATE de OL em `tr_fo_insert/update`. `tr_fo_delete` elimina um OL associado por `fostamp`.
+
+Assim, FO não deve ser classificado como origem directa de criação de OL com a evidência actual. O predicado de limpeza pode servir para remover um movimento previamente associado, mas a sua origem permanece por localizar.
+
