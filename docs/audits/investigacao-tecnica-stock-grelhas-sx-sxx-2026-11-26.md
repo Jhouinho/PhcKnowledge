@@ -68,14 +68,14 @@ Em ambas as fontes, a ausência de escrita em `SXX` nos triggers analisados não
 
 ## 4. Operações sobre SX que foram encontradas
 
-Na Fonte A foram identificadas operações de manutenção das dimensões de catálogo:
+Na Fonte B foram identificadas operações de manutenção das dimensões de catálogo:
 
 - `tr_sgc_update` / `tr_sgc_delete`: actualizam ou eliminam a cor nas linhas SX.
 - `tr_sgt_update` / `tr_sgt_delete`: actualizam ou eliminam o tamanho nas linhas SX.
 
-Estas operações não demonstram cálculo de `SX.stock`.
+Estas operações mantêm a coerência das dimensões de catálogo, mas não constituem por si só evidência de cálculo de `SX.stock`.
 
-Na Fonte B, para além da manutenção de catálogo, `tr_sl_insert` e `tr_sl_update` criam combinações SX em falta quando referência, armazém, cor e tamanho estão preenchidos. O `INSERT INTO SX` não indica explicitamente a coluna `stock`; o valor inicial depende, portanto, do schema/default da instalação, que ainda não foi consultado. Não se deve afirmar que começa necessariamente em zero.
+Na mesma Fonte B, para além da manutenção de catálogo, `tr_sl_insert` e `tr_sl_update` criam combinações SX em falta quando referência, armazém, cor e tamanho estão preenchidos. O `INSERT INTO SX` não indica explicitamente a coluna `stock`; o valor inicial depende, portanto, do schema/default da instalação, que ainda não foi consultado. Não se deve afirmar que começa necessariamente em zero.
 
 ## 5. SXX — estado do conhecimento
 
