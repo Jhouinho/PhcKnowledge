@@ -140,3 +140,8 @@ A investigação de stocks, transferências e grelhas está organizada nos segui
 - [Síntese funcional — circuitos de stock, transferências e produção](docs/audits/investigacao-funcional-phc-stock-transferencias-producao-2026-11-27.md).
 
 As verificações SQL pendentes de transferências estão em [pendentes-transferencias-stock-phc-gestao-2026-11-27.sql](docs/sql/pendentes-transferencias-stock-phc-gestao-2026-11-27.sql). O guião é exclusivamente read-only e deve ser executado apenas na base indicada no próprio ficheiro.
+
+
+## Índice de continuidade da investigação funcional PHC
+
+O ponto único de entrada para o conhecimento funcional consolidado — dossiers, stock, tesouraria, títulos, inventários, grelhas e pendências — está em [Índice de investigação funcional PHC — continuidade](docs/knowledge/indice-investigacao-funcional-phc-continuidade-2026-11-27.md). O índice identifica os relatórios integrados na main, as limitações de evidência e o ponto exacto de retoma. Não substitui os relatórios técnicos.
