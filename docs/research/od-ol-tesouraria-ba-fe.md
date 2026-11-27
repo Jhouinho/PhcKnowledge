@@ -446,7 +446,24 @@ O fecho de FE é um controlo do saldo diário de caixa:
 
 Não foi encontrado `tr_fe_*` nem validação de `FE.fechado` nos triggers SQL standard consultados. O cálculo de saldos é SQL; a autorização para movimentar dias fechados é descrita como controlo da aplicação/configuração.
 
-## 16. Estado revisto
+## 16. Próxima validação read-only
+
+A única validação de dados/configuração imediata que falta para fechar o ramo de recibos e as contabilizações associadas é confirmar as linhas de configuração de TSRE e as descrições efectivas dos códigos CM1 30/81.
+
+```sql
+SELECT ndoc, movinc, cmcc, cmccn
+FROM dbo.tsre
+ORDER BY ndoc;
+
+SELECT cm, cmdesc
+FROM dbo.cm1
+WHERE cm IN (30, 81)
+ORDER BY cm;
+```
+
+Esta consulta não procura redescobrir estrutura: os campos já foram confirmados no schema. Serve apenas para validar a configuração existente em `CSDefault202603`. Se TSRE não tiver linhas, isso também é um resultado relevante.
+
+## 17. Estado revisto
 
 | Tema | Estado |
 |---|---|
@@ -460,3 +477,13 @@ Não foi encontrado `tr_fe_*` nem validação de `FE.fechado` nos triggers SQL s
 | Multi-linha e runtime | Pendente |
 | Dados transaccionais na CSDefault202603 | Inexistentes nas tabelas consultadas |
 
+
+
+## 18. Fontes consultadas e proveniência
+
+- Script standard `docs/sources/triggers phc.sql` (552 definições CREATE TRIGGER; SHA-256 `ca947c507249a19f4b848ed05a03f321294a8ef81eff223f3cd1b98d0b4d6c08`). A análise não prova que a instalação tenha definições idênticas.
+- Exportação REL PHC consultada (260 relações), sem relação declarada encontrada para BA, BL, BR, BX ou BABR.
+- Esquema consultado de `CSDefault202603`: TSRE tem `ndoc`, `movinc`, `cmcc`, `cmccn`; RE tem `ndoc`, `olcodigo`, `totol2`, `valor2m3`; TSRE não tem `olcodigo`.
+- Enciclopédia PHC: **Códigos das Letras**; **Movimentos de Letras a Receber**; **Movimentos de Letras a Pagar**; **Constituição da Tabela de Previsões**; **Previsões de Tesouraria**; **Opções disponíveis no ecrã da tabela de previsões**; **Extratos Bancários**; **Reconciliação Automática de Movimentos**; **Fechar a Caixa**; **Parâmetros de Tesouraria**; **Configuração de recibos de C/C para clientes**; **Integrar os Recibos para Clientes**.
+
+Os ZIP da Enciclopédia e as capturas não são adicionados ao Git. Os títulos dos artigos são registados para rastreabilidade sem duplicar o corpus de origem.
