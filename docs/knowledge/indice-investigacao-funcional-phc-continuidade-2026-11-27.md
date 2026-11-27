@@ -52,6 +52,7 @@ A última `main` consultada está no commit:
 | [#35 — investigação inicial BO](https://github.com/Jhouinho/PhcKnowledge/pull/35) | BO / BO2 / TS / TS2 / BOTXT | Primeira passagem de triggers e validações | Aberto, não merged |
 | [#36 — índice de continuidade](https://github.com/Jhouinho/PhcKnowledge/pull/36) | Governação do conhecimento | Este índice e referência no README | Aberto, não merged |
 | [#38 — OD/OL, reconciliação bancária e FE](https://github.com/Jhouinho/PhcKnowledge/pull/38) | Tesouraria / letras / reconciliação / caixa | Investigação OD/OL, LM/LO/RE, BA/BL/BR/BX/BABR e FE | Aberto, Draft, não merged |
+| [#39 — ciclo de devolução de títulos](https://github.com/Jhouinho/PhcKnowledge/pull/39) | Títulos de clientes / CH / CHL / OL / CC | Dois cenários de devolução, movimentos observados e correlação com triggers | Aberto, não merged |
 
 Os PRs são trabalho documental separado. Não declarar os respectivos documentos como integrados na main até ocorrer merge. A actualização do grafo no PR #32 incorpora novas relações bancárias observadas, mas não integra automaticamente os relatórios dos PRs #34, #35 e #38.
 
@@ -201,6 +202,19 @@ Confirmado:
 - O Monitor de Cativação constitui o processo funcional de referência.
 - A criação, associação e conversão técnica para BI/SA continuam por localizar.
 - Não confundir pré-cativo, cativo/reserva e saída física.
+
+### 3.9 Devolução de títulos de clientes — CH / CHL / OY / OX / OL / CC
+
+**Fonte:** auditoria específica no [PR #39](https://github.com/Jhouinho/PhcKnowledge/pull/39), executada em 27-11-2026 sobre a cópia de testes `dfblock_teste`.
+
+- Foram observados dois cenários: título criado directamente e título criado a partir de recibo.
+- O relatório regista os movimentos observados em CH/CHL, OY/OX, OL e CC.
+- A inversão de tesouraria foi correlacionada com `tr_chl_insert`; a limpeza dos movimentos originais foi correlacionada com as condições de `tr_re_update` no script standard versionado.
+- A eventual compensação em CC permanece por confirmar.
+- Não foi demonstrada equivalência integral entre os triggers instalados e o script standard.
+- Os resultados pertencem à cópia de testes `dfblock_teste`; não constituem baseline universal PHC.
+
+**Estado:** investigação documentada, mas ainda não integrada na `main`; manter separadas observações, correlação com código e questões em aberto.
 
 ### 3.8 VO — recuperação pendente
 
