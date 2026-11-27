@@ -51,8 +51,9 @@ A última `main` consultada está no commit:
 | [#34 — stocks, transferências e produção](https://github.com/Jhouinho/PhcKnowledge/pull/34) | BI / FI / FN / SL / ST / SA / SX / SXX | Handoff funcional e investigação técnica SX/SXX | Aberto, não merged |
 | [#35 — investigação inicial BO](https://github.com/Jhouinho/PhcKnowledge/pull/35) | BO / BO2 / TS / TS2 / BOTXT | Primeira passagem de triggers e validações | Aberto, não merged |
 | [#36 — índice de continuidade](https://github.com/Jhouinho/PhcKnowledge/pull/36) | Governação do conhecimento | Este índice e referência no README | Aberto, não merged |
+| [#38 — OD/OL, reconciliação bancária e FE](https://github.com/Jhouinho/PhcKnowledge/pull/38) | Tesouraria / letras / reconciliação / caixa | Investigação OD/OL, LM/LO/RE, BA/BL/BR/BX/BABR e FE | Aberto, Draft, não merged |
 
-Os PRs são trabalho documental separado. Não declarar os respectivos documentos como integrados na main até ocorrer merge. A actualização do grafo neste PR #32 não integra automaticamente os conteúdos dos PRs #34 e #35.
+Os PRs são trabalho documental separado. Não declarar os respectivos documentos como integrados na main até ocorrer merge. A actualização do grafo no PR #32 incorpora novas relações bancárias observadas, mas não integra automaticamente os relatórios dos PRs #34, #35 e #38.
 
 ## 3. Mapa consolidado por domínio
 
@@ -75,33 +76,49 @@ Limites:
 - Os triggers instalados estavam encriptados e não foram comparados integralmente com o script standard.
 - Conclusões fechadas apenas para leitura estática/configuracional, não para validação transaccional.
 
-### 3.2 Tesouraria — OD / OL / BA / FE
+### 3.2 Tesouraria — OD / OL / BA / BL / BR / BX / BABR / FE
 
-**Estado:** conhecimento recuperado parcialmente do histórico; falta relatório técnico completo e confirmação das fontes originais.
+**Fonte:** relatório de investigação no [PR #38](https://github.com/Jhouinho/PhcKnowledge/pull/38), cruzado com a Enciclopédia PHC.
+
+O modelo foi corrigido: **OD não é convertido genericamente em OL**. OD mantém previsões; documentos/operações de origem geram OL directamente quando ocorre uma liquidação efectiva. Em LM/LO, OD e OL são resultados paralelos da operação sobre o título.
 
 | Tabela | Conhecimento actual | Lacuna principal |
 |---|---|---|
-| OD | Movimentos previstos | Mecanismo concreto OD → OL não identificado |
-| OL | Movimentos efectivos de tesouraria | Não assumir que todos os OL vêm de OD |
-| BA | Estrutura auxiliar associada a movimentos OL e reconciliação | Sincronização observada é parcial; ciclo de reconciliação por fechar |
-| FE | Saldos diários de caixa | Regra operacional de bloqueio em dias fechados por esclarecer |
+| OD | Movimentos previstos, manuais ou automáticos; origens CC, FC, LR/LM, LP/LO, VY e CHF identificadas no código | Valores/configuração reais e validação transaccional |
+| OL | Movimentos efectivos gerados directamente por FT, RE, LM, LO e outros circuitos | Inventário completo de origens e validação runtime |
+| BA | Movimentos bancários derivados de OL quando existe conta bancária (`contado>0)) | Índices/cardinalidades completas e validação do circuito |
+| BL | Contas bancárias e saldos totais/reconciliados actualizados por BA | Confirmar estrutura/índices e regras adicionais |
+| BX | Cabeçalho do extrato bancário importado | Confirmar estrutura/índices e sequência de actualização |
+| BR | Movimentos importados que pertencem a BX | Confirmar estrutura/índices e associação a BABR |
+| BABR | Associação entre BA e BR; triggers marcam/desmarcam ambos como reconciliados | Cardinalidade física e fluxo aplicacional de criação/remoção |
+| FE | Saldos diários da tesouraria em Caixa; fecha dias e regista utilizador | Localizar/validar a autorização aplicacional em dias fechados |
 
-BA:
-- Foram identificados campos como `extracto`, `reco`, `marcada`, `brstamp`, `olcodigo` e `olstamp`.
-- O trigger OL analisado sincroniza BA em condições como `contado > 0`, mas não actualiza todos os campos.
-- BA não é réplica integral de OL.
+**OD e OL**
+- A Enciclopédia descreve OD como movimentos previsionais manuais ou automáticos provenientes de documentos.
+- A opção **Dar como realizada a previsão** só transforma movimentos directos e movimentos constantes; não os que vêm de outros documentos.
+- LM/LR e LO/LP mantêm OD pelo saldo pendente do título e criam OL directamente nas operações elegíveis.
+- RE cria/actualiza OL quando fica processado e a série não está configurada para movimentos incobráveis (`TSRE.movinc=0`). Pode gerar uma segunda componente para o segundo local de tesouraria.
+- Os códigos LM/LO são mapeados pelo artigo PHC **Códigos das Letras**; não confundir esses códigos de operação com CM1. CM1 é usado para os movimentos de C/C gerados em alguns ramos (códigos 30 e 81).
 
-FE:
-- Estrutura diária com `data`, `festamp`, `saldof`, `esaldof`, `fechado` e `quemfechou`.
-- O trigger OL analisado actualiza FE para movimentos com `local='C'`.
-- Falta localizar onde o PHC impede ou permite alterações em dias fechados.
+**BA / BL / BR / BX / BABR**
+- `OL.contado` corresponde a `BL.noconta`; não é um indicador booleano de reconciliação.
+- `tr_ol_*` cria/actualiza/elimina BA para OL com conta bancária indicada.
+- `tr_ba_*` mantém em BL saldos totais e reconciliados (`reco=1)).
+- `tr_babr_insert/delete` liga BA a BR e marca/desmarca ambos como reconciliados.
+- BR contém movimentos importados; BX é o cabeçalho do extrato. `tr_br_*` chama `usp_Act_Extratos_Bancarios` para recalcular os saldos do BX.
+- `tr_ba_update` propaga `reco` e `extracto` para ML pelo `bastamp`.
+- BA não é réplica integral de OL e não se deve confundir a sua manutenção de saldos com a reconciliação.
 
-OD:
-- As notas recuperadas divergem quanto às origens: uma lista menciona CC, FC, LM, LO e VY; outra menciona CC, FC, LR, LP, VY e CHF.
-- Não consolidar qualquer lista até rever Dic/Rel, triggers e Enciclopédia.
-- A ausência de dependências em `sys.sql_expression_dependencies` não excluiria código aplicacional, SQL dinâmico ou rotinas não detectadas.
+**FE**
+- `tr_ol_*` actualiza os saldos FE quando `OL.local='C'`, incluindo os dias posteriores.
+- A Enciclopédia confirma que fechar a caixa marca o saldo diário como fechado e regista o utilizador; dias anteriores ainda abertos também são fechados.
+- Os parâmetros **Só se pode movimentar a caixa em dias já fechados com password** e **Password para movimentar a caixa em dias já fechados** controlam o bloqueio/autorização.
+- Não foi encontrado trigger `tr_fe_*` nem validação de `FE.fechado` nos triggers OL; a regra de autorização é aplicacional/configuracional.
 
-**Próxima pergunta central:** qual é o mecanismo concreto que transforma uma previsão OD num movimento OL?
+Limites:
+- As tabelas transaccionais consultadas em `CSDefault202603` estavam sem registos; não houve validação em execução.
+- A análise de triggers é do script standard e não prova que cada instalação tenha definições idênticas.
+- O extracto REL consultado não contém relações declaradas para BA, BL, BR, BX ou BABR; as ligações descritas são predicados e efeitos observados em código.
 
 ### 3.3 Dossiers internos — BO / BO2 / BI / BOTXT
 
@@ -192,23 +209,43 @@ Para recuperar:
 
 ## 4. Grafo e modelo de relações
 
-O grafo revisto está em [Grafo funcional PHC e relações estruturais observadas — PR #32](https://github.com/Jhouinho/PhcKnowledge/pull/32), actualizado no PR #32.
+O grafo funcional e estrutural foi actualizado no [PR #32](https://github.com/Jhouinho/PhcKnowledge/pull/32).
 
-O documento mantém duas vistas:
-- **Funcional:** BO/BO2/BI, stock, reservas, inventário, grelhas e tesouraria.
-- **Estrutural:** apenas os predicados observados `BO.bostamp = BO2.bo2stamp`, `BI.bostamp = BO.bostamp`, `SL.bistamp = BI.bistamp`, `BI.obistamp` como referência à linha de origem, `SL.sticstamp = STIC.sticstamp` e a limpeza BOTXT por `bostamp`.
+A vista funcional inclui agora:
+- OD e OL como resultados paralelos das operações sobre títulos;
+- RE → OL condicionado por processamento e configuração TSRE;
+- OL → BA quando existe conta bancária;
+- BA → BL para manutenção de saldos;
+- BA ↔ BABR ↔ BR para reconciliação com movimentos importados de BX;
+- BA → ML para propagação de estado de reconciliação;
+- OL → FE quando o local é Caixa.
 
-O grafo não é ERD físico e não afirma FKs SQL. Relações funcionais e mecanismos pendentes estão identificados separadamente.
+A vista estrutural inclui os predicados observados em código:
+- BO/BO2, BO/BI, BI/SL, BI.obistamp, SL/STIC e BOTXT por bostamp;
+- OL/BA, BA/BL, BR/BX, BABR/BA, BABR/BR e BA/ML.
+
+O grafo não é ERD físico e não afirma FKs SQL. O facto de uma ligação estar no grafo estrutural significa que o predicado foi observado em código, não que exista uma constraint FK.
 
 ## 5. Prioridades para a próxima investigação
 
-### Prioridade 1 — OD → OL / BA / FE
-1. Rever Dic e Rel de OD, OL, BA e FE.
-2. Localizar triggers, procedures, funções, views e referências na Enciclopédia.
-3. Confirmar as origens de OD e resolver a divergência das listas.
-4. Identificar a operação que cria/converte OD em OL.
-5. Fechar a sincronização BA e o comportamento de FE em dias fechados.
-6. Só depois pedir consultas read-only específicas para lacunas concretas.
+### Prioridade 1 — configuração e validação de tesouraria
+1. Confirmar valores TSRE (`ndoc`, `movinc`, `cmcc`, `cmccn`) e descrições CM1 para os códigos 30 e 81.
+2. Rever estrutura/índices de BA, BL, BR, BX e BABR.
+3. Localizar no código aplicacional a criação/remoção de BABR e a autorização de fecho FE.
+4. Auditar operações multi-linha nos triggers OL/BA e validar em ambiente descartável.
+
+Consulta específica pendente (não é uma query de estrutura; serve apenas para confirmar configuração e descrições efectivas):
+
+```sql
+SELECT ndoc, movinc, cmcc, cmccn
+FROM dbo.tsre
+ORDER BY ndoc;
+
+SELECT cm, cmdesc
+FROM dbo.cm1
+WHERE cm IN (30, 81)
+ORDER BY cm;
+```
 
 ### Prioridade 2 — SX / SXX e inventário com grelhas
 1. Procurar todas as rotinas SQL que escrevem em SX/SXX, não apenas triggers SL.
@@ -219,11 +256,9 @@ O grafo não é ERD físico e não afirma FKs SQL. Relações funcionais e mecan
 6. Separar evidência SQL, aplicação PHC e documentação/registos de assistência.
 
 ### Prioridade 3 — BO e dossiers internos
-1. Consultar Dic e Rel antes de novas queries.
-2. Revalidar integralmente `tr_bo_insert/update/delete`.
-3. Cruzar assinatura/importação com Enciclopédia.
-4. Identificar efeitos em BI, stock, tesouraria e dossiers relacionados apenas se houver evidência.
-5. Manter a investigação aberta enquanto o circuito não estiver demonstrado.
+1. Revalidar integralmente `tr_bo_insert/update/delete`.
+2. Cruzar assinatura/importação com Enciclopédia.
+3. Identificar efeitos em BI, stock, tesouraria e dossiers relacionados apenas se houver evidência.
 
 ### Prioridade 4 — produção e movimentos
 1. Fechar a semântica de OFC/OCI/OMI/OCP/OPT com fontes PHC Gestão/CS.
@@ -254,8 +289,8 @@ Não reescrever relatórios antigos como se tivessem sido produzidos com evidên
 
 ## 7. Ponto exacto de retoma
 
-A próxima investigação recomendada é **OD → OL**, incluindo BA e FE. É a lacuna mais transversal no circuito de tesouraria e está explicitamente assinalada no grafo.
+A investigação de OD/OL e da reconciliação bancária já tem uma primeira síntese no PR #38. A próxima acção concreta é confirmar os valores de configuração TSRE e as descrições CM1 30/81 com a consulta específica acima. Depois disso, avançar para índices/cardinalidades BA/BL/BR/BX/BABR e validação da aplicação.
 
-Em paralelo, PR #34 mantém a investigação SX/SXX aberta e PR #35 mantém BO como primeira passagem. O PR #32 contém o grafo actualizado. Todos permanecem fora da main até revisão e integração explícita.
+Em paralelo, PR #34 mantém SX/SXX e produção em aberto, PR #35 mantém BO como primeira passagem e PR #32 contém o grafo actualizado. Todos permanecem fora da main até revisão e integração explícita.
 
 **Este índice é uma fotografia de continuidade em 27-11-2026. Não significa que os circuitos PHC estejam todos fechados nem que os PRs tenham sido integrados.**
