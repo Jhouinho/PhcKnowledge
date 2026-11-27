@@ -93,6 +93,12 @@ O modelo foi corrigido: **OD não é convertido genericamente em OL**. OD manté
 | BABR | Associação entre BA e BR; triggers marcam/desmarcam ambos como reconciliados | Cardinalidade física e fluxo aplicacional de criação/remoção |
 | FE | Saldos diários da tesouraria em Caixa; fecha dias e regista utilizador | Localizar/validar a autorização aplicacional em dias fechados |
 
+**RD / PD / PO / FO**
+- RD (Recibos de Adiantamento) cria/actualiza OL directamente; TSRD.regrd distingue recibo normal de devolução e pode criar CH quando pago por cheque.
+- PD (Adiantamentos a Fornecedores) cria/actualiza FC e OL directamente; se houver cheque, associa CHF ao documento.
+- PO (Pagamentos a Fornecedores) cria/actualiza FC e OL quando processado; pode criar um segundo movimento OL para o segundo local.
+- FO (Compras a Fornecedores) cria/actualiza FC. O trigger FO de eliminação limpa OL por fostamp, mas não foi encontrado INSERT/UPDATE de OL em FO; não o classificar como origem de criação.
+
 **OD e OL**
 - A Enciclopédia descreve OD como movimentos previsionais manuais ou automáticos provenientes de documentos.
 - A opção **Dar como realizada a previsão** só transforma movimentos directos e movimentos constantes; não os que vêm de outros documentos.
@@ -212,6 +218,7 @@ Para recuperar:
 O grafo funcional e estrutural foi actualizado no [PR #32](https://github.com/Jhouinho/PhcKnowledge/pull/32).
 
 A vista funcional inclui agora:
+- RD/PD/PO como origens directas de OL; FO é apenas limpeza de OL no trigger de eliminação;
 - OD e OL como resultados paralelos das operações sobre títulos;
 - RE → OL condicionado por processamento e configuração TSRE;
 - OL → BA quando existe conta bancária;
@@ -247,7 +254,12 @@ WHERE cm IN (30, 81)
 ORDER BY cm;
 ```
 
-### Prioridade 2 — SX / SXX e inventário com grelhas
+### Prioridade 2 — outras origens directas de OL
+1. Aprofundar PR, VY/VZ, OX, OLBB, OW/OWLI, GPC e FACA/FACC/FACD.
+2. Distinguir criação, actualização e limpeza em cada trigger.
+3. Cruzar cada circuito com a Enciclopédia antes de classificar a função.
+
+### Prioridade 3 — SX / SXX e inventário com grelhas
 1. Procurar todas as rotinas SQL que escrevem em SX/SXX, não apenas triggers SL.
 2. Rever Dic/Rel e definições completas de SX/SXX.
 3. Localizar a rotina de lançamento STIC/STIL.
@@ -255,18 +267,18 @@ ORDER BY cm;
 5. Esclarecer o papel de `ST.textteis`.
 6. Separar evidência SQL, aplicação PHC e documentação/registos de assistência.
 
-### Prioridade 3 — BO e dossiers internos
+### Prioridade 4 — BO e dossiers internos
 1. Revalidar integralmente `tr_bo_insert/update/delete`.
 2. Cruzar assinatura/importação com Enciclopédia.
 3. Identificar efeitos em BI, stock, tesouraria e dossiers relacionados apenas se houver evidência.
 
-### Prioridade 4 — produção e movimentos
+### Prioridade 5 — produção e movimentos
 1. Fechar a semântica de OFC/OCI/OMI/OCP/OPT com fontes PHC Gestão/CS.
 2. Distinguir reservas, consumo físico, produção e valorização.
 3. Identificar o circuito completo de componentes e produto acabado.
 4. Não extrapolar documentação Manufactor.
 
-### Prioridade 5 — VO
+### Prioridade 6 — VO
 Recuperar evidências originais antes de reconstruir ou documentar conclusões.
 
 ## 6. Regras para actualizar o conhecimento
