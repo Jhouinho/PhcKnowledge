@@ -1,8 +1,9 @@
 # Grafos PHC — modelo funcional e relações estruturais observadas
 
-**Data:** 25-11-2026  
+**Data de criação:** 25-11-2026  
+**Última actualização:** 27-11-2026  
 **Estado:** representação demonstrativa baseada na investigação consolidada; não é um esquema físico completo nem uma especificação universal do PHC.  
-**Âmbito:** dossiers internos, stock, reservas, pré-cativação e inventários físicos.  
+**Âmbito:** dossiers internos, stock, reservas, pré-cativação, inventários físicos, grelhas e tesouraria.  
 **Repositório:** `Jhouinho/PhcKnowledge`.
 
 ## 1. Objectivo e convenções
@@ -263,8 +264,8 @@ Este documento deriva da investigação consolidada nos seguintes documentos:
 - [Stock e inventários físicos](investigacao-funcional-stock-inventarios-2026-11-25.md).
 - [Síntese e rastreabilidade — dossiers, stock e inventários](sintese-rastreabilidade-dossiers-stock-inventarios-2026-11-25.md).
 - [Investigação FT/FI/TD e tesouraria](investigacao-funcional-csdefault-ft-fi-td-2026-11-25.md).
-- [Investigação técnica de SX/SXX](investigacao-tecnica-stock-grelhas-sx-sxx-2026-11-26.md) — disponível no PR #34, ainda não integrado na main.
-- [Investigação inicial de BO](investigacao-funcional-csdefault-bo-2026-11-26.md) — disponível no PR #35, ainda não integrado na main.
+- [Investigação técnica de SX/SXX — PR #34](https://github.com/Jhouinho/PhcKnowledge/pull/34) — ainda não integrado na main.
+- [Investigação inicial de BO — PR #35](https://github.com/Jhouinho/PhcKnowledge/pull/35) — ainda não integrado na main.
 
 A evidência estrutural actualmente disponível é parcial. Em particular, a identificação de nomes de colunas não equivale a uma inspecção integral do catálogo SQL Server. O grafo deve ser actualizado quando forem obtidos os metadados físicos de cada base.
 
