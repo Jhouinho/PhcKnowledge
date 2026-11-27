@@ -133,7 +133,7 @@ A leitura conjunta de `tr_ol_*`, `tr_ba_*`, `tr_babr_*`, `tr_br_*` e da Enciclop
 - `tr_ol_update` actualiza BA quando o OL correspondente muda; elimina BA quando `contado=0`; cria BA se o movimento passar a ter conta bancária e ainda não existir BA.
 - `tr_ol_delete` elimina BA pelo `olstamp`.
 
-A coluna `contado` **não é um booleano de “contado/reconciliado”**. `tr_bl_update` preenche `OL.contado` com `BL.noconta`; `tr_ba_insert/update/delete` usam `BA.contado` para localizar a conta em `BL.noconta`. É, portanto, o identificador/número interno da conta bancária. A reconciliação é representada separadamente por `reco`.
+A coluna `contado` **não é um booleano de “contado/reconciliado”**. `tr_ba_insert/update/delete` usam `BA.contado = BL.noconta` para localizar a conta bancária; `tr_ol_insert/update` transportam para BA o valor de `OL.contado`. No `tr_bl_update` consultado, quando mudam `BL.banco` ou `BL.conta`, são actualizados os campos de apresentação `ollocal` nas tabelas que guardam o número `contado`; o trigger não atribui `OL.contado`. Assim, `contado` funciona como identificador/número interno da conta bancária, mas a origem exacta do seu preenchimento em OL deve ser atribuída aos documentos/configurações que o fornecem, não a `tr_bl_update`. A reconciliação é representada separadamente por `reco`.
 
 ### 4.2 Saldos de contas bancárias — BL
 
@@ -174,6 +174,24 @@ A Enciclopédia descreve reconciliação de um movimento importado com vários m
 - O trigger OL não copia todos os campos de OL para BA. Campos como `olcodigo`, `grupo`, `sgrupo`, `extracto`, `reco`, `brstamp` e `marcada` não são preenchidos nesse INSERT/UPDATE.
 - A pesquisa no extracto REL consultado não encontrou relações declaradas para BA, BL, BR, BX ou BABR. As ligações acima são predicados e efeitos de código, não FKs demonstradas.
 - O processo de reconciliação não se reduz a marcar `BA.reco`: a associação BA–BR e a actualização de BL/ML também fazem parte do circuito.
+
+
+
+### 4.5 Inventário de colunas stamp e limites da evidência estrutural
+
+Foi cruzado o extracto disponível com cabeçalho `TABLE_NAME / COLUMN_NAME`, que lista colunas de identidade/referência terminadas em `stamp`. Para as tabelas em análise, o extracto apresenta:
+
+| Tabela | Colunas stamp presentes no extracto |
+|---|---|
+| BA | `bastamp`, `brstamp`, `olstamp` |
+| BL | `blstamp` |
+| BR | `bastamp`, `brstamp`, `bxstamp` |
+| BX | `bxstamp` |
+| BABR | Sem entrada encontrada no extracto |
+
+Este extracto não contém tipos, nulabilidade, índices, PK/UK ou FKs; também não contém uma entrada para BABR, apesar de existirem triggers `tr_babr_insert/delete`. Por isso, não é suficiente para concluir cardinalidades físicas. A presença de `BA.brstamp` e `BR.bastamp` no inventário também não prova que sejam as ligações activas no circuito de reconciliação: nos triggers standard pesquisados não foram encontradas referências qualificadas `BA.brstamp` ou `BR.bastamp`; o mecanismo demonstrado é a tabela de associação BABR, pelos campos `bastamp` e `brstamp`.
+
+O trigger `tr_ol_insert` cria BA com `BA.bastamp = OL.olstamp` e `BA.olstamp = OL.olstamp`; a condição é `OL.contado > 0`. Isto demonstra a identidade usada pelo código para o movimento bancário derivado, mas não demonstra por si só uma restrição UNIQUE/PK sobre `BA.olstamp` nem uma FK física. A cardinalidade física continua por confirmar nos índices/constraints.
 
 ## 5. FE — saldos diários de caixa e fecho
 
@@ -216,7 +234,7 @@ flowchart TD
 |---|---|
 | Origens de OD em triggers analisados | Identificadas estaticamente |
 | Efeitos de OL sobre BA e FE | Identificados estaticamente |
-| Estrutura e índices de BA / FE | Consultados na base standard |
+| Estrutura e índices de BA / FE | FE consultada anteriormente; índices/constraints de BA/BL/BR/BX/BABR ainda por confirmar |
 | Dados transaccionais para validação | Inexistentes nas tabelas consultadas |
 | Operações multi-linha em OL | Requerem auditoria de código/testes |
 | Regras de fecho diário FE | Por localizar |
@@ -343,7 +361,7 @@ Este modelo é mais fiel à implementação observada: **OD e OL são resultados
 O primeiro cruzamento DIC/REL/Enciclopédia e a leitura dos triggers de LM/LO/RE e BA/BR/BX/BL já foram efectuados. A continuação deve concentrar-se nas lacunas de configuração e de execução:
 
 1. Confirmar os valores de configuração de `TSRE` (`ndoc`, `movinc`, `cmcc`, `cmccn`) e as descrições CM1 dos códigos 30 e 81.
-2. Rever estrutura/índices de BA, BR, BX, BABR e BL, confirmando cardinalidades e chaves usadas no circuito de reconciliação.
+2. Confirmar no catálogo SQL as colunas, nulabilidade, PK/UK, índices e FKs de BA, BL, BR, BX e BABR; o extracto stamp disponível não contém essa informação.
 3. Localizar no código aplicacional as operações de reconciliação que criam/eliminam BABR e as validações de fecho de FE.
 4. Auditar operações multi-linha nos triggers OL e BA, em especial datas distintas e movimentos de várias contas.
 5. Validar em ambiente descartável os circuitos RE, LM, LO, BA/BR e FE. Não usar a base standard de referência para criar transacções artificiais.
@@ -447,9 +465,9 @@ O fecho de FE é um controlo do saldo diário de caixa:
 
 Não foi encontrado `tr_fe_*` nem validação de `FE.fechado` nos triggers SQL standard consultados. O cálculo de saldos é SQL; a autorização para movimentar dias fechados é descrita como controlo da aplicação/configuração.
 
-## 16. Próxima validação read-only
+## 16. Validação de configuração e próxima validação estrutural
 
-A consulta de configuração foi executada em `CSDefault202603`; os resultados estão registados abaixo. Permanecem por validar a configuração de outras instalações e a execução transaccional dos circuitos.
+A consulta de configuração foi executada em `CSDefault202603`; os resultados estão registados abaixo. Permanecem por validar a configuração de outras instalações e a execução transaccional dos circuitos. A próxima consulta estrutural deverá ser executada no catálogo SQL, porque o extracto stamp disponível não inclui índices, constraints ou nulabilidade.
 
 ```sql
 SELECT ndoc, movinc, cmcc, cmccn
@@ -549,3 +567,75 @@ A Enciclopédia identifica FO como **Compras a Fornecedores**. Os triggers FO an
 
 Assim, FO não deve ser classificado como origem directa de criação de OL com a evidência actual. O predicado de limpeza pode servir para remover um movimento previamente associado, mas a sua origem permanece por localizar.
 
+
+
+### 20. Revisão estrutural BA / BL / BR / BX / BABR — 2026-11-27
+
+O inventário stamp consultado confirma as colunas listadas na secção 4.5, mas não contém metadados suficientes para avaliar PK/UK, índices ou FKs. A leitura dos triggers permite, no entanto, afirmar:
+
+- `BA` é criado por `tr_ol_insert` quando `OL.contado > 0`, com `BA.bastamp = BA.olstamp = OL.olstamp`.
+- `BA.contado` é usado para localizar `BL.noconta` nos triggers BA; não é o indicador de reconciliação.
+- `tr_ba_insert/update/delete` mantêm saldos totais e reconciliados em BL através do predicado `BL.noconta = BA.contado`.
+- `BR.bxstamp` liga cada movimento importado ao cabeçalho BX nos triggers de BR; estes chamam `usp_Act_Extratos_Bancarios` para recalcular os totais do extrato.
+- `BABR` é a associação operacional: INSERT marca BA e BR como `reco=1`; DELETE repõe `reco=0`. A documentação PHC descreve associação muitos-para-muitos. Sem índices/constraints e sem dados transaccionais, não se deve declarar cardinalidade física nem exclusividade.
+- O inventário inclui `BA.brstamp` e `BR.bastamp`, mas os triggers standard pesquisados não usam esses campos como predicados de ligação; não os representar como caminho principal sem outra evidência.
+
+A consulta de catálogo proposta para fechar a estrutura física é:
+
+```sql
+DECLARE @tables TABLE (name sysname PRIMARY KEY);
+INSERT INTO @tables (name) VALUES (N'BA'), (N'BL'), (N'BR'), (N'BX'), (N'BABR');
+
+-- Colunas, tipos e nulabilidade
+SELECT
+    t.name AS table_name,
+    c.column_id,
+    c.name AS column_name,
+    ty.name AS type_name,
+    c.max_length,
+    c.precision,
+    c.scale,
+    c.is_nullable
+FROM sys.tables AS t
+JOIN @tables AS x ON x.name = t.name
+JOIN sys.columns AS c ON c.object_id = t.object_id
+JOIN sys.types AS ty ON ty.user_type_id = c.user_type_id
+ORDER BY t.name, c.column_id;
+
+-- Índices, PK/UK e ordem das colunas
+SELECT
+    t.name AS table_name,
+    i.name AS index_name,
+    i.type_desc,
+    i.is_primary_key,
+    i.is_unique,
+    i.is_unique_constraint,
+    i.is_disabled,
+    ic.key_ordinal,
+    ic.is_included_column,
+    c.name AS column_name
+FROM sys.tables AS t
+JOIN @tables AS x ON x.name = t.name
+JOIN sys.indexes AS i ON i.object_id = t.object_id
+JOIN sys.index_columns AS ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+JOIN sys.columns AS c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+WHERE i.index_id > 0
+ORDER BY t.name, i.name, ic.key_ordinal, ic.index_column_id;
+
+-- Foreign keys físicas (se existirem)
+SELECT
+    fk.name AS fk_name,
+    tp.name AS parent_table,
+    cp.name AS parent_column,
+    tr.name AS referenced_table,
+    cr.name AS referenced_column
+FROM sys.foreign_keys AS fk
+JOIN sys.foreign_key_columns AS fkc ON fkc.constraint_object_id = fk.object_id
+JOIN sys.tables AS tp ON tp.object_id = fkc.parent_object_id
+JOIN sys.columns AS cp ON cp.object_id = fkc.parent_object_id AND cp.column_id = fkc.parent_column_id
+JOIN sys.tables AS tr ON tr.object_id = fkc.referenced_object_id
+JOIN sys.columns AS cr ON cr.object_id = fkc.referenced_object_id AND cr.column_id = fkc.referenced_column_id
+WHERE tp.name IN (N'BA',N'BL',N'BR',N'BX',N'BABR')
+   OR tr.name IN (N'BA',N'BL',N'BR',N'BX',N'BABR')
+ORDER BY tp.name, fk.name, fkc.constraint_column_id;
+```
