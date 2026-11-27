@@ -179,14 +179,14 @@ flowchart TB
 
 #### Tesouraria — FT, RE, LM/LR, LO/LP, OD, OL, BA/BL e reconciliação
 - FT pode criar OL quando `TD.lancaol=1` e existem correspondências necessárias em TD, FT2, FT3 e OC.
-- RE cria/actualiza OL quando fica processado e a série não está configurada para movimentos incobráveis (`TSRE.movinc=0)); pode gerar uma segunda componente quando o segundo local de tesouraria tem valor.
+- RE cria/actualiza OL quando fica processado e a série não está configurada para movimentos incobráveis (`TSRE.movinc=0`); pode gerar uma segunda componente quando o segundo local de tesouraria tem valor.
 - LM/LR e LO/LP mantêm OD como saldo pendente do título e criam OL directamente nas operações de liquidação elegíveis. Não existe conversão genérica OD → OL.
 - A Enciclopédia mapeia os códigos de operação das letras; não os confundir com os códigos CM1 de conta-corrente.
-- BA é criado a partir de OL quando `contado>0). `contado` é o número da conta bancária, correspondente a `BL.noconta`, e não um booleano de reconciliação.
+- BA é criado a partir de OL quando `contado>0`. `contado` é o número da conta bancária, correspondente a `BL.noconta`, e não um booleano de reconciliação.
 - BA actualiza os saldos totais e reconciliados em BL. BABR liga BA aos movimentos importados BR; os triggers BABR marcam/desmarcam ambos como reconciliados.
 - BR contém movimentos importados do extrato BX; os triggers BR chamam `usp_Act_Extratos_Bancarios` para recalcular os saldos do cabeçalho BX.
 - BA também propaga `reco` e `extracto` para ML quando existe correspondência por `bastamp`.
-- FE é actualizado por OL com `local='C'). O fecho diário é um controlo funcional/documentado da aplicação, não uma validação encontrada nos triggers OL.
+- FE é actualizado por OL com `local='C'`. O fecho diário é um controlo funcional/documentado da aplicação, não uma validação encontrada nos triggers OL.
 #### Pré-cativação
 - BIPRECAT e os campos `biprecatstamp` e `bostamp` foram identificados.
 - O processo funcional de pré-cativação está associado ao Monitor de Cativação, mas o ciclo técnico de criação, conversão e ligação a BI/SA ainda não está fechado.
@@ -236,6 +236,12 @@ flowchart LR
 | 4 | `BI.obistamp` referencia `BI.bistamp` de uma linha de origem | Auto-relação funcional de BI | Predicado de origem identificado; validar contexto e cardinalidade |
 | 5 | `SL.sticstamp = STIC.sticstamp` | Associação do movimento ao cabeçalho de inventário | Predicado observado |
 | 6 | `BOTXT.bostamp = deleted.bostamp` | `tr_bo_delete` | Predicado de limpeza no trigger; não prova FK nem ciclo de vida completo de BOTXT |
+| 7 | `OL.olstamp = BA.olstamp` | `tr_ol_insert/update/delete` | BA é criado apenas para OL com conta bancária indicada; não é cópia integral de OL |
+| 8 | `BA.contado = BL.noconta` | `tr_ba_insert/update/delete` e `tr_bl_update` | `contado` identifica a conta bancária; não é indicador booleano |
+| 9 | `BR.bxstamp = BX.bxstamp` | `tr_br_*` e `usp_Act_Extratos_Bancarios` | Movimento importado pertence a um cabeçalho de extrato |
+| 10 | `BABR.bastamp = BA.bastamp` | `tr_babr_insert/delete` | Associação de reconciliação |
+| 11 | `BABR.brstamp = BR.brstamp` | `tr_babr_insert/delete` | Associação de reconciliação; cardinalidade deve ser confirmada por índices |
+| 12 | `ML.bastamp = BA.bastamp` | `tr_ba_update` | Propagação de `reco` e `extracto` para movimentos contabilísticos |
 
 ### 3.2 Elementos conhecidos sem aresta estrutural demonstrada
 
@@ -244,7 +250,9 @@ flowchart LR
 | BO / TS / TS2 / BO2 | Validações de assinatura/importação nos triggers BO | Junções físicas ou cardinalidades sem rever Dic/Rel e expressão integral |
 | FT / FI / TD / OL | Circuito funcional condicional descrito nos triggers standard | FK entre documentos, linhas, configuração e OL |
 | FT / CH / CHL | Ramos funcionais de criação e histórico de cheques | Relações físicas completas ou semântica universal de cm=3 |
-| OD / OL / BA / BL / BR / BX / BABR / FE | OD e OL são resultados paralelos; BA mantém saldos bancários em BL e reconcilia com BR/BX via BABR; FE mantém saldos diários | Cardinalidades físicas e índices completos; regras de aplicação para reconciliação/fecho; validação multi-linha |
+| OD / LM / LR e OD / LO / LP | OD mantém o saldo pendente; LM/LO geram OL directamente nas operações elegíveis | Relação genérica OD→OL; não foi demonstrada |
+| OD / CC / FC / VY / CHF | Origens e efeitos de triggers identificados | Relações físicas completas ou cardinalidades fora dos predicados observados |
+| OL / FE | OL actualiza saldos diários FE quando `local='C'` | FK ou stamp directo; FE agrega por data |
 | BI / FI / FN / SL | Origens condicionais de movimentos de stock | Uma ligação universal para todos os tipos de documento |
 | SL / ST / SA | Actualização de acumulados nos triggers SL | Chaves físicas completas de artigo/armazém neste grafo |
 | SX / SXX / SGC / SGT | Views e operações de manutenção de dimensões em SX | Junção SX/SXX, rotina de saldo e relação directa SL→SX |
