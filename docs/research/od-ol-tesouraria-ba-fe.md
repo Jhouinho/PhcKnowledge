@@ -120,37 +120,77 @@ As condições `contado > 0` e `local = 'C'` são independentes. Um movimento po
 
 Os triggers usam as tabelas lógicas `inserted` e `deleted`. A análise identificou operações com agregações e junções para recalcular FE. É necessário rever especificamente instruções que afectem várias linhas com datas distintas. Isto é um **risco de auditoria**, não um erro confirmado.
 
-## 4. BA — estrutura auxiliar de movimentos
+## 4. BA — movimentos bancários derivados de OL
 
-A estrutura consultada contém, entre outros, os campos:
-- Identidade: `bastamp` (PK), `olstamp`.
-- Dados do movimento: `data`, `documento`, `descricao`, `entrada`, `saida`, `eentrada`, `esaida`, `contado`, `cheque`, `moeda`.
-- Reconciliação / extracto: `reco`, `extracto`.
-- Classificação e contexto: `origem`, `olcodigo`, `fref`, `ccusto`, `ncusto`.
-- Outros: `dvalor`, `intid`, `brstamp`, `entradam`, `saidam`, campos de auditoria e `marcada`.
+A leitura conjunta de `tr_ol_*`, `tr_ba_*`, `tr_babr_*`, `tr_br_*` e da Enciclopédia permite corrigir a interpretação inicial de BA.
 
-Índices observados:
-- PK única em `bastamp`.
-- Índice em `olstamp`, que suporta a pesquisa de BA pelo movimento OL.
-- Índices em `extracto`, `contado` e `data`.
-- Índices compostos para listagem/ordenação, incluindo `in_ba_balist` e `in_ba_dataes`.
+**BA não é uma cópia integral de OL nem é apenas uma tabela de reconciliação.** É uma estrutura de movimentos associados a contas bancárias, derivada de OL, que alimenta os saldos da tabela de contas bancárias `BL` e participa na reconciliação com movimentos importados de extratos.
 
-O trigger `tr_ol_*` não preenche nem sincroniza todos os campos de BA. No código analisado, campos como `olcodigo`, `extracto`, `reco`, `brstamp` e `marcada` não fazem parte do INSERT/UPDATE do trigger. A sua gestão pertence a outras operações ou a valores por defeito; não se deve assumir que BA é uma réplica integral de OL.
+### 4.1 Criação e correspondência com OL
 
-A existência de `reco` e `extracto` sugere participação no circuito de reconciliação bancária, mas os triggers OL analisados, isoladamente, não demonstram o fluxo completo dessa reconciliação.
+- `tr_ol_insert` cria BA para movimentos OL com `contado > 0`.
+- O trigger copia `OL.olstamp` para `BA.bastamp` e `BA.olstamp`; copia também data, data-valor, documento, cheque, descrição, entradas/saídas, moeda, conta (`contado`) e identificação interna.
+- `tr_ol_update` actualiza BA quando o OL correspondente muda; elimina BA quando `contado=0`; cria BA se o movimento passar a ter conta bancária e ainda não existir BA.
+- `tr_ol_delete` elimina BA pelo `olstamp`.
 
-## 5. FE — saldos diários de caixa
+A coluna `contado` **não é um booleano de “contado/reconciliado”**. `tr_bl_update` preenche `OL.contado` com `BL.noconta`; `tr_ba_insert/update/delete` usam `BA.contado` para localizar a conta em `BL.noconta`. É, portanto, o identificador/número interno da conta bancária. A reconciliação é representada separadamente por `reco`.
 
-A estrutura consultada contém:
-- `festamp`: identificador com índice único.
-- `data`: chave primária.
-- `saldof` e `esaldof`: saldos acumulados em moeda base e alternativa.
-- `fechado` e `quemfechou`: estado e responsável pelo fecho.
-- `marcada` e campos de auditoria.
+### 4.2 Saldos de contas bancárias — BL
 
-A chave primária em `data` e a lógica dos triggers sustentam a interpretação de FE como saldo diário, não como detalhe de cada movimento.
+Os triggers BA mantêm os saldos em BL:
+- `tr_ba_insert`: acrescenta o movimento aos saldos da conta.
+- `tr_ba_update`: desfaz o valor antigo e aplica o novo quando mudam valores, conta ou estado de reconciliação.
+- `tr_ba_delete`: retira o movimento dos saldos.
 
-Questão em aberto: a presença de `fechado` / `quemfechou` levanta a necessidade de localizar as validações que impedem ou permitem alterações em dias fechados. Os triggers OL analisados não bastam para concluir onde essa regra é aplicada.
+São mantidos saldos globais e saldos reconciliados:
+- `saldo`, `esaldo`, `saldom`: valores totais;
+- `rsaldo`, `ersaldo`, `rsaldom`: valores cuja BA tem `reco=1`.
+
+O trigger `tr_ba_update` também propaga `reco` e `extracto` para `ML` através de `ML.bastamp = BA.bastamp`. A relação é comportamento observado em código; `ML` é identificada no REL consultado como Movimentos Contabilísticos.
+
+### 4.3 Reconciliação bancária — BX / BR / BABR
+
+A documentação PHC descreve a reconciliação entre:
+- movimentos da tesouraria;
+- movimentos importados do extrato bancário.
+
+O código analisado permite identificar os elementos:
+- `BX`: cabeçalho do extrato importado, com conta, número/data do extrato e saldos inicial/final;
+- `BR`: movimentos importados que pertencem ao extrato (`BR.bxstamp`);
+- `BA`: movimentos da conta bancária derivados de OL;
+- `BABR`: associação entre movimentos BA e BR, pelos campos `bastamp` e `brstamp`.
+
+Evidência dos triggers:
+- `tr_babr_insert` marca BA e BR como reconciliados (`reco=1`).
+- `tr_babr_delete` repõe `reco=0` em ambos.
+- `tr_br_insert/update/delete` chama `usp_Act_Extratos_Bancarios` para recalcular os saldos inicial/final do BX a partir dos movimentos BR.
+- A procedure recalcula os totais do extrato; não transforma OD em OL nem cria movimentos de tesouraria.
+
+A Enciclopédia descreve reconciliação de um movimento importado com vários movimentos de tesouraria e vice-versa. Isto é consistente com a existência de `BABR` como tabela de associação, mas a cardinalidade física deve continuar a ser validada pelos índices e pela estrutura integral.
+
+### 4.4 Limites e relações não declaradas
+
+- BA só é criado a partir de OL quando existe uma conta bancária indicada em `contado`; não representa todos os movimentos OL.
+- O trigger OL não copia todos os campos de OL para BA. Campos como `olcodigo`, `grupo`, `sgrupo`, `extracto`, `reco`, `brstamp` e `marcada` não são preenchidos nesse INSERT/UPDATE.
+- A pesquisa no extracto REL consultado não encontrou relações declaradas para BA, BL, BR, BX ou BABR. As ligações acima são predicados e efeitos de código, não FKs demonstradas.
+- O processo de reconciliação não se reduz a marcar `BA.reco`: a associação BA–BR e a actualização de BL/ML também fazem parte do circuito.
+
+## 5. FE — saldos diários de caixa e fecho
+
+A estrutura FE representa os saldos diários da tesouraria no local Caixa, não os históricos de abertura/fecho de caixas POS.
+
+- `tr_ol_insert/update/delete` actualizam FE quando `OL.local='C'`.
+- A variação diária é `entr - said` e `eentr - esaid`.
+- A alteração de um movimento afecta o saldo do dia e os saldos dos dias seguintes.
+- FE contém `data`, `festamp`, `saldof`, `esaldof`, `fechado` e `quemfechou`.
+
+A Enciclopédia, no tópico **Fechar a Caixa**, confirma que:
+- fechar a caixa marca o saldo desse dia como fechado e regista o utilizador;
+- dias anteriores ainda abertos também são fechados nesse momento;
+- existe um parâmetro que controla o bloqueio de movimentos de tesouraria no local Caixa em dias fechados;
+- os parâmetros **Password para movimentar a caixa em dias já fechados** e **Só se pode movimentar a caixa em dias já fechados com password** controlam a autorização para ultrapassar o bloqueio.
+
+No script standard analisado não foi encontrado trigger `tr_fe_*` nem validação de `FE.fechado` nos triggers OL. A manutenção do saldo é feita por SQL; o controlo de autorização/fecho descrito no manual é, portanto, aplicação/configuração, não um bloqueio demonstrado nos triggers SQL analisados.
 
 ## 6. Mapa funcional provisório
 
@@ -231,12 +271,15 @@ Em `tr_ft_update`, o movimento OL existente é actualizado e, quando necessário
 
 ### 10.2 Recibos — RE
 
-`tr_re_insert` cria movimentos OL directamente a partir do recibo. O código contempla mais do que uma componente:
-- movimento principal, com origem `RE`, associado por `restamp`;
-- componente adicional associada a `substring('2' + restamp, 1, 25)`, quando existem valores nos campos de tesouraria secundária (`totol2`, `etotol2`, `valor2m3`);
-- cálculo de entradas/saídas condicionado pelos totais, arredondamentos, valores transferidos e configuração `TSRE`.
+A leitura dos triggers corrige a versão anterior desta secção:
 
-Isto mostra que um recibo pode originar mais do que um movimento OL. `tr_re_update` actualiza/reconcilia essas componentes e `tr_re_delete` elimina os movimentos associados.
+- `tr_re_insert` não é o trigger que cria OL; o INSERT trata os movimentos de conta-corrente associados ao recibo.
+- `tr_re_update` cria/actualiza OL quando o recibo fica processado (`process=1`) e a série não está configurada para movimentos incobráveis (`TSRE.movinc=0)).
+- O trigger usa `RE.olcodigo` para obter a classificação em OC; `TSRE` não tem campo `olcodigo` no esquema consultado.
+- Pode criar um movimento OL principal e uma segunda componente, com stamp derivado de `restamp`, quando existem valores no segundo local (`totol2`, `etotol2`, `valor2m3`).
+- `tr_re_delete` elimina os movimentos associados.
+
+A Enciclopédia explica que um recibo apenas gravado não altera a conta-corrente; quando é processado, é lançado em C/C. A configuração de recibos também distingue as séries normais das séries para movimentos incobráveis, nas quais ficam inibidos os campos de lançamento na tesouraria. Esta descrição é consistente com a condição `TSRE.movinc=0` do trigger. A semântica exacta do campo deve, ainda assim, ser validada pelos valores da configuração TSRE.
 
 ### 10.3 Títulos de recebimento — LM / LR
 
@@ -296,8 +339,124 @@ Este modelo é mais fiel à implementação observada: **OD e OL são resultados
 
 ## 12. Próxima investigação
 
-1. Confirmar no DIC/REL os campos de ligação e semântica de `FT`, `FT2`, `FT3`, `RE`, `LM`, `LR`, `LO` e `LP`.
-2. Mapear os códigos `CM` de LM/LO através de `CM1` e da Enciclopédia PHC, sem inferir a descrição funcional apenas pelo número.
-3. Seguir o circuito de `RE` e os campos `totol2` / `valor2m3` para perceber pagamentos mistos e múltiplos movimentos OL.
-4. Confirmar a configuração de `TD.lancaol`, `TD.olcodigo`, `TD.altollocal` e os campos `FT2` que determinam o meio/local de recebimento.
-5. Só depois fechar o diagrama completo e actualizar a documentação canónica, se a análise justificar alteração de conceitos.
+O primeiro cruzamento DIC/REL/Enciclopédia e a leitura dos triggers de LM/LO/RE e BA/BR/BX/BL já foram efectuados. A continuação deve concentrar-se nas lacunas de configuração e de execução:
+
+1. Confirmar os valores de configuração de `TSRE` (`ndoc`, `movinc`, `cmcc`, `cmccn`) e as descrições CM1 dos códigos 30 e 81.
+2. Rever estrutura/índices de BA, BR, BX, BABR e BL, confirmando cardinalidades e chaves usadas no circuito de reconciliação.
+3. Localizar no código aplicacional as operações de reconciliação que criam/eliminam BABR e as validações de fecho de FE.
+4. Auditar operações multi-linha nos triggers OL e BA, em especial datas distintas e movimentos de várias contas.
+5. Validar em ambiente descartável os circuitos RE, LM, LO, BA/BR e FE. Não usar a base standard de referência para criar transacções artificiais.
+
+
+
+## 13. Cruzamento DIC / REL / Enciclopédia — conclusões adicionais
+
+### 13.1 OD e a opção “Dar como realizada”
+
+A Enciclopédia descreve OD como a tabela de movimentos previsionais, alimentada por movimentos manuais ou automáticos provenientes de outros documentos. A opção **Dar como realizada a previsão** só transforma em tesouraria real movimentos directos e movimentos constantes; não permite transformar previsões provenientes de outros documentos.
+
+Isto reforça a conclusão da análise SQL: não existe uma conversão universal OD → OL. Nos circuitos LM/LO, a previsão e a liquidação são resultados paralelos das operações sobre o título.
+
+### 13.2 Códigos de operações de letras — não confundir com CM1
+
+O artigo da Enciclopédia **Códigos das Letras** fornece a semântica dos valores `LM.cm` e `LO.cm`. Estes códigos são códigos internos de operações de letras, não devem ser mapeados indiscriminadamente pela tabela CM1 (Códigos de movimentos de C/C).
+
+**LM — letras a receber**
+
+| CM | Operação documentada | Efeito observado nos triggers |
+|---:|---|---|
+| 1 | Nova letra a receber | Cria/actualiza OD do saldo pendente |
+| 3 | Cobrança directa | Remove OD; cria OL |
+| 5 | Amortização directa | Cria/actualiza OD do remanescente e OL do valor amortizado; pode criar CH se `lancach=1` |
+| 7 | Reforma de letras a receber | Remove OD |
+| 9 | Envio a desconto | Cria/actualiza OD |
+| 10 | Envio à cobrança | Cria/actualiza OD |
+| 11 | Desconto | Remove OD; cria OL líquido de encargos |
+| 13 | Cobrança bancária | Remove OD; cria OL líquido de encargos |
+| 14 | Anulação de envio a desconto | Cria/actualiza OD |
+| 15 | Anulação de envio à cobrança | Cria/actualiza OD |
+| 18 | Regularização | OL tratado no UPDATE; não consta do conjunto de INSERT |
+| 19 | Envio a aceite | Cria/actualiza OD |
+| 20 | Recepção de aceite | Cria/actualiza OD; manual confirma previsão pelo valor pendente |
+| 21 | Débito em C/C de clientes | Remove OD; cria CC com CM1=30 |
+| 23 | Registo de encargos | Cria OL dos encargos |
+| 26 | Recâmbio | Cria/actualiza OD, cria OL de saída e CC com CM1=30 |
+| 27 | Anulação de envio a aceite | Cria/actualiza OD |
+| 17 | Sem descrição no artigo consultado | Código usado para remover OD; semântica por esclarecer |
+
+No UPDATE, a manutenção de OD e a criação/actualização de OL exigem `currec=1`. O conjunto de OL inclui `cm=18`; no INSERT analisado o conjunto é mais restrito. Esta diferença entre INSERT e UPDATE deve manter-se como observação, não como erro presumido.
+
+**LO — letras a pagar**
+
+| CM | Operação documentada | Efeito observado nos triggers |
+|---:|---|---|
+| 2 | Nova letra a pagar | Cria/actualiza OD do saldo pendente |
+| 4 | Pagamento | Remove OD; cria OL de saída |
+| 6 | Amortização | Cria/actualiza OD do remanescente e OL da amortização |
+| 8 | Reforma de letras a pagar | Remove OD |
+| 22 | Débito C/C de fornecedores | Remove OD; cria FC com CM1=81 |
+| 28 | Registo de n/aceite | Cria/actualiza OD |
+| 29 | Registo de encargos | Cria OL dos encargos |
+| 17 | Sem descrição no artigo consultado | Código usado para remover OD; semântica por esclarecer |
+
+No UPDATE, os ramos de OD e OL exigem `currec=1`. A criação de OL usa `P10001`; OD representa o saldo pendente do título e usa a mesma classificação de pagamentos.
+
+Os códigos CM1=30 e CM1=81 são usados nos movimentos CC/FC gerados por determinadas operações de letras. A descrição desses dois códigos depende da configuração efectiva em CM1; não se deve confundir essa tabela com o catálogo de operações de letras.
+
+### 13.3 RE — configuração e processamento
+
+A configuração de séries de recibos documenta:
+- código de movimento de C/C;
+- nome do documento para tesouraria real;
+- série configurada para movimentos incobráveis;
+- classificação e locais de tesouraria no recibo.
+
+A série para movimentos incobráveis inibe os campos de lançamento na tesouraria. Isto é consistente com `TSRE.movinc=1` e com o bloqueio `TSRE.movinc=0` do trigger de criação de OL.
+
+O recibo pode indicar um segundo local de tesouraria; o manual explica que o valor desse segundo local é subtraído ao primeiro. O trigger materializa as componentes em OL separadamente quando os campos de segundo local têm valores.
+
+## 14. Reconciliação bancária — modelo funcional actualizado
+
+O circuito de reconciliação deve ser representado separadamente do circuito OD/OL:
+
+```mermaid
+flowchart TD
+    OL["OL — movimento de tesouraria"] -->|"contado > 0 (número da conta)"| BA["BA — movimento da conta bancária"]
+    BL["BL — conta bancária"] -->|"BL.noconta = BA.contado"| BA
+    BA -->|"actualiza saldo total e reconciliado"| BL
+    BX["BX — cabeçalho do extrato importado"] -->|"BX.bxstamp = BR.bxstamp"| BR["BR — movimento importado do extrato"]
+    BA -->|"BABR.bastamp"| BABR["BABR — associação de reconciliação"]
+    BR -->|"BABR.brstamp"| BABR
+    BABR -->|"marca reco=1 nos dois lados"| BA
+    BABR -->|"marca reco=1 nos dois lados"| BR
+    BA -->|"reco / extracto por bastamp"| ML["ML — movimento contabilístico"]
+```
+
+A Enciclopédia descreve reconciliação muitos-para-muitos: um movimento importado pode reconciliar vários movimentos de tesouraria e vice-versa. A tabela BABR é o mecanismo de associação observado nos triggers. A inserção de BABR marca BA e BR como reconciliados; a eliminação desfaz essa marcação.
+
+A procedure `usp_Act_Extratos_Bancarios` recalcula os saldos inicial/final do cabeçalho BX a partir dos movimentos BR, por conta e sequência temporal do extrato. Não é uma rotina de conversão de OD para OL.
+
+## 15. Fecho de FE — regra funcional e limite SQL
+
+O fecho de FE é um controlo do saldo diário de caixa:
+- fechar um dia marca FE como fechado e regista quem o fechou;
+- dias anteriores ainda abertos também são fechados;
+- a configuração **Só se pode movimentar a caixa em dias já fechados com password** exige a password definida em **Password para movimentar a caixa em dias já fechados**;
+- o controlo aplica-se às operações de tesouraria em Caixa e a operações/documentos configurados para lançar em Caixa.
+
+Não foi encontrado `tr_fe_*` nem validação de `FE.fechado` nos triggers SQL standard consultados. O cálculo de saldos é SQL; a autorização para movimentar dias fechados é descrita como controlo da aplicação/configuração.
+
+## 16. Estado revisto
+
+| Tema | Estado |
+|---|---|
+| OD: origens e diferença previsão/real | Compreendido estaticamente; sem validação transaccional |
+| LM/LR: códigos e efeitos OD/OL | Mapeados com triggers e Enciclopédia; código 17 por esclarecer |
+| LO/LP: códigos e efeitos OD/OL/FC | Mapeados com triggers e Enciclopédia; código 17 por esclarecer |
+| RE: processamento e geração de OL | Mapeado; configuração efectiva TSRE por confirmar |
+| BA/BL: movimentos e saldos bancários | Mapeados estaticamente |
+| BX/BR/BABR: importação e reconciliação | Mapeados funcionalmente; cardinalidade/índices a confirmar |
+| FE: saldo diário e fecho | Regra funcional documentada; controlo de aplicação não localizado no SQL |
+| Multi-linha e runtime | Pendente |
+| Dados transaccionais na CSDefault202603 | Inexistentes nas tabelas consultadas |
+
