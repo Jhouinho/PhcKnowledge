@@ -192,7 +192,7 @@ Para recuperar:
 
 ## 4. Grafo e modelo de relações
 
-O grafo revisto está em [Grafo funcional PHC e relações estruturais observadas](../audits/grafos-phc-funcional-e-estrutural-2026-11-25.md), actualizado no PR #32.
+O grafo revisto está em [Grafo funcional PHC e relações estruturais observadas — PR #32](https://github.com/Jhouinho/PhcKnowledge/pull/32), actualizado no PR #32.
 
 O documento mantém duas vistas:
 - **Funcional:** BO/BO2/BI, stock, reservas, inventário, grelhas e tesouraria.
