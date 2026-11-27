@@ -151,14 +151,20 @@ Foram consultados os ficheiros actuais:
 
 Isto confirma que a arquitectura do Scanner já distingue recolha de factos, interpretação e projecção de conhecimento. A documentação da consolidação PHC deve preservar a mesma separação.
 
-### 10.4 Reconciliação crítica dos ficheiros de triggers
+### 10.4 Reconciliação das duas fontes de triggers — discrepância explicada
 
-Foi detectada uma discrepância que impede tratar os ficheiros de triggers como uma única fonte:
-- O relatório FT/FI/TD declara ter analisado um script de 1 215 789 bytes, 21 713 linhas, 552 declarações `CREATE TRIGGER`, SHA-256 `ca947c507249a19f4b848ed05a03f321294a8ef81eff223f3cd1b98d0b4d6c08`.
-- O ficheiro actualmente acessível em `PhcKnowledgeScanner/triggers phc.sql` tem 957 619 caracteres no conteúdo devolvido e 353 declarações/nome únicos `CREATE TRIGGER`; o blob Git tem SHA `4ab635747718a8bee1e4243a0a9fcbb7d3ae0f39`.
-- O caminho `docs/sources/triggers phc.sql` também existe na árvore, mas a leitura através do conector devolveu conteúdo vazio; não foi possível confirmar que seja o mesmo artefacto.
+A comparação dos dois ficheiros identificados permitiu resolver a discrepância anterior. Não são duas versões do mesmo script nem devem ser tratados como fontes concorrentes:
 
-**Conclusão:** há pelo menos duas proveniências/versões a reconciliar. Não usar o ficheiro de 353 triggers para reproduzir automaticamente as conclusões obtidas com o script de 552 triggers. Antes de qualquer análise exaustiva, identificar a cópia exacta usada em cada relatório, comparar hashes e determinar se houve filtragem, truncagem ou diferença de versão.
+| Ficheiro | Identidade verificada | Conteúdo | Interpretação |
+|---|---|---|---|
+| `docs/sources/triggers phc.sql` | Git blob `f9949635b32e265129f2aed3803d12307633c842` | 1 215 153 caracteres devolvidos; 552 declarações `CREATE TRIGGER`; cabeçalho `USE CSDefault202603` | Fonte de triggers da base de referência CSDefault202603, usada na investigação funcional |
+| `PhcKnowledgeScanner/triggers phc.sql` | Git blob `4ab635747718a8bee1e4243a0a9fcbb7d3ae0f39` | 957 619 caracteres; 353 declarações `CREATE TRIGGER`; cabeçalho `USE Frenetikmove` | Outro script, associado a outra base/contexto; não substitui a fonte CSDefault202603 |
+
+A primeira leitura de `docs/sources/triggers phc.sql` através da operação de conteúdo devolveu texto vazio, mas a recuperação directa do Git blob pelo SHA confirmou que o ficheiro contém o script completo. A leitura vazia foi uma limitação do método de acesso, não evidência de ficheiro vazio.
+
+**Conclusão corrigida:** o relatório que refere 552 triggers está alinhado com o ficheiro `docs/sources/triggers phc.sql` e com a base `CSDefault202603`. O ficheiro de 353 triggers é distinto e declara outra base (`Frenetikmove`). A diferença de contagens fica explicada pela proveniência/contexto diferentes; não há fundamento para os tratar como truncagem ou duas versões da mesma captura.
+
+**Regra para o trabalho seguinte:** análises da base `CSDefault202603` devem citar explicitamente `docs/sources/triggers phc.sql` e o Git blob acima. O ficheiro em `PhcKnowledgeScanner/` só deve ser usado quando a investigação disser respeito à sua própria proveniência. Não misturar contagens, triggers ou conclusões entre os dois scripts.
 
 ### 10.5 Aprofundamento já persistido de FT/FI/TD e tesouraria
 
