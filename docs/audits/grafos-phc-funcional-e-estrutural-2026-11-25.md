@@ -84,24 +84,59 @@ flowchart TB
   end
 
   subgraph TREASURY["Tesouraria"]
-    OL["OL — movimentos efectivos"]
     OD["OD — movimentos previstos"]
+    OL["OL — movimentos efectivos"]
+    FT2["FT2 / FT3 — dados de pagamento e IVA"]
+    RE["RE — recibos"]
+    TSRE["TSRE — configuração de recibos"]
+    LR["LR — títulos a receber"]
+    LM["LM — operações de títulos a receber"]
+    LP["LP — títulos a pagar"]
+    LO["LO — operações de títulos a pagar"]
+    CC["CC — conta-corrente clientes"]
+    FC["FC — conta-corrente fornecedores"]
+    VY["VY — comissões de vendedores"]
+    CHF["CHF — movimentos de cheque"]
     CH["CH — cheques"]
     CHL["CHL — histórico de movimentos de cheque"]
     OC["OC — códigos de tesouraria"]
-    BA["BA — apoio a reconciliação bancária"]
+    BA["BA — movimentos de conta bancária"]
+    BL["BL — contas bancárias e saldos"]
+    BX["BX — cabeçalho de extrato importado"]
+    BR["BR — movimentos importados do extrato"]
+    BABR["BABR — associação de reconciliação"]
+    ML["ML — movimentos contabilísticos"]
     FE["FE — saldos diários de caixa"]
+
     FT -->|"condicional: TD.lancaol + TD/FT2/FT3/OC"| OL
-    TD -.->|"lancaol / códigos / local / moeda"| OL
-    OC -.->|"código de tesouraria configurado"| OL
+    FT2 -.->|"dados de pagamento / local / moeda"| OL
+    RE -->|"process=1 e TSRE.movinc=0"| OL
+    TSRE -.->|"configuração da série / movimentos incobráveis"| RE
+    LR --> LM
+    LM -->|"saldo pendente do título"| OD
+    LM -->|"CM de cobrança / liquidação"| OL
+    LP --> LO
+    LO -->|"saldo pendente do título"| OD
+    LO -->|"CM de pagamento / amortização / encargos"| OL
+    CC -->|"origem CC"| OD
+    FC -->|"origem FC"| OD
+    VY -->|"origem VY"| OD
+    CHF -.->|"eliminação de previsão associada"| OD
+    OC -.->|"código de tesouraria"| OL
     FT -.->|"ramo independente: multi=0 e cheque=1"| CH
     CH -->|"aceitação inicial: CHL cm=1"| CHL
     CHL -.->|"cm=3 e condições específicas"| OL
-    OD -.->|"concretização OD → OL não identificada"| OL
-    OL -.->|"sincronização parcial se contado > 0"| BA
-    OL -.->|"actualiza saldos quando local = C"| FE
-  end
 
+    OL -->|"contado > 0 (número da conta)"| BA
+    BA -->|"BA.contado = BL.noconta; actualiza saldos"| BL
+    BX -->|"BX.bxstamp = BR.bxstamp"| BR
+    BA -->|"BABR.bastamp"| BABR
+    BR -->|"BABR.brstamp"| BABR
+    BABR -.->|"marca BA.reco e BR.reco"| BA
+    BABR -.->|"marca BA.reco e BR.reco"| BR
+    BA -.->|"reco / extracto por bastamp"| ML
+    OL -->|"local = C"| FE
+  end
   subgraph PRE["Pré-cativação e reservas"]
     BIPRECAT["BIPRECAT — pré-cativação"]
     MON["Monitor de Cativação"]
@@ -142,15 +177,16 @@ flowchart TB
 - `usp_stinvclc` não foi demonstrada como responsável por SX/SXX.
 - SXX é descrita em Rel como stock global por armazém/cor/tamanho, mas o seu papel operacional não está provado.
 
-#### Tesouraria — FT, CH, CHL, OD, OL, BA e FE
+#### Tesouraria — FT, RE, LM/LR, LO/LP, OD, OL, BA/BL e reconciliação
 - FT pode criar OL quando `TD.lancaol=1` e existem correspondências necessárias em TD, FT2, FT3 e OC.
-- A criação de CH a partir de FT é um ramo separado. A aceitação inicial do cheque cria CHL (`cm=1)) e não cria, nesse ramo, OL.
-- Alguns ramos CHL (`cm=3)) podem criar OL sob condições específicas; não generalizar a semântica de cm=3.
-- Na configuração consultada, Fatura-Recibo e Fatura Simplificada usam `olcodigo=R10001`, local Caixa, moeda EURO e contado 0; OC classifica R10001 como Recebimentos de Clientes.
-- A passagem OD → OL continua por identificar. Existem apontamentos divergentes sobre as origens de OD; nenhuma lista deve ser tratada como final.
-- BA recebe sincronização parcial de OL sob condições como `contado > 0`; não é uma réplica integral nem prova o processo completo de reconciliação.
-- FE é actualizado por movimentos OL com `local='C'`; o controlo efectivo de movimentos em dias fechados permanece por esclarecer.
-
+- RE cria/actualiza OL quando fica processado e a série não está configurada para movimentos incobráveis (`TSRE.movinc=0)); pode gerar uma segunda componente quando o segundo local de tesouraria tem valor.
+- LM/LR e LO/LP mantêm OD como saldo pendente do título e criam OL directamente nas operações de liquidação elegíveis. Não existe conversão genérica OD → OL.
+- A Enciclopédia mapeia os códigos de operação das letras; não os confundir com os códigos CM1 de conta-corrente.
+- BA é criado a partir de OL quando `contado>0). `contado` é o número da conta bancária, correspondente a `BL.noconta`, e não um booleano de reconciliação.
+- BA actualiza os saldos totais e reconciliados em BL. BABR liga BA aos movimentos importados BR; os triggers BABR marcam/desmarcam ambos como reconciliados.
+- BR contém movimentos importados do extrato BX; os triggers BR chamam `usp_Act_Extratos_Bancarios` para recalcular os saldos do cabeçalho BX.
+- BA também propaga `reco` e `extracto` para ML quando existe correspondência por `bastamp`.
+- FE é actualizado por OL com `local='C'). O fecho diário é um controlo funcional/documentado da aplicação, não uma validação encontrada nos triggers OL.
 #### Pré-cativação
 - BIPRECAT e os campos `biprecatstamp` e `bostamp` foram identificados.
 - O processo funcional de pré-cativação está associado ao Monitor de Cativação, mas o ciclo técnico de criação, conversão e ligação a BI/SA ainda não está fechado.
@@ -168,6 +204,13 @@ flowchart LR
   SL["SL.bistamp / SL.sticstamp"]
   STIC["STIC.sticstamp"]
   BOTXT["BOTXT.bostamp"]
+  OL["OL.olstamp"]
+  BA["BA.bastamp / BA.olstamp"]
+  BL["BL.noconta"]
+  BX["BX.bxstamp"]
+  BR["BR.brstamp / BR.bxstamp"]
+  BABR["BABR.bastamp / BABR.brstamp"]
+  ML["ML.bastamp"]
 
   BO2 -->|"BO.bostamp = BO2.bo2stamp"| BO
   BI -->|"BI.bostamp = BO.bostamp"| BO
@@ -175,6 +218,12 @@ flowchart LR
   BI -.->|"obistamp referencia bistamp da linha de origem"| BI
   SL -->|"SL.sticstamp = STIC.sticstamp"| STIC
   BO -->|"tr_bo_delete: BOTXT.bostamp = deleted.bostamp"| BOTXT
+  OL -->|"OL.olstamp = BA.olstamp (tr_ol_*)"| BA
+  BA -->|"BA.contado = BL.noconta (tr_ba_*)"| BL
+  BR -->|"BR.bxstamp = BX.bxstamp (tr_br_* / procedure)"| BX
+  BA -->|"BABR.bastamp = BA.bastamp"| BABR
+  BR -->|"BABR.brstamp = BR.brstamp"| BABR
+  BA -->|"ML.bastamp = BA.bastamp (tr_ba_update)"| ML
 ```
 
 ### 3.1 Registo dos predicados
@@ -195,7 +244,7 @@ flowchart LR
 | BO / TS / TS2 / BO2 | Validações de assinatura/importação nos triggers BO | Junções físicas ou cardinalidades sem rever Dic/Rel e expressão integral |
 | FT / FI / TD / OL | Circuito funcional condicional descrito nos triggers standard | FK entre documentos, linhas, configuração e OL |
 | FT / CH / CHL | Ramos funcionais de criação e histórico de cheques | Relações físicas completas ou semântica universal de cm=3 |
-| OD / OL / BA / FE | Funções parciais e efeitos dos triggers OL | Chave OD→OL, relação estrutural OL–BA e chave temporal OL–FE |
+| OD / OL / BA / BL / BR / BX / BABR / FE | OD e OL são resultados paralelos; BA mantém saldos bancários em BL e reconcilia com BR/BX via BABR; FE mantém saldos diários | Cardinalidades físicas e índices completos; regras de aplicação para reconciliação/fecho; validação multi-linha |
 | BI / FI / FN / SL | Origens condicionais de movimentos de stock | Uma ligação universal para todos os tipos de documento |
 | SL / ST / SA | Actualização de acumulados nos triggers SL | Chaves físicas completas de artigo/armazém neste grafo |
 | SX / SXX / SGC / SGT | Views e operações de manutenção de dimensões em SX | Junção SX/SXX, rotina de saldo e relação directa SL→SX |
@@ -223,11 +272,13 @@ Cada ligação futura deve ser classificada como:
 
 ## 5. Prioridades para continuar a investigação
 
-1. **OD → OL / BA / FE:** resolver primeiro o mecanismo de concretização e a divergência das origens de OD.
-2. **SX/SXX:** localizar quem cria e actualiza `SX.stock`, esclarecer SXX e o circuito do inventário com grelhas.
-3. **BO / dossiers internos:** cruzar Dic, Rel, triggers integrais e Enciclopédia; determinar apenas depois os efeitos em BI, stock e tesouraria.
-4. **Produção:** fechar o percurso real de consumo/entrada no PHC Gestão/CS, sem extrapolar Manufactor.
-5. **VO:** recuperar as evidências originais; não assumir equivalência com BI.
+1. **Tesouraria — configuração e validação:** confirmar valores TSRE (`movinc`, `cmcc`, `cmccn`) e descrições CM1 30/81; depois validar em ambiente descartável os circuitos RE/LM/LO.
+2. **Reconciliação bancária:** confirmar estrutura, índices e cardinalidades de BA/BL/BR/BX/BABR; localizar no código aplicacional a criação/remoção das associações BABR.
+3. **Fecho FE:** localizar a validação aplicacional que exige password em dias fechados e confirmar a configuração efectiva.
+4. **SX/SXX:** localizar quem cria e actualiza `SX.stock`, esclarecer SXX e o circuito do inventário com grelhas.
+5. **BO / dossiers internos:** cruzar Dic, Rel, triggers integrais e Enciclopédia; determinar apenas depois os efeitos em BI, stock e tesouraria.
+6. **Produção:** fechar o percurso real de consumo/entrada no PHC Gestão/CS, sem extrapolar Manufactor.
+7. **VO:** recuperar as evidências originais; não assumir equivalência com BI.
 
 ## 6. Fontes de continuidade e proveniência
 
@@ -237,7 +288,8 @@ Cada ligação futura deve ser classificada como:
 - [PR #34 — stocks, produção, transferências e SX/SXX](https://github.com/Jhouinho/PhcKnowledge/pull/34).
 - [PR #35 — primeira passagem BO](https://github.com/Jhouinho/PhcKnowledge/pull/35).
 - [PR #36 — índice de continuidade](https://github.com/Jhouinho/PhcKnowledge/pull/36).
+- [PR #38 — OD/OL, letras, reconciliação bancária e FE](https://github.com/Jhouinho/PhcKnowledge/pull/38).
 
 O script `docs/sources/triggers phc.sql` é uma fonte standard legível, não prova automática de que as definições instaladas em cada base sejam idênticas. A análise estática não equivale a execução em runtime. Os ZIP da Enciclopédia e das capturas não devem ser adicionados ao repositório.
 
-**Estado final desta revisão:** grafo funcional reorganizado por domínio; grafo estrutural reduzido aos predicados registados; relações pendentes explicitamente isoladas; ERD físico completo continua dependente de recolha própria.
+**Estado final desta revisão:** grafo funcional reorganizado por domínio e actualizado com BA/BL/BR/BX/BABR; grafo estrutural inclui predicados observados em código; OD→OL genérico removido; relações pendentes explicitamente isoladas; ERD físico completo continua dependente de recolha própria.
