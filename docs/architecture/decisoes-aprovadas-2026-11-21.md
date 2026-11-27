@@ -387,3 +387,59 @@ O contrato normativo completo está em [D-023 — Identidade e correspondência 
 9. A análise cross-installation confirmou 12 pares observacionais `formb`/`formc`, sem validar matching universal, `Correspondence.Confirmed`, `SameStandardEntity` ou classificação. A investigação da projecção SQL concluiu que as diferenças de metadata nos 4 905 pares são exclusivamente datas de catálogo. C1/C2 demonstrou estabilidade temporal observacional; T-A demonstrou controlo sem mutações; T-B demonstrou detecção de alteração e reposição byte a byte numa âncora `formc`, mantendo identidade observada e MetadataFingerprint estáveis e DefinitionFingerprint indisponível. Estes ensaios não validam normalização semântica, identidade persistente ou generalização. D-023 aprova o contrato conceptual, mas não autoriza alterações ao Scanner, collectors, SQLite, schemas executáveis IKP, migrations/materialização SQL Server ou RAG. Essas alterações exigem proposta técnica e aprovação posterior.
 
 D-023 complementa D-015 a D-022 e prevalece em caso de conflito sobre identidade e correspondência entre instalações.
+
+## 15. D-024 — Descoberta Progressiva de Conhecimento Funcional
+
+**Data: 24-11-2026 — Estado: APROVADA.**  
+**Estatuto: objectivo fundamental do produto PHC Knowledge.**
+
+O PHC Knowledge deve permitir descobrir, construir, relacionar e validar progressivamente conhecimento sobre o funcionamento do PHC, partindo dos objectos técnicos e evidências recolhidos pelo Scanner e seguindo as relações que permitem compreender processos, dependências, regras e comportamentos funcionais.
+
+1. O produto não se limita a inventariar tabelas, campos, código ou personalizações. Deve evoluir para explicar como os elementos técnicos participam no funcionamento do PHC.
+2. As capacidades fundamentais são descoberta, correlação, investigação progressiva, validação e acumulação de conhecimento contextualizado.
+3. O sistema distingue factos observados, relações identificadas, hipóteses funcionais e conclusões validadas. A origem, semântica, contexto, evidências e estado de validação devem ser preservados.
+4. Uma relação inferida por análise de código não é apresentada como FK ou relação declarada PHC. Uma referência técnica não prova, por si só, regra de negócio ou causalidade funcional.
+5. A auditoria do Scanner avalia não só existência, completude e integridade dos artefactos, mas também se o contexto e as relações recolhidas permitem responder a perguntas funcionais reais.
+6. O Portal deverá permitir navegar das conclusões para as evidências de origem e investigar circuitos funcionais a partir de objectos conhecidos, sem exigir conhecimento antecipado de todas as tabelas ou etapas.
+7. O estudo Frenetikmove da factura 429 (FT → FI → SL → ST) é um caso de referência exploratório para avaliar esta capacidade, não uma regra universal do PHC nem conhecimento automaticamente transferível entre instalações.
+8. A capacidade evolui por etapas: qualidade da recolha; exploração estrutural/operacional; correlação rastreável; investigação e validação funcional; acumulação de conhecimento; e, posteriormente, IA fundamentada em evidências.
+9. A IA não é pré-requisito e não substitui a validação. A fundação deve ser útil sem IA, estruturada, pesquisável e rastreável.
+10. Conhecimento específico de uma instalação permanece sujeito a proveniência, âmbito, governação e permissões; não se torna standard nem partilhável automaticamente.
+11. D-024 orienta decisões futuras sobre Scanner, modelo de conhecimento e Portal, mas não aprova alterações a collectors, queries, Scanner, SQLite, schemas executáveis IKP, migrations, materialização SQL Server, motor de inferência ou RAG. Cada alteração exige evidência, proposta técnica e aprovação específica.
+
+O enquadramento funcional, as capacidades, o caso de referência e a sequência de evolução estão detalhados em [Novo rumo do produto e auditoria do Scanner](product-direction-and-scanner-knowledge-audit-2026-11-24.md).
+
+D-024 complementa as decisões anteriores. Não substitui D-015 a D-023 nem altera os respectivos contratos de identidade, proveniência, captura ou correspondência.
+
+### Metodologia inicial de investigação — três fontes
+
+A investigação do PHC Standard na CS Default cruza obrigatoriamente três fontes: (a) a base de dados PHC, incluindo estrutura, metadados, relações e objectos disponíveis; (b) o ficheiro existente de triggers PHC encriptados, usando o processo de leitura/desencriptação disponível; e (c) a Enciclopédia PHC. A pesquisa não fica concluída pela consulta isolada da base de dados.
+
+- Cada evidência e afirmação derivada identifica a fonte concreta, referência/localização, versão ou contexto disponível e limitações. A mesma informação encontrada em fontes diferentes mantém referências separadas.
+- Divergências entre fontes são registadas e investigadas, não resolvidas por suposição.
+- Informação da Enciclopédia PHC é evidência documental externa à base de dados; não deve ser apresentada como comportamento observado na CS Default.
+- O conteúdo dos triggers só pode ser usado na medida em que esteja efectivamente acessível e legível; não se presume que todo o ficheiro encriptado foi desencriptado ou pesquisado.
+- O conhecimento distingue conteúdo directamente observado, relações técnicas identificadas, hipóteses funcionais e conclusões validadas.
+- A sequência inicial privilegia compreender primeiro o PHC Standard com a CS Default. A investigação de instalações de clientes e personalizações é uma etapa posterior, mantendo âmbitos e proveniências separados.
+- Esta metodologia orienta a experiência exploratória; não aprova alterações ao Scanner, collectors, queries, dados da CS Default, schemas executáveis ou persistência.
+
+
+## 16. D-025 — Camada independente de conhecimento funcional persistente
+
+**Data: 24-11-2026 — Estado: APROVADA.**
+
+1. O conhecimento funcional descoberto será mantido numa camada conceptual independente, persistida no SQL Server central do PHC Knowledge, sem alterar, substituir ou incorporar os artefactos originais recolhidos pelo Scanner.
+2. Evidências técnicas e conhecimento derivado são informação distinta. Cada descoberta deve manter referências rastreáveis aos objectos e evidências de origem, bem como ao âmbito, captura, instalação ou referência standard e versão aplicáveis.
+3. Factos observados, relações identificadas, hipóteses funcionais e conclusões validadas mantêm estados distintos. A validação e a sua proveniência são registadas; uma hipótese não é promovida automaticamente a conclusão.
+4. Conhecimento PHC Standard e conhecimento específico de uma instalação mantêm âmbitos separados. Não há promoção ou partilha automática entre âmbitos/instalações.
+5. Cursor, análise humana ou ferramentas futuras podem propor conhecimento, mas não são proprietários da persistência ou governação. Não fica autorizado acesso de escrita directo do Cursor à base de dados central.
+6. O fluxo conceptual prevê produção de descobertas estruturadas, validação pelo PHC Knowledge de referências, integridade, proveniência, âmbito, permissões e duplicações, registo com estado apropriado e navegação no Portal até às evidências originais.
+7. A persistência deverá aproveitar o SQL Server central previsto para o produto; não se decide criar uma base de dados paralela.
+8. Os conceitos investigação, descoberta, referência a objecto, relação, evidência, validação e âmbito são apenas conceitos de domínio preliminares. Não constituem schema físico, tabelas, entidades, APIs ou contrato de importação aprovados.
+9. Um pacote estruturado e versionado (por exemplo, JSON) é uma hipótese de transporte a avaliar, não um contrato aprovado.
+10. A primeira experiência será exploratória, com Cursor sobre artefactos reais da CS Default e resultados estruturados fora da base central. Só depois de avaliar a qualidade e utilidade das descobertas será apresentada proposta técnica para importação e persistência.
+11. D-025 não autoriza alterações a código, Scanner, collectors, queries, workspace SQLite, schemas executáveis IKP, migrations, materialização SQL Server ou RAG. Cada alteração exige proposta técnica e aprovação específica.
+
+O detalhe, o fluxo conceptual e os limites estão documentados em [Novo rumo do produto e auditoria do Scanner](product-direction-and-scanner-knowledge-audit-2026-11-24.md#12-decisao-aprovada--camada-independente-de-conhecimento-funcional-persistente).
+
+D-025 concretiza a acumulação de conhecimento prevista em D-024, sem alterar os contratos de identidade, proveniência, captura ou correspondência aprovados em D-015 a D-023.

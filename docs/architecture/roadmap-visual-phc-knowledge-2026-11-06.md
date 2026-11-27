@@ -485,3 +485,60 @@ D-023 foi aprovado e documentado em [Contrato D-023 — Identidade e correspond�
 ### Estado e limites
 
 D-023 fecha o contrato conceptual; a matriz por ObjectKind v0.5 incorpora a evidência limitada de T-A e T-B, mas continua draft e não significa que exista implementação física de correspondências. Não iniciar materialização SQL Server enquanto os contratos e critérios de identidade/proveniência necessários não estiverem fechados. A materialização continua no roadmap, depois da validação e decisão técnica.
+
+## 13. Objectivo fundamental — Descoberta Progressiva de Conhecimento Funcional (D-024)
+
+**Aprovado em 24-11-2026.**
+
+O PHC Knowledge tem como objectivo fundamental descobrir, construir, relacionar e validar progressivamente conhecimento sobre o funcionamento do PHC, a partir dos objectos e evidências recolhidos pelo Scanner.
+
+O resultado pretendido vai além de um catálogo técnico: deve permitir partir de uma tabela, campo, ecrã ou funcionalidade, encontrar evidências relacionadas, seguir relações e investigar circuitos funcionais, distinguindo factos observados, relações identificadas, hipóteses e conclusões validadas.
+
+### Evolução no roadmap
+
+1. **Auditoria da evidência:** validar existência, completude, integridade, contexto e relações por tipo/operação do Scanner.
+2. **Exploração estrutural e operacional:** pesquisar objectos e perceber quem os consulta ou altera, com proveniência.
+3. **Correlação rastreável:** relacionar tabelas, campos, triggers, procedures, funções, regras, eventos, ecrãs e artefactos disponíveis, sem confundir relações declaradas com inferidas.
+4. **Investigação funcional:** navegar progressivamente pelas evidências, formular hipóteses e validar circuitos e comportamentos.
+5. **Conhecimento acumulado:** guardar conclusões contextualizadas, evidências, limitações e estado de validação, respeitando instalação e permissões.
+6. **IA fundamentada:** numa fase posterior, apoiar descoberta e explicação com respostas ligadas às evidências; IA não é requisito para os primeiros níveis.
+
+### Caso de referência
+
+O estudo Frenetikmove da factura 429 (FT → FI → SL → ST) é um caso exploratório de referência para avaliar a capacidade de reconstruir um circuito funcional a partir de várias fontes técnicas. Não é uma regra universal do PHC.
+
+### Consequências para a sequência actual
+
+A auditoria do Scanner deve avaliar se a recolha permite responder a perguntas funcionais reais, e não apenas se os objectos aparecem no pacote. A preparação do Portal deve privilegiar navegação entre objectos, relações e evidências, sem antecipar um motor de inferência ou IA.
+
+D-024 é um objectivo de produto e orientação de roadmap. Não altera a sequência imediata de validação nem autoriza alterações a código, collectors, queries, SQLite, schemas executáveis IKP, migrations, materialização SQL Server ou RAG. Qualquer alteração técnica exige evidência, proposta e aprovação específica.
+
+Referência normativa: [D-024 — Decisões aprovadas](decisoes-aprovadas-2026-11-21.md#15-d-024--descoberta-progressiva-de-conhecimento-funcional).
+
+
+## 14. D-025 aprovado — camada independente de conhecimento funcional persistente
+
+**Aprovado em 24-11-2026.**
+
+O conhecimento funcional descoberto será persistido numa camada independente no SQL Server central, ligada às evidências técnicas originais e sem alterar ou incorporar os artefactos do Scanner.
+
+### Fluxo evolutivo
+
+1. Investigar artefactos reais da CS Default com Cursor ou análise humana.
+2. Produzir descobertas estruturadas com relações, evidências, âmbito e limitações.
+3. Avaliar a qualidade e utilidade dos resultados fora da base central.
+4. Definir um contrato versionado de entrada e um processo de validação/importação.
+5. Persistir descobertas e validações no SQL Server central, mantendo referências às evidências originais.
+6. Disponibilizar pesquisa e navegação no Portal entre conclusões, objectos e evidências.
+
+### Salvaguardas
+
+- Evidência original e conhecimento derivado permanecem separados.
+- Hipóteses não são conclusões validadas.
+- PHC Standard e Installation Knowledge mantêm âmbitos separados.
+- Cursor pode propor descobertas, mas não escreve directamente na base central nem governa o conhecimento.
+- A proposta de modelo físico, pacote JSON, APIs e importação continua por fechar.
+
+D-025 não altera a sequência imediata da auditoria do Scanner nem autoriza implementação de código, collectors, SQLite, schemas executáveis IKP, migrations, materialização SQL Server ou RAG. A experiência CS Default e a avaliação dos resultados precedem a proposta técnica.
+
+Referência normativa: [D-025 — Decisões aprovadas](decisoes-aprovadas-2026-11-21.md#16-d-025--camada-independente-de-conhecimento-funcional-persistente).
