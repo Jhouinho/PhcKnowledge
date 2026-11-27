@@ -237,8 +237,9 @@ O grafo não é ERD físico e não afirma FKs SQL. O facto de uma ligação esta
 
 ### Prioridade 1 — configuração e validação de tesouraria
 1. Estrutura física de BA, BL, BR, BX e BABR confirmada no catálogo SQL de `CSDefault202603`: PK, índices e ausência de FKs estão registados no relatório PR #38.
-2. Localizar no código aplicacional a criação/remoção de BABR e a autorização de fecho FE.
-3. Auditar operações multi-linha nos triggers OL/BA e validar em ambiente descartável.
+2. Investigar o risco lógico de `tr_babr_delete`: repõe `reco=0` sem verificar outras associações; confirmar com dados e fluxo aplicacional se a remoção pode ser parcial.
+3. Localizar o fluxo aplicacional de criação/remoção de BABR e a autorização de fecho FE.
+4. Auditar operações multi-linha nos triggers OL/BA e validar em ambiente descartável.
 
 Consulta de configuração executada em `CSDefault202603`; os resultados foram incorporados no relatório do [PR #38](https://github.com/Jhouinho/PhcKnowledge/pull/38): TSRE ndoc 1/2 têm `movinc=0`, `cmcc=0`, `cmccn=NULL`; TSRD ndoc 1 tem `regrd=0` e ndoc 2 tem `regrd=1`; CM1 30 e 81 têm ambos a descrição `Anula. Letra`.
 
@@ -289,7 +290,7 @@ Não reescrever relatórios antigos como se tivessem sido produzidos com evidên
 
 ## 7. Ponto exacto de retoma
 
-A investigação de OD/OL e da reconciliação bancária já tem uma primeira síntese no PR #38. A validação read-only de TSRE, TSRD e CM1 em `CSDefault202603` está concluída e registada no relatório. A validação do catálogo SQL de BA/BL/BR/BX/BABR está concluída e registada no PR #38. A próxima acção concreta é localizar o fluxo aplicacional de criação/remoção de BABR e a autorização de fecho FE.
+A investigação de OD/OL e da reconciliação bancária já tem uma primeira síntese no PR #38. A validação read-only de TSRE, TSRD e CM1 em `CSDefault202603` está concluída e registada no relatório. A validação do catálogo SQL de BA/BL/BR/BX/BABR está concluída e registada no PR #38. A leitura dos triggers BABR revelou um risco lógico no DELETE: o flag `reco` é reposto a zero sem verificar se subsistem outras associações. A próxima acção é validar o estado dos dados e localizar o fluxo aplicacional de criação/remoção de BABR; depois, investigar a autorização de fecho FE.
 
 Em paralelo, PR #34 mantém SX/SXX e produção em aberto, PR #35 mantém BO como primeira passagem e PR #32 contém o grafo actualizado. Todos permanecem fora da main até revisão e integração explícita.
 
